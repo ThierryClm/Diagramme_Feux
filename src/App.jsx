@@ -4,9 +4,9 @@ import TimelineDiagram from './components/TimelineDiagram';
 import GroupTable from './components/GroupTable';
 import TrafficTable from './components/TrafficTable';
 import IntergreenMatrix from './components/IntergreenMatrix';
+import ActionTable from './components/ActionTable';
 import ProjectManager from './components/ProjectManager';
 
-import './components/TimelineDiagram.css';
 import './components/GroupTable.css';
 import './components/IntergreenMatrix.css';
 import './App.css';
@@ -29,7 +29,9 @@ function App() {
         saveProject,
         loadProject,
         getAllSaves,
-        deleteSave
+        deleteSave,
+        actionData,
+        updateActionRow
     } = useTrafficLight();
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -95,22 +97,22 @@ function App() {
                 <aside className="sidebar">
                     <div className="sidebar-tabs">
                         <button
-                            className={`tab - btn ${activeTab === 'config' ? 'active' : ''} `}
+                            className={`tab-btn ${activeTab === 'projects' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('projects')}
+                        >
+                            Projets
+                        </button>
+                        <button
+                            className={`tab-btn ${activeTab === 'config' ? 'active' : ''}`}
                             onClick={() => setActiveTab('config')}
                         >
                             Configuration
                         </button>
                         <button
-                            className={`tab - btn ${activeTab === 'traffic' ? 'active' : ''} `}
+                            className={`tab-btn ${activeTab === 'traffic' ? 'active' : ''}`}
                             onClick={() => setActiveTab('traffic')}
                         >
                             Trafic
-                        </button>
-                        <button
-                            className={`tab - btn ${activeTab === 'projects' ? 'active' : ''} `}
-                            onClick={() => setActiveTab('projects')}
-                        >
-                            Projets
                         </button>
                     </div>
 
@@ -120,11 +122,15 @@ function App() {
                                 groups={groups}
                                 updateGroupParams={updateGroupParams}
                                 cycleLength={cycleLength}
+                                moveGroup={moveGroup}
                             />
-                            <IntergreenMatrix
-                                conflictMatrix={conflictMatrix}
-                                setMatrixValue={setMatrixValue}
-                            />
+                            <div style={{ marginTop: '2rem' }}>
+                                <IntergreenMatrix
+                                    conflictMatrix={conflictMatrix}
+                                    setMatrixValue={setMatrixValue}
+                                    groups={groups}
+                                />
+                            </div>
                         </>
                     )}
 
@@ -157,14 +163,26 @@ function App() {
                     )}
                 </aside>
 
-                <section className="diagram-area">
-                    <TimelineDiagram
-                        groups={groups}
-                        globalTime={globalTime}
-                        getGroupState={getGroupState}
-                        onGroupClick={(g) => setSelectedGroupId(g.id)}
-                        pixelsPerSecond={pixelsPerSecond}
-                    />
+                <section className="diagram-area" style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <TimelineDiagram
+                            groups={groups}
+                            globalTime={globalTime}
+                            getGroupState={getGroupState}
+                            onGroupClick={(g) => setSelectedGroupId(g.id)}
+                            pixelsPerSecond={pixelsPerSecond}
+                            conflicts={conflicts}
+                            updateGroupParams={updateGroupParams}
+                            cycleLength={cycleLength}
+                        />
+                    </div>
+
+                    <div style={{ borderTop: '1px solid #333', marginTop: '1rem' }}>
+                        <ActionTable
+                            actionData={actionData}
+                            updateActionRow={updateActionRow}
+                        />
+                    </div>
                 </section>
             </main>
         </div>

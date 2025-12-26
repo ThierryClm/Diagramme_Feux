@@ -1,107 +1,107 @@
 .timeline-container {
-    width: 100%;
-    height: 100%;
-    background: #222;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    /* Remove overflow hidden to match body scroll */
 }
 
 .timeline-layout {
     display: flex;
-    flex-grow: 1;
-    overflow: hidden;
+    flex-direction: row;
 }
 
 .timeline-sidebar {
-    width: 50px;
+    width: 250px;
+    /* Wider to fit inputs */
     background: #1a1a1a;
     border-right: 1px solid #444;
     flex-shrink: 0;
     z-index: 10;
+    padding-top: 0;
+    /* Header is now inside */
 }
 
-.header-cell {
-    height: 30px;
+.sidebar-header-row {
+    height: 50px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    background: #222;
     border-bottom: 1px solid #444;
-    font-weight: bold;
-    color: #888;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 0 10px;
+    gap: 5px;
 }
 
-.row-label {
-    height: 40px;
+.col-label {
+    flex: 1;
+    font-size: 0.8em;
+    color: #888;
+    text-align: center;
+}
+
+.row-label-container {
+    height: 50px;
     display: flex;
     align-items: center;
-    justify-content: center;
     border-bottom: 1px solid #333;
+    padding: 0 10px;
+    gap: 5px;
     color: #eee;
-    font-weight: bold;
-    cursor: pointer;
 }
 
-.row-label:hover {
+.label-id {
+    width: 30px;
+    font-weight: bold;
+}
+
+.input-time {
+    width: 45px;
     background: #333;
+    border: 1px solid #444;
+    color: white;
+    padding: 4px;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.input-time:focus {
+    background: #444;
+    outline: none;
+    border-color: #666;
 }
 
 .timeline-scroll-area {
     flex-grow: 1;
     overflow-x: auto;
-    overflow-y: hidden;
-    /* Or auto if vertical scroll needed, but sidebar handles labels */
-    /* Syncing vertical scroll is tricky without more structure, 
-       but for now let's assume vertical scroll is on container or synced manually?
-       Actually, sidebar and content need to scroll vertically together if many groups.
-       Let's allow vertical scroll on .timeline-layout if possible. 
-    */
+    overflow-y: visible;
+    /* Allow vertical scroll */
     position: relative;
     background: #242424;
 }
 
 .timeline-track-container {
     position: relative;
-    height: 100%;
-    /* Width set dynamically */
 }
 
 .timeline-ruler {
-    height: 30px;
+    height: 50px;
     border-bottom: 1px solid #444;
-    position: relative;
-    background: #222;
-}
-
-.ruler-tick {
-    position: absolute;
-    top: 5px;
-    font-size: 0.75em;
-    color: #888;
-    border-left: 1px solid #444;
-    padding-left: 2px;
-    height: 25px;
-}
-
-.playhead {
-    position: absolute;
+    position: sticky;
     top: 0;
-    bottom: -1000px;
-    /* Hack to extend down, or use height: 100% of container */
-    width: 2px;
-    background: white;
-    z-index: 20;
-    pointer-events: none;
-    height: 100vh;
-    /* Better */
+    background: #222;
+    z-index: 30;
+    /* Above rows */
+    width: 100%;
+    /* Ensure it spans the track */
 }
 
 .timeline-row-track {
-    height: 40px;
+    height: 50px;
     position: relative;
     border-bottom: 1px solid #333;
     overflow: hidden;
-    /* Hide cycle parts outside */
 }
 
 .cycle-block {
@@ -117,17 +117,11 @@
 }
 
 .phase-bar.green {
-    background: linear-gradient(to bottom, #2ecc71, #27ae60);
-    box-shadow: 0 0 5px rgba(46, 204, 113, 0.5);
+    background: linear-gradient(to bottom, #00FF00, #00CC00);
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
 }
 
 .phase-bar.orange {
-    background: linear-gradient(to bottom, #e67e22, #d35400);
-    box-shadow: 0 0 5px rgba(230, 126, 34, 0.5);
-}
-
-.phase-bar.red {
-    background: linear-gradient(to bottom, #e74c3c, #c0392b);
-    opacity: 0.3;
-    /* Dim red */
+    background: linear-gradient(to bottom, #FFFF00, #CCCC00);
+    box-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
 }

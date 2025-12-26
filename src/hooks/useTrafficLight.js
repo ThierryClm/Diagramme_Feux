@@ -287,6 +287,55 @@ export const useTrafficLight = () => {
         localStorage.removeItem(`traffic_project_${name}`);
     };
 
+    // Action Table State
+    const [actionData, setActionData] = useState(() => {
+        try {
+            const saved = localStorage.getItem('trafficActionData');
+            return saved ? JSON.parse(saved) : Array.from({ length: 30 }, (_, i) => ({
+                id: i + 1,
+                gf: '',
+                action: '',
+                description: '',
+                deb: '',
+                fin: '',
+                actionMicro: '',
+                plage1: '',
+                plage2: '',
+                actionGF1: '',
+                actionGF1GF2: '',
+                actionGF1GF3: '',
+                actionGF1GF4: ''
+            }));
+        } catch (e) {
+            return Array.from({ length: 30 }, (_, i) => ({
+                id: i + 1,
+                gf: '',
+                action: '',
+                description: '',
+                deb: '',
+                fin: '',
+                actionMicro: '',
+                plage1: '',
+                plage2: '',
+                actionGF1: '',
+                actionGF1GF2: '',
+                actionGF1GF3: '',
+                actionGF1GF4: ''
+            }));
+        }
+    });
+
+    // Save actionData to localStorage
+    useEffect(() => {
+        localStorage.setItem('trafficActionData', JSON.stringify(actionData));
+    }, [actionData]);
+
+    const updateActionRow = (rowId, field, value) => {
+        setActionData(prev => prev.map(row =>
+            row.id === rowId ? { ...row, [field]: value } : row
+        ));
+    };
+
     return {
         intersectionName,
         setIntersectionName,
@@ -308,6 +357,9 @@ export const useTrafficLight = () => {
         saveProject,
         loadProject,
         getAllSaves,
-        deleteSave
+        deleteSave,
+        // Action Table
+        actionData,
+        updateActionRow
     };
 };

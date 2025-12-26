@@ -41,9 +41,6 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, moveGroup }) => {
                         <th>Type</th>
                         <th>Mini</th>
                         <th>Jaune</th>
-                        <th>Début</th>
-                        <th>Fin</th>
-                        <th>Durée</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -109,35 +106,6 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, moveGroup }) => {
                                         className="input-yellow"
                                         value={g.durations.orange}
                                         onChange={(e) => handleYellowChange(g.id, e.target.value)}
-                                    />
-                                </td>
-                                {/* Start (Offset) */}
-                                <td>
-                                    <input
-                                        type="number"
-                                        value={start}
-                                        onChange={(e) => handleStartChange(g.id, e.target.value)}
-                                    />
-                                </td>
-                                {/* End (Calculated) */}
-                                <td>
-                                    <input
-                                        type="number"
-                                        value={end}
-                                        onChange={(e) => handleEndChange(g.id, e.target.value, start)}
-                                    />
-                                </td>
-                                {/* Duration (Green) */}
-                                <td>
-                                    <input
-                                        type="number"
-                                        value={duration}
-                                        onChange={(e) => handleDurationChange(g.id, e.target.value)}
-                                        style={{
-                                            border: duration < g.minGreen ? '1px solid red' : '1px solid #444',
-                                            color: duration < g.minGreen ? 'red' : 'white'
-                                        }}
-                                        title={duration < g.minGreen ? `Inférieur au minimum (${g.minGreen}s)` : ''}
                                     />
                                 </td>
                             </tr>

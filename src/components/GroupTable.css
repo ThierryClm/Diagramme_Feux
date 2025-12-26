@@ -1,36 +1,43 @@
 .group-table-container {
     background: #1e1e1e;
-    padding: 1rem;
+    padding: 0;
+    /* Remove padding to handle full sticky */
     border-radius: 8px;
     border: 1px solid #333;
-    overflow-y: auto;
-    max-height: 80vh;
-}
-
-.group-table-container h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #eee;
+    overflow: visible;
+    /* Handled by parent */
+    max-height: none;
 }
 
 .group-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85em;
-    /* Slightly smaller to fit more cols */
+    font-size: 0.75em;
+    table-layout: fixed;
 }
 
 .group-table th {
     text-align: left;
     color: #aaa;
     font-weight: normal;
-    padding-bottom: 0.5rem;
+    padding: 0 0.5rem;
     border-bottom: 1px solid #444;
+    height: 50px;
+    position: sticky;
+    top: 0;
+    background: #1e1e1e;
+    z-index: 20;
+}
+
+.group-table tr {
+    height: 50px;
 }
 
 .group-table td {
-    padding: 4px 2px;
+    padding: 0 2px;
     border-bottom: 1px solid #333;
+    height: 50px;
+    vertical-align: middle;
 }
 
 .group-table input {
