@@ -1,0 +1,75 @@
+.diagram-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.cycle-circle {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    /* background: conic-gradient set inline */
+}
+
+/* Inner masking circle to make it a donut chart */
+.inner-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 220px;
+    height: 220px;
+    background: #242424;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.status-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.phase-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.timer {
+    font-family: monospace;
+    font-size: 1.2rem;
+    color: #888;
+}
+
+.pointer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transition: transform 0.1s linear;
+    /* Smooth movement */
+}
+
+.pointer-dot {
+    position: absolute;
+    top: 5px;
+    /* Adjust based on visuals, essentially on the ring */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 15px;
+    height: 15px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 0 10px white;
+    z-index: 10;
+}

@@ -1,0 +1,133 @@
+.timeline-container {
+    width: 100%;
+    height: 100%;
+    background: #222;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.timeline-layout {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.timeline-sidebar {
+    width: 50px;
+    background: #1a1a1a;
+    border-right: 1px solid #444;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.header-cell {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #444;
+    font-weight: bold;
+    color: #888;
+}
+
+.row-label {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #333;
+    color: #eee;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.row-label:hover {
+    background: #333;
+}
+
+.timeline-scroll-area {
+    flex-grow: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* Or auto if vertical scroll needed, but sidebar handles labels */
+    /* Syncing vertical scroll is tricky without more structure, 
+       but for now let's assume vertical scroll is on container or synced manually?
+       Actually, sidebar and content need to scroll vertically together if many groups.
+       Let's allow vertical scroll on .timeline-layout if possible. 
+    */
+    position: relative;
+    background: #242424;
+}
+
+.timeline-track-container {
+    position: relative;
+    height: 100%;
+    /* Width set dynamically */
+}
+
+.timeline-ruler {
+    height: 30px;
+    border-bottom: 1px solid #444;
+    position: relative;
+    background: #222;
+}
+
+.ruler-tick {
+    position: absolute;
+    top: 5px;
+    font-size: 0.75em;
+    color: #888;
+    border-left: 1px solid #444;
+    padding-left: 2px;
+    height: 25px;
+}
+
+.playhead {
+    position: absolute;
+    top: 0;
+    bottom: -1000px;
+    /* Hack to extend down, or use height: 100% of container */
+    width: 2px;
+    background: white;
+    z-index: 20;
+    pointer-events: none;
+    height: 100vh;
+    /* Better */
+}
+
+.timeline-row-track {
+    height: 40px;
+    position: relative;
+    border-bottom: 1px solid #333;
+    overflow: hidden;
+    /* Hide cycle parts outside */
+}
+
+.cycle-block {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    display: flex;
+    /* width is dynamic based on content? No, widths are fixed px now */
+}
+
+.phase-bar {
+    height: 100%;
+}
+
+.phase-bar.green {
+    background: linear-gradient(to bottom, #2ecc71, #27ae60);
+    box-shadow: 0 0 5px rgba(46, 204, 113, 0.5);
+}
+
+.phase-bar.orange {
+    background: linear-gradient(to bottom, #e67e22, #d35400);
+    box-shadow: 0 0 5px rgba(230, 126, 34, 0.5);
+}
+
+.phase-bar.red {
+    background: linear-gradient(to bottom, #e74c3c, #c0392b);
+    opacity: 0.3;
+    /* Dim red */
+}

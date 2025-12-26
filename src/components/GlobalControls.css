@@ -1,0 +1,61 @@
+.controls-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: #2a2a2a;
+    border-radius: 12px;
+    border: 1px solid #444;
+}
+
+.main-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #444;
+}
+
+.group-editor {
+    animation: fadeIn 0.2s;
+}
+
+.group-editor h3 {
+    margin: 0 0 1rem 0;
+    color: #fff;
+    font-size: 1.1em;
+}
+
+.durations-config {
+    display: flex;
+    justify-content: space-around;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.input-group label {
+    font-size: 0.8em;
+    margin-bottom: 4px;
+}
+
+.label-offset {
+    color: #aaa;
+}
+
+.select-hint {
+    color: #666;
+    font-style: italic;
+    padding: 1rem;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
