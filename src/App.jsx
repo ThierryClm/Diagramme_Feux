@@ -4,6 +4,7 @@ import TimelineDiagram from './components/TimelineDiagram';
 import GroupTable from './components/GroupTable';
 import TrafficTable from './components/TrafficTable';
 import IntergreenMatrix from './components/IntergreenMatrix';
+import ProjectManager from './components/ProjectManager';
 
 import './components/TimelineDiagram.css';
 import './components/GroupTable.css';
@@ -24,12 +25,16 @@ function App() {
         globalTime,
         getGroupState,
         updateGroupParams,
-        moveGroup
+        moveGroup,
+        saveProject,
+        loadProject,
+        getAllSaves,
+        deleteSave
     } = useTrafficLight();
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
     const [pixelsPerSecond, setPixelsPerSecond] = useState(10);
-    const [activeTab, setActiveTab] = useState('config'); // 'config' or 'traffic'
+    const [activeTab, setActiveTab] = useState('config'); // 'config', 'traffic', 'projects'
 
     return (
         <div className="app-container">
@@ -101,9 +106,15 @@ function App() {
                         >
                             Trafic
                         </button>
+                        <button
+                            className={`tab - btn ${activeTab === 'projects' ? 'active' : ''} `}
+                            onClick={() => setActiveTab('projects')}
+                        >
+                            Projets
+                        </button>
                     </div>
 
-                    {activeTab === 'config' ? (
+                    {activeTab === 'config' && (
                         <>
                             <GroupTable
                                 groups={groups}
@@ -115,10 +126,22 @@ function App() {
                                 setMatrixValue={setMatrixValue}
                             />
                         </>
-                    ) : (
+                    )}
+
+                    {activeTab === 'traffic' && (
                         <TrafficTable
                             groups={groups}
                             updateGroupParams={updateGroupParams}
+                        />
+                    )}
+
+                    {activeTab === 'projects' && (
+                        <ProjectManager
+                            saveProject={saveProject}
+                            loadProject={loadProject}
+                            getAllSaves={getAllSaves}
+                            deleteSave={deleteSave}
+                            currentName={intersectionName}
                         />
                     )}
 

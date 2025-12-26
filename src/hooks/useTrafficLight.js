@@ -3,8 +3,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 const DEFAULT_CYCLE = 100;
 
 export const useTrafficLight = () => {
-    const [intersectionName, setIntersectionName] = useState("Nouveau Carrefour");
-    const [cycleLength, setCycleLength] = useState(DEFAULT_CYCLE);
+    const [intersectionName, setIntersectionName] = useState(() => localStorage.getItem('trafficName') || "Nouveau Carrefour");
+    const [cycleLength, setCycleLength] = useState(() => parseInt(localStorage.getItem('trafficCycle')) || DEFAULT_CYCLE);
     const [globalTime, setGlobalTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
 
@@ -13,7 +13,7 @@ export const useTrafficLight = () => {
         id,
         name: `Groupe ${id}`, // Default name
         type: 'VL', // VL, TC, Cycliste, Piéton
-        minGreen: 5,
+        minGreen: 6,
         durations: { green: 30, orange: 3, red: 67 }, // Default orange is now 3s? Or 5s? Standard is usually 3s for VL.
         offset: (id - 1) * 5,
         // Traffic Engineering Props
@@ -26,16 +26,34 @@ export const useTrafficLight = () => {
         queueLength: 0, // Ile d'attente
     });
 
-    const [groups, setGroups] = useState(() =>
-        Array.from({ length: 5 }, (_, i) => createGroup(i + 1))
-    );
+    const [groups, setGroups] = useState(() => {
+        try {
+            const saved = localStorage.getItem('trafficGroups');
+            return saved ? JSON.parse(saved) : Array.from({ length: 5 }, (_, i) => createGroup(i + 1));
+        } catch (e) {
+            return Array.from({ length: 5 }, (_, i) => createGroup(i + 1));
+        }
+    });
 
     // Matrix: Size depends on number of groups.
     // We store as a URL-like generic object or always resize.
     // Let's keep it as 2D array, resizing when groups change.
-    const [conflictMatrix, setConflictMatrix] = useState(() =>
-        Array.from({ length: 5 }, () => Array(5).fill(0))
-    );
+    const [conflictMatrix, setConflictMatrix] = useState(() => {
+        try {
+            const saved = localStorage.getItem('trafficMatrix');
+            return saved ? JSON.parse(saved) : Array.from({ length: 5 }, () => Array(5).fill(0));
+        } catch (e) {
+            return Array.from({ length: 5 }, () => Array(5).fill(0));
+        }
+    });
+
+    // Auto-save Effect
+    useEffect(() => {
+        localStorage.setItem('trafficGroups', JSON.stringify(groups));
+        localStorage.setItem('trafficMatrix', JSON.stringify(conflictMatrix));
+        localStorage.setItem('trafficName', intersectionName);
+        localStorage.setItem('trafficCycle', cycleLength.toString());
+    }, [groups, conflictMatrix, intersectionName, cycleLength]);
 
     const setGroupCount = (count) => {
         const newCount = Math.max(1, parseInt(count) || 1);
@@ -217,6 +235,58 @@ export const useTrafficLight = () => {
         setGlobalTime(0);
     };
 
+    // Save/Load Logic
+    const saveProject = (name) => {
+        if (!name) return;
+        const projectData = {
+            intersectionName,
+            groups,
+            cycleLength,
+            conflictMatrix
+        };
+        try {
+            localStorage.setItem(`traffic_project_${name}`, JSON.stringify(projectData));
+            return true;
+        } catch (e) {
+            console.error("Save failed", e);
+            return false;
+        }
+    };
+
+    const loadProject = (name) => {
+        try {
+            const raw = localStorage.getItem(`traffic_project_${name}`);
+            if (!raw) return false;
+            const data = JSON.parse(raw);
+
+            // Batch updates
+            if (data.intersectionName) setIntersectionName(data.intersectionName);
+            if (data.groups) setGroups(data.groups);
+            if (data.cycleLength) setCycleLength(data.cycleLength);
+            if (data.conflictMatrix) setConflictMatrix(data.conflictMatrix);
+
+            return true;
+        } catch (e) {
+            console.error("Load failed", e);
+            return false;
+        }
+    };
+
+    const getAllSaves = () => {
+        const saves = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('traffic_project_')) {
+                saves.push(key.replace('traffic_project_', ''));
+            }
+        }
+        return saves;
+    };
+
+    const deleteSave = (name) => {
+        localStorage.removeItem(`traffic_project_${name}`);
+    };
+
     return {
         intersectionName,
         setIntersectionName,
@@ -232,6 +302,12 @@ export const useTrafficLight = () => {
         setIsPlaying,
         reset,
         updateGroupParams,
-        getGroupState
+        getGroupState,
+        moveGroup,
+        // Save/Load
+        saveProject,
+        loadProject,
+        getAllSaves,
+        deleteSave
     };
 };
