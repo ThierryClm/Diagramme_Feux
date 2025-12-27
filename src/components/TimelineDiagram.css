@@ -125,3 +125,25 @@
     background: linear-gradient(to bottom, #FFFF00, #CCCC00);
     box-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
 }
+
+.ruler-tick {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 0.75em;
+    color: #888;
+    border-left: 1px solid #444;
+    padding-left: 4px;
+}
+
+.playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ff4444;
+    z-index: 50;
+    pointer-events: none;
+}

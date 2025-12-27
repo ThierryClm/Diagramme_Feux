@@ -3,7 +3,7 @@ import './TimelineDiagram.css';
 
 const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, updateGroupParams, cycleLength }) => {
     const containerRef = useRef(null);
-    const TIME_WINDOW = 120; // seconds to display
+    const TIME_WINDOW = cycleLength || 100; // Use cycle length as time window
 
     // Determine total width in pixels
     const totalWidth = TIME_WINDOW * pixelsPerSecond;
