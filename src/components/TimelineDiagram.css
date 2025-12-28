@@ -41,7 +41,7 @@
 }
 
 .row-label-container {
-    height: 50px;
+    height: 30px;
     display: flex;
     align-items: center;
     border-bottom: 1px solid #333;
@@ -74,9 +74,7 @@
 
 .timeline-scroll-area {
     flex-grow: 1;
-    overflow-x: auto;
-    overflow-y: visible;
-    /* Allow vertical scroll */
+    overflow: visible;
     position: relative;
     background: #242424;
 }
@@ -98,7 +96,7 @@
 }
 
 .timeline-row-track {
-    height: 50px;
+    height: 30px;
     position: relative;
     border-bottom: 1px solid #333;
     overflow: hidden;
@@ -106,10 +104,9 @@
 
 .cycle-block {
     position: absolute;
-    top: 5px;
-    bottom: 5px;
+    top: 7px;
+    bottom: 7px;
     display: flex;
-    /* width is dynamic based on content? No, widths are fixed px now */
 }
 
 .phase-bar {
@@ -121,9 +118,30 @@
     box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
 }
 
+.phase-bar.green-dark {
+    background: linear-gradient(to bottom, #008800, #006600);
+    box-shadow: 0 0 5px rgba(0, 136, 0, 0.5);
+}
+
 .phase-bar.orange {
     background: linear-gradient(to bottom, #FFFF00, #CCCC00);
     box-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
+}
+
+.phase-bar.pedestrian-orange {
+    background: transparent;
+    position: relative;
+}
+
+.phase-bar.pedestrian-orange::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgb(255, 0, 0);
+    box-shadow: 0 0 3px rgba(255, 0, 0, 0.8);
 }
 
 .ruler-tick {
@@ -132,10 +150,10 @@
     height: 100%;
     display: flex;
     align-items: center;
+    justify-content: center;
     font-size: 0.75em;
     color: #888;
-    border-left: 1px solid #444;
-    padding-left: 4px;
+    transform: translateX(-50%);
 }
 
 .playhead {
@@ -146,4 +164,197 @@
     background: #ff4444;
     z-index: 50;
     pointer-events: none;
+}
+
+/* Grid lines */
+.timeline-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.grid-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+}
+
+.grid-1s {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.grid-5s {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.grid-10s {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Brace marker for Fermeture anticipée */
+.brace-marker {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.brace-marker::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 16px;
+    border: 3px solid #ff6b6b;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+}
+
+.brace-marker::after {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 9px solid #ff6b6b;
+}
+
+.brace-text {
+    display: none;
+}
+
+/* Lucarne styling */
+.cycle-block.lucarne {
+    opacity: 0.8;
+}
+
+/* Adaptatif vertical overlay */
+.adaptatif-overlay {
+    position: absolute;
+    background: rgba(100, 180, 255, 0.3);
+    border: 2px solid rgba(100, 180, 255, 0.7);
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Escamotage de phase overlay */
+.escamotage-overlay {
+    position: absolute;
+    background: rgba(128, 128, 128, 0.3);
+    border: 1px solid rgba(128, 128, 128, 0.4);
+    pointer-events: none;
+    z-index: 20;
+}
+
+.escamotage-label {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    color: #fff;
+    font-size: 0.8em;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+}
+
+.adaptatif-label {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    color: #fff;
+    font-size: 0.8em;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+}
+
+/* Fermeture anticipée arrows */
+.fermeture-arrow {
+    overflow: visible;
+}
+
+/* Ouverture anticipée hatched rectangle */
+.ouverture-anticipee {
+    position: absolute;
+    height: 25%;
+    bottom: 7px;
+    border: 1px solid #000;
+    border-radius: 2px;
+    background: repeating-linear-gradient(
+        45deg,
+        #00cc00,
+        #00cc00 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    pointer-events: none;
+    z-index: 7;
+}
+
+/* Bar label (Abrv) */
+.bar-label {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.55em;
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8), 0 0 1px #000;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    z-index: 6;
+    pointer-events: none;
+}
+
+/* Signa d'aide à la conduite */
+.signa-orange-bar {
+    position: absolute;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 8;
+    background: repeating-linear-gradient(
+        90deg,
+        #FF8C00,
+        #FF8C00 3px,
+        transparent 3px,
+        transparent 6px
+    );
+    box-shadow: 0 0 3px rgba(255, 140, 0, 0.5);
+}
+
+.signa-blue-bar {
+    position: absolute;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 8;
+    background: linear-gradient(to bottom, #4169E1, #2849C1);
+    box-shadow: 0 0 5px rgba(65, 105, 225, 0.5);
+}
+
+.signa-label {
+    position: absolute;
+    top: 50%;
+    left: 2px;
+    transform: translateY(-50%);
+    font-size: 0.55em;
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
 }

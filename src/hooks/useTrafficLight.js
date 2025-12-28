@@ -288,40 +288,29 @@ export const useTrafficLight = () => {
     };
 
     // Action Table State
+    const createEmptyActionRow = (id) => ({
+        id,
+        gf: '',
+        action: '',
+        description: '',
+        deb: '',
+        fin: '',
+        abrv: '',
+        micro: '',
+        plage1: '',
+        plage2: '',
+        actGf1: '',
+        actGf1Gf2: '',
+        actGf1Gf3: '',
+        actGf1Gf4: ''
+    });
+
     const [actionData, setActionData] = useState(() => {
         try {
             const saved = localStorage.getItem('trafficActionData');
-            return saved ? JSON.parse(saved) : Array.from({ length: 30 }, (_, i) => ({
-                id: i + 1,
-                gf: '',
-                action: '',
-                description: '',
-                deb: '',
-                fin: '',
-                actionMicro: '',
-                plage1: '',
-                plage2: '',
-                actionGF1: '',
-                actionGF1GF2: '',
-                actionGF1GF3: '',
-                actionGF1GF4: ''
-            }));
+            return saved ? JSON.parse(saved) : Array.from({ length: 30 }, (_, i) => createEmptyActionRow(i + 1));
         } catch (e) {
-            return Array.from({ length: 30 }, (_, i) => ({
-                id: i + 1,
-                gf: '',
-                action: '',
-                description: '',
-                deb: '',
-                fin: '',
-                actionMicro: '',
-                plage1: '',
-                plage2: '',
-                actionGF1: '',
-                actionGF1GF2: '',
-                actionGF1GF3: '',
-                actionGF1GF4: ''
-            }));
+            return Array.from({ length: 30 }, (_, i) => createEmptyActionRow(i + 1));
         }
     });
 

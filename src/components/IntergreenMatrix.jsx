@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './IntergreenMatrix.css';
 
-const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups }) => {
+const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength }) => {
 
     // Check if cell is 'asymmetric' (missing value where mirror has one)
     const isAsymmetric = (row, col) => {
@@ -11,6 +11,28 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups }) => {
         if (row === col) return false;
         if (mirrorVal > 0 && (!val || val === 0)) return true;
         return false;
+    };
+
+    // Check if matrix value exceeds actual delay between groups
+    const isDelayInsufficient = (fromIdx, toIdx) => {
+        const matrixVal = conflictMatrix[fromIdx][toIdx];
+        if (!matrixVal || matrixVal === 0) return false;
+        if (!groups || !groups[fromIdx] || !groups[toIdx]) return false;
+
+        const fromGroup = groups[fromIdx];
+        const toGroup = groups[toIdx];
+        const cycle = cycleLength || 100;
+
+        // End of fromGroup green phase
+        const fromEnd = (fromGroup.offset + fromGroup.durations.green) % cycle;
+        // Start of toGroup green phase
+        const toStart = toGroup.offset % cycle;
+
+        // Calculate actual delay
+        let actualDelay = toStart - fromEnd;
+        if (actualDelay < 0) actualDelay += cycle;
+
+        return matrixVal > actualDelay;
     };
 
     // 16x16 is big. Let's make it a scrollable grid.
@@ -37,21 +59,29 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups }) => {
                                 <td className="row-name">
                                     {groups && groups[fromIdx] ? groups[fromIdx].name : '-'}
                                 </td>
-                                {row.map((val, toIdx) => (
-                                    <td key={toIdx}>
-                                        {fromIdx === toIdx ? (
-                                            <span className="diagonal">-</span>
-                                        ) : (
-                                            <input
-                                                type="number"
-                                                className={isAsymmetric(fromIdx, toIdx) ? 'matrix-error-input' : ''}
-                                                value={val}
-                                                onChange={(e) => setMatrixValue(fromIdx + 1, toIdx + 1, e.target.value)}
-                                                min="0"
-                                            />
-                                        )}
-                                    </td>
-                                ))}
+                                {row.map((val, toIdx) => {
+                                    const hasInsufficientDelay = isDelayInsufficient(fromIdx, toIdx);
+                                    const hasAsymmetry = isAsymmetric(fromIdx, toIdx);
+                                    let inputClass = '';
+                                    if (hasInsufficientDelay) inputClass = 'matrix-conflict-input';
+                                    else if (hasAsymmetry) inputClass = 'matrix-error-input';
+
+                                    return (
+                                        <td key={toIdx}>
+                                            {fromIdx === toIdx ? (
+                                                <span className="diagonal">-</span>
+                                            ) : (
+                                                <input
+                                                    type="number"
+                                                    className={inputClass}
+                                                    value={val}
+                                                    onChange={(e) => setMatrixValue(fromIdx + 1, toIdx + 1, e.target.value)}
+                                                    min="0"
+                                                />
+                                            )}
+                                        </td>
+                                    );
+                                })}
                             </tr>
                         ))}
                     </tbody>

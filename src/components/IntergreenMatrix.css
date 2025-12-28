@@ -100,3 +100,12 @@
     /* Higher than name */
     border-right: 1px solid #444;
 }
+
+.matrix-conflict-input {
+    color: #ff4444 !important;
+    font-weight: bold;
+}
+
+.matrix-error-input {
+    color: #ffaa00 !important;
+}

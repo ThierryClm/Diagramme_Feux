@@ -129,6 +129,7 @@ function App() {
                                     conflictMatrix={conflictMatrix}
                                     setMatrixValue={setMatrixValue}
                                     groups={groups}
+                                    cycleLength={cycleLength}
                                 />
                             </div>
                         </>
@@ -138,6 +139,7 @@ function App() {
                         <TrafficTable
                             groups={groups}
                             updateGroupParams={updateGroupParams}
+                            cycleLength={cycleLength}
                         />
                     )}
 
@@ -174,6 +176,7 @@ function App() {
                             conflicts={conflicts}
                             updateGroupParams={updateGroupParams}
                             cycleLength={cycleLength}
+                            actionData={actionData}
                         />
                     </div>
 

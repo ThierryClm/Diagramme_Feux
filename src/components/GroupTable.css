@@ -108,9 +108,16 @@
 
 .input-trafic-text {
     width: 60px !important;
-    text-align: left !important;
+    text-align: center !important;
 }
 
 .input-trafic-num {
     width: 45px !important;
+    text-align: center !important;
+}
+
+.col-calculated {
+    text-align: center;
+    color: #8cf;
+    font-weight: bold;
 }

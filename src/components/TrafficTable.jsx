@@ -1,11 +1,18 @@
 import React from 'react';
 import './GroupTable.css'; // Reuse table styles
 
-const TrafficTable = ({ groups, updateGroupParams }) => {
+const TrafficTable = ({ groups, updateGroupParams, cycleLength }) => {
 
     const handleChange = (id, field, value) => {
         // Allow float for some, int for others? Let's use generic logic for now.
         updateGroupParams(id, { [field]: value });
+    };
+
+    // Calculate V.Utile = trafic / (1800 * coef / cycle)
+    const calculateVUtile = (trafficVol, laneCoef) => {
+        if (!trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return '';
+        const result = trafficVol / (1800 * laneCoef / cycleLength);
+        return Math.round(result); // Round to integer
     };
 
     return (
@@ -59,14 +66,9 @@ const TrafficTable = ({ groups, updateGroupParams }) => {
                                     onChange={(e) => handleChange(g.id, 'trafficVol', parseInt(e.target.value))}
                                 />
                             </td>
-                            {/* Vert Utile */}
-                            <td>
-                                <input
-                                    type="number"
-                                    className="input-trafic-num"
-                                    value={g.effectiveGreen}
-                                    onChange={(e) => handleChange(g.id, 'effectiveGreen', parseInt(e.target.value))}
-                                />
+                            {/* Vert Utile (calculé) */}
+                            <td className="col-calculated">
+                                {calculateVUtile(g.trafficVol, g.laneCoef)}
                             </td>
                             {/* Capacité Utilisée */}
                             <td>
