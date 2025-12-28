@@ -33,7 +33,9 @@ function App() {
         actionData,
         updateActionRow,
         undo,
-        canUndo
+        canUndo,
+        startDrag,
+        endDrag
     } = useTrafficLight();
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -200,10 +202,13 @@ function App() {
                             onGroupClick={(g) => setSelectedGroupId(g.id)}
                             pixelsPerSecond={pixelsPerSecond}
                             conflicts={conflicts}
+                            conflictMatrix={conflictMatrix}
                             updateGroupParams={updateGroupParams}
                             cycleLength={cycleLength}
                             actionData={actionData}
                             updateActionRow={updateActionRow}
+                            startDrag={startDrag}
+                            endDrag={endDrag}
                         />
                     </div>
 
@@ -212,6 +217,8 @@ function App() {
                             actionData={actionData}
                             updateActionRow={updateActionRow}
                             cycleLength={cycleLength}
+                            startDrag={startDrag}
+                            endDrag={endDrag}
                         />
                     </div>
                 </section>

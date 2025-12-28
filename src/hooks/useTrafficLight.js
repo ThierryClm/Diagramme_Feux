@@ -12,6 +12,7 @@ export const useTrafficLight = () => {
     // History for undo functionality
     const [history, setHistory] = useState([]);
     const isUndoing = useRef(false);
+    const isDragging = useRef(false);
 
     // Groups State
     const createGroup = (id) => ({
@@ -349,6 +350,19 @@ export const useTrafficLight = () => {
         });
     }, [groups, conflictMatrix, actionData, cycleLength, intersectionName]);
 
+    // Start drag - save history once at the beginning
+    const startDrag = useCallback(() => {
+        if (!isDragging.current) {
+            saveToHistory();
+            isDragging.current = true;
+        }
+    }, [saveToHistory]);
+
+    // End drag
+    const endDrag = useCallback(() => {
+        isDragging.current = false;
+    }, []);
+
     // Undo function
     const undo = useCallback(() => {
         if (history.length === 0) return false;
@@ -375,16 +389,20 @@ export const useTrafficLight = () => {
         return true;
     }, [history]);
 
-    // Wrapped update functions that save to history
+    // Wrapped update functions that save to history (skip if dragging)
     const updateActionRowWithHistory = useCallback((rowId, field, value) => {
-        saveToHistory();
+        if (!isDragging.current) {
+            saveToHistory();
+        }
         setActionData(prev => prev.map(row =>
             row.id === rowId ? { ...row, [field]: value } : row
         ));
     }, [saveToHistory]);
 
     const updateGroupParamsWithHistory = useCallback((id, params) => {
-        saveToHistory();
+        if (!isDragging.current) {
+            saveToHistory();
+        }
         setGroups(prev => prev.map(g => {
             if (g.id !== id) return g;
 
@@ -407,12 +425,28 @@ export const useTrafficLight = () => {
     }, [saveToHistory, cycleLength]);
 
     const setMatrixValueWithHistory = useCallback((fromId, toId, value) => {
-        saveToHistory();
+        if (!isDragging.current) {
+            saveToHistory();
+        }
         setConflictMatrix(prev => {
             const next = prev.map(row => [...row]);
             if (next[fromId - 1]) {
-                const parsedValue = value === '' ? '' : parseInt(value);
-                next[fromId - 1][toId - 1] = isNaN(parsedValue) ? '' : parsedValue;
+                // Empty value is allowed
+                if (value === '') {
+                    next[fromId - 1][toId - 1] = '';
+                } else {
+                    const parsedValue = parseInt(value);
+                    // Only allow values between 3 and 20
+                    if (!isNaN(parsedValue) && parsedValue >= 3 && parsedValue <= 20) {
+                        next[fromId - 1][toId - 1] = parsedValue;
+                    } else if (!isNaN(parsedValue) && parsedValue < 3) {
+                        // If value is less than 3, set to empty
+                        next[fromId - 1][toId - 1] = '';
+                    } else if (!isNaN(parsedValue) && parsedValue > 20) {
+                        // If value is greater than 20, cap at 20
+                        next[fromId - 1][toId - 1] = 20;
+                    }
+                }
             }
             return next;
         });
@@ -445,6 +479,9 @@ export const useTrafficLight = () => {
         updateActionRow: updateActionRowWithHistory,
         // Undo
         undo,
-        canUndo: history.length > 0
+        canUndo: history.length > 0,
+        // Drag helpers (for saving history only once per drag)
+        startDrag,
+        endDrag
     };
 };

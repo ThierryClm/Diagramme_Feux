@@ -114,7 +114,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength 
                                     }
 
                                     return (
-                                        <td key={toIdx} className={cellClass}>
+                                        <td key={toIdx} className={fromIdx === toIdx ? 'diagonal-cell' : cellClass}>
                                             {fromIdx === toIdx ? (
                                                 <span className="diagonal">-</span>
                                             ) : (

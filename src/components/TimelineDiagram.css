@@ -392,6 +392,38 @@
     white-space: nowrap;
 }
 
+/* Escamotage (group-specific) overlay */
+.escamotage-group-overlay {
+    position: absolute;
+    background: repeating-linear-gradient(
+        -45deg,
+        rgba(128, 128, 128, 0.2),
+        rgba(128, 128, 128, 0.2) 3px,
+        rgba(128, 128, 128, 0.4) 3px,
+        rgba(128, 128, 128, 0.4) 6px
+    );
+    border: 2px dashed #888;
+    border-radius: 3px;
+    z-index: 15;
+}
+
+.escamotage-group-overlay.dragging {
+    z-index: 100;
+}
+
+.escamotage-group-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 0.7em;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
 /* Fermeture anticipée arrows */
 .fermeture-arrow {
     overflow: visible;

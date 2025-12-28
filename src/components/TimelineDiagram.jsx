@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, updateGroupParams, cycleLength, actionData = [], updateActionRow }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -32,25 +32,27 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     const handleDragStart = useCallback((e, groupId, type, currentValue) => {
         e.stopPropagation();
         e.preventDefault();
+        if (startDrag) startDrag(); // Save history once at drag start
         setDragState({
             groupId,
             type, // 'start' or 'end'
             initialMouseX: e.clientX,
             initialValue: currentValue
         });
-    }, []);
+    }, [startDrag]);
 
     // Drag handler for action overlays
     const handleActionDragStart = useCallback((e, actionId, field, currentValue) => {
         e.stopPropagation();
         e.preventDefault();
+        if (startDrag) startDrag(); // Save history once at drag start
         setDragState({
             actionId,
             field, // 'deb' or 'fin'
             initialMouseX: e.clientX,
             initialValue: parseInt(currentValue) || 0
         });
-    }, []);
+    }, [startDrag]);
 
     const handleDragMove = useCallback((e) => {
         if (!dragState) return;
@@ -105,8 +107,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     }, [dragState, pixelsPerSecond, cycleLength, groups, updateGroupParams, updateActionRow]);
 
     const handleDragEnd = useCallback(() => {
+        if (endDrag) endDrag(); // End drag mode
         setDragState(null);
-    }, []);
+    }, [endDrag]);
 
     // Global mouse event listeners for drag
     useEffect(() => {
@@ -146,6 +149,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     // Get all "Escamotage de phase" actions
     const escamotageActions = actionData.filter(action =>
         action.action === 'Escamotage de phase' && action.deb !== '' && action.fin !== ''
+    );
+
+    // Get all "Escamotage" actions (linked to specific group via actGf1)
+    // No deb/fin required - arrows are calculated from group times and intergreen
+    const escamotageGroupActions = actionData.filter(action =>
+        action.action === 'Escamotage' && action.gf && action.actGf1
     );
 
     // Get all "Signa d'aide à la conduite" actions
@@ -245,13 +254,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     {i * 5}
                                 </div>
                             ))}
-                            {/* Playhead */}
-                            <div
-                                className="playhead"
-                                style={{
-                                    left: `${(globalTime % TIME_WINDOW) * pixelsPerSecond}px`
-                                }}
-                            ></div>
                         </div>
 
                         {/* Rows */}
@@ -575,6 +577,90 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         <span className="escamotage-label">{abrv}</span>
                                     )}
                                 </div>
+                            );
+                        })}
+
+                        {/* Escamotage (group-specific) with arrows */}
+                        {escamotageGroupActions.map((action, idx) => {
+                            const sourceGfId = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                            const targetGfId = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
+
+                            if (sourceGfId === 0 || targetGfId === 0) return null;
+                            if (sourceGfId > groups.length || targetGfId > groups.length) return null;
+
+                            const sourceGroup = groups.find(g => g.id === sourceGfId);
+                            const targetGroup = groups.find(g => g.id === targetGfId);
+                            if (!sourceGroup || !targetGroup) return null;
+
+                            // Get intergreen times from conflict matrix
+                            const intergreenSourceToTarget = conflictMatrix[sourceGfId - 1]?.[targetGfId - 1] || 0;
+                            const intergreenTargetToSource = conflictMatrix[targetGfId - 1]?.[sourceGfId - 1] || 0;
+
+                            // Source group times
+                            const sourceStart = sourceGroup.offset % cycleLength;
+                            const sourceEnd = (sourceStart + sourceGroup.durations.green) % cycleLength;
+
+                            // Y positions (center of each row)
+                            const sourceY = RULER_HEIGHT + ((sourceGfId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                            const targetY = RULER_HEIGHT + ((targetGfId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+
+                            // Arrow 1: From start of source GF to (source start - intergreen target→source)
+                            const arrow1SourceX = sourceStart * pixelsPerSecond;
+                            const arrow1TargetX = ((sourceStart - intergreenTargetToSource + cycleLength) % cycleLength) * pixelsPerSecond;
+
+                            // Arrow 2: From end of source GF to (source end + intergreen source→target)
+                            const arrow2SourceX = sourceEnd * pixelsPerSecond;
+                            const arrow2TargetX = ((sourceEnd + intergreenSourceToTarget) % cycleLength) * pixelsPerSecond;
+
+                            return (
+                                <svg
+                                    key={`escamotage-group-${idx}`}
+                                    className="escamotage-arrows"
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        pointerEvents: 'none',
+                                        zIndex: 16
+                                    }}
+                                >
+                                    <defs>
+                                        <marker
+                                            id={`escam-arrowhead-${idx}`}
+                                            markerWidth="8"
+                                            markerHeight="6"
+                                            refX="8"
+                                            refY="3"
+                                            orient="auto"
+                                        >
+                                            <polygon points="0 0, 8 3, 0 6" fill="#888" />
+                                        </marker>
+                                    </defs>
+                                    {/* Arrow 1: From source start to (source start - intergreen target→source) */}
+                                    <line
+                                        x1={arrow1SourceX}
+                                        y1={sourceY}
+                                        x2={arrow1TargetX}
+                                        y2={targetY}
+                                        stroke="#888"
+                                        strokeWidth="1"
+                                        strokeDasharray="4,2"
+                                        markerEnd={`url(#escam-arrowhead-${idx})`}
+                                    />
+                                    {/* Arrow 2: From source end to (source end + intergreen source→target) */}
+                                    <line
+                                        x1={arrow2SourceX}
+                                        y1={sourceY}
+                                        x2={arrow2TargetX}
+                                        y2={targetY}
+                                        stroke="#888"
+                                        strokeWidth="1"
+                                        strokeDasharray="4,2"
+                                        markerEnd={`url(#escam-arrowhead-${idx})`}
+                                    />
+                                </svg>
                             );
                         })}
 

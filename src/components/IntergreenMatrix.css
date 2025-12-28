@@ -62,8 +62,12 @@
     outline: none;
 }
 
+.diagonal-cell {
+    background: #333 !important;
+}
+
 .diagonal {
-    color: #444;
+    color: #666;
 }
 
 .col-name-header {

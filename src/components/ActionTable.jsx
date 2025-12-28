@@ -21,7 +21,7 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow, cycleLength = 100 }) => {
+const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag, endDrag }) => {
     // Drag state for Déb/Fin fields
     const [dragState, setDragState] = useState(null);
     // dragState = { rowId, field: 'deb' | 'fin', initialMouseX, initialValue }
@@ -29,13 +29,14 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100 }) => {
     // Drag handlers
     const handleDragStart = useCallback((e, rowId, field, currentValue) => {
         e.preventDefault();
+        if (startDrag) startDrag(); // Save history once at drag start
         setDragState({
             rowId,
             field,
             initialMouseX: e.clientX,
             initialValue: parseInt(currentValue) || 0
         });
-    }, []);
+    }, [startDrag]);
 
     const handleDragMove = useCallback((e) => {
         if (!dragState) return;
@@ -52,8 +53,9 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100 }) => {
     }, [dragState, cycleLength, updateActionRow]);
 
     const handleDragEnd = useCallback(() => {
+        if (endDrag) endDrag(); // End drag mode
         setDragState(null);
-    }, []);
+    }, [endDrag]);
 
     // Global mouse event listeners for drag
     useEffect(() => {
