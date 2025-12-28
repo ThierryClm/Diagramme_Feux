@@ -47,7 +47,16 @@ export const useTrafficLight = () => {
     const [conflictMatrix, setConflictMatrix] = useState(() => {
         try {
             const saved = localStorage.getItem('trafficMatrix');
-            return saved ? JSON.parse(saved) : Array.from({ length: 5 }, () => Array(5).fill(''));
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Clean 0 values and values outside 3-20 range
+                return parsed.map(row => row.map(val => {
+                    if (val === 0 || val === '0') return '';
+                    if (typeof val === 'number' && (val < 3 || val > 20)) return '';
+                    return val;
+                }));
+            }
+            return Array.from({ length: 5 }, () => Array(5).fill(''));
         } catch (e) {
             return Array.from({ length: 5 }, () => Array(5).fill(''));
         }
@@ -272,7 +281,15 @@ export const useTrafficLight = () => {
             if (data.intersectionName) setIntersectionName(data.intersectionName);
             if (data.groups) setGroups(data.groups);
             if (data.cycleLength) setCycleLength(data.cycleLength);
-            if (data.conflictMatrix) setConflictMatrix(data.conflictMatrix);
+            if (data.conflictMatrix) {
+                // Clean 0 values and values outside 3-20 range
+                const cleanedMatrix = data.conflictMatrix.map(row => row.map(val => {
+                    if (val === 0 || val === '0') return '';
+                    if (typeof val === 'number' && (val < 3 || val > 20)) return '';
+                    return val;
+                }));
+                setConflictMatrix(cleanedMatrix);
+            }
 
             return true;
         } catch (e) {

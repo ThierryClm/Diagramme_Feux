@@ -123,7 +123,8 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength 
                                                     className={inputClass}
                                                     value={val}
                                                     onChange={(e) => setMatrixValue(fromIdx + 1, toIdx + 1, e.target.value)}
-                                                    min="0"
+                                                    min="3"
+                                                    max="20"
                                                 />
                                             )}
                                         </td>
