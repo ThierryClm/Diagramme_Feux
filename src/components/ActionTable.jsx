@@ -1,5 +1,13 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import './ActionTable.css';
+
+// Auto-resize textarea helper
+const autoResizeTextarea = (textarea) => {
+    if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+};
 
 const ACTION_OPTIONS = [
     '',
@@ -21,10 +29,28 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag, endDrag }) => {
+const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag, endDrag, maxGroup = 16 }) => {
     // Drag state for Déb/Fin fields
     const [dragState, setDragState] = useState(null);
     // dragState = { rowId, field: 'deb' | 'fin', initialMouseX, initialValue }
+
+    // Refs for textarea auto-resize
+    const textareaRefs = useRef({});
+
+    // Validate group field value (1 to maxGroup, or empty)
+    const handleGroupFieldChange = useCallback((rowId, field, value) => {
+        // Allow empty value
+        if (value === '') {
+            updateActionRow(rowId, field, '');
+            return;
+        }
+        // Parse as number and validate
+        const numValue = parseInt(value);
+        if (!isNaN(numValue) && numValue >= 1 && numValue <= maxGroup) {
+            updateActionRow(rowId, field, value);
+        }
+        // Reject invalid values silently
+    }, [updateActionRow, maxGroup]);
 
     // Drag handlers
     const handleDragStart = useCallback((e, rowId, field, currentValue) => {
@@ -87,6 +113,11 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
         return actionData.slice(0, Math.max(endIndex, 1));
     }, [actionData]);
 
+    // Auto-resize all textareas when data changes
+    useEffect(() => {
+        Object.values(textareaRefs.current).forEach(autoResizeTextarea);
+    }, [actionData]);
+
     return (
         <div className={`action-table-container ${dragState ? 'dragging' : ''}`}>
             <h3>Tableau des Actions</h3>
@@ -118,11 +149,12 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
                             <tr key={row.id}>
                                 <td>
                                     <input
-                                        type="text"
-                                        maxLength="2"
+                                        type="number"
+                                        min="1"
+                                        max={maxGroup}
                                         className="input-gf"
                                         value={row.gf}
-                                        onChange={(e) => updateActionRow(row.id, 'gf', e.target.value)}
+                                        onChange={(e) => handleGroupFieldChange(row.id, 'gf', e.target.value)}
                                     />
                                 </td>
                                 <td>
@@ -182,68 +214,77 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
                                 </td>
                                 <td>
                                     <textarea
+                                        ref={(el) => {
+                                            textareaRefs.current[row.id] = el;
+                                            autoResizeTextarea(el);
+                                        }}
                                         className="input-micro"
                                         value={row.micro || ''}
-                                        onChange={(e) => updateActionRow(row.id, 'micro', e.target.value)}
-                                        rows={1}
-                                        onInput={(e) => {
-                                            e.target.style.height = 'auto';
-                                            e.target.style.height = e.target.scrollHeight + 'px';
+                                        onChange={(e) => {
+                                            updateActionRow(row.id, 'micro', e.target.value);
+                                            autoResizeTextarea(e.target);
                                         }}
+                                        rows={1}
                                     />
                                 </td>
                                 <td>
                                     <input
-                                        type="text"
-                                        maxLength="2"
+                                        type="number"
+                                        min="1"
+                                        max={maxGroup}
                                         className="input-small"
                                         value={row.plage1}
-                                        onChange={(e) => updateActionRow(row.id, 'plage1', e.target.value)}
+                                        onChange={(e) => handleGroupFieldChange(row.id, 'plage1', e.target.value)}
                                     />
                                 </td>
                                 <td>
                                     <input
-                                        type="text"
-                                        maxLength="2"
+                                        type="number"
+                                        min="1"
+                                        max={maxGroup}
                                         className="input-small"
                                         value={row.plage2}
-                                        onChange={(e) => updateActionRow(row.id, 'plage2', e.target.value)}
+                                        onChange={(e) => handleGroupFieldChange(row.id, 'plage2', e.target.value)}
                                     />
                                 </td>
                                 <td>
                                     <input
-                                        type="text"
-                                        maxLength="2"
+                                        type="number"
+                                        min="1"
+                                        max={maxGroup}
                                         className="input-small"
                                         value={row.actGf1}
-                                        onChange={(e) => updateActionRow(row.id, 'actGf1', e.target.value)}
+                                        onChange={(e) => handleGroupFieldChange(row.id, 'actGf1', e.target.value)}
                                     />
                                 </td>
                                 <td>
                                     <input
-                                        type="text"
-                                        maxLength="2"
+                                        type="number"
+                                        min="1"
+                                        max={maxGroup}
                                         className="input-small"
                                         value={row.actGf1Gf2}
-                                        onChange={(e) => updateActionRow(row.id, 'actGf1Gf2', e.target.value)}
+                                        onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf2', e.target.value)}
                                     />
                                 </td>
                                 <td>
                                     <input
-                                        type="text"
-                                        maxLength="2"
+                                        type="number"
+                                        min="1"
+                                        max={maxGroup}
                                         className="input-small"
                                         value={row.actGf1Gf3}
-                                        onChange={(e) => updateActionRow(row.id, 'actGf1Gf3', e.target.value)}
+                                        onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf3', e.target.value)}
                                     />
                                 </td>
                                 <td>
                                     <input
-                                        type="text"
-                                        maxLength="2"
+                                        type="number"
+                                        min="1"
+                                        max={maxGroup}
                                         className="input-small"
                                         value={row.actGf1Gf4}
-                                        onChange={(e) => updateActionRow(row.id, 'actGf1Gf4', e.target.value)}
+                                        onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf4', e.target.value)}
                                     />
                                 </td>
                             </tr>

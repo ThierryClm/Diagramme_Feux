@@ -197,6 +197,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         const start = g.offset % cycleLength;
                         const duration = g.durations.green;
                         const end = (start + duration) % cycleLength;
+                        // Show both values if either is non-zero
+                        const hasValue = start > 0 || end > 0;
 
                         return (
                             <div key={g.id} className="row-label-container" onClick={() => onGroupClick(g)}>
@@ -204,25 +206,28 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 <input
                                     type="number"
                                     className="input-time"
-                                    value={start}
+                                    value={hasValue ? start : ''}
                                     onChange={(e) => handleStartChange(g.id, e.target.value)}
                                     title="Début"
+                                    placeholder=""
                                 />
                                 <input
                                     type="number"
                                     className="input-time"
-                                    value={end}
+                                    value={hasValue ? end : ''}
                                     onChange={(e) => handleEndChange(g.id, e.target.value, start)}
                                     title="Fin"
                                     style={{ color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }}
+                                    placeholder=""
                                 />
                                 <input
                                     type="number"
                                     className="input-time input-duration"
-                                    value={duration}
+                                    value={duration === 0 ? '' : duration}
                                     onChange={(e) => handleDurationChange(g.id, e.target.value)}
                                     title="Durée"
                                     style={{ color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }}
+                                    placeholder=""
                                 />
                             </div>
                         );
@@ -262,6 +267,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const isConflict = conflicts && conflicts.some(c => c.from === group.id || c.to === group.id);
                             const orangeDuration = group.durations.orange || 3;
 
+                            // Check if group has a phase (not all zeros)
+                            const offset = group.offset % cycleLength;
+                            const greenDuration = group.durations.green;
+                            const endValue = (offset + greenDuration) % cycleLength;
+                            const hasPhase = greenDuration > 0 || offset > 0 || endValue > 0;
+
                             // Calculate base bars from group offset/duration
                             const totalDuration = group.durations.green + group.durations.orange + group.durations.red;
                             const cyclesToRender = Math.ceil(TIME_WINDOW / totalDuration) + 1;
@@ -273,15 +284,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     onClick={() => onGroupClick(group)}
                                     style={{ backgroundColor: isConflict ? 'rgba(231, 76, 60, 0.1)' : 'transparent' }}
                                 >
-                                    {/* Base bars from group Début/Fin (sidebar values) */}
-                                    {Array.from({ length: cyclesToRender }).map((_, i) => {
-                                        const offset = group.offset % cycleLength;
+                                    {/* Base bars from group Début/Fin (sidebar values) - only if phase exists */}
+                                    {hasPhase && Array.from({ length: cyclesToRender }).map((_, i) => {
                                         const cycleStart = (i * cycleLength) + offset;
-                                        const greenWidth = group.durations.green * pixelsPerSecond;
+                                        const greenWidth = greenDuration * pixelsPerSecond;
                                         const orangeWidth = group.durations.orange * pixelsPerSecond;
                                         const leftPos = cycleStart * pixelsPerSecond;
                                         const isPedestrian = group.type === 'Piéton';
-                                        const endValue = (offset + group.durations.green) % cycleLength;
 
                                         return (
                                             <div
@@ -612,6 +621,16 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const arrow2SourceX = sourceEnd * pixelsPerSecond;
                             const arrow2TargetX = ((sourceEnd + intergreenSourceToTarget) % cycleLength) * pixelsPerSecond;
 
+                            // Rectangle between arrow endpoints on target row (lower half of bar)
+                            const rectX = Math.min(arrow1TargetX, arrow2TargetX);
+                            const rectWidth = Math.abs(arrow2TargetX - arrow1TargetX);
+                            const barHeight = ROW_HEIGHT - 14; // Bar has top:7px and bottom:7px (16px)
+                            const rectHeight = barHeight / 2; // Half the bar height (8px)
+                            // Calculate exact bar bottom position and align rectangle there
+                            const rowTopY = RULER_HEIGHT + ((targetGfId - 1) * ROW_HEIGHT);
+                            const barBottomY = rowTopY + ROW_HEIGHT - 7; // Exact bottom of bar
+                            const rectY = barBottomY - rectHeight; // Rectangle bottom aligned to bar bottom
+
                             return (
                                 <svg
                                     key={`escamotage-group-${idx}`}
@@ -637,7 +656,27 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         >
                                             <polygon points="0 0, 8 3, 0 6" fill="#888" />
                                         </marker>
+                                        <pattern
+                                            id={`escam-hatch-${idx}`}
+                                            patternUnits="userSpaceOnUse"
+                                            width="6"
+                                            height="6"
+                                            patternTransform="rotate(-45)"
+                                        >
+                                            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(100,100,100,0.7)" strokeWidth="1.5" />
+                                        </pattern>
                                     </defs>
+                                    {/* Hatched rectangle between arrow endpoints */}
+                                    <rect
+                                        x={rectX}
+                                        y={rectY}
+                                        width={rectWidth}
+                                        height={rectHeight}
+                                        fill={`url(#escam-hatch-${idx})`}
+                                        stroke="#888"
+                                        strokeWidth="0.5"
+                                        strokeDasharray="2,2"
+                                    />
                                     {/* Arrow 1: From source start to (source start - intergreen target→source) */}
                                     <line
                                         x1={arrow1SourceX}

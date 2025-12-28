@@ -219,6 +219,7 @@ function App() {
                             cycleLength={cycleLength}
                             startDrag={startDrag}
                             endDrag={endDrag}
+                            maxGroup={groups.length}
                         />
                     </div>
                 </section>
