@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTrafficLight } from './hooks/useTrafficLight';
 import TimelineDiagram from './components/TimelineDiagram';
 import GroupTable from './components/GroupTable';
@@ -31,12 +31,27 @@ function App() {
         getAllSaves,
         deleteSave,
         actionData,
-        updateActionRow
+        updateActionRow,
+        undo,
+        canUndo
     } = useTrafficLight();
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
     const [pixelsPerSecond, setPixelsPerSecond] = useState(10);
     const [activeTab, setActiveTab] = useState('config'); // 'config', 'traffic', 'projects'
+
+    // Keyboard shortcut for undo (Ctrl+Z)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                undo();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [undo]);
 
     return (
         <div className="app-container">
@@ -80,6 +95,17 @@ function App() {
                         />
                         {pixelsPerSecond}px/s
                     </label>
+                </div>
+
+                <div className="header-actions">
+                    <button
+                        className="undo-btn"
+                        onClick={undo}
+                        disabled={!canUndo}
+                        title="Annuler (Ctrl+Z)"
+                    >
+                        ↶ Annuler
+                    </button>
                 </div>
 
                 <div className="status-bar">

@@ -7,17 +7,59 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength 
     const isAsymmetric = (row, col) => {
         const val = conflictMatrix[row][col];
         const mirrorVal = conflictMatrix[col][row];
-        // If mirror has value (>0) and current is 0 (or undefined/empty), it's potentially an error.
+        // If mirror has a value (number) and current is empty, it's asymmetric
         if (row === col) return false;
-        if (mirrorVal > 0 && (!val || val === 0)) return true;
+        const valIsEmpty = val === '' || val === undefined || val === null;
+        const mirrorIsEmpty = mirrorVal === '' || mirrorVal === undefined || mirrorVal === null;
+        if (!mirrorIsEmpty && valIsEmpty) return true;
         return false;
+    };
+
+    // Check if two groups have overlapping green phases
+    const hasOverlap = (fromIdx, toIdx) => {
+        const matrixVal = conflictMatrix[fromIdx][toIdx];
+        // Skip if value is empty (not defined), but consider 0 as valid
+        if (matrixVal === '' || matrixVal === undefined || matrixVal === null) return false;
+        if (!groups || !groups[fromIdx] || !groups[toIdx]) return false;
+
+        const groupA = groups[fromIdx];
+        const groupB = groups[toIdx];
+        const cycle = cycleLength || 100;
+
+        const aStart = groupA.offset % cycle;
+        const aEnd = (groupA.offset + groupA.durations.green) % cycle;
+        const bStart = groupB.offset % cycle;
+        const bEnd = (groupB.offset + groupB.durations.green) % cycle;
+
+        // Check for overlap considering cyclic timeline
+        // Two intervals overlap if they share any common point
+        const aWraps = aEnd <= aStart; // A wraps around cycle
+        const bWraps = bEnd <= bStart; // B wraps around cycle
+
+        if (!aWraps && !bWraps) {
+            // Neither wraps: simple interval check
+            return aStart < bEnd && bStart < aEnd;
+        } else if (aWraps && !bWraps) {
+            // A wraps: A is [aStart, cycle) + [0, aEnd)
+            return bStart < aEnd || bEnd > aStart;
+        } else if (!aWraps && bWraps) {
+            // B wraps: B is [bStart, cycle) + [0, bEnd)
+            return aStart < bEnd || aEnd > bStart;
+        } else {
+            // Both wrap: they definitely overlap
+            return true;
+        }
     };
 
     // Check if matrix value exceeds actual delay between groups
     const isDelayInsufficient = (fromIdx, toIdx) => {
         const matrixVal = conflictMatrix[fromIdx][toIdx];
-        if (!matrixVal || matrixVal === 0) return false;
+        // Skip if value is empty (not defined), but consider 0 as valid
+        if (matrixVal === '' || matrixVal === undefined || matrixVal === null) return false;
         if (!groups || !groups[fromIdx] || !groups[toIdx]) return false;
+
+        // First check for overlap - if groups overlap, it's definitely a conflict
+        if (hasOverlap(fromIdx, toIdx)) return true;
 
         const fromGroup = groups[fromIdx];
         const toGroup = groups[toIdx];

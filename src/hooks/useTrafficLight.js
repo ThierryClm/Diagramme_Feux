@@ -1,12 +1,17 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
 const DEFAULT_CYCLE = 100;
+const MAX_HISTORY_SIZE = 50;
 
 export const useTrafficLight = () => {
     const [intersectionName, setIntersectionName] = useState(() => localStorage.getItem('trafficName') || "Nouveau Carrefour");
     const [cycleLength, setCycleLength] = useState(() => parseInt(localStorage.getItem('trafficCycle')) || DEFAULT_CYCLE);
     const [globalTime, setGlobalTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
+
+    // History for undo functionality
+    const [history, setHistory] = useState([]);
+    const isUndoing = useRef(false);
 
     // Groups State
     const createGroup = (id) => ({
@@ -41,9 +46,9 @@ export const useTrafficLight = () => {
     const [conflictMatrix, setConflictMatrix] = useState(() => {
         try {
             const saved = localStorage.getItem('trafficMatrix');
-            return saved ? JSON.parse(saved) : Array.from({ length: 5 }, () => Array(5).fill(0));
+            return saved ? JSON.parse(saved) : Array.from({ length: 5 }, () => Array(5).fill(''));
         } catch (e) {
-            return Array.from({ length: 5 }, () => Array(5).fill(0));
+            return Array.from({ length: 5 }, () => Array(5).fill(''));
         }
     });
 
@@ -74,7 +79,7 @@ export const useTrafficLight = () => {
 
             // Resize matrix
             const newMatrix = Array.from({ length: newCount }, (_, r) => {
-                const row = new Array(newCount).fill(0);
+                const row = new Array(newCount).fill('');
                 // Copy existing values
                 for (let c = 0; c < newCount; c++) {
                     if (r < currentSize && c < currentSize) {
@@ -142,23 +147,24 @@ export const useTrafficLight = () => {
         for (let from = 0; from < count; from++) {
             for (let to = 0; to < count; to++) {
                 const minGap = conflictMatrix[from][to];
-                if (minGap > 0 && from !== to) {
-                    const gFrom = groups[from];
-                    const gTo = groups[to];
+                // Skip empty values, but consider 0 as valid
+                if ((minGap === '' || minGap === undefined || minGap === null) || from === to) continue;
 
-                    const endGreenA_Absolute = (gFrom.offset + gFrom.durations.green) % cycleLength;
-                    const startGreenB_Absolute = gTo.offset % cycleLength;
+                const gFrom = groups[from];
+                const gTo = groups[to];
 
-                    let distance = (startGreenB_Absolute - endGreenA_Absolute + cycleLength) % cycleLength;
+                const endGreenA_Absolute = (gFrom.offset + gFrom.durations.green) % cycleLength;
+                const startGreenB_Absolute = gTo.offset % cycleLength;
 
-                    if (distance < minGap) {
-                        list.push({
-                            from: gFrom.id,
-                            to: gTo.id,
-                            required: minGap,
-                            actual: distance
-                        });
-                    }
+                let distance = (startGreenB_Absolute - endGreenA_Absolute + cycleLength) % cycleLength;
+
+                if (distance < minGap) {
+                    list.push({
+                        from: gFrom.id,
+                        to: gTo.id,
+                        required: minGap,
+                        actual: distance
+                    });
                 }
             }
         }
@@ -199,7 +205,9 @@ export const useTrafficLight = () => {
             const next = prev.map(row => [...row]);
             // Guard against out of bounds if resizing happened async
             if (next[fromId - 1]) {
-                next[fromId - 1][toId - 1] = parseInt(value) || 0;
+                // Keep empty string if value is empty, otherwise parse as integer
+                const parsedValue = value === '' ? '' : parseInt(value);
+                next[fromId - 1][toId - 1] = isNaN(parsedValue) ? '' : parsedValue;
             }
             return next;
         });
@@ -319,11 +327,96 @@ export const useTrafficLight = () => {
         localStorage.setItem('trafficActionData', JSON.stringify(actionData));
     }, [actionData]);
 
-    const updateActionRow = (rowId, field, value) => {
+    // Save current state to history (for undo)
+    const saveToHistory = useCallback(() => {
+        if (isUndoing.current) return; // Don't save during undo
+
+        const currentState = {
+            groups: JSON.parse(JSON.stringify(groups)),
+            conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix)),
+            actionData: JSON.parse(JSON.stringify(actionData)),
+            cycleLength,
+            intersectionName
+        };
+
+        setHistory(prev => {
+            const newHistory = [...prev, currentState];
+            // Limit history size
+            if (newHistory.length > MAX_HISTORY_SIZE) {
+                return newHistory.slice(-MAX_HISTORY_SIZE);
+            }
+            return newHistory;
+        });
+    }, [groups, conflictMatrix, actionData, cycleLength, intersectionName]);
+
+    // Undo function
+    const undo = useCallback(() => {
+        if (history.length === 0) return false;
+
+        isUndoing.current = true;
+
+        const previousState = history[history.length - 1];
+
+        // Restore previous state
+        setGroups(previousState.groups);
+        setConflictMatrix(previousState.conflictMatrix);
+        setActionData(previousState.actionData);
+        setCycleLength(previousState.cycleLength);
+        setIntersectionName(previousState.intersectionName);
+
+        // Remove the last history entry
+        setHistory(prev => prev.slice(0, -1));
+
+        // Reset the flag after a short delay
+        setTimeout(() => {
+            isUndoing.current = false;
+        }, 100);
+
+        return true;
+    }, [history]);
+
+    // Wrapped update functions that save to history
+    const updateActionRowWithHistory = useCallback((rowId, field, value) => {
+        saveToHistory();
         setActionData(prev => prev.map(row =>
             row.id === rowId ? { ...row, [field]: value } : row
         ));
-    };
+    }, [saveToHistory]);
+
+    const updateGroupParamsWithHistory = useCallback((id, params) => {
+        saveToHistory();
+        setGroups(prev => prev.map(g => {
+            if (g.id !== id) return g;
+
+            let newG = { ...g, ...params };
+
+            if (params.durations || params.offset !== undefined) {
+                const mergedDurations = { ...g.durations, ...(params.durations || {}) };
+                const currentGreen = mergedDurations.green;
+                const currentOrange = mergedDurations.orange;
+                const newRed = Math.max(0, cycleLength - currentGreen - currentOrange);
+
+                newG.durations = {
+                    green: currentGreen,
+                    orange: currentOrange,
+                    red: newRed
+                };
+            }
+            return newG;
+        }));
+    }, [saveToHistory, cycleLength]);
+
+    const setMatrixValueWithHistory = useCallback((fromId, toId, value) => {
+        saveToHistory();
+        setConflictMatrix(prev => {
+            const next = prev.map(row => [...row]);
+            if (next[fromId - 1]) {
+                const parsedValue = value === '' ? '' : parseInt(value);
+                next[fromId - 1][toId - 1] = isNaN(parsedValue) ? '' : parsedValue;
+            }
+            return next;
+        });
+    }, [saveToHistory]);
 
     return {
         intersectionName,
@@ -333,13 +426,13 @@ export const useTrafficLight = () => {
         cycleLength,
         setCycleLength,
         conflictMatrix,
-        setMatrixValue,
+        setMatrixValue: setMatrixValueWithHistory,
         conflicts,
         globalTime,
         isPlaying,
         setIsPlaying,
         reset,
-        updateGroupParams,
+        updateGroupParams: updateGroupParamsWithHistory,
         getGroupState,
         moveGroup,
         // Save/Load
@@ -349,6 +442,9 @@ export const useTrafficLight = () => {
         deleteSave,
         // Action Table
         actionData,
-        updateActionRow
+        updateActionRow: updateActionRowWithHistory,
+        // Undo
+        undo,
+        canUndo: history.length > 0
     };
 };

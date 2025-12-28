@@ -45,6 +45,37 @@
     border-radius: 4px;
 }
 
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.undo-btn {
+    background: #333;
+    border: 1px solid #555;
+    color: #ddd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.undo-btn:hover:not(:disabled) {
+    background: #444;
+    border-color: #666;
+    color: #fff;
+}
+
+.undo-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .status-bar {
     font-weight: bold;
     font-size: 0.9rem;
