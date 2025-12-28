@@ -133,3 +133,63 @@
 .input-small {
     width: 25px !important;
 }
+
+/* Dragging state */
+.action-table-container.dragging {
+    cursor: ew-resize;
+    user-select: none;
+}
+
+.action-table-container.dragging * {
+    cursor: ew-resize !important;
+}
+
+/* Draggable cell styling */
+.draggable-cell {
+    position: relative;
+}
+
+.drag-handle-time {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    cursor: ew-resize;
+    z-index: 1;
+    background: transparent;
+    transition: background-color 0.15s ease;
+}
+
+.drag-handle-time:hover {
+    background: rgba(100, 180, 255, 0.15);
+}
+
+.drag-handle-time:active {
+    background: rgba(100, 180, 255, 0.25);
+}
+
+/* Keep input above drag handle when focused */
+.draggable-cell input:focus {
+    position: relative;
+    z-index: 2;
+}
+
+/* Visual indicator for draggable fields */
+.draggable-cell::before {
+    content: '↔';
+    position: absolute;
+    top: 50%;
+    left: 2px;
+    transform: translateY(-50%);
+    font-size: 8px;
+    color: #555;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.draggable-cell:hover::before {
+    opacity: 1;
+}

@@ -4,6 +4,24 @@
     /* Remove overflow hidden to match body scroll */
 }
 
+.diagram-title {
+    margin: 0 0 0.5rem 0;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    color: #eee;
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+}
+
+.timeline-container.dragging {
+    cursor: ew-resize;
+    user-select: none;
+}
+
+.timeline-container.dragging * {
+    cursor: ew-resize !important;
+}
+
 .timeline-layout {
     display: flex;
     flex-direction: row;
@@ -109,6 +127,100 @@
     display: flex;
 }
 
+.cycle-block.dragging {
+    z-index: 100;
+}
+
+/* Drag handles for resizing phase bars */
+.drag-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+    z-index: 10;
+    background: transparent;
+    transition: background-color 0.15s ease;
+}
+
+.drag-handle:hover,
+.drag-handle:active {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.drag-handle-start {
+    left: 0;
+    transform: translateX(-50%);
+    border-radius: 2px 0 0 2px;
+}
+
+.drag-handle-end {
+    transform: translateX(-50%);
+    border-radius: 0 2px 2px 0;
+}
+
+/* Visual indicator on hover */
+.drag-handle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 60%;
+    background: transparent;
+    border-radius: 1px;
+    transition: background-color 0.15s ease;
+}
+
+.drag-handle:hover::before,
+.drag-handle:active::before {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* Action overlay drag handles */
+.action-drag-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    cursor: ew-resize;
+    z-index: 25;
+    background: transparent;
+    transition: background-color 0.15s ease;
+    pointer-events: auto;
+}
+
+.action-drag-handle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.action-drag-handle:active {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.action-drag-handle-start {
+    left: 0;
+    transform: translateX(-50%);
+    border-radius: 3px 0 0 3px;
+}
+
+.action-drag-handle-end {
+    right: 0;
+    transform: translateX(50%);
+    border-radius: 0 3px 3px 0;
+}
+
+/* Dragging state for action overlays */
+.adaptatif-overlay.dragging,
+.escamotage-overlay.dragging,
+.signa-wrapper.dragging,
+.brace-marker.dragging,
+.ouverture-anticipee.dragging,
+.cycle-block.lucarne.dragging {
+    z-index: 100;
+}
+
 .phase-bar {
     height: 100%;
 }
@@ -204,7 +316,6 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    pointer-events: none;
     z-index: 5;
 }
 
@@ -248,7 +359,6 @@
     background: rgba(100, 180, 255, 0.3);
     border: 2px solid rgba(100, 180, 255, 0.7);
     border-radius: 4px;
-    pointer-events: none;
     z-index: 10;
 }
 
@@ -257,7 +367,6 @@
     position: absolute;
     background: rgba(128, 128, 128, 0.3);
     border: 1px solid rgba(128, 128, 128, 0.4);
-    pointer-events: none;
     z-index: 20;
 }
 
@@ -302,7 +411,6 @@
         transparent 1px,
         transparent 3px
     );
-    pointer-events: none;
     z-index: 7;
 }
 
@@ -331,9 +439,9 @@
     background: repeating-linear-gradient(
         90deg,
         #FF8C00,
-        #FF8C00 3px,
-        transparent 3px,
-        transparent 6px
+        #FF8C00 var(--stripe-width, 10px),
+        transparent var(--stripe-width, 10px),
+        transparent calc(var(--stripe-width, 10px) * 2)
     );
     box-shadow: 0 0 3px rgba(255, 140, 0, 0.5);
 }

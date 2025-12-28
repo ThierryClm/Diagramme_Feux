@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import './ActionTable.css';
 
 const ACTION_OPTIONS = [
@@ -21,7 +21,56 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow }) => {
+const ActionTable = ({ actionData, updateActionRow, cycleLength = 100 }) => {
+    // Drag state for Déb/Fin fields
+    const [dragState, setDragState] = useState(null);
+    // dragState = { rowId, field: 'deb' | 'fin', initialMouseX, initialValue }
+
+    // Drag handlers
+    const handleDragStart = useCallback((e, rowId, field, currentValue) => {
+        e.preventDefault();
+        setDragState({
+            rowId,
+            field,
+            initialMouseX: e.clientX,
+            initialValue: parseInt(currentValue) || 0
+        });
+    }, []);
+
+    const handleDragMove = useCallback((e) => {
+        if (!dragState) return;
+
+        const deltaX = e.clientX - dragState.initialMouseX;
+        // 3 pixels = 1 second for finer control
+        const deltaSeconds = Math.round(deltaX / 3);
+        let newValue = dragState.initialValue + deltaSeconds;
+
+        // Wrap around cycle length
+        newValue = ((newValue % cycleLength) + cycleLength) % cycleLength;
+
+        updateActionRow(dragState.rowId, dragState.field, newValue.toString());
+    }, [dragState, cycleLength, updateActionRow]);
+
+    const handleDragEnd = useCallback(() => {
+        setDragState(null);
+    }, []);
+
+    // Global mouse event listeners for drag
+    useEffect(() => {
+        if (dragState) {
+            const handleMouseMove = (e) => handleDragMove(e);
+            const handleMouseUp = () => handleDragEnd();
+
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+    }, [dragState, handleDragMove, handleDragEnd]);
+
     // Calculate visible rows: all filled + 1 empty
     const visibleRows = useMemo(() => {
         let lastFilledIndex = -1;
@@ -37,7 +86,7 @@ const ActionTable = ({ actionData, updateActionRow }) => {
     }, [actionData]);
 
     return (
-        <div className="action-table-container">
+        <div className={`action-table-container ${dragState ? 'dragging' : ''}`}>
             <h3>Tableau des Actions</h3>
             <div className="action-table-scroll">
                 <table className="action-table">
@@ -94,7 +143,12 @@ const ActionTable = ({ actionData, updateActionRow }) => {
                                         onChange={(e) => updateActionRow(row.id, 'description', e.target.value)}
                                     />
                                 </td>
-                                <td>
+                                <td className="draggable-cell">
+                                    <div
+                                        className="drag-handle-time"
+                                        onMouseDown={(e) => handleDragStart(e, row.id, 'deb', row.deb)}
+                                        title="Glisser pour modifier"
+                                    />
                                     <input
                                         type="number"
                                         className="input-time-xs"
@@ -102,7 +156,12 @@ const ActionTable = ({ actionData, updateActionRow }) => {
                                         onChange={(e) => updateActionRow(row.id, 'deb', e.target.value)}
                                     />
                                 </td>
-                                <td>
+                                <td className="draggable-cell">
+                                    <div
+                                        className="drag-handle-time"
+                                        onMouseDown={(e) => handleDragStart(e, row.id, 'fin', row.fin)}
+                                        title="Glisser pour modifier"
+                                    />
                                     <input
                                         type="number"
                                         className="input-time-xs"

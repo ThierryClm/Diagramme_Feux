@@ -177,6 +177,7 @@ function App() {
                             updateGroupParams={updateGroupParams}
                             cycleLength={cycleLength}
                             actionData={actionData}
+                            updateActionRow={updateActionRow}
                         />
                     </div>
 
@@ -184,6 +185,7 @@ function App() {
                         <ActionTable
                             actionData={actionData}
                             updateActionRow={updateActionRow}
+                            cycleLength={cycleLength}
                         />
                     </div>
                 </section>

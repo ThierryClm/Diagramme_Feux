@@ -1,8 +1,13 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, updateGroupParams, cycleLength, actionData = [] }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, updateGroupParams, cycleLength, actionData = [], updateActionRow }) => {
     const containerRef = useRef(null);
+
+    // Drag state - supports both group bars and action overlays
+    const [dragState, setDragState] = useState(null);
+    // dragState = { groupId, type: 'start' | 'end', initialMouseX, initialValue }
+    // OR dragState = { actionId, field: 'deb' | 'fin', initialMouseX, initialValue }
     const TIME_WINDOW = cycleLength || 100; // Use cycle length as time window
 
     // Determine total width in pixels
@@ -22,6 +27,102 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         if (duration < 0) duration += cycleLength;
         updateGroupParams(id, { durations: { green: Math.max(0, duration) } });
     };
+
+    // Drag handlers for resizing phase bars
+    const handleDragStart = useCallback((e, groupId, type, currentValue) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setDragState({
+            groupId,
+            type, // 'start' or 'end'
+            initialMouseX: e.clientX,
+            initialValue: currentValue
+        });
+    }, []);
+
+    // Drag handler for action overlays
+    const handleActionDragStart = useCallback((e, actionId, field, currentValue) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setDragState({
+            actionId,
+            field, // 'deb' or 'fin'
+            initialMouseX: e.clientX,
+            initialValue: parseInt(currentValue) || 0
+        });
+    }, []);
+
+    const handleDragMove = useCallback((e) => {
+        if (!dragState) return;
+
+        const deltaX = e.clientX - dragState.initialMouseX;
+        const deltaSeconds = Math.round(deltaX / pixelsPerSecond);
+
+        // Handle action overlay drag
+        if (dragState.actionId !== undefined && updateActionRow) {
+            let newValue = dragState.initialValue + deltaSeconds;
+            // Wrap around cycle length
+            newValue = ((newValue % cycleLength) + cycleLength) % cycleLength;
+            updateActionRow(dragState.actionId, dragState.field, newValue.toString());
+            return;
+        }
+
+        // Handle group bar drag
+        if (dragState.type === 'start') {
+            // Dragging start (offset)
+            let newOffset = dragState.initialValue + deltaSeconds;
+            // Wrap around cycle
+            newOffset = ((newOffset % cycleLength) + cycleLength) % cycleLength;
+
+            // Also adjust duration to keep end position fixed
+            const group = groups.find(g => g.id === dragState.groupId);
+            if (group) {
+                const oldEnd = (group.offset + group.durations.green) % cycleLength;
+                let newDuration = oldEnd - newOffset;
+                if (newDuration <= 0) newDuration += cycleLength;
+                if (newDuration > 0 && newDuration <= cycleLength) {
+                    updateGroupParams(dragState.groupId, {
+                        offset: newOffset,
+                        durations: { green: newDuration }
+                    });
+                }
+            }
+        } else if (dragState.type === 'end') {
+            // Dragging end (duration)
+            const group = groups.find(g => g.id === dragState.groupId);
+            if (group) {
+                const offset = group.offset % cycleLength;
+                let newEnd = dragState.initialValue + deltaSeconds;
+                // Wrap around cycle
+                newEnd = ((newEnd % cycleLength) + cycleLength) % cycleLength;
+                let newDuration = newEnd - offset;
+                if (newDuration <= 0) newDuration += cycleLength;
+                if (newDuration > 0 && newDuration <= cycleLength) {
+                    updateGroupParams(dragState.groupId, { durations: { green: newDuration } });
+                }
+            }
+        }
+    }, [dragState, pixelsPerSecond, cycleLength, groups, updateGroupParams, updateActionRow]);
+
+    const handleDragEnd = useCallback(() => {
+        setDragState(null);
+    }, []);
+
+    // Global mouse event listeners for drag
+    useEffect(() => {
+        if (dragState) {
+            const handleMouseMove = (e) => handleDragMove(e);
+            const handleMouseUp = () => handleDragEnd();
+
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+    }, [dragState, handleDragMove, handleDragEnd]);
 
     // Helper to get actions for a specific group
     const getActionsForGroup = (groupId) => {
@@ -48,9 +149,16 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     );
 
     // Get all "Signa d'aide à la conduite" actions
-    const signaActions = actionData.filter(action =>
-        action.action === 'Signa d\'aide à la conduite' && action.deb !== '' && action.fin !== ''
-    );
+    const signaActions = actionData.filter(action => {
+        if (action.action !== 'Signa d\'aide à la conduite') return false;
+        if (action.deb === '' || action.fin === '') return false;
+        const deb = parseInt(action.deb) || 0;
+        const fin = parseInt(action.fin) || 0;
+        if (deb === fin) return false;
+        // Only show if orange zone exists (fin - 5 > deb)
+        if (fin - 5 <= deb) return false;
+        return true;
+    });
 
     const ROW_HEIGHT = 30; // Height of each row in pixels
     const RULER_HEIGHT = 50; // Height of the ruler
@@ -64,7 +172,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     };
 
     return (
-        <div className="timeline-container" ref={containerRef}>
+        <div className={`timeline-container ${dragState ? 'dragging' : ''}`} ref={containerRef}>
+            <h3 className="diagram-title">Diagramme</h3>
             <div className="timeline-layout">
                 <div className="timeline-sidebar">
                     {/* Header Label for Sidebar */}
@@ -96,6 +205,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     value={end}
                                     onChange={(e) => handleEndChange(g.id, e.target.value, start)}
                                     title="Fin"
+                                    style={{ color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }}
                                 />
                                 <input
                                     type="number"
@@ -169,15 +279,29 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const orangeWidth = group.durations.orange * pixelsPerSecond;
                                         const leftPos = cycleStart * pixelsPerSecond;
                                         const isPedestrian = group.type === 'Piéton';
+                                        const endValue = (offset + group.durations.green) % cycleLength;
 
                                         return (
                                             <div
                                                 key={`base-${i}`}
-                                                className="cycle-block"
+                                                className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
                                                 style={{ left: `${leftPos}px` }}
                                             >
+                                                {/* Drag handle for start (left edge) */}
+                                                <div
+                                                    className="drag-handle drag-handle-start"
+                                                    onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
+                                                    title="Glisser pour modifier le début"
+                                                />
                                                 <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
                                                 <div className={`phase-bar ${isPedestrian ? 'pedestrian-orange' : 'orange'}`} style={{ width: `${orangeWidth}px` }}></div>
+                                                {/* Drag handle for end (right edge of green) */}
+                                                <div
+                                                    className="drag-handle drag-handle-end"
+                                                    onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
+                                                    style={{ left: `${greenWidth}px` }}
+                                                    title="Glisser pour modifier la fin"
+                                                />
                                             </div>
                                         );
                                     })}
@@ -210,23 +334,48 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 {/* Seconde lucarne: additional bar with darker green */}
                                                 {action.action === 'Seconde lucarne' && (
                                                     <div
-                                                        className="cycle-block lucarne"
+                                                        className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''}`}
                                                         style={{ left: `${leftPos}px` }}
                                                     >
+                                                        {/* Drag handle for start (left edge) */}
+                                                        <div
+                                                            className="drag-handle drag-handle-start"
+                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                            title="Glisser pour modifier le début"
+                                                        />
                                                         <div className="phase-bar green-dark" style={{ width: `${greenWidth}px` }}></div>
                                                         <div className="phase-bar orange" style={{ width: `${orangeWidth}px` }}></div>
+                                                        {/* Drag handle for end (right edge of green) */}
+                                                        <div
+                                                            className="drag-handle drag-handle-end"
+                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                            style={{ left: `${greenWidth}px` }}
+                                                            title="Glisser pour modifier la fin"
+                                                        />
                                                     </div>
                                                 )}
 
                                                 {/* Fermeture anticipée: brace */}
                                                 {action.action === 'Fermeture anticipée' && (
                                                     <div
-                                                        className="brace-marker"
+                                                        className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''}`}
                                                         style={{
                                                             left: `${leftPos}px`,
                                                             width: `${greenWidth}px`
                                                         }}
                                                     >
+                                                        {/* Drag handle for start (left edge) */}
+                                                        <div
+                                                            className="action-drag-handle action-drag-handle-start"
+                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                            title="Glisser pour modifier le début"
+                                                        />
+                                                        {/* Drag handle for end (right edge) */}
+                                                        <div
+                                                            className="action-drag-handle action-drag-handle-end"
+                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                            title="Glisser pour modifier la fin"
+                                                        />
                                                         <span className="brace-text">⏎</span>
                                                     </div>
                                                 )}
@@ -234,12 +383,25 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 {/* Ouverture anticipée: hatched green rectangle */}
                                                 {action.action === 'Ouverture anticipée' && (
                                                     <div
-                                                        className="ouverture-anticipee"
+                                                        className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''}`}
                                                         style={{
                                                             left: `${leftPos}px`,
                                                             width: `${greenWidth}px`
                                                         }}
-                                                    />
+                                                    >
+                                                        {/* Drag handle for start (left edge) */}
+                                                        <div
+                                                            className="action-drag-handle action-drag-handle-start"
+                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                            title="Glisser pour modifier le début"
+                                                        />
+                                                        {/* Drag handle for end (right edge) */}
+                                                        <div
+                                                            className="action-drag-handle action-drag-handle-end"
+                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                            title="Glisser pour modifier la fin"
+                                                        />
+                                                    </div>
                                                 )}
                                             </React.Fragment>
                                         );
@@ -277,7 +439,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             return (
                                 <div
                                     key={`adaptatif-${idx}`}
-                                    className="adaptatif-overlay"
+                                    className={`adaptatif-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
                                     style={{
                                         left: `${leftPos}px`,
                                         width: `${width}px`,
@@ -285,6 +447,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         height: `${height}px`
                                     }}
                                 >
+                                    {/* Drag handle for start (left edge) */}
+                                    <div
+                                        className="action-drag-handle action-drag-handle-start"
+                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                        title="Glisser pour modifier le début"
+                                    />
+                                    {/* Drag handle for end (right edge) */}
+                                    <div
+                                        className="action-drag-handle action-drag-handle-end"
+                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                        title="Glisser pour modifier la fin"
+                                    />
                                     {abrv && (
                                         <span className="adaptatif-label">{abrv}</span>
                                     )}
@@ -377,7 +551,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             return (
                                 <div
                                     key={`escamotage-${idx}`}
-                                    className="escamotage-overlay"
+                                    className={`escamotage-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
                                     style={{
                                         left: `${leftPos}px`,
                                         width: `${width}px`,
@@ -385,6 +559,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         height: `${height}px`
                                     }}
                                 >
+                                    {/* Drag handle for start (left edge) */}
+                                    <div
+                                        className="action-drag-handle action-drag-handle-start"
+                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                        title="Glisser pour modifier le début"
+                                    />
+                                    {/* Drag handle for end (right edge) */}
+                                    <div
+                                        className="action-drag-handle action-drag-handle-end"
+                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                        title="Glisser pour modifier la fin"
+                                    />
                                     {abrv && (
                                         <span className="escamotage-label">{abrv}</span>
                                     )}
@@ -402,9 +588,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             // Calculate positions
                             const orangeLeftPos = deb * pixelsPerSecond;
-                            const orangeWidth = 3 * pixelsPerSecond; // Orange intermittent zone (3s)
+                            const orangeDuration = blueStart - deb; // From Déb to (Fin-5)
+                            const orangeWidth = orangeDuration * pixelsPerSecond;
                             const blueLeftPos = blueStart * pixelsPerSecond;
                             const blueWidth = 5 * pixelsPerSecond; // Blue zone (5s at end)
+                            const totalWidth = (fin - deb) * pixelsPerSecond;
+
+                            // Calculate stripe width based on 1 second interval
+                            const stripeWidth = pixelsPerSecond;
 
                             // Vertical position based on GF
                             const topPos = RULER_HEIGHT + ((gf - 1) * ROW_HEIGHT) + 7;
@@ -412,6 +603,33 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             return (
                                 <React.Fragment key={`signa-${idx}`}>
+                                    {/* Wrapper for drag handles */}
+                                    <div
+                                        className={`signa-wrapper ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                        style={{
+                                            position: 'absolute',
+                                            left: `${orangeLeftPos}px`,
+                                            width: `${totalWidth}px`,
+                                            top: `${topPos}px`,
+                                            height: `${height}px`,
+                                            pointerEvents: 'none'
+                                        }}
+                                    >
+                                        {/* Drag handle for start (left edge) */}
+                                        <div
+                                            className="action-drag-handle action-drag-handle-start"
+                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                            title="Glisser pour modifier le début"
+                                            style={{ pointerEvents: 'auto' }}
+                                        />
+                                        {/* Drag handle for end (right edge) */}
+                                        <div
+                                            className="action-drag-handle action-drag-handle-end"
+                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                            title="Glisser pour modifier la fin"
+                                            style={{ pointerEvents: 'auto' }}
+                                        />
+                                    </div>
                                     {/* Orange intermittent bar at start */}
                                     <div
                                         className="signa-orange-bar"
@@ -419,7 +637,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             left: `${orangeLeftPos}px`,
                                             width: `${orangeWidth}px`,
                                             top: `${topPos}px`,
-                                            height: `${height}px`
+                                            height: `${height}px`,
+                                            '--stripe-width': `${stripeWidth}px`
                                         }}
                                     />
                                     {/* Blue bar at end (last 5s) */}

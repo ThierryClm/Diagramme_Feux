@@ -62,12 +62,17 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength 
                                 {row.map((val, toIdx) => {
                                     const hasInsufficientDelay = isDelayInsufficient(fromIdx, toIdx);
                                     const hasAsymmetry = isAsymmetric(fromIdx, toIdx);
+                                    let cellClass = '';
                                     let inputClass = '';
-                                    if (hasInsufficientDelay) inputClass = 'matrix-conflict-input';
-                                    else if (hasAsymmetry) inputClass = 'matrix-error-input';
+                                    if (hasInsufficientDelay) {
+                                        cellClass = 'matrix-conflict-cell';
+                                        inputClass = 'matrix-conflict-input';
+                                    } else if (hasAsymmetry) {
+                                        inputClass = 'matrix-error-input';
+                                    }
 
                                     return (
-                                        <td key={toIdx}>
+                                        <td key={toIdx} className={cellClass}>
                                             {fromIdx === toIdx ? (
                                                 <span className="diagonal">-</span>
                                             ) : (

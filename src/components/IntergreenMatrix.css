@@ -101,9 +101,14 @@
     border-right: 1px solid #444;
 }
 
+.matrix-conflict-cell {
+    background: rgba(255, 68, 68, 0.3) !important;
+}
+
 .matrix-conflict-input {
     color: #ff4444 !important;
     font-weight: bold;
+    background: transparent !important;
 }
 
 .matrix-error-input {
