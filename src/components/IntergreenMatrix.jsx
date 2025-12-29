@@ -15,6 +15,22 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength 
         return false;
     };
 
+    // Count asymmetric cells and get pairs
+    const getAsymmetricPairs = () => {
+        const pairs = [];
+        for (let i = 0; i < conflictMatrix.length; i++) {
+            for (let j = 0; j < conflictMatrix.length; j++) {
+                if (i !== j && isAsymmetric(i, j)) {
+                    // The cell [i][j] is empty but [j][i] has a value
+                    pairs.push({ from: j + 1, to: i + 1 });
+                }
+            }
+        }
+        return pairs;
+    };
+
+    const asymmetricPairs = getAsymmetricPairs();
+
     // Check if two groups have overlapping green phases
     const hasOverlap = (fromIdx, toIdx) => {
         const matrixVal = conflictMatrix[fromIdx][toIdx];
@@ -110,6 +126,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength 
                                         cellClass = 'matrix-conflict-cell';
                                         inputClass = 'matrix-conflict-input';
                                     } else if (hasAsymmetry) {
+                                        cellClass = 'matrix-asymmetric-cell';
                                         inputClass = 'matrix-error-input';
                                     }
 
@@ -135,6 +152,21 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength 
                     </tbody>
                 </table>
             </div>
+
+            {asymmetricPairs.length > 0 && (
+                <div className="matrix-warning">
+                    Matrice non symétrique : {asymmetricPairs.length} valeur(s) manquante(s)
+                    <br />
+                    <small>
+                        {asymmetricPairs.map((p, i) => (
+                            <span key={i}>
+                                G{p.from}→G{p.to}
+                                {i < asymmetricPairs.length - 1 ? ', ' : ''}
+                            </span>
+                        ))}
+                    </small>
+                </div>
+            )}
         </div>
     );
 };

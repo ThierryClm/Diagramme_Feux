@@ -205,3 +205,105 @@
         opacity: 1;
     }
 }
+
+/* Legend styles for Options modal */
+.legend-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.legend-preview {
+    width: 80px;
+    height: 20px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.legend-item span {
+    color: #ddd;
+    font-size: 0.9em;
+}
+
+/* Adaptatif vertical - blue rectangle */
+.legend-adaptatif {
+    background: rgba(0, 100, 255, 0.4);
+    border: 1px solid rgba(0, 100, 255, 0.6);
+}
+
+/* Escamotage de phase - gray transparent */
+.legend-escamotage {
+    background: rgba(128, 128, 128, 0.3);
+    border: 1px solid rgba(128, 128, 128, 0.4);
+}
+
+/* Ouverture anticipée - hatched pattern */
+.legend-ouverture {
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 1px,
+        rgba(0, 200, 0, 0.4) 1px,
+        rgba(0, 200, 0, 0.4) 3px
+    );
+    border: 1px solid rgba(0, 200, 0, 0.5);
+    height: 10px;
+}
+
+/* Fermeture anticipée - brace */
+.legend-fermeture {
+    position: relative;
+    background: transparent;
+    border: 2px solid #FF8C00;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    height: 14px;
+}
+
+/* Signa d'aide à la conduite - orange stripes + blue */
+.legend-signa {
+    display: flex;
+    gap: 2px;
+    background: transparent;
+    border: none;
+}
+
+.legend-signa-orange {
+    width: 40px;
+    height: 16px;
+    border-radius: 2px;
+    background: repeating-linear-gradient(
+        90deg,
+        #FF8C00,
+        #FF8C00 5px,
+        transparent 5px,
+        transparent 10px
+    );
+}
+
+.legend-signa-blue {
+    width: 36px;
+    height: 16px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, #4169E1, #2849C1);
+}
+
+/* Début de bande passante - vertical green line */
+.legend-bande-debut {
+    background: transparent;
+    border-left: 3px solid #00ff00;
+    width: 20px;
+}
+
+/* Fin de bande passante - vertical red line */
+.legend-bande-fin {
+    background: transparent;
+    border-left: 3px solid #ff0000;
+    width: 20px;
+}

@@ -331,6 +331,37 @@ export const useTrafficLight = () => {
         return saves;
     };
 
+    // Load full state (for duplication)
+    const loadFullState = (state) => {
+        try {
+            if (state.intersectionName) setIntersectionName(state.intersectionName);
+            if (state.groups) setGroups(state.groups);
+            if (state.cycleLength) setCycleLength(state.cycleLength);
+            if (state.conflictMatrix) {
+                const cleanedMatrix = state.conflictMatrix.map(row => row.map(val => {
+                    if (val === 0 || val === '0') return '';
+                    if (typeof val === 'number' && (val < 3 || val > 20)) return '';
+                    return val;
+                }));
+                setConflictMatrix(cleanedMatrix);
+            }
+            if (state.actionData) setActionData(state.actionData);
+            return true;
+        } catch (e) {
+            console.error("Load full state failed", e);
+            return false;
+        }
+    };
+
+    // Get full state (for duplication)
+    const getFullState = () => ({
+        intersectionName,
+        groups,
+        cycleLength,
+        conflictMatrix,
+        actionData
+    });
+
     const deleteSave = (name) => {
         localStorage.removeItem(`traffic_project_${name}`);
     };
@@ -491,6 +522,71 @@ export const useTrafficLight = () => {
         });
     }, [saveToHistory]);
 
+    // Slide all groups by a given offset
+    const slideAllGroups = useCallback((delta) => {
+        saveToHistory();
+        setGroups(currentGroups => {
+            return currentGroups.map(g => ({
+                ...g,
+                offset: ((g.offset + delta) % cycleLength + cycleLength) % cycleLength
+            }));
+        });
+        // Also slide action data Déb/Fin
+        setActionData(currentData => {
+            return currentData.map(row => {
+                const newRow = { ...row };
+                if (newRow.deb !== '' && newRow.deb !== undefined) {
+                    const newDeb = ((parseInt(newRow.deb) + delta) % cycleLength + cycleLength) % cycleLength;
+                    newRow.deb = newDeb.toString();
+                }
+                if (newRow.fin !== '' && newRow.fin !== undefined) {
+                    const newFin = ((parseInt(newRow.fin) + delta) % cycleLength + cycleLength) % cycleLength;
+                    newRow.fin = newFin.toString();
+                }
+                return newRow;
+            });
+        });
+    }, [saveToHistory, cycleLength]);
+
+    // Insert time at a given position for a given duration
+    const insertTime = useCallback((startSecond, duration) => {
+        saveToHistory();
+        setGroups(currentGroups => {
+            return currentGroups.map(g => {
+                const offset = g.offset;
+                // If group starts at or after the insertion point, shift it
+                if (offset >= startSecond) {
+                    return {
+                        ...g,
+                        offset: offset + duration
+                    };
+                }
+                return g;
+            });
+        });
+        // Also shift action data Déb/Fin
+        setActionData(currentData => {
+            return currentData.map(row => {
+                const newRow = { ...row };
+                if (newRow.deb !== '' && newRow.deb !== undefined) {
+                    const deb = parseInt(newRow.deb);
+                    if (deb >= startSecond) {
+                        newRow.deb = (deb + duration).toString();
+                    }
+                }
+                if (newRow.fin !== '' && newRow.fin !== undefined) {
+                    const fin = parseInt(newRow.fin);
+                    if (fin >= startSecond) {
+                        newRow.fin = (fin + duration).toString();
+                    }
+                }
+                return newRow;
+            });
+        });
+        // Increase cycle length
+        setCycleLength(prev => prev + duration);
+    }, [saveToHistory]);
+
     return {
         intersectionName,
         setIntersectionName,
@@ -513,6 +609,8 @@ export const useTrafficLight = () => {
         loadProject,
         getAllSaves,
         deleteSave,
+        getFullState,
+        loadFullState,
         // Action Table
         actionData,
         updateActionRow: updateActionRowWithHistory,
@@ -521,6 +619,9 @@ export const useTrafficLight = () => {
         canUndo: history.length > 0,
         // Drag helpers (for saving history only once per drag)
         startDrag,
-        endDrag
+        endDrag,
+        // Diagram operations
+        slideAllGroups,
+        insertTime
     };
 };

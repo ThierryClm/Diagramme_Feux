@@ -122,6 +122,20 @@
     background: transparent !important;
 }
 
+.matrix-asymmetric-cell {
+    background: rgba(255, 165, 0, 0.3) !important;
+}
+
 .matrix-error-input {
-    /* Keep yellow color for asymmetric cells too */
+    color: #ffa500 !important;
+}
+
+.matrix-warning {
+    background: rgba(255, 165, 0, 0.2);
+    border: 1px solid #ffa500;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-top: 12px;
+    color: #ffa500;
+    font-size: 0.85em;
 }
