@@ -619,3 +619,19 @@
     stroke: #ffcc00;
     stroke-width: 3;
 }
+
+/* Priorité piétons intermittent yellow bar */
+.priorite-pietons-wrapper {
+    z-index: 15;
+}
+
+.priorite-pietons-wrapper.dragging {
+    z-index: 100;
+}
+
+.priorite-pietons-bar.highlighted,
+.priorite-pietons-wrapper.highlighted {
+    outline: 2px solid #ffcc00;
+    outline-offset: 1px;
+    box-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
+}

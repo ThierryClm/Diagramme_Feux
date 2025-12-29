@@ -185,6 +185,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         action.plage2 !== ''
     );
 
+    // Get all "Priorité piétons" actions
+    const prioritePietonsActions = actionData.filter(action =>
+        action.action === 'Priorité piétons' &&
+        action.gf !== '' &&
+        action.deb !== '' &&
+        action.fin !== ''
+    );
+
     const ROW_HEIGHT = 30; // Height of each row in pixels
     const RULER_HEIGHT = 50; // Height of the ruler
 
@@ -1320,6 +1328,107 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             {abrv}
                                         </div>
                                     )}
+                                </React.Fragment>
+                            );
+                        })}
+
+                        {/* Priorité piétons - intermittent yellow bar */}
+                        {prioritePietonsActions.map((action, idx) => {
+                            const gf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                            const deb = parseInt(action.deb) || 0;
+                            const fin = parseInt(action.fin) || 0;
+                            const abrv = action.abrv || '';
+                            const isHighlighted = hoveredActionId === action.id;
+
+                            if (gf < 1 || gf > groups.length) return null;
+                            if (deb === fin) return null;
+
+                            // Calculate bar duration (handle wrap-around)
+                            let duration = fin - deb;
+                            if (duration < 0) duration += cycleLength;
+
+                            // Calculate positions
+                            const leftPos = deb * pixelsPerSecond;
+                            const barWidth = duration * pixelsPerSecond;
+
+                            // Vertical position based on GF
+                            const topPos = RULER_HEIGHT + ((gf - 1) * ROW_HEIGHT) + 7;
+                            const height = ROW_HEIGHT - 14;
+
+                            // Stripe width based on 1 second interval
+                            const stripeWidth = pixelsPerSecond;
+
+                            return (
+                                <React.Fragment key={`priorite-pietons-${idx}`}>
+                                    {/* Wrapper for drag handles */}
+                                    <div
+                                        className={`priorite-pietons-wrapper ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+                                        style={{
+                                            position: 'absolute',
+                                            left: `${leftPos}px`,
+                                            width: `${barWidth}px`,
+                                            top: `${topPos}px`,
+                                            height: `${height}px`,
+                                            pointerEvents: 'auto'
+                                        }}
+                                        onMouseEnter={() => setHoveredActionId(action.id)}
+                                        onMouseLeave={() => setHoveredActionId(null)}
+                                    >
+                                        {/* Drag handle for start (left edge) */}
+                                        <div
+                                            className="action-drag-handle action-drag-handle-start"
+                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                            title="Glisser pour modifier le début"
+                                            style={{ pointerEvents: 'auto' }}
+                                        />
+                                        {/* Drag handle for end (right edge) */}
+                                        <div
+                                            className="action-drag-handle action-drag-handle-end"
+                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                            title="Glisser pour modifier la fin"
+                                            style={{ pointerEvents: 'auto' }}
+                                        />
+                                    </div>
+                                    {/* Intermittent yellow bar */}
+                                    <div
+                                        className={`priorite-pietons-bar ${isHighlighted ? 'highlighted' : ''}`}
+                                        style={{
+                                            position: 'absolute',
+                                            left: `${leftPos}px`,
+                                            width: `${barWidth}px`,
+                                            top: `${topPos}px`,
+                                            height: `${height}px`,
+                                            borderRadius: '2px',
+                                            pointerEvents: 'none',
+                                            zIndex: 15,
+                                            background: `repeating-linear-gradient(
+                                                90deg,
+                                                #FFFF00,
+                                                #FFFF00 ${stripeWidth}px,
+                                                transparent ${stripeWidth}px,
+                                                transparent ${stripeWidth * 2}px
+                                            )`,
+                                            boxShadow: '0 0 3px rgba(255, 255, 0, 0.5)'
+                                        }}
+                                    >
+                                        {abrv && (
+                                            <span className="priorite-pietons-label" style={{
+                                                position: 'absolute',
+                                                top: '50%',
+                                                left: '2px',
+                                                transform: 'translateY(-50%)',
+                                                fontSize: '0.65em',
+                                                color: '#000',
+                                                fontWeight: 'bold',
+                                                textShadow: '0 0 2px rgba(255, 255, 255, 0.8)',
+                                                whiteSpace: 'nowrap',
+                                                zIndex: 50,
+                                                pointerEvents: 'none'
+                                            }}>
+                                                {abrv}
+                                            </span>
+                                        )}
+                                    </div>
                                 </React.Fragment>
                             );
                         })}
