@@ -102,36 +102,40 @@ export const useTrafficLight = () => {
         });
     };
 
-    // Swap Logic
+    // Swap group data and matrix, but keep GF IDs in place (G1 stays G1, G2 stays G2)
     const moveGroup = (index, direction) => {
         if (direction === 'up' && index === 0) return;
         if (direction === 'down' && index === groups.length - 1) return;
 
         const targetIndex = direction === 'up' ? index - 1 : index + 1;
 
-        // 1. Swap Groups Steps
+        // GF numbers are 1-based (index + 1)
+        const gfA = index + 1;
+        const gfB = targetIndex + 1;
+
+        // 1. Swap group DATA (but keep IDs in place)
         setGroups(currentGroups => {
             const newGroups = [...currentGroups];
-            // Swap standard array swap
-            const temp = newGroups[index];
-            newGroups[index] = newGroups[targetIndex];
-            newGroups[targetIndex] = temp;
+            const groupA = newGroups[index];
+            const groupB = newGroups[targetIndex];
 
-            // Re-assign IDs to match position? 
-            // The previous logic tried to preserve ID but swap data. 
-            // Actually, for a list of items, we usually just want to re-order the items.
-            // Items carry their ID. Re-assigning ID based on position is optional but clean for "Group 1", "Group 2".
-            // Let's just swap the items. If Group 5 moves up, it remains "Group 5" (ID=5) but is now at index 3.
-            // But verify: user wants to "intervertir", usually implied re-ordering the sequence.
+            // Swap all properties except ID
+            newGroups[index] = {
+                ...groupB,
+                id: groupA.id  // Keep original ID
+            };
+            newGroups[targetIndex] = {
+                ...groupA,
+                id: groupB.id  // Keep original ID
+            };
 
             return newGroups;
         });
 
+        // 2. Swap matrix rows and columns
         setConflictMatrix(currentMatrix => {
             if (!currentMatrix || currentMatrix.length === 0) return currentMatrix;
 
-            // Update Matrix: Swap Row index and Row targetIndex
-            // And Swap Col index and Col targetIndex
             const newMatrix = currentMatrix.map(row => [...row]);
 
             // Swap Rows
@@ -147,6 +151,24 @@ export const useTrafficLight = () => {
                 row[targetIndex] = tempVal;
             }
             return newMatrix;
+        });
+
+        // 3. Swap GF references in ActionTable
+        const gfFields = ['gf', 'plage1', 'plage2', 'actGf1', 'actGf1Gf2', 'actGf1Gf3', 'actGf1Gf4'];
+
+        setActionData(currentData => {
+            return currentData.map(row => {
+                const newRow = { ...row };
+                gfFields.forEach(field => {
+                    const val = parseInt(newRow[field]);
+                    if (val === gfA) {
+                        newRow[field] = gfB.toString();
+                    } else if (val === gfB) {
+                        newRow[field] = gfA.toString();
+                    }
+                });
+                return newRow;
+            });
         });
     };
 

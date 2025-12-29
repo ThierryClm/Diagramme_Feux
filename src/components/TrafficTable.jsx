@@ -1,5 +1,5 @@
 import React from 'react';
-import './GroupTable.css'; // Reuse table styles
+import './TrafficTable.css';
 
 const TrafficTable = ({ groups, updateGroupParams, cycleLength }) => {
 
@@ -16,9 +16,9 @@ const TrafficTable = ({ groups, updateGroupParams, cycleLength }) => {
     };
 
     return (
-        <div className="group-table-container">
+        <div className="traffic-table-container">
             <h3>Données Trafic</h3>
-            <table className="group-table">
+            <table className="traffic-table">
                 <thead>
                     <tr>
                         <th>Grp</th>

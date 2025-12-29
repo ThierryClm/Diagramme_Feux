@@ -285,22 +285,59 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     style={{ backgroundColor: isConflict ? 'rgba(231, 76, 60, 0.1)' : 'transparent' }}
                                 >
                                     {/* Base bars from group Début/Fin (sidebar values) - only if phase exists */}
-                                    {hasPhase && Array.from({ length: cyclesToRender }).map((_, i) => {
-                                        const cycleStart = (i * cycleLength) + offset;
-                                        const greenWidth = greenDuration * pixelsPerSecond;
-                                        const orangeWidth = group.durations.orange * pixelsPerSecond;
-                                        const leftPos = cycleStart * pixelsPerSecond;
+                                    {hasPhase && (() => {
                                         const isPedestrian = group.type === 'Piéton';
                                         const isCyclist = group.type === 'Cycliste';
                                         const orangeClass = isPedestrian ? 'pedestrian-orange' : isCyclist ? 'cyclist-orange' : 'orange';
+                                        const orangeWidth = group.durations.orange * pixelsPerSecond;
 
+                                        // Check if bar wraps around cycle
+                                        const wrapsAround = offset + greenDuration > cycleLength;
+
+                                        if (wrapsAround) {
+                                            // Split into two bars
+                                            const firstPartWidth = (cycleLength - offset) * pixelsPerSecond;
+                                            const secondPartWidth = ((offset + greenDuration) % cycleLength) * pixelsPerSecond;
+
+                                            return (
+                                                <React.Fragment>
+                                                    {/* First part: from offset to end of cycle */}
+                                                    <div
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                        style={{ left: `${offset * pixelsPerSecond}px` }}
+                                                    >
+                                                        <div
+                                                            className="drag-handle drag-handle-start"
+                                                            onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
+                                                            title="Glisser pour modifier le début"
+                                                        />
+                                                        <div className="phase-bar green" style={{ width: `${firstPartWidth}px` }}></div>
+                                                    </div>
+                                                    {/* Second part: from start of cycle to end */}
+                                                    <div
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                        style={{ left: '0px' }}
+                                                    >
+                                                        <div className="phase-bar green" style={{ width: `${secondPartWidth}px` }}></div>
+                                                        <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
+                                                        <div
+                                                            className="drag-handle drag-handle-end"
+                                                            onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
+                                                            style={{ left: `${secondPartWidth}px` }}
+                                                            title="Glisser pour modifier la fin"
+                                                        />
+                                                    </div>
+                                                </React.Fragment>
+                                            );
+                                        }
+
+                                        // Normal case: bar doesn't wrap
+                                        const greenWidth = greenDuration * pixelsPerSecond;
                                         return (
                                             <div
-                                                key={`base-${i}`}
                                                 className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
-                                                style={{ left: `${leftPos}px` }}
+                                                style={{ left: `${offset * pixelsPerSecond}px` }}
                                             >
-                                                {/* Drag handle for start (left edge) */}
                                                 <div
                                                     className="drag-handle drag-handle-start"
                                                     onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
@@ -308,7 +345,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 />
                                                 <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
                                                 <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
-                                                {/* Drag handle for end (right edge of green) */}
                                                 <div
                                                     className="drag-handle drag-handle-end"
                                                     onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
@@ -317,7 +353,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 />
                                             </div>
                                         );
-                                    })}
+                                    })()}
 
                                     {/* Action-based overlays */}
                                     {groupActions.map((action, idx) => {
@@ -345,77 +381,165 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 )}
 
                                                 {/* Seconde lucarne: additional bar with darker green */}
-                                                {action.action === 'Seconde lucarne' && (
-                                                    <div
-                                                        className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''}`}
-                                                        style={{ left: `${leftPos}px` }}
-                                                    >
-                                                        {/* Drag handle for start (left edge) */}
+                                                {action.action === 'Seconde lucarne' && (() => {
+                                                    const wrapsAround = deb > fin;
+                                                    if (wrapsAround) {
+                                                        const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
+                                                        const secondPartWidth = fin * pixelsPerSecond;
+                                                        return (
+                                                            <React.Fragment>
+                                                                {/* First part: from deb to end of cycle */}
+                                                                <div
+                                                                    className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    style={{ left: `${leftPos}px` }}
+                                                                >
+                                                                    <div
+                                                                        className="drag-handle drag-handle-start"
+                                                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                                        title="Glisser pour modifier le début"
+                                                                    />
+                                                                    <div className="phase-bar green-dark" style={{ width: `${firstPartWidth}px` }}></div>
+                                                                </div>
+                                                                {/* Second part: from start of cycle to fin */}
+                                                                <div
+                                                                    className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    style={{ left: '0px' }}
+                                                                >
+                                                                    <div className="phase-bar green-dark" style={{ width: `${secondPartWidth}px` }}></div>
+                                                                    <div className="phase-bar orange" style={{ width: `${orangeWidth}px` }}></div>
+                                                                    <div
+                                                                        className="drag-handle drag-handle-end"
+                                                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                                        style={{ left: `${secondPartWidth}px` }}
+                                                                        title="Glisser pour modifier la fin"
+                                                                    />
+                                                                </div>
+                                                            </React.Fragment>
+                                                        );
+                                                    }
+                                                    return (
                                                         <div
-                                                            className="drag-handle drag-handle-start"
-                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                            title="Glisser pour modifier le début"
-                                                        />
-                                                        <div className="phase-bar green-dark" style={{ width: `${greenWidth}px` }}></div>
-                                                        <div className="phase-bar orange" style={{ width: `${orangeWidth}px` }}></div>
-                                                        {/* Drag handle for end (right edge of green) */}
-                                                        <div
-                                                            className="drag-handle drag-handle-end"
-                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                            style={{ left: `${greenWidth}px` }}
-                                                            title="Glisser pour modifier la fin"
-                                                        />
-                                                    </div>
-                                                )}
+                                                            className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                            style={{ left: `${leftPos}px` }}
+                                                        >
+                                                            <div
+                                                                className="drag-handle drag-handle-start"
+                                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                                title="Glisser pour modifier le début"
+                                                            />
+                                                            <div className="phase-bar green-dark" style={{ width: `${greenWidth}px` }}></div>
+                                                            <div className="phase-bar orange" style={{ width: `${orangeWidth}px` }}></div>
+                                                            <div
+                                                                className="drag-handle drag-handle-end"
+                                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                                style={{ left: `${greenWidth}px` }}
+                                                                title="Glisser pour modifier la fin"
+                                                            />
+                                                        </div>
+                                                    );
+                                                })()}
 
                                                 {/* Fermeture anticipée: brace */}
-                                                {action.action === 'Fermeture anticipée' && (
-                                                    <div
-                                                        className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''}`}
-                                                        style={{
-                                                            left: `${leftPos}px`,
-                                                            width: `${greenWidth}px`
-                                                        }}
-                                                    >
-                                                        {/* Drag handle for start (left edge) */}
+                                                {action.action === 'Fermeture anticipée' && (() => {
+                                                    const wrapsAround = deb > fin;
+                                                    if (wrapsAround) {
+                                                        const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
+                                                        const secondPartWidth = fin * pixelsPerSecond;
+                                                        return (
+                                                            <React.Fragment>
+                                                                <div
+                                                                    className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    style={{ left: `${leftPos}px`, width: `${firstPartWidth}px` }}
+                                                                >
+                                                                    <div
+                                                                        className="action-drag-handle action-drag-handle-start"
+                                                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                                        title="Glisser pour modifier le début"
+                                                                    />
+                                                                </div>
+                                                                <div
+                                                                    className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    style={{ left: '0px', width: `${secondPartWidth}px` }}
+                                                                >
+                                                                    <div
+                                                                        className="action-drag-handle action-drag-handle-end"
+                                                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                                        title="Glisser pour modifier la fin"
+                                                                    />
+                                                                    <span className="brace-text">⏎</span>
+                                                                </div>
+                                                            </React.Fragment>
+                                                        );
+                                                    }
+                                                    return (
                                                         <div
-                                                            className="action-drag-handle action-drag-handle-start"
-                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                            title="Glisser pour modifier le début"
-                                                        />
-                                                        {/* Drag handle for end (right edge) */}
-                                                        <div
-                                                            className="action-drag-handle action-drag-handle-end"
-                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                            title="Glisser pour modifier la fin"
-                                                        />
-                                                        <span className="brace-text">⏎</span>
-                                                    </div>
-                                                )}
+                                                            className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                            style={{ left: `${leftPos}px`, width: `${greenWidth}px` }}
+                                                        >
+                                                            <div
+                                                                className="action-drag-handle action-drag-handle-start"
+                                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                                title="Glisser pour modifier le début"
+                                                            />
+                                                            <div
+                                                                className="action-drag-handle action-drag-handle-end"
+                                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                                title="Glisser pour modifier la fin"
+                                                            />
+                                                            <span className="brace-text">⏎</span>
+                                                        </div>
+                                                    );
+                                                })()}
 
                                                 {/* Ouverture anticipée: hatched green rectangle */}
-                                                {action.action === 'Ouverture anticipée' && (
-                                                    <div
-                                                        className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''}`}
-                                                        style={{
-                                                            left: `${leftPos}px`,
-                                                            width: `${greenWidth}px`
-                                                        }}
-                                                    >
-                                                        {/* Drag handle for start (left edge) */}
+                                                {action.action === 'Ouverture anticipée' && (() => {
+                                                    const wrapsAround = deb > fin;
+                                                    if (wrapsAround) {
+                                                        const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
+                                                        const secondPartWidth = fin * pixelsPerSecond;
+                                                        return (
+                                                            <React.Fragment>
+                                                                <div
+                                                                    className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    style={{ left: `${leftPos}px`, width: `${firstPartWidth}px` }}
+                                                                >
+                                                                    <div
+                                                                        className="action-drag-handle action-drag-handle-start"
+                                                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                                        title="Glisser pour modifier le début"
+                                                                    />
+                                                                </div>
+                                                                <div
+                                                                    className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    style={{ left: '0px', width: `${secondPartWidth}px` }}
+                                                                >
+                                                                    <div
+                                                                        className="action-drag-handle action-drag-handle-end"
+                                                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                                        title="Glisser pour modifier la fin"
+                                                                    />
+                                                                </div>
+                                                            </React.Fragment>
+                                                        );
+                                                    }
+                                                    return (
                                                         <div
-                                                            className="action-drag-handle action-drag-handle-start"
-                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                            title="Glisser pour modifier le début"
-                                                        />
-                                                        {/* Drag handle for end (right edge) */}
-                                                        <div
-                                                            className="action-drag-handle action-drag-handle-end"
-                                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                            title="Glisser pour modifier la fin"
-                                                        />
-                                                    </div>
-                                                )}
+                                                            className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                            style={{ left: `${leftPos}px`, width: `${greenWidth}px` }}
+                                                        >
+                                                            <div
+                                                                className="action-drag-handle action-drag-handle-start"
+                                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                                title="Glisser pour modifier le début"
+                                                            />
+                                                            <div
+                                                                className="action-drag-handle action-drag-handle-end"
+                                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                                title="Glisser pour modifier la fin"
+                                                            />
+                                                        </div>
+                                                    );
+                                                })()}
                                             </React.Fragment>
                                         );
                                     })}
@@ -427,9 +551,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {adaptatifActions.map((action, idx) => {
                             const deb = parseInt(action.deb) || 0;
                             const fin = parseInt(action.fin) || 0;
-                            const duration = fin >= deb ? fin - deb : (cycleLength - deb + fin);
                             const leftPos = deb * pixelsPerSecond;
-                            const width = duration * pixelsPerSecond;
                             const abrv = action.abrv || '';
 
                             // Calculate vertical position based on Plage1/Plage2
@@ -448,6 +570,56 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 topPos = RULER_HEIGHT;
                                 height = groups.length * ROW_HEIGHT;
                             }
+
+                            // Check if overlay wraps around cycle
+                            const wrapsAround = deb > fin;
+
+                            if (wrapsAround) {
+                                const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
+                                const secondPartWidth = fin * pixelsPerSecond;
+                                return (
+                                    <React.Fragment key={`adaptatif-${idx}`}>
+                                        {/* First part: from deb to end of cycle */}
+                                        <div
+                                            className={`adaptatif-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                            style={{
+                                                left: `${leftPos}px`,
+                                                width: `${firstPartWidth}px`,
+                                                top: `${topPos}px`,
+                                                height: `${height}px`
+                                            }}
+                                        >
+                                            <div
+                                                className="action-drag-handle action-drag-handle-start"
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                title="Glisser pour modifier le début"
+                                            />
+                                        </div>
+                                        {/* Second part: from start of cycle to fin */}
+                                        <div
+                                            className={`adaptatif-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                            style={{
+                                                left: '0px',
+                                                width: `${secondPartWidth}px`,
+                                                top: `${topPos}px`,
+                                                height: `${height}px`
+                                            }}
+                                        >
+                                            <div
+                                                className="action-drag-handle action-drag-handle-end"
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                title="Glisser pour modifier la fin"
+                                            />
+                                            {abrv && (
+                                                <span className="adaptatif-label">{abrv}</span>
+                                            )}
+                                        </div>
+                                    </React.Fragment>
+                                );
+                            }
+
+                            const duration = fin - deb;
+                            const width = duration * pixelsPerSecond;
 
                             return (
                                 <div
@@ -504,6 +676,61 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 const targetY = RULER_HEIGHT + ((targetGf - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
                                 const sourceX = fin * pixelsPerSecond;
                                 const targetX = targetStartPos * pixelsPerSecond;
+                                const cycleEndX = cycleLength * pixelsPerSecond;
+
+                                // If arrow would go backwards, split into two segments
+                                if (sourceX > targetX) {
+                                    return (
+                                        <svg
+                                            key={`arrow-${idx}-${tIdx}`}
+                                            className="fermeture-arrow"
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                pointerEvents: 'none',
+                                                zIndex: 20
+                                            }}
+                                        >
+                                            <defs>
+                                                <marker
+                                                    id={`arrowhead-${idx}-${tIdx}`}
+                                                    markerWidth="8"
+                                                    markerHeight="6"
+                                                    refX="8"
+                                                    refY="3"
+                                                    orient="auto"
+                                                >
+                                                    <polygon
+                                                        points="0 0, 8 3, 0 6"
+                                                        fill="#ff4444"
+                                                    />
+                                                </marker>
+                                            </defs>
+                                            {/* First segment: from source to end of cycle */}
+                                            <line
+                                                x1={sourceX}
+                                                y1={sourceY}
+                                                x2={cycleEndX}
+                                                y2={sourceY + (targetY - sourceY) * ((cycleEndX - sourceX) / (cycleEndX - sourceX + targetX))}
+                                                stroke="#ff4444"
+                                                strokeWidth="2"
+                                            />
+                                            {/* Second segment: from start of cycle to target */}
+                                            <line
+                                                x1={0}
+                                                y1={sourceY + (targetY - sourceY) * ((cycleEndX - sourceX) / (cycleEndX - sourceX + targetX))}
+                                                x2={targetX}
+                                                y2={targetY}
+                                                stroke="#ff4444"
+                                                strokeWidth="2"
+                                                markerEnd={`url(#arrowhead-${idx}-${tIdx})`}
+                                            />
+                                        </svg>
+                                    );
+                                }
 
                                 return (
                                     <svg
@@ -552,14 +779,62 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {escamotageActions.map((action, idx) => {
                             const deb = parseInt(action.deb) || 0;
                             const fin = parseInt(action.fin) || 0;
-                            const duration = fin >= deb ? fin - deb : (cycleLength - deb + fin);
                             const leftPos = deb * pixelsPerSecond;
-                            const width = duration * pixelsPerSecond;
                             const abrv = action.abrv || '';
 
                             // Cover all rows, starting just below ruler (8px above rows) and 30px below
                             const topPos = RULER_HEIGHT - 8;
                             const height = 8 + (groups.length * ROW_HEIGHT) + 30;
+
+                            // Check if overlay wraps around cycle
+                            const wrapsAround = deb > fin;
+
+                            if (wrapsAround) {
+                                const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
+                                const secondPartWidth = fin * pixelsPerSecond;
+                                return (
+                                    <React.Fragment key={`escamotage-${idx}`}>
+                                        {/* First part: from deb to end of cycle */}
+                                        <div
+                                            className={`escamotage-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                            style={{
+                                                left: `${leftPos}px`,
+                                                width: `${firstPartWidth}px`,
+                                                top: `${topPos}px`,
+                                                height: `${height}px`
+                                            }}
+                                        >
+                                            <div
+                                                className="action-drag-handle action-drag-handle-start"
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                title="Glisser pour modifier le début"
+                                            />
+                                        </div>
+                                        {/* Second part: from start of cycle to fin */}
+                                        <div
+                                            className={`escamotage-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                            style={{
+                                                left: '0px',
+                                                width: `${secondPartWidth}px`,
+                                                top: `${topPos}px`,
+                                                height: `${height}px`
+                                            }}
+                                        >
+                                            <div
+                                                className="action-drag-handle action-drag-handle-end"
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                title="Glisser pour modifier la fin"
+                                            />
+                                            {abrv && (
+                                                <span className="escamotage-label">{abrv}</span>
+                                            )}
+                                        </div>
+                                    </React.Fragment>
+                                );
+                            }
+
+                            const duration = fin - deb;
+                            const width = duration * pixelsPerSecond;
 
                             return (
                                 <div

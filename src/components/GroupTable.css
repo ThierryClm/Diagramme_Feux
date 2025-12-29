@@ -22,7 +22,7 @@
     font-weight: normal;
     padding: 0 0.5rem;
     border-bottom: 1px solid #444;
-    height: 50px;
+    height: 32px;
     position: sticky;
     top: 0;
     background: #1e1e1e;
@@ -30,13 +30,13 @@
 }
 
 .group-table tr {
-    height: 50px;
+    height: 32px;
 }
 
 .group-table td {
     padding: 0 2px;
     border-bottom: 1px solid #333;
-    height: 50px;
+    height: 32px;
     vertical-align: middle;
 }
 
