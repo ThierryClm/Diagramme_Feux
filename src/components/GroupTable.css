@@ -1,99 +1,106 @@
 .group-table-container {
     background: #1e1e1e;
     padding: 0;
-    /* Remove padding to handle full sticky */
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid #333;
     overflow: visible;
-    /* Handled by parent */
     max-height: none;
+    margin-top: calc(0.5rem + 1rem + 0.5rem + 1px); /* Align with diagram title height */
 }
 
 .group-table {
-    width: 100%;
+    width: auto;
     border-collapse: collapse;
-    font-size: 0.75em;
-    table-layout: fixed;
+    table-layout: auto;
 }
 
 .group-table th {
-    text-align: left;
-    color: #aaa;
+    text-align: center;
+    color: #888;
     font-weight: normal;
-    padding: 0 0.5rem;
+    font-size: 0.75em;
+    padding: 0 4px;
     border-bottom: 1px solid #444;
-    height: 32px;
+    height: 50px;
     position: sticky;
     top: 0;
-    background: #1e1e1e;
+    background: #222;
     z-index: 20;
+    white-space: nowrap;
 }
 
 .group-table tr {
-    height: 32px;
+    height: 30px;
 }
 
 .group-table td {
     padding: 0 2px;
     border-bottom: 1px solid #333;
-    height: 32px;
+    height: 30px;
     vertical-align: middle;
 }
 
 .group-table input {
-    width: 45px;
+    width: 32px;
     background: #333;
     border: 1px solid #444;
     color: white;
-    padding: 4px;
-    border-radius: 4px;
-    text-align: right;
+    padding: 2px;
+    border-radius: 3px;
+    text-align: center;
+    font-size: 0.8em;
 }
 
 .group-table select.input-type {
-    width: 65px;
+    width: 52px;
     background: #333;
     color: white;
     border: 1px solid #444;
-    border-radius: 4px;
+    border-radius: 3px;
+    padding: 1px;
+    font-size: 0.8em;
 }
 
 .input-mini,
 .input-yellow {
-    width: 40px !important;
+    width: 32px !important;
     color: #bbb !important;
 }
 
 .col-id {
     font-weight: bold;
-    color: #888;
+    color: #eee;
+    padding: 0 4px;
+    width: 28px;
 }
 
 .input-name-cell {
-    width: 90px !important;
+    width: 70px !important;
     text-align: left !important;
-    font-size: 0.9em;
+    font-size: 0.8em;
+    color: #aaa !important;
 }
 
 .btn-move {
-    background: #eee;
-    border: 1px solid #ccc;
+    background: #444;
+    border: 1px solid #555;
     cursor: pointer;
-    font-size: 1.2em;
-    color: #333;
-    padding: 2px 5px;
-    margin: 0 2px;
+    font-size: 0.9em;
+    color: #aaa;
+    padding: 1px 4px;
+    margin: 0 1px;
     width: auto !important;
     display: inline-block;
+    border-radius: 2px;
 }
 
 .btn-move:hover:not(:disabled) {
     color: #3498db;
-    font-weight: bold;
+    background: #555;
 }
 
 .btn-move:disabled {
-    color: #ddd;
+    color: #555;
     cursor: default;
 }
 

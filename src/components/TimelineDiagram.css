@@ -28,14 +28,12 @@
 }
 
 .timeline-sidebar {
-    width: 250px;
-    /* Wider to fit inputs */
+    width: 190px;
     background: #1a1a1a;
     border-right: 1px solid #444;
     flex-shrink: 0;
     z-index: 10;
     padding-top: 0;
-    /* Header is now inside */
 }
 
 .sidebar-header-row {
@@ -47,19 +45,30 @@
     position: sticky;
     top: 0;
     z-index: 20;
-    padding: 0 10px;
-    gap: 5px;
+    padding: 0 6px;
+    gap: 3px;
 }
 
 .col-label {
-    width: 45px;
-    font-size: 0.8em;
+    font-size: 0.75em;
     color: #888;
     text-align: center;
 }
 
-.col-label:first-child {
-    width: 30px;
+.col-label.col-grp {
+    width: 28px;
+    flex-shrink: 0;
+}
+
+.col-label.col-name {
+    width: 55px;
+    flex-shrink: 0;
+    text-align: left;
+}
+
+.col-label.col-time {
+    width: 26px;
+    flex-shrink: 0;
 }
 
 .row-label-container {
@@ -67,14 +76,43 @@
     display: flex;
     align-items: center;
     border-bottom: 1px solid #333;
-    padding: 0 10px;
-    gap: 5px;
+    padding: 0 6px;
+    gap: 3px;
     color: #eee;
 }
 
 .label-id {
-    width: 30px;
+    width: 28px;
     font-weight: bold;
+    flex-shrink: 0;
+}
+
+.label-name {
+    width: 55px;
+    flex-shrink: 0;
+    font-size: 0.75em;
+    color: #aaa;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.input-time-sm {
+    width: 26px;
+    background: #333;
+    border: 1px solid #444;
+    color: white;
+    padding: 1px;
+    border-radius: 3px;
+    text-align: center;
+    font-size: 0.75em;
+    flex-shrink: 0;
+}
+
+.input-time-sm:focus {
+    background: #444;
+    outline: none;
+    border-color: #666;
 }
 
 .input-time {

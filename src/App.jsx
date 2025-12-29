@@ -65,6 +65,7 @@ function App() {
     const [slideValue, setSlideValue] = useState(0);
     const [insertStart, setInsertStart] = useState(0);
     const [insertDuration, setInsertDuration] = useState(5);
+    const [selectedProject, setSelectedProject] = useState(null);
 
     // Check for duplicated state on load
     useEffect(() => {
@@ -96,6 +97,7 @@ function App() {
                 }
                 break;
             case 'open':
+                setSelectedProject(null);
                 setOpenModal(true);
                 break;
             case 'save':
@@ -137,9 +139,12 @@ function App() {
     };
 
     // Handle project selection from open modal
-    const handleOpenProject = (projectName) => {
-        loadProject(projectName);
-        setOpenModal(false);
+    const handleOpenProject = () => {
+        if (selectedProject) {
+            loadProject(selectedProject);
+            setOpenModal(false);
+            setSelectedProject(null);
+        }
     };
 
     // Handle slide confirmation
@@ -389,15 +394,49 @@ function App() {
             {/* Modal Ouvrir */}
             <Modal isOpen={openModal} onClose={() => setOpenModal(false)} title="Ouvrir un projet">
                 {getAllSaves().length > 0 ? (
-                    <ul className="project-list">
-                        {getAllSaves().map((save) => (
-                            <li key={save.name} onClick={() => handleOpenProject(save.name)}>
-                                {save.name}
-                            </li>
-                        ))}
-                    </ul>
+                    <>
+                        <div className="project-list-container">
+                            <ul className="project-list">
+                                {getAllSaves().map((projectName) => (
+                                    <li
+                                        key={projectName}
+                                        className={selectedProject === projectName ? 'selected' : ''}
+                                        onClick={() => setSelectedProject(projectName)}
+                                        onDoubleClick={() => {
+                                            setSelectedProject(projectName);
+                                            loadProject(projectName);
+                                            setOpenModal(false);
+                                            setSelectedProject(null);
+                                        }}
+                                    >
+                                        <span className="project-icon"></span>
+                                        <span className="project-name">{projectName}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="modal-actions">
+                            <button className="modal-btn modal-btn-secondary" onClick={() => setOpenModal(false)}>
+                                Annuler
+                            </button>
+                            <button
+                                className="modal-btn modal-btn-primary"
+                                onClick={handleOpenProject}
+                                disabled={!selectedProject}
+                            >
+                                Ouvrir
+                            </button>
+                        </div>
+                    </>
                 ) : (
-                    <p className="no-projects">Aucun projet sauvegardé</p>
+                    <>
+                        <p className="no-projects">Aucun projet sauvegardé</p>
+                        <div className="modal-actions">
+                            <button className="modal-btn modal-btn-secondary" onClick={() => setOpenModal(false)}>
+                                Fermer
+                            </button>
+                        </div>
+                    </>
                 )}
             </Modal>
 

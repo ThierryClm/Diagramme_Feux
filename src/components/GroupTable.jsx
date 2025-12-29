@@ -31,7 +31,6 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, moveGroup }) => {
 
     return (
         <div className="group-table-container">
-            <h3>Configuration</h3>
             <table className="group-table">
                 <thead>
                     <tr>

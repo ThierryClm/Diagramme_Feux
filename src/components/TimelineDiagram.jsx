@@ -211,10 +211,11 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                 <div className="timeline-sidebar">
                     {/* Header Label for Sidebar */}
                     <div className="sidebar-header-row">
-                        <span className="col-label">Grp</span>
-                        <span className="col-label">Début</span>
-                        <span className="col-label">Fin</span>
-                        <span className="col-label">Durée</span>
+                        <span className="col-label col-grp">Grp</span>
+                        <span className="col-label col-name">Nom</span>
+                        <span className="col-label col-time">Déb</span>
+                        <span className="col-label col-time">Fin</span>
+                        <span className="col-label col-time">Dur</span>
                     </div>
 
                     {groups.map(g => {
@@ -227,9 +228,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         return (
                             <div key={g.id} className="row-label-container" onClick={() => onGroupClick(g)}>
                                 <span className="label-id">G{g.id}</span>
+                                <span className="label-name" title={g.name}>{g.name || '-'}</span>
                                 <input
                                     type="number"
-                                    className="input-time"
+                                    className="input-time-sm"
                                     value={hasValue ? start : ''}
                                     onChange={(e) => handleStartChange(g.id, e.target.value)}
                                     title="Début"
@@ -237,7 +239,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 />
                                 <input
                                     type="number"
-                                    className="input-time"
+                                    className="input-time-sm"
                                     value={hasValue ? end : ''}
                                     onChange={(e) => handleEndChange(g.id, e.target.value, start)}
                                     title="Fin"
@@ -246,7 +248,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 />
                                 <input
                                     type="number"
-                                    className="input-time input-duration"
+                                    className="input-time-sm"
                                     value={duration === 0 ? '' : duration}
                                     onChange={(e) => handleDurationChange(g.id, e.target.value)}
                                     title="Durée"
