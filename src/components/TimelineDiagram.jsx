@@ -169,6 +169,22 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         return true;
     });
 
+    // Get all "Point de repos" actions
+    const pointReposActions = actionData.filter(action =>
+        action.action === 'Point de repos' &&
+        action.deb !== '' &&
+        action.plage1 !== '' &&
+        action.plage2 !== ''
+    );
+
+    // Get all "Synchro BTS" actions
+    const synchroBtsActions = actionData.filter(action =>
+        action.action === 'Synchro BTS' &&
+        action.deb !== '' &&
+        action.plage1 !== '' &&
+        action.plage2 !== ''
+    );
+
     const ROW_HEIGHT = 30; // Height of each row in pixels
     const RULER_HEIGHT = 50; // Height of the ruler
 
@@ -1110,6 +1126,200 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <span className="signa-label">{abrv}</span>
                                         )}
                                     </div>
+                                </React.Fragment>
+                            );
+                        })}
+
+                        {/* Point de repos arrows - vertical red arrows */}
+                        {pointReposActions.map((action, idx) => {
+                            const deb = parseInt(action.deb) || 0;
+                            const plage1 = parseInt(action.plage1) || 0;
+                            const plage2 = parseInt(action.plage2) || 0;
+                            const abrv = action.abrv || '';
+                            const isHighlighted = hoveredActionId === action.id;
+
+                            if (plage1 < 1 || plage2 < 1 || plage1 > groups.length || plage2 > groups.length) return null;
+
+                            // X position at deb
+                            const xPos = deb * pixelsPerSecond;
+
+                            // Arrow length fixed at 16 pixels
+                            const arrowLength = 16;
+
+                            // Downward arrow: ends just above plage1 row
+                            const downArrowEndY = RULER_HEIGHT + (plage1 - 1) * ROW_HEIGHT - 2;
+                            const downArrowStartY = downArrowEndY - arrowLength;
+
+                            // Upward arrow: ends just below plage2 row
+                            const upArrowEndY = RULER_HEIGHT + plage2 * ROW_HEIGHT + 2;
+                            const upArrowStartY = upArrowEndY + arrowLength;
+
+                            // Arrow head size
+                            const arrowSize = 5;
+
+                            // Label position below the diagram
+                            const labelY = RULER_HEIGHT + groups.length * ROW_HEIGHT + 20;
+
+                            return (
+                                <React.Fragment key={`point-repos-${idx}`}>
+                                    <svg
+                                        className={`point-repos-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            pointerEvents: 'none',
+                                            zIndex: 100,
+                                            overflow: 'visible'
+                                        }}
+                                    >
+                                        {/* Downward arrow line */}
+                                        <line
+                                            x1={xPos}
+                                            y1={downArrowStartY}
+                                            x2={xPos}
+                                            y2={downArrowEndY}
+                                            stroke="#ff0000"
+                                            strokeWidth="2"
+                                        />
+                                        {/* Downward arrow head (pointing down) */}
+                                        <polygon
+                                            points={`${xPos - arrowSize},${downArrowEndY} ${xPos + arrowSize},${downArrowEndY} ${xPos},${downArrowEndY + arrowSize * 1.5}`}
+                                            fill="#ff0000"
+                                        />
+                                        {/* Upward arrow line */}
+                                        <line
+                                            x1={xPos}
+                                            y1={upArrowStartY}
+                                            x2={xPos}
+                                            y2={upArrowEndY}
+                                            stroke="#ff0000"
+                                            strokeWidth="2"
+                                        />
+                                        {/* Upward arrow head (pointing up) */}
+                                        <polygon
+                                            points={`${xPos - arrowSize},${upArrowEndY} ${xPos + arrowSize},${upArrowEndY} ${xPos},${upArrowEndY - arrowSize * 1.5}`}
+                                            fill="#ff0000"
+                                        />
+                                    </svg>
+                                    {/* Label below diagram */}
+                                    {abrv && (
+                                        <div
+                                            className="point-repos-label"
+                                            style={{
+                                                position: 'absolute',
+                                                left: `${xPos}px`,
+                                                top: `${labelY}px`,
+                                                transform: 'translateX(-50%)',
+                                                color: '#ffffff',
+                                                fontSize: '0.7em',
+                                                fontWeight: 'bold',
+                                                whiteSpace: 'nowrap',
+                                                zIndex: 100
+                                            }}
+                                        >
+                                            {abrv}
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
+
+                        {/* Synchro BTS arrows - vertical blue arrows */}
+                        {synchroBtsActions.map((action, idx) => {
+                            const deb = parseInt(action.deb) || 0;
+                            const plage1 = parseInt(action.plage1) || 0;
+                            const plage2 = parseInt(action.plage2) || 0;
+                            const abrv = action.abrv || '';
+                            const isHighlighted = hoveredActionId === action.id;
+
+                            if (plage1 < 1 || plage2 < 1 || plage1 > groups.length || plage2 > groups.length) return null;
+
+                            // X position at deb
+                            const xPos = deb * pixelsPerSecond;
+
+                            // Arrow length fixed at 16 pixels
+                            const arrowLength = 16;
+
+                            // Downward arrow: ends just above plage1 row
+                            const downArrowEndY = RULER_HEIGHT + (plage1 - 1) * ROW_HEIGHT - 2;
+                            const downArrowStartY = downArrowEndY - arrowLength;
+
+                            // Upward arrow: ends just below plage2 row
+                            const upArrowEndY = RULER_HEIGHT + plage2 * ROW_HEIGHT + 2;
+                            const upArrowStartY = upArrowEndY + arrowLength;
+
+                            // Arrow head size
+                            const arrowSize = 5;
+
+                            // Label position below the diagram
+                            const labelY = RULER_HEIGHT + groups.length * ROW_HEIGHT + 20;
+
+                            return (
+                                <React.Fragment key={`synchro-bts-${idx}`}>
+                                    <svg
+                                        className={`synchro-bts-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            pointerEvents: 'none',
+                                            zIndex: 100,
+                                            overflow: 'visible'
+                                        }}
+                                    >
+                                        {/* Downward arrow line */}
+                                        <line
+                                            x1={xPos}
+                                            y1={downArrowStartY}
+                                            x2={xPos}
+                                            y2={downArrowEndY}
+                                            stroke="#0000FF"
+                                            strokeWidth="2"
+                                        />
+                                        {/* Downward arrow head (pointing down) */}
+                                        <polygon
+                                            points={`${xPos - arrowSize},${downArrowEndY} ${xPos + arrowSize},${downArrowEndY} ${xPos},${downArrowEndY + arrowSize * 1.5}`}
+                                            fill="#0000FF"
+                                        />
+                                        {/* Upward arrow line */}
+                                        <line
+                                            x1={xPos}
+                                            y1={upArrowStartY}
+                                            x2={xPos}
+                                            y2={upArrowEndY}
+                                            stroke="#0000FF"
+                                            strokeWidth="2"
+                                        />
+                                        {/* Upward arrow head (pointing up) */}
+                                        <polygon
+                                            points={`${xPos - arrowSize},${upArrowEndY} ${xPos + arrowSize},${upArrowEndY} ${xPos},${upArrowEndY - arrowSize * 1.5}`}
+                                            fill="#0000FF"
+                                        />
+                                    </svg>
+                                    {/* Label below diagram */}
+                                    {abrv && (
+                                        <div
+                                            className="synchro-bts-label"
+                                            style={{
+                                                position: 'absolute',
+                                                left: `${xPos}px`,
+                                                top: `${labelY}px`,
+                                                transform: 'translateX(-50%)',
+                                                color: '#ffffff',
+                                                fontSize: '0.7em',
+                                                fontWeight: 'bold',
+                                                whiteSpace: 'nowrap',
+                                                zIndex: 100
+                                            }}
+                                        >
+                                            {abrv}
+                                        </div>
+                                    )}
                                 </React.Fragment>
                             );
                         })}

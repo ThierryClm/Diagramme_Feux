@@ -591,3 +591,31 @@
     outline-offset: 1px;
     box-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
 }
+
+/* Point de repos arrows */
+.point-repos-arrows {
+    overflow: visible;
+}
+
+.point-repos-arrows line {
+    transition: stroke-width 0.15s ease;
+}
+
+.point-repos-arrows.highlighted line {
+    stroke: #ffcc00;
+    stroke-width: 3;
+}
+
+/* Synchro BTS arrows */
+.synchro-bts-arrows {
+    overflow: visible;
+}
+
+.synchro-bts-arrows line {
+    transition: stroke-width 0.15s ease;
+}
+
+.synchro-bts-arrows.highlighted line {
+    stroke: #ffcc00;
+    stroke-width: 3;
+}

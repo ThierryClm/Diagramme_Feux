@@ -19,6 +19,7 @@ const ACTION_OPTIONS = [
     'Fin de bande passante',
     'Instant de coordination',
     'Ouverture anticipée',
+    'Point de repos',
     'Priorité piétons',
     'Seconde lucarne',
     'Signa d\'aide à la conduite',

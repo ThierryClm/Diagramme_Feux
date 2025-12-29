@@ -350,13 +350,6 @@ function App() {
                                 )}
                             </div>
                         ))}
-                        <button
-                            className="pf-tab-add"
-                            onClick={() => duplicatePF()}
-                            title="Dupliquer le diagramme"
-                        >
-                            +
-                        </button>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
