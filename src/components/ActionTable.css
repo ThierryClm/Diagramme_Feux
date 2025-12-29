@@ -213,3 +213,17 @@
 .draggable-cell:hover::before {
     opacity: 1;
 }
+
+/* Highlighted row state */
+.action-table tbody tr.row-highlighted {
+    background: rgba(255, 204, 0, 0.15) !important;
+    outline: 1px solid rgba(255, 204, 0, 0.5);
+}
+
+.action-table tbody tr.row-highlighted td {
+    background: transparent !important;
+}
+
+.action-table tbody tr:hover {
+    background: rgba(100, 150, 200, 0.1);
+}

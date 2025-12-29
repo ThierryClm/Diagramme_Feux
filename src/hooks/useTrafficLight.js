@@ -172,36 +172,32 @@ export const useTrafficLight = () => {
         });
     };
 
-    // Computed Conflicts
-    const conflicts = useMemo(() => {
-        const list = [];
-        const count = groups.length;
-        for (let from = 0; from < count; from++) {
-            for (let to = 0; to < count; to++) {
-                const minGap = conflictMatrix[from][to];
-                // Skip empty values, but consider 0 as valid
-                if ((minGap === '' || minGap === undefined || minGap === null) || from === to) continue;
+    // Helper: Check if two time ranges overlap in cyclic time
+    const rangesOverlap = (start1, end1, start2, end2, cycle) => {
+        // Normalize to cycle
+        start1 = ((start1 % cycle) + cycle) % cycle;
+        end1 = ((end1 % cycle) + cycle) % cycle;
+        start2 = ((start2 % cycle) + cycle) % cycle;
+        end2 = ((end2 % cycle) + cycle) % cycle;
 
-                const gFrom = groups[from];
-                const gTo = groups[to];
+        // Handle wrap-around cases
+        const range1Wraps = end1 <= start1;
+        const range2Wraps = end2 <= start2;
 
-                const endGreenA_Absolute = (gFrom.offset + gFrom.durations.green) % cycleLength;
-                const startGreenB_Absolute = gTo.offset % cycleLength;
-
-                let distance = (startGreenB_Absolute - endGreenA_Absolute + cycleLength) % cycleLength;
-
-                if (distance < minGap) {
-                    list.push({
-                        from: gFrom.id,
-                        to: gTo.id,
-                        required: minGap,
-                        actual: distance
-                    });
-                }
-            }
+        if (!range1Wraps && !range2Wraps) {
+            // Neither wraps: simple overlap check
+            return start1 < end2 && start2 < end1;
+        } else if (range1Wraps && !range2Wraps) {
+            // Range 1 wraps: [start1, cycle) and [0, end1)
+            return (start2 < end1) || (start2 >= start1);
+        } else if (!range1Wraps && range2Wraps) {
+            // Range 2 wraps
+            return (start1 < end2) || (start1 >= start2);
+        } else {
+            // Both wrap: they definitely overlap
+            return true;
         }
-        return list;
-    }, [groups, conflictMatrix, cycleLength]);
+    };
 
     const updateGroupParams = (id, params) => {
         setGroups(prev => prev.map(g => {
@@ -345,7 +341,14 @@ export const useTrafficLight = () => {
                 }));
                 setConflictMatrix(cleanedMatrix);
             }
-            if (state.actionData) setActionData(state.actionData);
+            // Handle new pfTabs format or old actionData format
+            if (state.pfTabs) {
+                setPfTabs(state.pfTabs);
+                if (state.activePFId) setActivePFId(state.activePFId);
+            } else if (state.actionData) {
+                setPfTabs([{ id: 1, name: 'PF1', data: state.actionData }]);
+                setActivePFId(1);
+            }
             return true;
         } catch (e) {
             console.error("Load full state failed", e);
@@ -359,7 +362,8 @@ export const useTrafficLight = () => {
         groups,
         cycleLength,
         conflictMatrix,
-        actionData
+        pfTabs,
+        activePFId
     });
 
     const deleteSave = (name) => {
@@ -384,19 +388,201 @@ export const useTrafficLight = () => {
         actGf1Gf4: ''
     });
 
-    const [actionData, setActionData] = useState(() => {
+    const createEmptyActionData = () => Array.from({ length: 30 }, (_, i) => createEmptyActionRow(i + 1));
+
+    // Multiple PF (Plans de Feux) support
+    const [pfTabs, setPfTabs] = useState(() => {
         try {
-            const saved = localStorage.getItem('trafficActionData');
-            return saved ? JSON.parse(saved) : Array.from({ length: 30 }, (_, i) => createEmptyActionRow(i + 1));
+            const saved = localStorage.getItem('trafficPfTabs');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            // Migrate from old single actionData format
+            const oldData = localStorage.getItem('trafficActionData');
+            if (oldData) {
+                return [{ id: 1, name: 'PF1', data: JSON.parse(oldData) }];
+            }
+            return [{ id: 1, name: 'PF1', data: createEmptyActionData() }];
         } catch (e) {
-            return Array.from({ length: 30 }, (_, i) => createEmptyActionRow(i + 1));
+            return [{ id: 1, name: 'PF1', data: createEmptyActionData() }];
         }
     });
 
-    // Save actionData to localStorage
+    const [activePFId, setActivePFId] = useState(() => {
+        try {
+            const saved = localStorage.getItem('trafficActivePF');
+            return saved ? parseInt(saved) : 1;
+        } catch (e) {
+            return 1;
+        }
+    });
+
+    // Get current actionData based on active PF
+    const actionData = useMemo(() => {
+        const activePF = pfTabs.find(pf => pf.id === activePFId);
+        return activePF ? activePF.data : createEmptyActionData();
+    }, [pfTabs, activePFId]);
+
+    // Computed Conflicts
+    const conflicts = useMemo(() => {
+        const list = [];
+        const count = groups.length;
+
+        // Get seconde lucarne actions from current actionData
+        const secondeLucarnes = actionData.filter(action =>
+            action.action === 'Seconde lucarne' &&
+            action.gf !== '' &&
+            action.deb !== '' &&
+            action.fin !== ''
+        ).map(action => ({
+            gf: parseInt(action.gf),
+            deb: parseInt(action.deb),
+            fin: parseInt(action.fin),
+            abrv: action.abrv || 'SL'
+        }));
+
+        // Check intergreen time conflicts (existing logic)
+        for (let from = 0; from < count; from++) {
+            for (let to = 0; to < count; to++) {
+                const minGap = conflictMatrix[from][to];
+                // Skip empty values
+                if ((minGap === '' || minGap === undefined || minGap === null) || from === to) continue;
+
+                const gFrom = groups[from];
+                const gTo = groups[to];
+
+                const endGreenA_Absolute = (gFrom.offset + gFrom.durations.green) % cycleLength;
+                const startGreenB_Absolute = gTo.offset % cycleLength;
+
+                let distance = (startGreenB_Absolute - endGreenA_Absolute + cycleLength) % cycleLength;
+
+                if (distance < minGap) {
+                    list.push({
+                        from: gFrom.id,
+                        to: gTo.id,
+                        required: minGap,
+                        actual: distance,
+                        type: 'intergreen'
+                    });
+                }
+
+                // Check for actual overlap between antagonist groups
+                const startA = gFrom.offset;
+                const endA = gFrom.offset + gFrom.durations.green;
+                const startB = gTo.offset;
+                const endB = gTo.offset + gTo.durations.green;
+
+                if (rangesOverlap(startA, endA, startB, endB, cycleLength)) {
+                    // Only add if not already a more severe intergreen conflict
+                    const existingConflict = list.find(c =>
+                        c.from === gFrom.id && c.to === gTo.id && c.type === 'intergreen'
+                    );
+                    if (!existingConflict) {
+                        list.push({
+                            from: gFrom.id,
+                            to: gTo.id,
+                            type: 'overlap',
+                            message: 'Chevauchement des phases vertes'
+                        });
+                    }
+                }
+
+                // Check seconde lucarne overlaps with antagonist green phases
+                secondeLucarnes.forEach(sl => {
+                    if (sl.gf === gFrom.id) {
+                        // Check SL of gFrom against green of gTo
+                        if (rangesOverlap(sl.deb, sl.fin, startB, endB, cycleLength)) {
+                            list.push({
+                                from: gFrom.id,
+                                to: gTo.id,
+                                type: 'sl-overlap',
+                                message: `Seconde lucarne chevauche vert`
+                            });
+                        }
+                    }
+                    if (sl.gf === gTo.id) {
+                        // Check SL of gTo against green of gFrom
+                        if (rangesOverlap(sl.deb, sl.fin, startA, endA, cycleLength)) {
+                            list.push({
+                                from: gTo.id,
+                                to: gFrom.id,
+                                type: 'sl-overlap',
+                                message: `Seconde lucarne chevauche vert`
+                            });
+                        }
+                    }
+                });
+            }
+        }
+
+        // Check seconde lucarne overlaps between themselves for antagonist groups
+        for (let i = 0; i < secondeLucarnes.length; i++) {
+            for (let j = i + 1; j < secondeLucarnes.length; j++) {
+                const sl1 = secondeLucarnes[i];
+                const sl2 = secondeLucarnes[j];
+
+                // Check if these groups are antagonists
+                const idx1 = sl1.gf - 1;
+                const idx2 = sl2.gf - 1;
+                if (idx1 >= 0 && idx2 >= 0 && idx1 < count && idx2 < count) {
+                    const areAntagonists = conflictMatrix[idx1][idx2] !== '' || conflictMatrix[idx2][idx1] !== '';
+                    if (areAntagonists && rangesOverlap(sl1.deb, sl1.fin, sl2.deb, sl2.fin, cycleLength)) {
+                        list.push({
+                            from: sl1.gf,
+                            to: sl2.gf,
+                            type: 'sl-sl-overlap',
+                            message: `Chevauchement des secondes lucarnes`
+                        });
+                    }
+                }
+            }
+        }
+
+        return list;
+    }, [groups, conflictMatrix, cycleLength, actionData]);
+
+    // Update action data for active PF
+    const setActionData = useCallback((newData) => {
+        setPfTabs(prev => prev.map(pf =>
+            pf.id === activePFId
+                ? { ...pf, data: typeof newData === 'function' ? newData(pf.data) : newData }
+                : pf
+        ));
+    }, [activePFId]);
+
+    // Duplicate current PF
+    const duplicatePF = useCallback(() => {
+        const nextId = Math.max(...pfTabs.map(pf => pf.id)) + 1;
+        const newName = `PF${nextId}`;
+        const currentData = JSON.parse(JSON.stringify(actionData));
+        setPfTabs(prev => [...prev, { id: nextId, name: newName, data: currentData }]);
+        setActivePFId(nextId);
+        return nextId;
+    }, [pfTabs, actionData]);
+
+    // Delete a PF (cannot delete if only one remains)
+    const deletePF = useCallback((pfId) => {
+        if (pfTabs.length <= 1) return false;
+        setPfTabs(prev => prev.filter(pf => pf.id !== pfId));
+        if (activePFId === pfId) {
+            const remaining = pfTabs.filter(pf => pf.id !== pfId);
+            setActivePFId(remaining[0].id);
+        }
+        return true;
+    }, [pfTabs, activePFId]);
+
+    // Rename a PF
+    const renamePF = useCallback((pfId, newName) => {
+        setPfTabs(prev => prev.map(pf =>
+            pf.id === pfId ? { ...pf, name: newName } : pf
+        ));
+    }, []);
+
+    // Save pfTabs to localStorage
     useEffect(() => {
-        localStorage.setItem('trafficActionData', JSON.stringify(actionData));
-    }, [actionData]);
+        localStorage.setItem('trafficPfTabs', JSON.stringify(pfTabs));
+        localStorage.setItem('trafficActivePF', activePFId.toString());
+    }, [pfTabs, activePFId]);
 
     // Save current state to history (for undo)
     const saveToHistory = useCallback(() => {
@@ -405,7 +591,8 @@ export const useTrafficLight = () => {
         const currentState = {
             groups: JSON.parse(JSON.stringify(groups)),
             conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix)),
-            actionData: JSON.parse(JSON.stringify(actionData)),
+            pfTabs: JSON.parse(JSON.stringify(pfTabs)),
+            activePFId,
             cycleLength,
             intersectionName
         };
@@ -418,7 +605,7 @@ export const useTrafficLight = () => {
             }
             return newHistory;
         });
-    }, [groups, conflictMatrix, actionData, cycleLength, intersectionName]);
+    }, [groups, conflictMatrix, pfTabs, activePFId, cycleLength, intersectionName]);
 
     // Start drag - save history once at the beginning
     const startDrag = useCallback(() => {
@@ -444,7 +631,15 @@ export const useTrafficLight = () => {
         // Restore previous state
         setGroups(previousState.groups);
         setConflictMatrix(previousState.conflictMatrix);
-        setActionData(previousState.actionData);
+        if (previousState.pfTabs) {
+            setPfTabs(previousState.pfTabs);
+            setActivePFId(previousState.activePFId);
+        } else if (previousState.actionData) {
+            // Handle old history format
+            setPfTabs(prev => prev.map(pf =>
+                pf.id === activePFId ? { ...pf, data: previousState.actionData } : pf
+            ));
+        }
         setCycleLength(previousState.cycleLength);
         setIntersectionName(previousState.intersectionName);
 
@@ -614,6 +809,13 @@ export const useTrafficLight = () => {
         // Action Table
         actionData,
         updateActionRow: updateActionRowWithHistory,
+        // PF (Plans de Feux) management
+        pfTabs,
+        activePFId,
+        setActivePFId,
+        duplicatePF,
+        deletePF,
+        renamePF,
         // Undo
         undo,
         canUndo: history.length > 0,

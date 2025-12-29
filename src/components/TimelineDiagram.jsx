@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, hoveredActionId, setHoveredActionId }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -364,6 +364,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const greenWidth = duration * pixelsPerSecond;
                                         const orangeWidth = orangeDuration * pixelsPerSecond;
                                         const abrv = action.abrv || '';
+                                        const isHighlighted = hoveredActionId === action.id;
 
                                         return (
                                             <React.Fragment key={`action-${idx}`}>
@@ -390,8 +391,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             <React.Fragment>
                                                                 {/* First part: from deb to end of cycle */}
                                                                 <div
-                                                                    className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                                     style={{ left: `${leftPos}px` }}
+                                                                    onMouseEnter={() => setHoveredActionId(action.id)}
+                                                                    onMouseLeave={() => setHoveredActionId(null)}
                                                                 >
                                                                     <div
                                                                         className="drag-handle drag-handle-start"
@@ -402,8 +405,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                 </div>
                                                                 {/* Second part: from start of cycle to fin */}
                                                                 <div
-                                                                    className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                                     style={{ left: '0px' }}
+                                                                    onMouseEnter={() => setHoveredActionId(action.id)}
+                                                                    onMouseLeave={() => setHoveredActionId(null)}
                                                                 >
                                                                     <div className="phase-bar green-dark" style={{ width: `${secondPartWidth}px` }}></div>
                                                                     <div className="phase-bar orange" style={{ width: `${orangeWidth}px` }}></div>
@@ -419,8 +424,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     }
                                                     return (
                                                         <div
-                                                            className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                            className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                             style={{ left: `${leftPos}px` }}
+                                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                                            onMouseLeave={() => setHoveredActionId(null)}
                                                         >
                                                             <div
                                                                 className="drag-handle drag-handle-start"
@@ -448,8 +455,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         return (
                                                             <React.Fragment>
                                                                 <div
-                                                                    className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                                     style={{ left: `${leftPos}px`, width: `${firstPartWidth}px` }}
+                                                                    onMouseEnter={() => setHoveredActionId(action.id)}
+                                                                    onMouseLeave={() => setHoveredActionId(null)}
                                                                 >
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-start"
@@ -458,8 +467,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     />
                                                                 </div>
                                                                 <div
-                                                                    className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                                     style={{ left: '0px', width: `${secondPartWidth}px` }}
+                                                                    onMouseEnter={() => setHoveredActionId(action.id)}
+                                                                    onMouseLeave={() => setHoveredActionId(null)}
                                                                 >
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-end"
@@ -473,8 +484,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     }
                                                     return (
                                                         <div
-                                                            className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                            className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                             style={{ left: `${leftPos}px`, width: `${greenWidth}px` }}
+                                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                                            onMouseLeave={() => setHoveredActionId(null)}
                                                         >
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-start"
@@ -500,8 +513,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         return (
                                                             <React.Fragment>
                                                                 <div
-                                                                    className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                                     style={{ left: `${leftPos}px`, width: `${firstPartWidth}px` }}
+                                                                    onMouseEnter={() => setHoveredActionId(action.id)}
+                                                                    onMouseLeave={() => setHoveredActionId(null)}
                                                                 >
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-start"
@@ -510,8 +525,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     />
                                                                 </div>
                                                                 <div
-                                                                    className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                                    className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                                     style={{ left: '0px', width: `${secondPartWidth}px` }}
+                                                                    onMouseEnter={() => setHoveredActionId(action.id)}
+                                                                    onMouseLeave={() => setHoveredActionId(null)}
                                                                 >
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-end"
@@ -524,8 +541,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     }
                                                     return (
                                                         <div
-                                                            className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                                            className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                             style={{ left: `${leftPos}px`, width: `${greenWidth}px` }}
+                                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                                            onMouseLeave={() => setHoveredActionId(null)}
                                                         >
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-start"
@@ -553,6 +572,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const fin = parseInt(action.fin) || 0;
                             const leftPos = deb * pixelsPerSecond;
                             const abrv = action.abrv || '';
+                            const isHighlighted = hoveredActionId === action.id;
 
                             // Calculate vertical position based on Plage1/Plage2
                             const plage1 = parseInt(action.plage1) || 0;
@@ -581,13 +601,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     <React.Fragment key={`adaptatif-${idx}`}>
                                         {/* First part: from deb to end of cycle */}
                                         <div
-                                            className={`adaptatif-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                            className={`adaptatif-overlay ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                             style={{
                                                 left: `${leftPos}px`,
                                                 width: `${firstPartWidth}px`,
                                                 top: `${topPos}px`,
                                                 height: `${height}px`
                                             }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
                                         >
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
@@ -597,13 +619,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         </div>
                                         {/* Second part: from start of cycle to fin */}
                                         <div
-                                            className={`adaptatif-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                            className={`adaptatif-overlay ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                             style={{
                                                 left: '0px',
                                                 width: `${secondPartWidth}px`,
                                                 top: `${topPos}px`,
                                                 height: `${height}px`
                                             }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
                                         >
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
@@ -624,13 +648,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             return (
                                 <div
                                     key={`adaptatif-${idx}`}
-                                    className={`adaptatif-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                    className={`adaptatif-overlay ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                     style={{
                                         left: `${leftPos}px`,
                                         width: `${width}px`,
                                         top: `${topPos}px`,
                                         height: `${height}px`
                                     }}
+                                    onMouseEnter={() => setHoveredActionId(action.id)}
+                                    onMouseLeave={() => setHoveredActionId(null)}
                                 >
                                     {/* Drag handle for start (left edge) */}
                                     <div
@@ -781,6 +807,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const fin = parseInt(action.fin) || 0;
                             const leftPos = deb * pixelsPerSecond;
                             const abrv = action.abrv || '';
+                            const isHighlighted = hoveredActionId === action.id;
 
                             // Cover all rows, starting just below ruler (8px above rows) and 30px below
                             const topPos = RULER_HEIGHT - 8;
@@ -796,13 +823,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     <React.Fragment key={`escamotage-${idx}`}>
                                         {/* First part: from deb to end of cycle */}
                                         <div
-                                            className={`escamotage-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                            className={`escamotage-overlay ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                             style={{
                                                 left: `${leftPos}px`,
                                                 width: `${firstPartWidth}px`,
                                                 top: `${topPos}px`,
                                                 height: `${height}px`
                                             }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
                                         >
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
@@ -812,13 +841,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         </div>
                                         {/* Second part: from start of cycle to fin */}
                                         <div
-                                            className={`escamotage-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                            className={`escamotage-overlay ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                             style={{
                                                 left: '0px',
                                                 width: `${secondPartWidth}px`,
                                                 top: `${topPos}px`,
                                                 height: `${height}px`
                                             }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
                                         >
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
@@ -839,13 +870,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             return (
                                 <div
                                     key={`escamotage-${idx}`}
-                                    className={`escamotage-overlay ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                    className={`escamotage-overlay ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                     style={{
                                         left: `${leftPos}px`,
                                         width: `${width}px`,
                                         top: `${topPos}px`,
                                         height: `${height}px`
                                     }}
+                                    onMouseEnter={() => setHoveredActionId(action.id)}
+                                    onMouseLeave={() => setHoveredActionId(null)}
                                 >
                                     {/* Drag handle for start (left edge) */}
                                     <div
@@ -870,6 +903,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {escamotageGroupActions.map((action, idx) => {
                             const sourceGfId = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
                             const targetGfId = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                            const isHighlighted = hoveredActionId === action.id;
 
                             if (sourceGfId === 0 || targetGfId === 0) return null;
                             if (sourceGfId > groups.length || targetGfId > groups.length) return null;
@@ -909,19 +943,34 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const rectY = barBottomY - rectHeight; // Rectangle bottom aligned to bar bottom
 
                             return (
-                                <svg
-                                    key={`escamotage-group-${idx}`}
-                                    className="escamotage-arrows"
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100%',
-                                        height: '100%',
-                                        pointerEvents: 'none',
-                                        zIndex: 20
-                                    }}
-                                >
+                                <React.Fragment key={`escamotage-group-${idx}`}>
+                                    {/* Hover zone for highlighting */}
+                                    <div
+                                        className={`escamotage-group-hover ${isHighlighted ? 'highlighted' : ''}`}
+                                        style={{
+                                            position: 'absolute',
+                                            left: `${rectX}px`,
+                                            top: `${rectY - 5}px`,
+                                            width: `${rectWidth}px`,
+                                            height: `${rectHeight + 10}px`,
+                                            zIndex: 21,
+                                            cursor: 'pointer'
+                                        }}
+                                        onMouseEnter={() => setHoveredActionId(action.id)}
+                                        onMouseLeave={() => setHoveredActionId(null)}
+                                    />
+                                    <svg
+                                        className={`escamotage-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            pointerEvents: 'none',
+                                            zIndex: 20
+                                        }}
+                                    >
                                     <defs>
                                         <marker
                                             id={`escam-arrowhead-${idx}`}
@@ -976,7 +1025,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         strokeDasharray="4,2"
                                         markerEnd={`url(#escam-arrowhead-${idx})`}
                                     />
-                                </svg>
+                                    </svg>
+                                </React.Fragment>
                             );
                         })}
 
@@ -987,6 +1037,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const fin = parseInt(action.fin) || 0;
                             const blueStart = fin - 5;
                             const abrv = action.abrv || '';
+                            const isHighlighted = hoveredActionId === action.id;
 
                             // Calculate positions
                             const orangeLeftPos = deb * pixelsPerSecond;
@@ -1007,15 +1058,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 <React.Fragment key={`signa-${idx}`}>
                                     {/* Wrapper for drag handles */}
                                     <div
-                                        className={`signa-wrapper ${dragState?.actionId === action.id ? 'dragging' : ''}`}
+                                        className={`signa-wrapper ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                         style={{
                                             position: 'absolute',
                                             left: `${orangeLeftPos}px`,
                                             width: `${totalWidth}px`,
                                             top: `${topPos}px`,
                                             height: `${height}px`,
-                                            pointerEvents: 'none'
+                                            pointerEvents: 'auto'
                                         }}
+                                        onMouseEnter={() => setHoveredActionId(action.id)}
+                                        onMouseLeave={() => setHoveredActionId(null)}
                                     >
                                         {/* Drag handle for start (left edge) */}
                                         <div
@@ -1034,7 +1087,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     </div>
                                     {/* Orange intermittent bar at start */}
                                     <div
-                                        className="signa-orange-bar"
+                                        className={`signa-orange-bar ${isHighlighted ? 'highlighted' : ''}`}
                                         style={{
                                             left: `${orangeLeftPos}px`,
                                             width: `${orangeWidth}px`,
@@ -1045,7 +1098,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     />
                                     {/* Blue bar at end (last 5s) */}
                                     <div
-                                        className="signa-blue-bar"
+                                        className={`signa-blue-bar ${isHighlighted ? 'highlighted' : ''}`}
                                         style={{
                                             left: `${blueLeftPos}px`,
                                             width: `${blueWidth}px`,

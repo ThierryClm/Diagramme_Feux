@@ -30,11 +30,7 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag, endDrag, maxGroup = 16 }) => {
-    // Drag state for Déb/Fin fields
-    const [dragState, setDragState] = useState(null);
-    // dragState = { rowId, field: 'deb' | 'fin', initialMouseX, initialValue }
-
+const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId }) => {
     // Sorting state: null = no sort, 'gf' | 'action' | 'deb'
     const [sortField, setSortField] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc'); // 'asc' | 'desc'
@@ -56,53 +52,6 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
         }
         // Reject invalid values silently
     }, [updateActionRow, maxGroup]);
-
-    // Drag handlers
-    const handleDragStart = useCallback((e, rowId, field, currentValue) => {
-        e.preventDefault();
-        if (startDrag) startDrag(); // Save history once at drag start
-        setDragState({
-            rowId,
-            field,
-            initialMouseX: e.clientX,
-            initialValue: parseInt(currentValue) || 0
-        });
-    }, [startDrag]);
-
-    const handleDragMove = useCallback((e) => {
-        if (!dragState) return;
-
-        const deltaX = e.clientX - dragState.initialMouseX;
-        // 3 pixels = 1 second for finer control
-        const deltaSeconds = Math.round(deltaX / 3);
-        let newValue = dragState.initialValue + deltaSeconds;
-
-        // Wrap around cycle length
-        newValue = ((newValue % cycleLength) + cycleLength) % cycleLength;
-
-        updateActionRow(dragState.rowId, dragState.field, newValue.toString());
-    }, [dragState, cycleLength, updateActionRow]);
-
-    const handleDragEnd = useCallback(() => {
-        if (endDrag) endDrag(); // End drag mode
-        setDragState(null);
-    }, [endDrag]);
-
-    // Global mouse event listeners for drag
-    useEffect(() => {
-        if (dragState) {
-            const handleMouseMove = (e) => handleDragMove(e);
-            const handleMouseUp = () => handleDragEnd();
-
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-
-            return () => {
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-            };
-        }
-    }, [dragState, handleDragMove, handleDragEnd]);
 
     // Handle sort toggle
     const handleSort = useCallback((field) => {
@@ -174,7 +123,7 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
     }, [actionData]);
 
     return (
-        <div className={`action-table-container ${dragState ? 'dragging' : ''}`}>
+        <div className="action-table-container">
             <h3>Tableau des Actions</h3>
             <div className="action-table-scroll">
                 <table className="action-table">
@@ -222,7 +171,12 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
                     </thead>
                     <tbody>
                         {visibleRows.map((row) => (
-                            <tr key={row.id}>
+                            <tr
+                                key={row.id}
+                                className={hoveredActionId === row.id ? 'row-highlighted' : ''}
+                                onMouseEnter={() => isRowFilled(row) && setHoveredActionId(row.id)}
+                                onMouseLeave={() => setHoveredActionId(null)}
+                            >
                                 <td>
                                     <input
                                         type="number"
@@ -253,12 +207,7 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
                                         onChange={(e) => updateActionRow(row.id, 'description', e.target.value)}
                                     />
                                 </td>
-                                <td className="draggable-cell">
-                                    <div
-                                        className="drag-handle-time"
-                                        onMouseDown={(e) => handleDragStart(e, row.id, 'deb', row.deb)}
-                                        title="Glisser pour modifier"
-                                    />
+                                <td>
                                     <input
                                         type="number"
                                         className="input-time-xs"
@@ -266,12 +215,7 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
                                         onChange={(e) => updateActionRow(row.id, 'deb', e.target.value)}
                                     />
                                 </td>
-                                <td className="draggable-cell">
-                                    <div
-                                        className="drag-handle-time"
-                                        onMouseDown={(e) => handleDragStart(e, row.id, 'fin', row.fin)}
-                                        title="Glisser pour modifier"
-                                    />
+                                <td>
                                     <input
                                         type="number"
                                         className="input-time-xs"

@@ -543,3 +543,51 @@
     z-index: 50;
     pointer-events: none;
 }
+
+/* Highlighted state for action overlays */
+.cycle-block.highlighted,
+.brace-marker.highlighted,
+.ouverture-anticipee.highlighted,
+.adaptatif-overlay.highlighted,
+.escamotage-overlay.highlighted,
+.signa-wrapper.highlighted {
+    outline: 2px solid #ffcc00;
+    outline-offset: 1px;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+    z-index: 100;
+}
+
+.cycle-block.lucarne.highlighted .phase-bar.green-dark {
+    background: linear-gradient(to bottom, #2a8a2a, #1a6a1a);
+    box-shadow: inset 0 0 10px rgba(255, 204, 0, 0.3);
+}
+
+.brace-marker.highlighted {
+    border-color: #ffcc00;
+}
+
+.ouverture-anticipee.highlighted {
+    border-color: rgba(255, 204, 0, 0.8);
+}
+
+.escamotage-group-hover.highlighted {
+    background: rgba(255, 204, 0, 0.2);
+    border-radius: 3px;
+}
+
+.escamotage-arrows.highlighted line {
+    stroke: #ffcc00;
+    stroke-width: 2;
+}
+
+.escamotage-arrows.highlighted rect {
+    stroke: #ffcc00;
+    stroke-width: 2;
+}
+
+.signa-orange-bar.highlighted,
+.signa-blue-bar.highlighted {
+    outline: 2px solid #ffcc00;
+    outline-offset: 1px;
+    box-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
+}

@@ -36,6 +36,12 @@ function App() {
         loadFullState,
         actionData,
         updateActionRow,
+        pfTabs,
+        activePFId,
+        setActivePFId,
+        duplicatePF,
+        deletePF,
+        renamePF,
         undo,
         canUndo,
         startDrag,
@@ -48,6 +54,7 @@ function App() {
     const [pixelsPerSecond, setPixelsPerSecond] = useState(10);
     const [activeTab, setActiveTab] = useState('config'); // 'config', 'traffic', 'projects'
     const [showDependencies, setShowDependencies] = useState(false);
+    const [hoveredActionId, setHoveredActionId] = useState(null);
 
     // Modal states
     const [openModal, setOpenModal] = useState(false);
@@ -104,15 +111,7 @@ function App() {
                 window.close();
                 break;
             case 'duplicate':
-                {
-                    // Get current state and save to sessionStorage
-                    const currentState = getFullState();
-                    const duplicateId = Date.now().toString();
-                    sessionStorage.setItem(`duplicate_${duplicateId}`, JSON.stringify(currentState));
-                    // Open new tab with duplicate parameter
-                    const newUrl = `${window.location.pathname}?duplicate=${duplicateId}`;
-                    window.open(newUrl, '_blank');
-                }
+                duplicatePF();
                 break;
             case 'slide':
                 setSlideValue(0);
@@ -312,7 +311,13 @@ function App() {
                             <h4>Conflits:</h4>
                             <ul>
                                 {conflicts.map((c, i) => (
-                                    <li key={i}>G{c.from} &#8594; G{c.to}: Req {c.required}s, Act {c.actual.toFixed(1)}s</li>
+                                    <li key={i}>
+                                        {c.type === 'intergreen' ? (
+                                            <>G{c.from} → G{c.to} : Dégagement insuffisant ({c.actual.toFixed(1)}s / {c.required}s requis)</>
+                                        ) : (
+                                            <>G{c.from} ↔ G{c.to} : {c.message}</>
+                                        )}
+                                    </li>
                                 ))}
                             </ul>
                         </div>
@@ -320,6 +325,40 @@ function App() {
                 </aside>
 
                 <section className="diagram-area" style={{ display: 'flex', flexDirection: 'column' }}>
+                    {/* PF Tabs */}
+                    <div className="pf-tabs-bar">
+                        {pfTabs.map((pf) => (
+                            <div
+                                key={pf.id}
+                                className={`pf-tab ${activePFId === pf.id ? 'active' : ''}`}
+                                onClick={() => setActivePFId(pf.id)}
+                            >
+                                <span className="pf-tab-name">{pf.name}</span>
+                                {pfTabs.length > 1 && (
+                                    <button
+                                        className="pf-tab-close"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm(`Supprimer ${pf.name} ?`)) {
+                                                deletePF(pf.id);
+                                            }
+                                        }}
+                                        title="Fermer cet onglet"
+                                    >
+                                        ×
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                        <button
+                            className="pf-tab-add"
+                            onClick={() => duplicatePF()}
+                            title="Dupliquer le diagramme"
+                        >
+                            +
+                        </button>
+                    </div>
+
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <TimelineDiagram
                             groups={groups}
@@ -336,6 +375,8 @@ function App() {
                             startDrag={startDrag}
                             endDrag={endDrag}
                             showDependencies={showDependencies}
+                            hoveredActionId={hoveredActionId}
+                            setHoveredActionId={setHoveredActionId}
                         />
                     </div>
 
@@ -344,9 +385,9 @@ function App() {
                             actionData={actionData}
                             updateActionRow={updateActionRow}
                             cycleLength={cycleLength}
-                            startDrag={startDrag}
-                            endDrag={endDrag}
                             maxGroup={groups.length}
+                            hoveredActionId={hoveredActionId}
+                            setHoveredActionId={setHoveredActionId}
                         />
                     </div>
                 </section>
