@@ -1,7 +1,154 @@
 import React from 'react';
 import './IntergreenMatrix.css';
 
-const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength }) => {
+const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData }) => {
+
+    // Get all "Seconde lucarne" actions
+    const getSecondesLucarnes = () => {
+        if (!actionData) return [];
+        return actionData
+            .filter(row => row.action === 'Seconde lucarne' && row.gf && row.deb !== '' && row.fin !== '')
+            .map(row => ({
+                gf: parseInt(row.gf),
+                deb: parseInt(row.deb),
+                fin: parseInt(row.fin),
+                id: row.id
+            }));
+    };
+
+    const secondesLucarnes = getSecondesLucarnes();
+
+    // Check if a seconde lucarne conflicts with a group's green time
+    const checkSecondeLucarneConflicts = () => {
+        const conflicts = [];
+        const cycle = cycleLength || 100;
+
+        secondesLucarnes.forEach(sl => {
+            const slStart = sl.deb;
+            const slEnd = sl.fin;
+            const slDuration = slEnd >= slStart ? slEnd - slStart : cycle - slStart + slEnd;
+
+            // Check against all other groups
+            for (let otherIdx = 0; otherIdx < groups.length; otherIdx++) {
+                const otherGf = otherIdx + 1;
+                if (otherGf === sl.gf) continue; // Skip same group
+
+                // Check if there's an intergreen constraint
+                const slIdx = sl.gf - 1;
+                const intergreen1 = conflictMatrix[slIdx]?.[otherIdx]; // SL -> Other
+                const intergreen2 = conflictMatrix[otherIdx]?.[slIdx]; // Other -> SL
+
+                if (!intergreen1 && !intergreen2) continue; // No constraint
+
+                const otherGroup = groups[otherIdx];
+                if (!otherGroup) continue;
+
+                const otherStart = otherGroup.offset % cycle;
+                const otherEnd = (otherGroup.offset + otherGroup.durations.green) % cycle;
+
+                // Check delay from seconde lucarne end to other group start
+                if (intergreen1 && intergreen1 !== '') {
+                    let delay = otherStart - slEnd;
+                    if (delay < 0) delay += cycle;
+                    if (delay < intergreen1) {
+                        conflicts.push({
+                            type: 'sl_to_group',
+                            slGf: sl.gf,
+                            otherGf: otherGf,
+                            required: intergreen1,
+                            actual: delay
+                        });
+                    }
+                }
+
+                // Check delay from other group end to seconde lucarne start
+                if (intergreen2 && intergreen2 !== '') {
+                    let delay = slStart - otherEnd;
+                    if (delay < 0) delay += cycle;
+                    if (delay < intergreen2) {
+                        conflicts.push({
+                            type: 'group_to_sl',
+                            slGf: sl.gf,
+                            otherGf: otherGf,
+                            required: intergreen2,
+                            actual: delay
+                        });
+                    }
+                }
+            }
+
+            // Check against other secondes lucarnes
+            secondesLucarnes.forEach(otherSl => {
+                if (otherSl.id === sl.id) return; // Skip self
+                if (otherSl.gf === sl.gf) return; // Skip same group
+
+                const slIdx = sl.gf - 1;
+                const otherIdx = otherSl.gf - 1;
+                const intergreen1 = conflictMatrix[slIdx]?.[otherIdx];
+                const intergreen2 = conflictMatrix[otherIdx]?.[slIdx];
+
+                if (!intergreen1 && !intergreen2) return;
+
+                // Check delay from SL1 end to SL2 start
+                if (intergreen1 && intergreen1 !== '') {
+                    let delay = otherSl.deb - slEnd;
+                    if (delay < 0) delay += cycle;
+                    if (delay < intergreen1) {
+                        conflicts.push({
+                            type: 'sl_to_sl',
+                            slGf: sl.gf,
+                            otherGf: otherSl.gf,
+                            required: intergreen1,
+                            actual: delay
+                        });
+                    }
+                }
+            });
+
+            // Check if seconde lucarne overlaps with its own group's main green
+            const ownGroup = groups[sl.gf - 1];
+            if (ownGroup) {
+                const mainStart = ownGroup.offset % cycle;
+                const mainEnd = (ownGroup.offset + ownGroup.durations.green) % cycle;
+
+                // Check for overlap
+                const slWraps = slEnd < slStart;
+                const mainWraps = mainEnd < mainStart;
+
+                let overlaps = false;
+                if (!slWraps && !mainWraps) {
+                    overlaps = slStart < mainEnd && mainStart < slEnd;
+                } else if (slWraps && !mainWraps) {
+                    overlaps = mainStart < slEnd || mainEnd > slStart;
+                } else if (!slWraps && mainWraps) {
+                    overlaps = slStart < mainEnd || slEnd > mainStart;
+                } else {
+                    overlaps = true;
+                }
+
+                if (overlaps) {
+                    conflicts.push({
+                        type: 'sl_overlap_main',
+                        slGf: sl.gf,
+                        otherGf: sl.gf,
+                        required: 0,
+                        actual: 0
+                    });
+                }
+            }
+        });
+
+        // Remove duplicates
+        const seen = new Set();
+        return conflicts.filter(c => {
+            const key = `${c.type}-${c.slGf}-${c.otherGf}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    };
+
+    const slConflicts = secondesLucarnes.length > 0 ? checkSecondeLucarneConflicts() : [];
 
     // Check if cell is 'asymmetric' (missing value where mirror has one)
     const isAsymmetric = (row, col) => {
@@ -165,6 +312,27 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength 
                             </span>
                         ))}
                     </small>
+                </div>
+            )}
+
+            {slConflicts.length > 0 && (
+                <div className="matrix-error">
+                    Conflits Secondes Lucarnes : {slConflicts.length} problème(s)
+                    <ul className="conflict-details">
+                        {slConflicts.map((c, i) => (
+                            <li key={i}>
+                                {c.type === 'sl_overlap_main' ? (
+                                    <>SL G{c.slGf} chevauche le vert principal</>
+                                ) : c.type === 'sl_to_sl' ? (
+                                    <>SL G{c.slGf} → SL G{c.otherGf} : {c.actual}s &lt; {c.required}s requis</>
+                                ) : c.type === 'sl_to_group' ? (
+                                    <>SL G{c.slGf} → G{c.otherGf} : {c.actual}s &lt; {c.required}s requis</>
+                                ) : (
+                                    <>G{c.otherGf} → SL G{c.slGf} : {c.actual}s &lt; {c.required}s requis</>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             )}
         </div>

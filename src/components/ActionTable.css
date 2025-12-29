@@ -62,6 +62,23 @@
     font-size: 0.9em;
 }
 
+/* Sortable headers */
+.action-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.action-table th.sortable:hover {
+    background: #333;
+    color: #fff;
+}
+
+.action-table th.sortable.sorted {
+    background: #2a3a4a;
+    color: #6af;
+}
+
 .action-table td {
     border: 1px solid #555;
     padding: 1px;

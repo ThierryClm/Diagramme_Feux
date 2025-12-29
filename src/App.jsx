@@ -54,6 +54,7 @@ function App() {
     const [slideModal, setSlideModal] = useState(false);
     const [insertModal, setInsertModal] = useState(false);
     const [optionsModal, setOptionsModal] = useState(false);
+    const [helpModal, setHelpModal] = useState(false);
     const [slideValue, setSlideValue] = useState(0);
     const [insertStart, setInsertStart] = useState(0);
     const [insertDuration, setInsertDuration] = useState(5);
@@ -126,7 +127,7 @@ function App() {
                 setOptionsModal(true);
                 break;
             case 'help':
-                alert('Aide - Diagramme de Feux\n\nApplication de conception de diagrammes de feux de signalisation.');
+                setHelpModal(true);
                 break;
             case 'credit':
                 alert('Diagramme de Feux\n\nDéveloppé avec React + Vite\n2024');
@@ -282,6 +283,7 @@ function App() {
                                     setMatrixValue={setMatrixValue}
                                     groups={groups}
                                     cycleLength={cycleLength}
+                                    actionData={actionData}
                                 />
                             </div>
                         </>
@@ -467,6 +469,96 @@ function App() {
                 </div>
                 <div className="modal-actions" style={{ marginTop: '20px' }}>
                     <button className="modal-btn modal-btn-primary" onClick={() => setOptionsModal(false)}>
+                        Fermer
+                    </button>
+                </div>
+            </Modal>
+
+            {/* Modal Aide en ligne */}
+            <Modal isOpen={helpModal} onClose={() => setHelpModal(false)} title="Aide - Diagramme de Feux">
+                <div className="help-content">
+                    <section className="help-section">
+                        <h4>Présentation</h4>
+                        <p>Application de conception de diagrammes de feux de signalisation pour carrefours à feux.</p>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Interface principale</h4>
+                        <ul>
+                            <li><strong>En-tête :</strong> Nom du carrefour, nombre de groupes, durée du cycle, zoom</li>
+                            <li><strong>Panneau gauche :</strong> Onglets Projets, Configuration et Trafic</li>
+                            <li><strong>Zone centrale :</strong> Diagramme temporel et tableau des actions</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Configuration des groupes</h4>
+                        <ul>
+                            <li><strong>Type :</strong> VL (véhicules), TC (transports en commun), Cycliste, Piéton</li>
+                            <li><strong>Déc (Décalage) :</strong> Position de départ du vert dans le cycle</li>
+                            <li><strong>V (Vert) :</strong> Durée du feu vert</li>
+                            <li><strong>J (Jaune) :</strong> Durée du feu jaune/orange</li>
+                            <li><strong>Vm (Vert minimum) :</strong> Durée minimale du vert</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Matrice de dégagement</h4>
+                        <p>Définit les temps de dégagement (intervert) entre groupes conflictuels.
+                        Valeurs acceptées : 3 à 20 secondes.</p>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Tableau des actions</h4>
+                        <p>Permet de définir des actions spéciales sur le diagramme :</p>
+                        <ul>
+                            <li><strong>Adaptatif vertical :</strong> Zone d'adaptation du temps de vert</li>
+                            <li><strong>Escamotage de phase :</strong> Phase pouvant être supprimée</li>
+                            <li><strong>Ouverture anticipée :</strong> Anticipation du passage au vert</li>
+                            <li><strong>Fermeture anticipée :</strong> Anticipation du passage au rouge</li>
+                            <li><strong>Signa d'aide à la conduite :</strong> Signal d'information conducteur</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Manipulation du diagramme</h4>
+                        <ul>
+                            <li><strong>Glisser-déposer :</strong> Déplacez les barres du diagramme avec la souris</li>
+                            <li><strong>Zoom :</strong> Utilisez le curseur dans l'en-tête</li>
+                            <li><strong>Dépendances :</strong> Affichez les flèches de dégagement avec le bouton "Dépendance"</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Menu Diagramme</h4>
+                        <ul>
+                            <li><strong>Dupliquer :</strong> Ouvre une copie dans un nouvel onglet</li>
+                            <li><strong>Glisser :</strong> Décale tous les groupes</li>
+                            <li><strong>Insérer :</strong> Insère du temps dans le cycle</li>
+                            <li><strong>Options :</strong> Légende des actions</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Raccourcis clavier</h4>
+                        <ul>
+                            <li><strong>Ctrl+Z :</strong> Annuler la dernière action</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Données Trafic</h4>
+                        <p>L'onglet Trafic permet de saisir les données de trafic par groupe :</p>
+                        <ul>
+                            <li><strong>Courant :</strong> Nom du courant de circulation</li>
+                            <li><strong>Coef :</strong> Coefficient de voie</li>
+                            <li><strong>Trafic :</strong> Volume de trafic (véh/h)</li>
+                            <li><strong>V.Utile :</strong> Calculé automatiquement = Trafic / (1800 × Coef / Cycle)</li>
+                        </ul>
+                    </section>
+                </div>
+                <div className="modal-actions" style={{ marginTop: '20px' }}>
+                    <button className="modal-btn modal-btn-primary" onClick={() => setHelpModal(false)}>
                         Fermer
                     </button>
                 </div>

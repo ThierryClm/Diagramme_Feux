@@ -12,14 +12,15 @@ const autoResizeTextarea = (textarea) => {
 const ACTION_OPTIONS = [
     '',
     'Adaptatif vertical',
+    'Début de bande passante',
     'Escamotage',
     'Escamotage de phase',
-    'Ouverture anticipée',
     'Fermeture anticipée',
-    'Signa d\'aide à la conduite',
+    'Fin de bande passante',
+    'Ouverture anticipée',
+    'Priorité piétons',
     'Seconde lucarne',
-    'Début de bande passante',
-    'Fin de bande passante'
+    'Signa d\'aide à la conduite'
 ];
 
 // Check if a row has any data
@@ -33,6 +34,10 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
     // Drag state for Déb/Fin fields
     const [dragState, setDragState] = useState(null);
     // dragState = { rowId, field: 'deb' | 'fin', initialMouseX, initialValue }
+
+    // Sorting state: null = no sort, 'gf' | 'action' | 'deb'
+    const [sortField, setSortField] = useState(null);
+    const [sortDirection, setSortDirection] = useState('asc'); // 'asc' | 'desc'
 
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
@@ -99,7 +104,23 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
         }
     }, [dragState, handleDragMove, handleDragEnd]);
 
-    // Calculate visible rows: all filled + 1 empty
+    // Handle sort toggle
+    const handleSort = useCallback((field) => {
+        if (sortField === field) {
+            // Toggle direction or reset
+            if (sortDirection === 'asc') {
+                setSortDirection('desc');
+            } else {
+                setSortField(null);
+                setSortDirection('asc');
+            }
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    }, [sortField, sortDirection]);
+
+    // Calculate visible rows: all filled + 1 empty, then apply sorting
     const visibleRows = useMemo(() => {
         let lastFilledIndex = -1;
         for (let i = actionData.length - 1; i >= 0; i--) {
@@ -110,8 +131,42 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
         }
         // Show all filled rows + 1 empty (up to max 30)
         const endIndex = Math.min(lastFilledIndex + 2, actionData.length);
-        return actionData.slice(0, Math.max(endIndex, 1));
-    }, [actionData]);
+        let rows = actionData.slice(0, Math.max(endIndex, 1));
+
+        // Apply sorting if a sort field is selected
+        if (sortField) {
+            const filledRows = rows.filter(isRowFilled);
+            const emptyRows = rows.filter(row => !isRowFilled(row));
+
+            filledRows.sort((a, b) => {
+                let valA, valB;
+
+                if (sortField === 'gf') {
+                    valA = parseInt(a.gf) || 999;
+                    valB = parseInt(b.gf) || 999;
+                } else if (sortField === 'action') {
+                    valA = a.action || '';
+                    valB = b.action || '';
+                } else if (sortField === 'deb') {
+                    valA = a.deb !== '' ? parseInt(a.deb) : 999;
+                    valB = b.deb !== '' ? parseInt(b.deb) : 999;
+                }
+
+                if (sortField === 'action') {
+                    // String comparison
+                    const cmp = valA.localeCompare(valB, 'fr');
+                    return sortDirection === 'asc' ? cmp : -cmp;
+                } else {
+                    // Numeric comparison
+                    return sortDirection === 'asc' ? valA - valB : valB - valA;
+                }
+            });
+
+            rows = [...filledRows, ...emptyRows];
+        }
+
+        return rows;
+    }, [actionData, sortField, sortDirection]);
 
     // Auto-resize all textareas when data changes
     useEffect(() => {
@@ -125,10 +180,31 @@ const ActionTable = ({ actionData, updateActionRow, cycleLength = 100, startDrag
                 <table className="action-table">
                     <thead>
                         <tr className="header-group">
-                            <th rowSpan="2" title="Groupe Fonctionnel">GF</th>
-                            <th rowSpan="2" title="Action (20 car.)">Action</th>
+                            <th
+                                rowSpan="2"
+                                title="Groupe Fonctionnel - Cliquer pour trier"
+                                className={`sortable ${sortField === 'gf' ? 'sorted' : ''}`}
+                                onClick={() => handleSort('gf')}
+                            >
+                                GF {sortField === 'gf' && (sortDirection === 'asc' ? '▲' : '▼')}
+                            </th>
+                            <th
+                                rowSpan="2"
+                                title="Action - Cliquer pour trier"
+                                className={`sortable ${sortField === 'action' ? 'sorted' : ''}`}
+                                onClick={() => handleSort('action')}
+                            >
+                                Action {sortField === 'action' && (sortDirection === 'asc' ? '▲' : '▼')}
+                            </th>
                             <th rowSpan="2" title="Description (30 car.)">Description</th>
-                            <th rowSpan="2">Déb</th>
+                            <th
+                                rowSpan="2"
+                                title="Début - Cliquer pour trier"
+                                className={`sortable ${sortField === 'deb' ? 'sorted' : ''}`}
+                                onClick={() => handleSort('deb')}
+                            >
+                                Déb {sortField === 'deb' && (sortDirection === 'asc' ? '▲' : '▼')}
+                            </th>
                             <th rowSpan="2">Fin</th>
                             <th rowSpan="2">Abrv</th>
                             <th rowSpan="2" title="Action Micro (40 car.)">Action_Micro</th>

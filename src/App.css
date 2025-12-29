@@ -307,3 +307,50 @@
     border-left: 3px solid #ff0000;
     width: 20px;
 }
+
+/* Help modal styles */
+.help-content {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.help-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #444;
+}
+
+.help-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.help-section h4 {
+    color: #3498db;
+    margin: 0 0 10px 0;
+    font-size: 1.1em;
+}
+
+.help-section p {
+    color: #ccc;
+    margin: 0 0 10px 0;
+    line-height: 1.5;
+    font-size: 0.9em;
+}
+
+.help-section ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #bbb;
+    font-size: 0.9em;
+}
+
+.help-section li {
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+.help-section li strong {
+    color: #fff;
+}
