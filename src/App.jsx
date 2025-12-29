@@ -529,6 +529,7 @@ function App() {
                             <li><strong>En-tête :</strong> Nom du carrefour, nombre de groupes, durée du cycle, zoom</li>
                             <li><strong>Panneau gauche :</strong> Onglets Projets, Configuration et Trafic</li>
                             <li><strong>Zone centrale :</strong> Diagramme temporel et tableau des actions</li>
+                            <li><strong>Onglets PF :</strong> Gérez plusieurs plans de feux (PF1, PF2...) avec le bouton "+"</li>
                         </ul>
                     </section>
 
@@ -551,32 +552,66 @@ function App() {
 
                     <section className="help-section">
                         <h4>Tableau des actions</h4>
-                        <p>Permet de définir des actions spéciales sur le diagramme :</p>
+                        <p>Permet de définir des actions spéciales sur le diagramme. Survolez une ligne pour mettre en surbrillance l'action correspondante dans le diagramme (et inversement).</p>
                         <ul>
-                            <li><strong>Adaptatif vertical :</strong> Zone d'adaptation du temps de vert</li>
-                            <li><strong>Escamotage de phase :</strong> Phase pouvant être supprimée</li>
-                            <li><strong>Ouverture anticipée :</strong> Anticipation du passage au vert</li>
-                            <li><strong>Fermeture anticipée :</strong> Anticipation du passage au rouge</li>
-                            <li><strong>Signa d'aide à la conduite :</strong> Signal d'information conducteur</li>
+                            <li><strong>Adaptatif vertical :</strong> Zone d'adaptation du temps de vert (rectangle bleu). Utilisez Plage1/Plage2 pour définir les groupes concernés.</li>
+                            <li><strong>Seconde lucarne :</strong> Deuxième phase de vert (vert foncé + orange). Crée une barre supplémentaire sur la ligne du groupe.</li>
+                            <li><strong>Escamotage de phase :</strong> Phase pouvant être supprimée (rectangle gris transparent sur toute la hauteur).</li>
+                            <li><strong>Escamotage :</strong> Escamotage lié à un groupe spécifique. Définissez GF (source) et Action GF 1 (cible) pour afficher les flèches de dépendance.</li>
+                            <li><strong>Ouverture anticipée :</strong> Anticipation du passage au vert (barre hachurée verte).</li>
+                            <li><strong>Fermeture anticipée :</strong> Anticipation du passage au rouge (accolade orange sous la barre).</li>
+                            <li><strong>Signa d'aide à la conduite :</strong> Signal d'information conducteur (orange clignotant + bleu fixe).</li>
+                            <li><strong>Début/Fin de bande passante :</strong> Lignes verticales verte/rouge marquant la coordination.</li>
+                            <li><strong>Priorité piétons :</strong> Action pour la priorité aux piétons.</li>
+                            <li><strong>Instant de coordination :</strong> Point de synchronisation dans le cycle.</li>
+                            <li><strong>Synchro BTS :</strong> Synchronisation avec le système BTS.</li>
                         </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Colonnes du tableau des actions</h4>
+                        <ul>
+                            <li><strong>GF :</strong> Groupe fonctionnel concerné par l'action</li>
+                            <li><strong>Action :</strong> Type d'action (liste déroulante)</li>
+                            <li><strong>Description :</strong> Description libre (30 caractères max)</li>
+                            <li><strong>Déb/Fin :</strong> Temps de début et fin de l'action dans le cycle</li>
+                            <li><strong>Abrv :</strong> Abréviation affichée sur le diagramme</li>
+                            <li><strong>Action_Micro :</strong> Commande micro-contrôleur (40 caractères)</li>
+                            <li><strong>Plage 1/2 :</strong> Groupes délimitant la zone verticale (Adaptatif)</li>
+                            <li><strong>Action GF 1-4 :</strong> Groupes liés à l'action (Escamotage)</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Détection des conflits</h4>
+                        <p>L'application détecte automatiquement les conflits entre groupes antagonistes :</p>
+                        <ul>
+                            <li><strong>Dégagement insuffisant :</strong> Le temps entre la fin du vert d'un groupe et le début du vert d'un autre est inférieur au temps requis dans la matrice.</li>
+                            <li><strong>Chevauchement des phases vertes :</strong> Deux groupes antagonistes ont leurs phases vertes qui se chevauchent.</li>
+                            <li><strong>Seconde lucarne chevauche vert :</strong> Une seconde lucarne chevauche la phase verte d'un groupe antagoniste.</li>
+                            <li><strong>Chevauchement des secondes lucarnes :</strong> Deux secondes lucarnes de groupes antagonistes se chevauchent.</li>
+                        </ul>
+                        <p><em>Note : Les conflits de chevauchement sont automatiquement ignorés lorsqu'un Escamotage ou Escamotage de phase est défini entre les deux groupes concernés.</em></p>
                     </section>
 
                     <section className="help-section">
                         <h4>Manipulation du diagramme</h4>
                         <ul>
-                            <li><strong>Glisser-déposer :</strong> Déplacez les barres du diagramme avec la souris</li>
+                            <li><strong>Glisser-déposer :</strong> Déplacez les barres du diagramme avec la souris (bords gauche/droit pour redimensionner)</li>
+                            <li><strong>Actions glissables :</strong> Les overlays d'actions peuvent aussi être redimensionnés par glisser-déposer</li>
                             <li><strong>Zoom :</strong> Utilisez le curseur dans l'en-tête</li>
                             <li><strong>Dépendances :</strong> Affichez les flèches de dégagement avec le bouton "Dépendance"</li>
+                            <li><strong>Surbrillance :</strong> Survolez une action dans le tableau ou le diagramme pour la mettre en évidence</li>
                         </ul>
                     </section>
 
                     <section className="help-section">
                         <h4>Menu Diagramme</h4>
                         <ul>
-                            <li><strong>Dupliquer :</strong> Ouvre une copie dans un nouvel onglet</li>
-                            <li><strong>Glisser :</strong> Décale tous les groupes</li>
-                            <li><strong>Insérer :</strong> Insère du temps dans le cycle</li>
-                            <li><strong>Options :</strong> Légende des actions</li>
+                            <li><strong>Dupliquer :</strong> Crée un nouvel onglet PF avec une copie du diagramme actuel</li>
+                            <li><strong>Glisser :</strong> Décale tous les groupes d'un nombre de secondes donné</li>
+                            <li><strong>Insérer :</strong> Insère du temps dans le cycle à une position donnée</li>
+                            <li><strong>Options :</strong> Affiche la légende visuelle des actions</li>
                         </ul>
                     </section>
 
@@ -595,6 +630,16 @@ function App() {
                             <li><strong>Coef :</strong> Coefficient de voie</li>
                             <li><strong>Trafic :</strong> Volume de trafic (véh/h)</li>
                             <li><strong>V.Utile :</strong> Calculé automatiquement = Trafic / (1800 × Coef / Cycle)</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Sauvegarde et projets</h4>
+                        <ul>
+                            <li><strong>Sauvegarde automatique :</strong> Les données sont sauvegardées automatiquement dans le navigateur</li>
+                            <li><strong>Projets nommés :</strong> Utilisez l'onglet Projets pour sauvegarder et charger des configurations</li>
+                            <li><strong>Export :</strong> Menu Fichier → Exporter pour télécharger un fichier JSON</li>
+                            <li><strong>Import :</strong> Menu Fichier → Importer pour charger un fichier JSON</li>
                         </ul>
                     </section>
                 </div>

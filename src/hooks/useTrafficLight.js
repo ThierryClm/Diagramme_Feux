@@ -441,6 +441,24 @@ export const useTrafficLight = () => {
             abrv: action.abrv || 'SL'
         }));
 
+        // Get escamotage actions (both types) to check for managed overlaps
+        const escamotages = actionData.filter(action =>
+            (action.action === 'Escamotage' || action.action === 'Escamotage de phase') &&
+            action.gf !== '' &&
+            action.actGf1 !== ''
+        ).map(action => ({
+            sourceGf: parseInt(action.gf),
+            targetGf: parseInt(action.actGf1)
+        }));
+
+        // Helper to check if an escamotage exists between two groups
+        const hasEscamotage = (gfA, gfB) => {
+            return escamotages.some(e =>
+                (e.sourceGf === gfA && e.targetGf === gfB) ||
+                (e.sourceGf === gfB && e.targetGf === gfA)
+            );
+        };
+
         // Check intergreen time conflicts (existing logic)
         for (let from = 0; from < count; from++) {
             for (let to = 0; to < count; to++) {
@@ -473,6 +491,10 @@ export const useTrafficLight = () => {
                 const endB = gTo.offset + gTo.durations.green;
 
                 if (rangesOverlap(startA, endA, startB, endB, cycleLength)) {
+                    // Skip if there's an escamotage between these groups (overlap is managed)
+                    if (hasEscamotage(gFrom.id, gTo.id)) {
+                        continue;
+                    }
                     // Only add if not already a more severe intergreen conflict
                     const existingConflict = list.find(c =>
                         c.from === gFrom.id && c.to === gTo.id && c.type === 'intergreen'
