@@ -21,10 +21,9 @@
 }
 
 .action-table {
-    width: 100%;
+    width: auto;
     border-collapse: collapse;
-    font-size: 0.75em;
-    min-width: 750px;
+    font-size: 0.7em;
     border: 2px solid #666;
 }
 
@@ -114,11 +113,11 @@
 .idx-col {
     color: #666;
     text-align: center;
-    width: 30px;
+    width: 22px;
 }
 
 .input-gf {
-    width: 20px !important;
+    width: 18px !important;
 }
 
 .input-action {
@@ -126,32 +125,35 @@
     max-width: 220px !important;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 1.5em;
 }
 
 .input-desc {
-    width: 140px !important;
+    width: 160px !important;
+    font-size: 1.5em;
 }
 
 .input-time-xs {
-    width: 28px !important;
+    width: 24px !important;
     text-align: right;
 }
 
 .input-abrv {
-    width: 30px !important;
+    width: 24px !important;
 }
 
 .input-micro {
-    width: 250px !important;
-    min-height: 18px;
+    width: 300px !important;
+    min-height: 16px;
     resize: none;
     overflow: hidden;
     line-height: 1.2;
     vertical-align: top;
+    font-size: 1.5em;
 }
 
 .input-small {
-    width: 16px !important;
+    width: 14px !important;
 }
 
 /* Dragging state */
