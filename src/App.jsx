@@ -41,6 +41,7 @@ function App() {
     const [selectedGroupId, setSelectedGroupId] = useState(null);
     const [pixelsPerSecond, setPixelsPerSecond] = useState(10);
     const [activeTab, setActiveTab] = useState('config'); // 'config', 'traffic', 'projects'
+    const [showDependencies, setShowDependencies] = useState(false);
 
     // Keyboard shortcut for undo (Ctrl+Z)
     useEffect(() => {
@@ -107,6 +108,13 @@ function App() {
                         title="Annuler (Ctrl+Z)"
                     >
                         ↶ Annuler
+                    </button>
+                    <button
+                        className={`toggle-btn ${showDependencies ? 'active' : ''}`}
+                        onClick={() => setShowDependencies(!showDependencies)}
+                        title="Afficher/masquer les temps de dégagement"
+                    >
+                        ⟷ Dépendance
                     </button>
                 </div>
 
@@ -209,6 +217,7 @@ function App() {
                             updateActionRow={updateActionRow}
                             startDrag={startDrag}
                             endDrag={endDrag}
+                            showDependencies={showDependencies}
                         />
                     </div>
 

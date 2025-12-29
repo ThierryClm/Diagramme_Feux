@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -291,6 +291,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const orangeWidth = group.durations.orange * pixelsPerSecond;
                                         const leftPos = cycleStart * pixelsPerSecond;
                                         const isPedestrian = group.type === 'Piéton';
+                                        const isCyclist = group.type === 'Cycliste';
+                                        const orangeClass = isPedestrian ? 'pedestrian-orange' : isCyclist ? 'cyclist-orange' : 'orange';
 
                                         return (
                                             <div
@@ -305,7 +307,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     title="Glisser pour modifier le début"
                                                 />
                                                 <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
-                                                <div className={`phase-bar ${isPedestrian ? 'pedestrian-orange' : 'orange'}`} style={{ width: `${orangeWidth}px` }}></div>
+                                                <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
                                                 {/* Drag handle for end (right edge of green) */}
                                                 <div
                                                     className="drag-handle drag-handle-end"
@@ -514,7 +516,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             width: '100%',
                                             height: '100%',
                                             pointerEvents: 'none',
-                                            zIndex: 15
+                                            zIndex: 20
                                         }}
                                     >
                                         <defs>
@@ -642,7 +644,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         width: '100%',
                                         height: '100%',
                                         pointerEvents: 'none',
-                                        zIndex: 16
+                                        zIndex: 20
                                     }}
                                 >
                                     <defs>
@@ -783,6 +785,186 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 </React.Fragment>
                             );
                         })}
+
+                        {/* Dependency arrows - intergreen times between groups */}
+                        {showDependencies && (
+                            <svg
+                                className="dependency-arrows"
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    pointerEvents: 'none',
+                                    zIndex: 5
+                                }}
+                            >
+                                <defs>
+                                    <marker
+                                        id="dep-arrowhead"
+                                        markerWidth="6"
+                                        markerHeight="4"
+                                        refX="6"
+                                        refY="2"
+                                        orient="auto"
+                                    >
+                                        <polygon points="0 0, 6 2, 0 4" fill="#999" />
+                                    </marker>
+                                </defs>
+                                {/* Arrows from main green phases */}
+                                {groups.map((fromGroup) => {
+                                    const fromId = fromGroup.id;
+                                    const fromOffset = fromGroup.offset % cycleLength;
+                                    const fromGreenEnd = (fromOffset + fromGroup.durations.green) % cycleLength;
+                                    const fromRowY = RULER_HEIGHT + ((fromId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                                    const fromX = fromGreenEnd * pixelsPerSecond;
+
+                                    return groups.map((toGroup) => {
+                                        const toId = toGroup.id;
+                                        if (fromId === toId) return null;
+
+                                        const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
+                                        if (intergreenTime <= 0) return null;
+
+                                        const toOffset = toGroup.offset % cycleLength;
+
+                                        // Calculate gap between end of fromGroup green and start of toGroup green
+                                        let gap = (toOffset - fromGreenEnd + cycleLength) % cycleLength;
+                                        // If gap is 0, it means they're at the same time, consider it as full cycle
+                                        if (gap === 0) gap = cycleLength;
+
+                                        // Don't show arrow if gap > 20 seconds
+                                        if (gap > 20) return null;
+
+                                        // Arrow ends at: end of green + intergreen time
+                                        const arrowEndTime = (fromGreenEnd + intergreenTime) % cycleLength;
+                                        const toX = arrowEndTime * pixelsPerSecond;
+                                        const toRowY = RULER_HEIGHT + ((toId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                                        const cycleEndX = cycleLength * pixelsPerSecond;
+
+                                        // If arrow would go backwards, split into two segments
+                                        if (fromX > toX) {
+                                            return (
+                                                <g key={`dep-${fromId}-${toId}`}>
+                                                    {/* First segment: from start to end of cycle */}
+                                                    <line
+                                                        x1={fromX}
+                                                        y1={fromRowY}
+                                                        x2={cycleEndX}
+                                                        y2={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
+                                                        stroke="#999"
+                                                        strokeWidth="1"
+                                                        opacity="0.6"
+                                                    />
+                                                    {/* Second segment: from start of cycle to end point */}
+                                                    <line
+                                                        x1={0}
+                                                        y1={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
+                                                        x2={toX}
+                                                        y2={toRowY}
+                                                        stroke="#999"
+                                                        strokeWidth="1"
+                                                        markerEnd="url(#dep-arrowhead)"
+                                                        opacity="0.6"
+                                                    />
+                                                </g>
+                                            );
+                                        }
+
+                                        return (
+                                            <line
+                                                key={`dep-${fromId}-${toId}`}
+                                                x1={fromX}
+                                                y1={fromRowY}
+                                                x2={toX}
+                                                y2={toRowY}
+                                                stroke="#999"
+                                                strokeWidth="1"
+                                                markerEnd="url(#dep-arrowhead)"
+                                                opacity="0.6"
+                                            />
+                                        );
+                                    });
+                                })}
+
+                                {/* Arrows from Seconde lucarne phases */}
+                                {actionData.filter(a => a.action === 'Seconde lucarne' && a.gf && a.fin !== '').map((lucarne, lIdx) => {
+                                    const fromId = parseInt(lucarne.gf);
+                                    if (isNaN(fromId) || fromId < 1 || fromId > groups.length) return null;
+
+                                    const lucarneEnd = parseInt(lucarne.fin) || 0;
+                                    const fromRowY = RULER_HEIGHT + ((fromId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                                    const fromX = lucarneEnd * pixelsPerSecond;
+
+                                    return groups.map((toGroup) => {
+                                        const toId = toGroup.id;
+                                        if (fromId === toId) return null;
+
+                                        const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
+                                        if (intergreenTime <= 0) return null;
+
+                                        const toOffset = toGroup.offset % cycleLength;
+
+                                        // Calculate gap between end of lucarne and start of toGroup green
+                                        let gap = (toOffset - lucarneEnd + cycleLength) % cycleLength;
+                                        if (gap === 0) gap = cycleLength;
+
+                                        // Don't show arrow if gap > 20 seconds
+                                        if (gap > 20) return null;
+
+                                        // Arrow ends at: end of lucarne + intergreen time
+                                        const arrowEndTime = (lucarneEnd + intergreenTime) % cycleLength;
+                                        const toX = arrowEndTime * pixelsPerSecond;
+                                        const toRowY = RULER_HEIGHT + ((toId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                                        const cycleEndX = cycleLength * pixelsPerSecond;
+
+                                        // If arrow would go backwards, split into two segments
+                                        if (fromX > toX) {
+                                            return (
+                                                <g key={`dep-luc-${lIdx}-${toId}`}>
+                                                    {/* First segment: from start to end of cycle */}
+                                                    <line
+                                                        x1={fromX}
+                                                        y1={fromRowY}
+                                                        x2={cycleEndX}
+                                                        y2={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
+                                                        stroke="#999"
+                                                        strokeWidth="1"
+                                                        opacity="0.6"
+                                                    />
+                                                    {/* Second segment: from start of cycle to end point */}
+                                                    <line
+                                                        x1={0}
+                                                        y1={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
+                                                        x2={toX}
+                                                        y2={toRowY}
+                                                        stroke="#999"
+                                                        strokeWidth="1"
+                                                        markerEnd="url(#dep-arrowhead)"
+                                                        opacity="0.6"
+                                                    />
+                                                </g>
+                                            );
+                                        }
+
+                                        return (
+                                            <line
+                                                key={`dep-luc-${lIdx}-${toId}`}
+                                                x1={fromX}
+                                                y1={fromRowY}
+                                                x2={toX}
+                                                y2={toRowY}
+                                                stroke="#999"
+                                                strokeWidth="1"
+                                                markerEnd="url(#dep-arrowhead)"
+                                                opacity="0.6"
+                                            />
+                                        );
+                                    });
+                                })}
+                            </svg>
+                        )}
                     </div>
                 </div>
             </div>

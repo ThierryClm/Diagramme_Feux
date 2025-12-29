@@ -136,6 +136,7 @@
     top: 7px;
     bottom: 7px;
     display: flex;
+    z-index: 10;
 }
 
 .cycle-block.dragging {
@@ -149,7 +150,7 @@
     bottom: 0;
     width: 8px;
     cursor: ew-resize;
-    z-index: 10;
+    z-index: 25;
     background: transparent;
     transition: background-color 0.15s ease;
 }
@@ -267,6 +268,28 @@
     box-shadow: 0 0 3px rgba(255, 0, 0, 0.8);
 }
 
+.phase-bar.cyclist-orange {
+    background: transparent;
+    position: relative;
+}
+
+.phase-bar.cyclist-orange::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: repeating-linear-gradient(
+        to right,
+        rgb(255, 0, 0) 0px,
+        rgb(255, 0, 0) 4px,
+        transparent 4px,
+        transparent 8px
+    );
+    box-shadow: 0 0 3px rgba(255, 0, 0, 0.5);
+}
+
 .ruler-tick {
     position: absolute;
     top: 0;
@@ -327,7 +350,8 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    z-index: 5;
+    z-index: 20;
+    pointer-events: none;
 }
 
 .brace-marker::before {
@@ -364,21 +388,22 @@
     opacity: 0.8;
 }
 
-/* Adaptatif vertical overlay */
-.adaptatif-overlay {
-    position: absolute;
-    background: rgba(100, 180, 255, 0.2);
-    border: 2px solid rgba(100, 180, 255, 0.7);
-    border-radius: 4px;
-    z-index: 30;
-}
-
 /* Escamotage de phase overlay */
 .escamotage-overlay {
     position: absolute;
     background: rgba(128, 128, 128, 0.2);
     border: 1px solid rgba(128, 128, 128, 0.4);
-    z-index: 30;
+    z-index: 15;
+    pointer-events: none;
+}
+
+/* Adaptatif vertical overlay - above escamotage for dragging */
+.adaptatif-overlay {
+    position: absolute;
+    background: rgba(100, 180, 255, 0.2);
+    border: 2px solid rgba(100, 180, 255, 0.7);
+    border-radius: 4px;
+    z-index: 18;
 }
 
 .escamotage-label {
@@ -419,7 +444,8 @@
     );
     border: 2px dashed #888;
     border-radius: 3px;
-    z-index: 15;
+    z-index: 20;
+    pointer-events: none;
 }
 
 .escamotage-group-overlay.dragging {
@@ -459,7 +485,8 @@
         transparent 1px,
         transparent 3px
     );
-    z-index: 7;
+    z-index: 20;
+    pointer-events: none;
 }
 
 /* Bar label (Abrv) */
@@ -483,7 +510,7 @@
     position: absolute;
     border-radius: 2px;
     pointer-events: none;
-    z-index: 8;
+    z-index: 10;
     background: repeating-linear-gradient(
         90deg,
         #FF8C00,
@@ -498,7 +525,7 @@
     position: absolute;
     border-radius: 2px;
     pointer-events: none;
-    z-index: 8;
+    z-index: 10;
     background: linear-gradient(to bottom, #4169E1, #2849C1);
     box-shadow: 0 0 5px rgba(65, 105, 225, 0.5);
 }

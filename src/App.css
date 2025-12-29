@@ -76,6 +76,32 @@
     cursor: not-allowed;
 }
 
+.toggle-btn {
+    background: #333;
+    border: 1px solid #555;
+    color: #ddd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.toggle-btn:hover {
+    background: #444;
+    border-color: #666;
+    color: #fff;
+}
+
+.toggle-btn.active {
+    background: #2a5a2a;
+    border-color: #4a8a4a;
+    color: #8f8;
+}
+
 .status-bar {
     font-weight: bold;
     font-size: 0.9rem;
