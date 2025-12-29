@@ -17,10 +17,12 @@ const ACTION_OPTIONS = [
     'Escamotage de phase',
     'Fermeture anticipée',
     'Fin de bande passante',
+    'Instant de coordination',
     'Ouverture anticipée',
     'Priorité piétons',
     'Seconde lucarne',
-    'Signa d\'aide à la conduite'
+    'Signa d\'aide à la conduite',
+    'Synchro BTS'
 ];
 
 // Check if a row has any data
