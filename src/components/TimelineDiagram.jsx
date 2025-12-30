@@ -972,7 +972,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             // Y positions (center of each row)
                             const sourceY = RULER_HEIGHT + ((sourceGfId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
-                            const targetY = RULER_HEIGHT + ((targetGfId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
 
                             // Arrow 1: From start of source GF to (source start - intergreen target→source)
                             const arrow1SourceX = sourceStart * pixelsPerSecond;
@@ -990,7 +989,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             // Calculate exact bar bottom position and align rectangle there
                             const rowTopY = RULER_HEIGHT + ((targetGfId - 1) * ROW_HEIGHT);
                             const barBottomY = rowTopY + ROW_HEIGHT - 7; // Exact bottom of bar
-                            const rectY = barBottomY - rectHeight; // Rectangle bottom aligned to bar bottom
+                            const rectY = barBottomY - rectHeight + 5; // Rectangle bottom aligned to bar bottom +5px offset
+
+                            // Arrow target Y points to bottom of rectangle
+                            const targetY = rectY + rectHeight;
 
                             return (
                                 <React.Fragment key={`escamotage-group-${idx}`}>
