@@ -110,6 +110,36 @@
     width: 100px;
 }
 
+.green-wave-sync-btn {
+    padding: 6px 16px;
+    background: #2196F3;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.9em;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.green-wave-sync-btn:hover {
+    background: #1976D2;
+}
+
+.green-wave-save-btn {
+    padding: 6px 16px;
+    background: #4CAF50;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.9em;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.green-wave-save-btn:hover {
+    background: #45a049;
+}
+
 .green-wave-close {
     background: none;
     border: none;
@@ -164,4 +194,94 @@
     width: 30px;
     height: 0;
     border-top: 2px dashed #4CAF50;
+}
+
+.legend-bandwidth {
+    width: 20px;
+    height: 12px;
+    background: rgba(76, 175, 80, 0.3);
+    border: 1px solid #4CAF50;
+    border-radius: 2px;
+}
+
+/* Parameters panel */
+.green-wave-params-panel {
+    padding: 15px 20px;
+    background: #2a2a2a;
+    border-top: 1px solid #444;
+}
+
+.green-wave-params-panel h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.9em;
+    color: #aaa;
+    font-weight: normal;
+}
+
+.params-table {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 600px;
+}
+
+.params-header {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #444;
+    font-size: 0.8em;
+    color: #888;
+}
+
+.params-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 2px 0;
+}
+
+.params-row-g2 {
+    margin-top: -2px;
+}
+
+.param-col-name {
+    width: 120px;
+    font-size: 0.85em;
+    color: #ccc;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.param-col-dist {
+    width: 60px;
+    text-align: center;
+}
+
+.param-col-group {
+    width: 40px;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.param-col-offset,
+.param-col-green {
+    width: 50px;
+    text-align: center;
+}
+
+.params-row input {
+    background: #333;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 3px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+}
+
+.params-row input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background: #3a3a3a;
 }

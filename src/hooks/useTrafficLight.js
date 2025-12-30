@@ -321,10 +321,28 @@ export const useTrafficLight = () => {
                 setActivePFId(1);
             }
 
+            // Move project to top of the order list
+            updateProjectOrder(name);
+
             return true;
         } catch (e) {
             console.error("Load failed", e);
             return false;
+        }
+    };
+
+    // Update project order - move project to top
+    const updateProjectOrder = (name) => {
+        try {
+            const orderRaw = localStorage.getItem('traffic_project_order');
+            let order = orderRaw ? JSON.parse(orderRaw) : [];
+            // Remove if already exists
+            order = order.filter(n => n !== name);
+            // Add to top
+            order.unshift(name);
+            localStorage.setItem('traffic_project_order', JSON.stringify(order));
+        } catch (e) {
+            console.error("Update order failed", e);
         }
     };
 
@@ -336,6 +354,26 @@ export const useTrafficLight = () => {
                 saves.push(key.replace('traffic_project_', ''));
             }
         }
+
+        // Sort by order (most recently loaded first)
+        try {
+            const orderRaw = localStorage.getItem('traffic_project_order');
+            if (orderRaw) {
+                const order = JSON.parse(orderRaw);
+                saves.sort((a, b) => {
+                    const indexA = order.indexOf(a);
+                    const indexB = order.indexOf(b);
+                    // Projects not in order list go to the end
+                    if (indexA === -1 && indexB === -1) return 0;
+                    if (indexA === -1) return 1;
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
+                });
+            }
+        } catch (e) {
+            console.error("Sort order failed", e);
+        }
+
         return saves;
     };
 

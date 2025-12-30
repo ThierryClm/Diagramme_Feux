@@ -6,6 +6,69 @@ const GreenWavePage = () => {
     const [pixelsPerSecond, setPixelsPerSecond] = useState(8);
     const [pixelsPerMeter, setPixelsPerMeter] = useState(1);
     const [speed, setSpeed] = useState(50); // km/h
+    const [greenWaveName, setGreenWaveName] = useState('');
+
+    // Save green wave data to localStorage
+    const handleSaveGreenWave = () => {
+        if (!intersections) return;
+
+        const name = prompt('Nom de l\'onde verte:', greenWaveName || 'Onde verte');
+        if (!name) return;
+
+        const greenWaveData = {
+            name,
+            intersections,
+            speed,
+            pixelsPerSecond,
+            pixelsPerMeter,
+            savedAt: new Date().toISOString()
+        };
+
+        // Get existing saved green waves
+        const savedGreenWaves = JSON.parse(localStorage.getItem('savedGreenWaves') || '{}');
+        savedGreenWaves[name] = greenWaveData;
+        localStorage.setItem('savedGreenWaves', JSON.stringify(savedGreenWaves));
+
+        setGreenWaveName(name);
+        alert(`Onde verte "${name}" enregistrée avec succès.`);
+    };
+
+    // Synchronize green wave data from saved projects
+    const handleSyncGreenWave = () => {
+        if (!intersections) return;
+
+        let updatedCount = 0;
+        const updatedIntersections = intersections.map(intersection => {
+            // Try to load project data from localStorage
+            const projectKey = `traffic_project_${intersection.projectName}`;
+            const projectRaw = localStorage.getItem(projectKey);
+
+            if (projectRaw) {
+                try {
+                    const projectData = JSON.parse(projectRaw);
+                    if (projectData.groups) {
+                        updatedCount++;
+                        return {
+                            ...intersection,
+                            groups: projectData.groups,
+                            cycleLength: projectData.cycleLength || intersection.cycleLength
+                        };
+                    }
+                } catch (e) {
+                    console.error(`Failed to sync project ${intersection.projectName}`, e);
+                }
+            }
+            return intersection;
+        });
+
+        setIntersections(updatedIntersections);
+
+        if (updatedCount > 0) {
+            alert(`${updatedCount} carrefour(s) synchronisé(s) avec succès.`);
+        } else {
+            alert('Aucun carrefour mis à jour. Vérifiez que les projets existent.');
+        }
+    };
 
     // Load data from sessionStorage on mount
     useEffect(() => {
@@ -42,10 +105,39 @@ const GreenWavePage = () => {
         };
     }, [intersections]);
 
+    // Update group parameter in intersection
+    const updateGroupParam = (intersectionIdx, groupId, field, value) => {
+        setIntersections(prev => {
+            const updated = [...prev];
+            const intersection = { ...updated[intersectionIdx] };
+            intersection.groups = intersection.groups.map(g => {
+                if (g.id === groupId) {
+                    if (field === 'offset') {
+                        return { ...g, offset: parseInt(value) || 0 };
+                    } else if (field === 'green') {
+                        return { ...g, durations: { ...g.durations, green: parseInt(value) || 0 } };
+                    }
+                }
+                return g;
+            });
+            updated[intersectionIdx] = intersection;
+            return updated;
+        });
+    };
+
+    // Update intersection distance
+    const updateDistance = (intersectionIdx, value) => {
+        setIntersections(prev => {
+            const updated = [...prev];
+            updated[intersectionIdx] = { ...updated[intersectionIdx], distance: parseInt(value) || 0 };
+            return updated;
+        });
+    };
+
     // Calculate speed line slope (meters per second)
     const speedMps = (speed * 1000) / 3600; // Convert km/h to m/s
 
-    const PADDING_LEFT = 80;
+    const PADDING_LEFT = 150;
     const PADDING_BOTTOM = 50;
     const PADDING_TOP = 20;
     const PADDING_RIGHT = 20;
@@ -69,6 +161,94 @@ const GreenWavePage = () => {
     for (let d = 0; d <= maxDistance; d += distanceStep) {
         distanceTicks.push(d);
     }
+
+    // Calculate bandwidth corridors (ascending and descending)
+    const bandwidthData = useMemo(() => {
+        if (!intersections || intersections.length === 0) return null;
+
+        // Sort intersections by distance
+        const sortedIntersections = [...intersections].sort((a, b) => a.distance - b.distance);
+        if (sortedIntersections.length === 0) return null;
+
+        // Reference = bottom intersection (min distance)
+        const bottomIntersection = sortedIntersections[0];
+        const topIntersection = sortedIntersections[sortedIntersections.length - 1];
+
+        // ASCENDING bandwidth (bottom to top, positive slope)
+        // At reference (bottom), find the time window that passes through all greens going up
+        const bottomGroup = bottomIntersection.groups.find(g => g.id === bottomIntersection.selectedGroup1);
+        if (!bottomGroup) return null;
+
+        let ascStart = bottomGroup.offset;
+        let ascEnd = bottomGroup.offset + (bottomGroup.durations?.green || 0);
+
+        sortedIntersections.forEach((intersection) => {
+            const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
+            if (!group) return;
+
+            // Time to travel from bottom to this intersection
+            const travelTime = (intersection.distance - bottomIntersection.distance) / speedMps;
+
+            // Green window at this intersection
+            const greenStart = group.offset;
+            const greenEnd = greenStart + (group.durations?.green || 0);
+
+            // Shift back to bottom reference time
+            const greenStartAtBottom = greenStart - travelTime;
+            const greenEndAtBottom = greenEnd - travelTime;
+
+            // Intersect windows
+            ascStart = Math.max(ascStart, greenStartAtBottom);
+            ascEnd = Math.min(ascEnd, greenEndAtBottom);
+        });
+
+        const ascWidth = ascEnd - ascStart;
+
+        // DESCENDING bandwidth (top to bottom, negative slope)
+        const topGroup = topIntersection.groups.find(g => g.id === topIntersection.selectedGroup1);
+
+        let descStart = 0;
+        let descEnd = cycleLength;
+
+        if (topGroup) {
+            descStart = topGroup.offset;
+            descEnd = topGroup.offset + (topGroup.durations?.green || 0);
+
+            sortedIntersections.forEach((intersection) => {
+                const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
+                if (!group) return;
+
+                // Time to travel from top to this intersection (going down)
+                const travelTime = (topIntersection.distance - intersection.distance) / speedMps;
+
+                // Green window at this intersection
+                const greenStart = group.offset;
+                const greenEnd = greenStart + (group.durations?.green || 0);
+
+                // Shift back to top reference time
+                const greenStartAtTop = greenStart - travelTime;
+                const greenEndAtTop = greenEnd - travelTime;
+
+                descStart = Math.max(descStart, greenStartAtTop);
+                descEnd = Math.min(descEnd, greenEndAtTop);
+            });
+        }
+
+        const descWidth = descEnd - descStart;
+
+        return {
+            ascending: ascWidth > 0 ? {
+                start: ascStart,
+                width: ascWidth,
+                refDistance: bottomIntersection.distance
+            } : null,
+            descending: descWidth > 0 ? {
+                start: descStart,
+                width: descWidth,
+                refDistance: topIntersection.distance
+            } : null
+        };
+    }, [intersections, speedMps, cycleLength]);
 
     // Generate speed lines (green wave corridors)
     const speedLines = [];
@@ -131,6 +311,12 @@ const GreenWavePage = () => {
                         />
                         {pixelsPerMeter.toFixed(1)}px/m
                     </label>
+                    <button className="green-wave-sync-btn" onClick={handleSyncGreenWave}>
+                        Synchroniser
+                    </button>
+                    <button className="green-wave-save-btn" onClick={handleSaveGreenWave}>
+                        Enregistrer
+                    </button>
                 </div>
             </div>
 
@@ -174,6 +360,80 @@ const GreenWavePage = () => {
                             strokeWidth={0.5}
                         />
                     ))}
+
+                    {/* Ascending bandwidth corridor (bottom to top) */}
+                    {bandwidthData?.ascending && intersections && (() => {
+                        const sortedIntersections = [...intersections].sort((a, b) => a.distance - b.distance);
+                        const bottomDist = sortedIntersections[0].distance;
+                        const topDist = sortedIntersections[sortedIntersections.length - 1].distance;
+                        const { start, width } = bandwidthData.ascending;
+
+                        // Draw parallelogram for each cycle
+                        const polygons = [];
+                        for (let cycle = 0; cycle < 2; cycle++) {
+                            const cycleOffset = cycle * cycleLength;
+                            const startTime = start + cycleOffset;
+                            const endTime = startTime + width;
+
+                            // Bottom left, bottom right, top right, top left
+                            const travelTimeToTop = (topDist - bottomDist) / speedMps;
+                            const points = [
+                                `${timeToX(startTime)},${distanceToY(bottomDist)}`,
+                                `${timeToX(endTime)},${distanceToY(bottomDist)}`,
+                                `${timeToX(endTime + travelTimeToTop)},${distanceToY(topDist)}`,
+                                `${timeToX(startTime + travelTimeToTop)},${distanceToY(topDist)}`
+                            ].join(' ');
+
+                            polygons.push(
+                                <polygon
+                                    key={`asc-${cycle}`}
+                                    points={points}
+                                    fill="#4CAF50"
+                                    opacity={0.25}
+                                    stroke="#4CAF50"
+                                    strokeWidth={2}
+                                />
+                            );
+                        }
+                        return polygons;
+                    })()}
+
+                    {/* Descending bandwidth corridor (top to bottom) */}
+                    {bandwidthData?.descending && intersections && (() => {
+                        const sortedIntersections = [...intersections].sort((a, b) => a.distance - b.distance);
+                        const bottomDist = sortedIntersections[0].distance;
+                        const topDist = sortedIntersections[sortedIntersections.length - 1].distance;
+                        const { start, width } = bandwidthData.descending;
+
+                        // Draw parallelogram for each cycle
+                        const polygons = [];
+                        for (let cycle = 0; cycle < 2; cycle++) {
+                            const cycleOffset = cycle * cycleLength;
+                            const startTime = start + cycleOffset;
+                            const endTime = startTime + width;
+
+                            // Top left, top right, bottom right, bottom left (going down = time increases)
+                            const travelTimeToBottom = (topDist - bottomDist) / speedMps;
+                            const points = [
+                                `${timeToX(startTime)},${distanceToY(topDist)}`,
+                                `${timeToX(endTime)},${distanceToY(topDist)}`,
+                                `${timeToX(endTime + travelTimeToBottom)},${distanceToY(bottomDist)}`,
+                                `${timeToX(startTime + travelTimeToBottom)},${distanceToY(bottomDist)}`
+                            ].join(' ');
+
+                            polygons.push(
+                                <polygon
+                                    key={`desc-${cycle}`}
+                                    points={points}
+                                    fill="#FF9800"
+                                    opacity={0.25}
+                                    stroke="#FF9800"
+                                    strokeWidth={2}
+                                />
+                            );
+                        }
+                        return polygons;
+                    })()}
 
                     {/* Speed lines (green wave corridor) */}
                     {speedLines.map((line, idx) => (
@@ -242,21 +502,48 @@ const GreenWavePage = () => {
 
                         return (
                             <g key={`intersection-${idx}`}>
-                                {/* Intersection label */}
+                                {/* Project name */}
                                 <text
                                     x={PADDING_LEFT - 5}
-                                    y={y + 4}
+                                    y={y - 12}
                                     textAnchor="end"
                                     fill="#fff"
-                                    fontSize="11"
+                                    fontSize="10"
+                                    fontWeight="bold"
                                 >
                                     {intersection.projectName}
                                 </text>
 
+                                {/* Group 1 name */}
+                                {group1 && (
+                                    <text
+                                        x={PADDING_LEFT - 5}
+                                        y={y}
+                                        textAnchor="end"
+                                        fill="#4CAF50"
+                                        fontSize="9"
+                                    >
+                                        G{group1.id}: {group1.name || `Groupe ${group1.id}`}
+                                    </text>
+                                )}
+
+                                {/* Group 2 name */}
+                                {group2 && (
+                                    <text
+                                        x={PADDING_LEFT - 5}
+                                        y={y + 12}
+                                        textAnchor="end"
+                                        fill="#8BC34A"
+                                        fontSize="9"
+                                    >
+                                        G{group2.id}: {group2.name || `Groupe ${group2.id}`}
+                                    </text>
+                                )}
+
                                 {/* Distance label */}
                                 <text
                                     x={PADDING_LEFT - 5}
-                                    y={y + 16}
+                                    y={y + 24}
                                     textAnchor="end"
                                     fill="#888"
                                     fontSize="9"
@@ -380,7 +667,90 @@ const GreenWavePage = () => {
                 </div>
                 <div className="legend-item">
                     <div className="legend-line"></div>
-                    <span>Corridor onde verte ({speed} km/h)</span>
+                    <span>Vitesse: {speed} km/h</span>
+                </div>
+                {bandwidthData?.ascending && (
+                    <div className="legend-item">
+                        <div className="legend-bandwidth" style={{ background: 'rgba(76, 175, 80, 0.3)', borderColor: '#4CAF50' }}></div>
+                        <span>Montant: {bandwidthData.ascending.width.toFixed(1)}s</span>
+                    </div>
+                )}
+                {bandwidthData?.descending && (
+                    <div className="legend-item">
+                        <div className="legend-bandwidth" style={{ background: 'rgba(255, 152, 0, 0.3)', borderColor: '#FF9800' }}></div>
+                        <span>Descendant: {bandwidthData.descending.width.toFixed(1)}s</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Parameters panel */}
+            <div className="green-wave-params-panel">
+                <h3>Paramètres des carrefours</h3>
+                <div className="params-table">
+                    <div className="params-header">
+                        <span className="param-col-name">Carrefour</span>
+                        <span className="param-col-dist">Dist (m)</span>
+                        <span className="param-col-group">Groupe</span>
+                        <span className="param-col-offset">Décal</span>
+                        <span className="param-col-green">Vert</span>
+                    </div>
+                    {intersections?.map((intersection, idx) => {
+                        const group1 = intersection.groups.find(g => g.id === intersection.selectedGroup1);
+                        const group2 = intersection.groups.find(g => g.id === intersection.selectedGroup2);
+
+                        return (
+                            <div key={idx} className="params-row">
+                                <span className="param-col-name">{intersection.projectName}</span>
+                                <input
+                                    type="number"
+                                    className="param-col-dist"
+                                    value={intersection.distance}
+                                    onChange={(e) => updateDistance(idx, e.target.value)}
+                                />
+                                {group1 && (
+                                    <>
+                                        <span className="param-col-group" style={{ color: '#4CAF50' }}>G{group1.id}</span>
+                                        <input
+                                            type="number"
+                                            className="param-col-offset"
+                                            value={group1.offset}
+                                            onChange={(e) => updateGroupParam(idx, group1.id, 'offset', e.target.value)}
+                                        />
+                                        <input
+                                            type="number"
+                                            className="param-col-green"
+                                            value={group1.durations?.green || 0}
+                                            onChange={(e) => updateGroupParam(idx, group1.id, 'green', e.target.value)}
+                                        />
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })}
+                    {intersections?.map((intersection, idx) => {
+                        const group2 = intersection.groups.find(g => g.id === intersection.selectedGroup2);
+                        if (!group2) return null;
+
+                        return (
+                            <div key={`g2-${idx}`} className="params-row params-row-g2">
+                                <span className="param-col-name"></span>
+                                <span className="param-col-dist"></span>
+                                <span className="param-col-group" style={{ color: '#8BC34A' }}>G{group2.id}</span>
+                                <input
+                                    type="number"
+                                    className="param-col-offset"
+                                    value={group2.offset}
+                                    onChange={(e) => updateGroupParam(idx, group2.id, 'offset', e.target.value)}
+                                />
+                                <input
+                                    type="number"
+                                    className="param-col-green"
+                                    value={group2.durations?.green || 0}
+                                    onChange={(e) => updateGroupParam(idx, group2.id, 'green', e.target.value)}
+                                />
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>

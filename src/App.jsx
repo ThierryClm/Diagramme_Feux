@@ -157,6 +157,10 @@ function App() {
                 // TODO: implement open green wave from file
                 alert('Fonctionnalité à venir');
                 break;
+            case 'saveGreenWave':
+                // Save is handled in the GreenWavePage window
+                alert('L\'enregistrement se fait depuis la fenêtre Onde Verte.');
+                break;
             case 'closeGreenWave':
                 setGreenWaveViewer(false);
                 setGreenWaveData(null);

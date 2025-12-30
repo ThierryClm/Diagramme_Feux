@@ -60,6 +60,7 @@ const MenuBar = ({ onAction }) => {
             items: [
                 { label: 'Ouvrir une onde verte...', action: 'openGreenWave' },
                 { label: 'Créer une onde verte...', action: 'createGreenWave' },
+                { label: 'Enregistrer', action: 'saveGreenWave' },
                 { type: 'separator' },
                 { label: 'Fermer', action: 'closeGreenWave' }
             ]
