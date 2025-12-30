@@ -33,26 +33,75 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         e.stopPropagation();
         e.preventDefault();
         if (startDrag) startDrag(); // Save history once at drag start
+
+        // Store initial values for linked "Début de bande passante" actions (linked to START of green)
+        let linkedDebutBandeActions = [];
+        if (type === 'start' && actionData) {
+            linkedDebutBandeActions = actionData
+                .filter(action => {
+                    const rowGf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                    return rowGf === groupId &&
+                        action.action === 'Début de bande passante' &&
+                        action.deb !== '';
+                })
+                .map(action => ({
+                    id: action.id,
+                    initialDeb: parseInt(action.deb) || 0,
+                    initialFin: action.fin !== '' ? parseInt(action.fin) || 0 : null
+                }));
+        }
+
+        // Store initial values for linked "Fin de bande passante" actions (linked to END of green)
+        let linkedFinBandeActions = [];
+        if (type === 'end' && actionData) {
+            linkedFinBandeActions = actionData
+                .filter(action => {
+                    const rowGf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                    return rowGf === groupId &&
+                        action.action === 'Fin de bande passante' &&
+                        action.deb !== '';
+                })
+                .map(action => ({
+                    id: action.id,
+                    initialDeb: parseInt(action.deb) || 0,
+                    initialFin: action.fin !== '' ? parseInt(action.fin) || 0 : null
+                }));
+        }
+
         setDragState({
             groupId,
             type, // 'start' or 'end'
             initialMouseX: e.clientX,
-            initialValue: currentValue
+            initialValue: currentValue,
+            linkedDebutBandeActions, // Store initial values of linked "Début de bande passante" actions
+            linkedFinBandeActions // Store initial values of linked "Fin de bande passante" actions
         });
-    }, [startDrag]);
+    }, [startDrag, actionData]);
 
     // Drag handler for action overlays
     const handleActionDragStart = useCallback((e, actionId, field, currentValue) => {
         e.stopPropagation();
         e.preventDefault();
         if (startDrag) startDrag(); // Save history once at drag start
+
+        // For "Début de bande passante" and "Fin de bande passante", store initial fin value when dragging deb
+        const action = actionData.find(a => a.id === actionId);
+        let initialFinValue = null;
+        if (action &&
+            (action.action === 'Début de bande passante' || action.action === 'Fin de bande passante') &&
+            field === 'deb' &&
+            action.fin !== '') {
+            initialFinValue = parseInt(action.fin) || 0;
+        }
+
         setDragState({
             actionId,
             field, // 'deb' or 'fin'
             initialMouseX: e.clientX,
-            initialValue: parseInt(currentValue) || 0
+            initialValue: parseInt(currentValue) || 0,
+            initialFinValue // Store initial fin value for bande passante
         });
-    }, [startDrag]);
+    }, [startDrag, actionData]);
 
     const handleDragMove = useCallback((e) => {
         if (!dragState) return;
@@ -65,7 +114,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             let newValue = dragState.initialValue + deltaSeconds;
             // Wrap around cycle length
             newValue = ((newValue % cycleLength) + cycleLength) % cycleLength;
-            updateActionRow(dragState.actionId, dragState.field, newValue.toString());
+
+            // For "Début de bande passante" and "Fin de bande passante", when dragging 'deb', also update 'fin' to maintain the gap
+            if (dragState.initialFinValue !== null && dragState.initialFinValue !== undefined) {
+                const newFin = ((dragState.initialFinValue + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
+                updateActionRow(dragState.actionId, 'deb', newValue.toString());
+                updateActionRow(dragState.actionId, 'fin', newFin.toString());
+            } else {
+                updateActionRow(dragState.actionId, dragState.field, newValue.toString());
+            }
             return;
         }
 
@@ -83,10 +140,25 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                 let newDuration = oldEnd - newOffset;
                 if (newDuration <= 0) newDuration += cycleLength;
                 if (newDuration > 0 && newDuration <= cycleLength) {
+                    // Update group offset and duration WITHOUT triggering bande passante update in useTrafficLight
+                    // We handle bande passante update manually here using stored initial values
                     updateGroupParams(dragState.groupId, {
                         offset: newOffset,
                         durations: { green: newDuration }
                     });
+
+                    // Update linked "Début de bande passante" actions
+                    // using stored initial values to avoid drift
+                    if (dragState.linkedDebutBandeActions && dragState.linkedDebutBandeActions.length > 0 && updateActionRow) {
+                        dragState.linkedDebutBandeActions.forEach(linkedAction => {
+                            const newDeb = ((linkedAction.initialDeb + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
+                            updateActionRow(linkedAction.id, 'deb', newDeb.toString());
+                            if (linkedAction.initialFin !== null) {
+                                const newFin = ((linkedAction.initialFin + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
+                                updateActionRow(linkedAction.id, 'fin', newFin.toString());
+                            }
+                        });
+                    }
                 }
             }
         } else if (dragState.type === 'end') {
@@ -101,6 +173,19 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                 if (newDuration <= 0) newDuration += cycleLength;
                 if (newDuration > 0 && newDuration <= cycleLength) {
                     updateGroupParams(dragState.groupId, { durations: { green: newDuration } });
+
+                    // Update linked "Fin de bande passante" actions
+                    // using stored initial values to avoid drift
+                    if (dragState.linkedFinBandeActions && dragState.linkedFinBandeActions.length > 0 && updateActionRow) {
+                        dragState.linkedFinBandeActions.forEach(linkedAction => {
+                            const newDeb = ((linkedAction.initialDeb + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
+                            updateActionRow(linkedAction.id, 'deb', newDeb.toString());
+                            if (linkedAction.initialFin !== null) {
+                                const newFin = ((linkedAction.initialFin + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
+                                updateActionRow(linkedAction.id, 'fin', newFin.toString());
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -1485,7 +1570,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const startX = deb * pixelsPerSecond;
                             const endX = fin * pixelsPerSecond;
                             const startY = RULER_HEIGHT + (startGroupIndex * ROW_HEIGHT) + (ROW_HEIGHT / 2);
-                            const endY = RULER_HEIGHT + (endGroupIndex * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                            // End Y points to bottom of the bar (ROW_HEIGHT - 7 is bottom of bar)
+                            const endY = RULER_HEIGHT + (endGroupIndex * ROW_HEIGHT) + ROW_HEIGHT - 7;
                             const cycleEndX = cycleLength * pixelsPerSecond;
 
                             // Arrow head size
@@ -1611,7 +1697,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const startX = deb * pixelsPerSecond;
                             const endX = fin * pixelsPerSecond;
                             const startY = RULER_HEIGHT + (startGroupIndex * ROW_HEIGHT) + (ROW_HEIGHT / 2);
-                            const endY = RULER_HEIGHT + (endGroupIndex * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                            // End Y points to bottom of the bar (ROW_HEIGHT - 7 is bottom of bar)
+                            const endY = RULER_HEIGHT + (endGroupIndex * ROW_HEIGHT) + ROW_HEIGHT - 7;
                             const cycleEndX = cycleLength * pixelsPerSecond;
 
                             // Arrow head size

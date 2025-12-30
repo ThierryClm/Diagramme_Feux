@@ -690,6 +690,57 @@ export const useTrafficLight = () => {
         if (!isDragging.current) {
             saveToHistory();
         }
+
+        // If offset or duration is changing, calculate delta to update linked bande passante actions
+        // Skip this during dragging - TimelineDiagram handles it directly with stored initial values to avoid drift
+        if (!isDragging.current) {
+            const currentGroup = groups.find(g => g.id === id);
+            if (currentGroup) {
+                // Calculate old and new end of green
+                const oldOffset = currentGroup.offset;
+                const oldGreen = currentGroup.durations.green;
+                const oldEnd = (oldOffset + oldGreen) % cycleLength;
+
+                const newOffset = params.offset !== undefined ? params.offset : oldOffset;
+                const newGreen = params.durations?.green !== undefined ? params.durations.green : oldGreen;
+                const newEnd = (newOffset + newGreen) % cycleLength;
+
+                const deltaOffset = newOffset - oldOffset;
+                const deltaEnd = ((newEnd - oldEnd) % cycleLength + cycleLength) % cycleLength;
+                // Normalize deltaEnd to handle wrap-around correctly
+                const normalizedDeltaEnd = deltaEnd > cycleLength / 2 ? deltaEnd - cycleLength : deltaEnd;
+
+                setActionData(currentData => {
+                    return currentData.map(row => {
+                        const rowGf = parseInt(row.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                        if (rowGf !== id) return row;
+
+                        // "Début de bande passante" is linked to START of green (offset)
+                        if (row.action === 'Début de bande passante' && row.deb !== '' && deltaOffset !== 0) {
+                            const newDeb = ((parseInt(row.deb) + deltaOffset) % cycleLength + cycleLength) % cycleLength;
+                            if (row.fin !== '') {
+                                const newFin = ((parseInt(row.fin) + deltaOffset) % cycleLength + cycleLength) % cycleLength;
+                                return { ...row, deb: newDeb.toString(), fin: newFin.toString() };
+                            }
+                            return { ...row, deb: newDeb.toString() };
+                        }
+
+                        // "Fin de bande passante" is linked to END of green (offset + green duration)
+                        if (row.action === 'Fin de bande passante' && row.deb !== '' && normalizedDeltaEnd !== 0) {
+                            const newDeb = ((parseInt(row.deb) + normalizedDeltaEnd) % cycleLength + cycleLength) % cycleLength;
+                            if (row.fin !== '') {
+                                const newFin = ((parseInt(row.fin) + normalizedDeltaEnd) % cycleLength + cycleLength) % cycleLength;
+                                return { ...row, deb: newDeb.toString(), fin: newFin.toString() };
+                            }
+                            return { ...row, deb: newDeb.toString() };
+                        }
+
+                        return row;
+                    });
+                });
+            }
+        }
+
         setGroups(prev => prev.map(g => {
             if (g.id !== id) return g;
 
@@ -709,7 +760,7 @@ export const useTrafficLight = () => {
             }
             return newG;
         }));
-    }, [saveToHistory, cycleLength]);
+    }, [saveToHistory, cycleLength, groups, setActionData]);
 
     const setMatrixValueWithHistory = useCallback((fromId, toId, value) => {
         if (!isDragging.current) {
