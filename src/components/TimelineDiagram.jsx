@@ -193,6 +193,24 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         action.fin !== ''
     );
 
+    // Get all "Début de bande passante" actions
+    const debutBandeActions = actionData.filter(action =>
+        action.action === 'Début de bande passante' &&
+        action.gf !== '' &&
+        action.deb !== '' &&
+        action.fin !== '' &&
+        action.actGf1 !== ''
+    );
+
+    // Get all "Fin de bande passante" actions
+    const finBandeActions = actionData.filter(action =>
+        action.action === 'Fin de bande passante' &&
+        action.gf !== '' &&
+        action.deb !== '' &&
+        action.fin !== '' &&
+        action.actGf1 !== ''
+    );
+
     const ROW_HEIGHT = 30; // Height of each row in pixels
     const RULER_HEIGHT = 50; // Height of the ruler
 
@@ -227,7 +245,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                         return (
                             <div key={g.id} className="row-label-container" onClick={() => onGroupClick(g)}>
-                                <span className="label-id">G{g.id}</span>
+                                <span className="label-id">{g.id}</span>
                                 <span className="label-name" title={g.name}>{g.name || '-'}</span>
                                 <input
                                     type="number"
@@ -1006,7 +1024,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             refY="3"
                                             orient="auto"
                                         >
-                                            <polygon points="0 0, 8 3, 0 6" fill="#888" />
+                                            <polygon points="0 0, 8 3, 0 6" fill="#64B5F6" />
                                         </marker>
                                         <pattern
                                             id={`escam-hatch-${idx}`}
@@ -1015,7 +1033,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             height="6"
                                             patternTransform="rotate(-45)"
                                         >
-                                            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(100,100,100,0.7)" strokeWidth="1.5" />
+                                            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(100,180,255,0.7)" strokeWidth="1.5" />
                                         </pattern>
                                     </defs>
                                     {/* Hatched rectangle between arrow endpoints */}
@@ -1025,7 +1043,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         width={rectWidth}
                                         height={rectHeight}
                                         fill={`url(#escam-hatch-${idx})`}
-                                        stroke="#888"
+                                        stroke="#64B5F6"
                                         strokeWidth="0.5"
                                         strokeDasharray="2,2"
                                     />
@@ -1035,7 +1053,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         y1={sourceY}
                                         x2={arrow1TargetX}
                                         y2={targetY}
-                                        stroke="#888"
+                                        stroke="#64B5F6"
                                         strokeWidth="1"
                                         strokeDasharray="4,2"
                                         markerEnd={`url(#escam-arrowhead-${idx})`}
@@ -1046,7 +1064,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         y1={sourceY}
                                         x2={arrow2TargetX}
                                         y2={targetY}
-                                        stroke="#888"
+                                        stroke="#64B5F6"
                                         strokeWidth="1"
                                         strokeDasharray="4,2"
                                         markerEnd={`url(#escam-arrowhead-${idx})`}
@@ -1065,6 +1083,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
 
+                            // Find group index in array
+                            const groupIndex = groups.findIndex(g => g.id === gf);
+                            if (groupIndex === -1) return null;
+
                             // Calculate positions
                             const orangeLeftPos = deb * pixelsPerSecond;
                             const orangeDuration = blueStart - deb; // From Déb to (Fin-5)
@@ -1076,8 +1098,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             // Calculate stripe width based on 1 second interval
                             const stripeWidth = pixelsPerSecond;
 
-                            // Vertical position based on GF
-                            const topPos = RULER_HEIGHT + ((gf - 1) * ROW_HEIGHT) + 7;
+                            // Vertical position based on group index
+                            const topPos = RULER_HEIGHT + (groupIndex * ROW_HEIGHT) + 7;
                             const height = ROW_HEIGHT - 14;
 
                             return (
@@ -1342,7 +1364,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
 
-                            if (gf < 1 || gf > groups.length) return null;
+                            // Find group index in array
+                            const groupIndex = groups.findIndex(g => g.id === gf);
+                            if (groupIndex === -1) return null;
                             if (deb === fin) return null;
 
                             // Calculate bar duration (handle wrap-around)
@@ -1353,8 +1377,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const leftPos = deb * pixelsPerSecond;
                             const barWidth = duration * pixelsPerSecond;
 
-                            // Vertical position based on GF
-                            const topPos = RULER_HEIGHT + ((gf - 1) * ROW_HEIGHT) + 7;
+                            // Vertical position based on group index (centered in row)
+                            const topPos = RULER_HEIGHT + (groupIndex * ROW_HEIGHT) + 7;
                             const height = ROW_HEIGHT - 14;
 
                             // Stripe width based on 1 second interval
@@ -1431,6 +1455,258 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             </span>
                                         )}
                                     </div>
+                                </React.Fragment>
+                            );
+                        })}
+
+                        {/* Début de bande passante arrows - dashed green diagonal arrows */}
+                        {debutBandeActions.map((action, idx) => {
+                            const gf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                            const deb = parseInt(action.deb) || 0;
+                            const fin = parseInt(action.fin) || 0;
+                            const actGf1 = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                            const abrv = action.abrv || '';
+                            const isHighlighted = hoveredActionId === action.id;
+
+                            // Find group indices
+                            const startGroupIndex = groups.findIndex(g => g.id === gf);
+                            const endGroupIndex = groups.findIndex(g => g.id === actGf1);
+                            if (startGroupIndex === -1 || endGroupIndex === -1) return null;
+
+                            // Calculate positions
+                            const startX = deb * pixelsPerSecond;
+                            const endX = fin * pixelsPerSecond;
+                            const startY = RULER_HEIGHT + (startGroupIndex * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                            const endY = RULER_HEIGHT + (endGroupIndex * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                            const cycleEndX = cycleLength * pixelsPerSecond;
+
+                            // Arrow head size
+                            const arrowSize = 4;
+
+                            // Check if arrow wraps around cycle (deb > fin)
+                            const wrapsAround = deb > fin;
+
+                            if (wrapsAround) {
+                                // Calculate intermediate Y at cycle boundary
+                                const totalXDistance = (cycleLength - deb) + fin;
+                                const firstSegmentRatio = (cycleLength - deb) / totalXDistance;
+                                const intermediateY = startY + (endY - startY) * firstSegmentRatio;
+
+                                // Angle for second segment arrow head
+                                const angle2 = Math.atan2(endY - intermediateY, endX - 0);
+
+                                return (
+                                    <React.Fragment key={`debut-bande-${idx}`}>
+                                        <svg
+                                            className={`debut-bande-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                pointerEvents: 'none',
+                                                zIndex: 50,
+                                                overflow: 'visible'
+                                            }}
+                                        >
+                                            {/* First segment: from start to end of cycle */}
+                                            <line
+                                                x1={startX}
+                                                y1={startY}
+                                                x2={cycleEndX}
+                                                y2={intermediateY}
+                                                stroke="#00cc00"
+                                                strokeWidth="1"
+                                                strokeDasharray="4,3"
+                                            />
+                                            {/* Second segment: from start of cycle to end */}
+                                            <line
+                                                x1={0}
+                                                y1={intermediateY}
+                                                x2={endX}
+                                                y2={endY}
+                                                stroke="#00cc00"
+                                                strokeWidth="1"
+                                                strokeDasharray="4,3"
+                                            />
+                                            {/* Arrow head at end */}
+                                            <polygon
+                                                points={`
+                                                    ${endX},${endY}
+                                                    ${endX - arrowSize * Math.cos(angle2 - Math.PI / 6)},${endY - arrowSize * Math.sin(angle2 - Math.PI / 6)}
+                                                    ${endX - arrowSize * Math.cos(angle2 + Math.PI / 6)},${endY - arrowSize * Math.sin(angle2 + Math.PI / 6)}
+                                                `}
+                                                fill="#00cc00"
+                                            />
+                                        </svg>
+                                    </React.Fragment>
+                                );
+                            }
+
+                            const angle = Math.atan2(endY - startY, endX - startX);
+
+                            return (
+                                <React.Fragment key={`debut-bande-${idx}`}>
+                                    <svg
+                                        className={`debut-bande-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            pointerEvents: 'none',
+                                            zIndex: 50,
+                                            overflow: 'visible'
+                                        }}
+                                    >
+                                        {/* Dashed diagonal line */}
+                                        <line
+                                            x1={startX}
+                                            y1={startY}
+                                            x2={endX}
+                                            y2={endY}
+                                            stroke="#00cc00"
+                                            strokeWidth="1"
+                                            strokeDasharray="4,3"
+                                        />
+                                        {/* Arrow head at end */}
+                                        <polygon
+                                            points={`
+                                                ${endX},${endY}
+                                                ${endX - arrowSize * Math.cos(angle - Math.PI / 6)},${endY - arrowSize * Math.sin(angle - Math.PI / 6)}
+                                                ${endX - arrowSize * Math.cos(angle + Math.PI / 6)},${endY - arrowSize * Math.sin(angle + Math.PI / 6)}
+                                            `}
+                                            fill="#00cc00"
+                                        />
+                                    </svg>
+                                </React.Fragment>
+                            );
+                        })}
+
+                        {/* Fin de bande passante arrows - dashed red diagonal arrows */}
+                        {finBandeActions.map((action, idx) => {
+                            const gf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                            const deb = parseInt(action.deb) || 0;
+                            const fin = parseInt(action.fin) || 0;
+                            const actGf1 = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                            const abrv = action.abrv || '';
+                            const isHighlighted = hoveredActionId === action.id;
+
+                            // Find group indices
+                            const startGroupIndex = groups.findIndex(g => g.id === gf);
+                            const endGroupIndex = groups.findIndex(g => g.id === actGf1);
+                            if (startGroupIndex === -1 || endGroupIndex === -1) return null;
+
+                            // Calculate positions (same as début: from gf at deb to actGf1 at fin)
+                            const startX = deb * pixelsPerSecond;
+                            const endX = fin * pixelsPerSecond;
+                            const startY = RULER_HEIGHT + (startGroupIndex * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                            const endY = RULER_HEIGHT + (endGroupIndex * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                            const cycleEndX = cycleLength * pixelsPerSecond;
+
+                            // Arrow head size
+                            const arrowSize = 4;
+
+                            // Check if arrow wraps around cycle (deb > fin)
+                            const wrapsAround = deb > fin;
+
+                            if (wrapsAround) {
+                                // Calculate intermediate Y at cycle boundary
+                                const totalXDistance = (cycleLength - deb) + fin;
+                                const firstSegmentRatio = (cycleLength - deb) / totalXDistance;
+                                const intermediateY = startY + (endY - startY) * firstSegmentRatio;
+
+                                // Angle for second segment arrow head
+                                const angle2 = Math.atan2(endY - intermediateY, endX - 0);
+
+                                return (
+                                    <React.Fragment key={`fin-bande-${idx}`}>
+                                        <svg
+                                            className={`fin-bande-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                pointerEvents: 'none',
+                                                zIndex: 50,
+                                                overflow: 'visible'
+                                            }}
+                                        >
+                                            {/* First segment: from start to end of cycle */}
+                                            <line
+                                                x1={startX}
+                                                y1={startY}
+                                                x2={cycleEndX}
+                                                y2={intermediateY}
+                                                stroke="#00cc00"
+                                                strokeWidth="1"
+                                                strokeDasharray="4,3"
+                                            />
+                                            {/* Second segment: from start of cycle to end */}
+                                            <line
+                                                x1={0}
+                                                y1={intermediateY}
+                                                x2={endX}
+                                                y2={endY}
+                                                stroke="#00cc00"
+                                                strokeWidth="1"
+                                                strokeDasharray="4,3"
+                                            />
+                                            {/* Arrow head at end */}
+                                            <polygon
+                                                points={`
+                                                    ${endX},${endY}
+                                                    ${endX - arrowSize * Math.cos(angle2 - Math.PI / 6)},${endY - arrowSize * Math.sin(angle2 - Math.PI / 6)}
+                                                    ${endX - arrowSize * Math.cos(angle2 + Math.PI / 6)},${endY - arrowSize * Math.sin(angle2 + Math.PI / 6)}
+                                                `}
+                                                fill="#00cc00"
+                                            />
+                                        </svg>
+                                    </React.Fragment>
+                                );
+                            }
+
+                            const angle = Math.atan2(endY - startY, endX - startX);
+
+                            return (
+                                <React.Fragment key={`fin-bande-${idx}`}>
+                                    <svg
+                                        className={`fin-bande-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            pointerEvents: 'none',
+                                            zIndex: 50,
+                                            overflow: 'visible'
+                                        }}
+                                    >
+                                        {/* Dashed diagonal line */}
+                                        <line
+                                            x1={startX}
+                                            y1={startY}
+                                            x2={endX}
+                                            y2={endY}
+                                            stroke="#00cc00"
+                                            strokeWidth="1"
+                                            strokeDasharray="4,3"
+                                        />
+                                        {/* Arrow head at end */}
+                                        <polygon
+                                            points={`
+                                                ${endX},${endY}
+                                                ${endX - arrowSize * Math.cos(angle - Math.PI / 6)},${endY - arrowSize * Math.sin(angle - Math.PI / 6)}
+                                                ${endX - arrowSize * Math.cos(angle + Math.PI / 6)},${endY - arrowSize * Math.sin(angle + Math.PI / 6)}
+                                            `}
+                                            fill="#00cc00"
+                                        />
+                                    </svg>
                                 </React.Fragment>
                             );
                         })}

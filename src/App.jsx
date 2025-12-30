@@ -62,10 +62,13 @@ function App() {
     const [insertModal, setInsertModal] = useState(false);
     const [optionsModal, setOptionsModal] = useState(false);
     const [helpModal, setHelpModal] = useState(false);
+    const [importModal, setImportModal] = useState(false);
     const [slideValue, setSlideValue] = useState(0);
     const [insertStart, setInsertStart] = useState(0);
     const [insertDuration, setInsertDuration] = useState(5);
     const [selectedProject, setSelectedProject] = useState(null);
+    const [importFile, setImportFile] = useState(null);
+    const [importError, setImportError] = useState('');
 
     // Check for duplicated state on load
     useEffect(() => {
@@ -130,6 +133,11 @@ function App() {
             case 'help':
                 setHelpModal(true);
                 break;
+            case 'import':
+                setImportFile(null);
+                setImportError('');
+                setImportModal(true);
+                break;
             case 'credit':
                 alert('Diagramme de Feux\n\nDéveloppé avec React + Vite\n2024');
                 break;
@@ -161,6 +169,89 @@ function App() {
             insertTime(insertStart, insertDuration);
         }
         setInsertModal(false);
+    };
+
+    // Handle file selection for import
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImportFile(file);
+            setImportError('');
+        }
+    };
+
+    // Handle CSV import
+    const handleImport = () => {
+        if (!importFile) {
+            setImportError('Veuillez sélectionner un fichier');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const content = e.target.result;
+                const lines = content.split('\n').filter(line => line.trim());
+
+                if (lines.length < 2) {
+                    setImportError('Le fichier CSV est vide ou invalide');
+                    return;
+                }
+
+                // Parse header
+                const header = lines[0].split(';').map(h => h.trim().toLowerCase());
+
+                // Parse data rows
+                const importedGroups = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(';');
+                    if (values.length < 2) continue;
+
+                    const row = {};
+                    header.forEach((col, idx) => {
+                        row[col] = values[idx]?.trim() || '';
+                    });
+
+                    // Map CSV columns to group structure
+                    const group = {
+                        id: importedGroups.length + 1,
+                        name: row['nom'] || row['name'] || `G${importedGroups.length + 1}`,
+                        type: row['type'] || 'VL',
+                        minGreen: parseInt(row['minvert'] || row['mingreen'] || row['min']) || 6,
+                        offset: parseInt(row['debut'] || row['offset'] || row['deb']) || 0,
+                        durations: {
+                            green: parseInt(row['vert'] || row['green'] || row['duree'] || row['dur']) || 0,
+                            orange: parseInt(row['orange'] || row['jaune']) || 3,
+                            red: parseInt(row['rouge'] || row['red']) || 0
+                        }
+                    };
+                    importedGroups.push(group);
+                }
+
+                if (importedGroups.length === 0) {
+                    setImportError('Aucune donnée valide trouvée dans le fichier');
+                    return;
+                }
+
+                // Load the imported data
+                const projectName = importFile.name.replace(/\.csv$/i, '');
+                loadFullState({
+                    intersectionName: projectName,
+                    groups: importedGroups,
+                    cycleLength: cycleLength
+                });
+
+                setImportModal(false);
+                setImportFile(null);
+                setImportError('');
+            } catch (err) {
+                setImportError('Erreur lors de la lecture du fichier: ' + err.message);
+            }
+        };
+        reader.onerror = () => {
+            setImportError('Erreur lors de la lecture du fichier');
+        };
+        reader.readAsText(importFile);
     };
 
     // Keyboard shortcut for undo (Ctrl+Z)
@@ -678,6 +769,54 @@ function App() {
                 <div className="modal-actions" style={{ marginTop: '20px' }}>
                     <button className="modal-btn modal-btn-primary" onClick={() => setHelpModal(false)}>
                         Fermer
+                    </button>
+                </div>
+            </Modal>
+
+            {/* Modal Importer CSV */}
+            <Modal isOpen={importModal} onClose={() => setImportModal(false)} title="Importer un fichier CSV">
+                <div className="form-row">
+                    <label>
+                        Sélectionner un fichier CSV :
+                        <input
+                            type="file"
+                            accept=".csv"
+                            onChange={handleFileSelect}
+                            style={{
+                                display: 'block',
+                                marginTop: '10px',
+                                padding: '10px',
+                                border: '1px dashed #555',
+                                borderRadius: '4px',
+                                backgroundColor: '#2a2a2a',
+                                color: '#ddd',
+                                cursor: 'pointer',
+                                width: '100%'
+                            }}
+                        />
+                    </label>
+                </div>
+                {importFile && (
+                    <p style={{ color: '#8f8', fontSize: '0.9em', marginTop: '10px' }}>
+                        Fichier sélectionné : {importFile.name}
+                    </p>
+                )}
+                {importError && (
+                    <p style={{ color: '#f66', fontSize: '0.9em', marginTop: '10px' }}>
+                        {importError}
+                    </p>
+                )}
+                <div style={{ color: '#888', fontSize: '0.8em', marginTop: '15px', padding: '10px', backgroundColor: '#1a1a1a', borderRadius: '4px' }}>
+                    <strong>Format CSV attendu (séparateur : point-virgule) :</strong><br />
+                    <code style={{ color: '#aaa' }}>Nom;Type;Debut;Vert;Orange;MinVert</code><br />
+                    <span style={{ fontSize: '0.9em' }}>Exemple : G1;VL;0;20;3;6</span>
+                </div>
+                <div className="modal-actions">
+                    <button className="modal-btn modal-btn-secondary" onClick={() => setImportModal(false)}>
+                        Annuler
+                    </button>
+                    <button className="modal-btn modal-btn-primary" onClick={handleImport} disabled={!importFile}>
+                        OK
                     </button>
                 </div>
             </Modal>

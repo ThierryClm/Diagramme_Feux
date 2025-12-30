@@ -50,7 +50,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, moveGroup }) => {
 
                         return (
                             <tr key={g.id}>
-                                <td className="col-id">G{g.id}</td>
+                                <td className="col-id">{g.id}</td>
                                 <td>
                                     <button
                                         className="btn-move"

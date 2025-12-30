@@ -254,13 +254,13 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                         <tr>
                             <th>/</th>
                             <th className="col-name-header">Nom</th>
-                            {indices.map(i => <th key={i}>G{i}</th>)}
+                            {indices.map(i => <th key={i}>{i}</th>)}
                         </tr>
                     </thead>
                     <tbody>
                         {conflictMatrix.map((row, fromIdx) => (
                             <tr key={fromIdx}>
-                                <td className="row-header">G{fromIdx + 1}</td>
+                                <td className="row-header">{fromIdx + 1}</td>
                                 <td className="row-name">
                                     {groups && groups[fromIdx] ? groups[fromIdx].name : '-'}
                                 </td>
@@ -307,7 +307,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                     <small>
                         {asymmetricPairs.map((p, i) => (
                             <span key={i}>
-                                G{p.from}→G{p.to}
+                                {p.from}→{p.to}
                                 {i < asymmetricPairs.length - 1 ? ', ' : ''}
                             </span>
                         ))}
@@ -322,13 +322,13 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                         {slConflicts.map((c, i) => (
                             <li key={i}>
                                 {c.type === 'sl_overlap_main' ? (
-                                    <>SL G{c.slGf} chevauche le vert principal</>
+                                    <>SL {c.slGf} chevauche le vert principal</>
                                 ) : c.type === 'sl_to_sl' ? (
-                                    <>SL G{c.slGf} → SL G{c.otherGf} : {c.actual}s &lt; {c.required}s requis</>
+                                    <>SL {c.slGf} → SL {c.otherGf} : {c.actual}s &lt; {c.required}s requis</>
                                 ) : c.type === 'sl_to_group' ? (
-                                    <>SL G{c.slGf} → G{c.otherGf} : {c.actual}s &lt; {c.required}s requis</>
+                                    <>SL {c.slGf} → {c.otherGf} : {c.actual}s &lt; {c.required}s requis</>
                                 ) : (
-                                    <>G{c.otherGf} → SL G{c.slGf} : {c.actual}s &lt; {c.required}s requis</>
+                                    <>{c.otherGf} → SL {c.slGf} : {c.actual}s &lt; {c.required}s requis</>
                                 )}
                             </li>
                         ))}

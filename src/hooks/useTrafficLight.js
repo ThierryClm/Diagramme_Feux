@@ -295,8 +295,8 @@ export const useTrafficLight = () => {
             if (!raw) return false;
             const data = JSON.parse(raw);
 
-            // Batch updates
-            if (data.intersectionName) setIntersectionName(data.intersectionName);
+            // Batch updates - use project name as intersection name
+            setIntersectionName(name);
             if (data.groups) setGroups(data.groups);
             if (data.cycleLength) setCycleLength(data.cycleLength);
             if (data.conflictMatrix) {

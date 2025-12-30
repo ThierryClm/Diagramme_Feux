@@ -614,13 +614,17 @@
 }
 
 .escamotage-arrows.highlighted line {
-    stroke: #ffcc00;
+    stroke: #2196F3;
     stroke-width: 2;
 }
 
 .escamotage-arrows.highlighted rect {
-    stroke: #ffcc00;
+    stroke: #2196F3;
     stroke-width: 2;
+}
+
+.escamotage-arrows.highlighted polygon {
+    fill: #2196F3;
 }
 
 .signa-orange-bar.highlighted,
@@ -672,4 +676,40 @@
     outline: 2px solid #ffcc00;
     outline-offset: 1px;
     box-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
+}
+
+/* Début de bande passante arrows */
+.debut-bande-arrows {
+    overflow: visible;
+}
+
+.debut-bande-arrows line {
+    transition: stroke-width 0.15s ease;
+}
+
+.debut-bande-arrows.highlighted line {
+    stroke: #00ff00;
+    stroke-width: 2;
+}
+
+.debut-bande-arrows.highlighted polygon {
+    fill: #00ff00;
+}
+
+/* Fin de bande passante arrows */
+.fin-bande-arrows {
+    overflow: visible;
+}
+
+.fin-bande-arrows line {
+    transition: stroke-width 0.15s ease;
+}
+
+.fin-bande-arrows.highlighted line {
+    stroke: #00ff00;
+    stroke-width: 2;
+}
+
+.fin-bande-arrows.highlighted polygon {
+    fill: #00ff00;
 }

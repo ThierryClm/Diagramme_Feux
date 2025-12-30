@@ -35,7 +35,7 @@ const TrafficTable = ({ groups, updateGroupParams, cycleLength }) => {
                 <tbody>
                     {groups.map(g => (
                         <tr key={g.id}>
-                            <td className="col-id">G{g.id}</td>
+                            <td className="col-id">{g.id}</td>
                             <td className="col-name-readonly">{g.name}</td>
 
                             {/* Courant de circulation */}
