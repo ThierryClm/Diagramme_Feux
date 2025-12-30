@@ -22,6 +22,7 @@ export const useTrafficLight = () => {
         minGreen: 6,
         durations: { green: 30, orange: 3, red: 67 }, // Default orange is now 3s? Or 5s? Standard is usually 3s for VL.
         offset: (id - 1) * 5,
+        da: '', // DA field (2 characters)
         // Traffic Engineering Props
         trafficStream: '', // Courant de circulation
         laneCoef: 1, // Coef voie
@@ -278,7 +279,9 @@ export const useTrafficLight = () => {
             intersectionName,
             groups,
             cycleLength,
-            conflictMatrix
+            conflictMatrix,
+            pfTabs,
+            activePFId
         };
         try {
             localStorage.setItem(`traffic_project_${name}`, JSON.stringify(projectData));
@@ -307,6 +310,15 @@ export const useTrafficLight = () => {
                     return val;
                 }));
                 setConflictMatrix(cleanedMatrix);
+            }
+            // Load action table data (pfTabs)
+            if (data.pfTabs) {
+                setPfTabs(data.pfTabs);
+                if (data.activePFId) setActivePFId(data.activePFId);
+            } else if (data.actionData) {
+                // Handle old format for backward compatibility
+                setPfTabs([{ id: 1, name: 'PF1', data: data.actionData }]);
+                setActivePFId(1);
             }
 
             return true;

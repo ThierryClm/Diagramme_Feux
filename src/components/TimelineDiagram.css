@@ -28,7 +28,7 @@
 }
 
 .timeline-sidebar {
-    width: 190px;
+    width: 220px;
     background: #1a1a1a;
     border-right: 1px solid #444;
     flex-shrink: 0;
@@ -42,9 +42,9 @@
     align-items: center;
     background: #222;
     border-bottom: 1px solid #444;
-    position: sticky;
+    position: relative;
     top: 0;
-    z-index: 20;
+    z-index: 1;
     padding: 0 6px;
     gap: 3px;
 }
@@ -68,6 +68,11 @@
 
 .col-label.col-time {
     width: 26px;
+    flex-shrink: 0;
+}
+
+.col-label.col-da {
+    width: 20px;
     flex-shrink: 0;
 }
 
@@ -115,6 +120,24 @@
     border-color: #666;
 }
 
+.input-da {
+    width: 20px;
+    background: #333;
+    border: 1px solid #444;
+    color: white;
+    padding: 1px;
+    border-radius: 3px;
+    text-align: center;
+    font-size: 0.75em;
+    flex-shrink: 0;
+}
+
+.input-da:focus {
+    background: #444;
+    outline: none;
+    border-color: #666;
+}
+
 .input-time {
     width: 45px;
     background: #333;
@@ -153,13 +176,11 @@
 .timeline-ruler {
     height: 50px;
     border-bottom: 1px solid #444;
-    position: sticky;
+    position: relative;
     top: 0;
     background: #222;
-    z-index: 30;
-    /* Above rows */
+    z-index: 1;
     width: 100%;
-    /* Ensure it spans the track */
 }
 
 .timeline-row-track {

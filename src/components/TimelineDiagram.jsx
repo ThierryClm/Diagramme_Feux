@@ -319,6 +319,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         <span className="col-label col-time">Déb</span>
                         <span className="col-label col-time">Fin</span>
                         <span className="col-label col-time">Dur</span>
+                        <span className="col-label col-da">DA</span>
                     </div>
 
                     {groups.map(g => {
@@ -356,6 +357,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     onChange={(e) => handleDurationChange(g.id, e.target.value)}
                                     title="Durée"
                                     style={{ color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }}
+                                    placeholder=""
+                                />
+                                <input
+                                    type="text"
+                                    className="input-da"
+                                    value={g.da || ''}
+                                    onChange={(e) => updateGroupParams(g.id, { da: e.target.value.slice(0, 2) })}
+                                    title="DA"
+                                    maxLength={2}
                                     placeholder=""
                                 />
                             </div>
@@ -418,15 +428,64 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const isPedestrian = group.type === 'Piéton';
                                         const isCyclist = group.type === 'Cycliste';
                                         const orangeClass = isPedestrian ? 'pedestrian-orange' : isCyclist ? 'cyclist-orange' : 'orange';
-                                        const orangeWidth = group.durations.orange * pixelsPerSecond;
+                                        const orangeDur = group.durations.orange;
+                                        const orangeWidth = orangeDur * pixelsPerSecond;
 
-                                        // Check if bar wraps around cycle
-                                        const wrapsAround = offset + greenDuration > cycleLength;
+                                        // Check if green bar wraps around cycle
+                                        const greenWrapsAround = offset + greenDuration > cycleLength;
+                                        // Check if orange bar wraps around cycle (only for pedestrians and cyclists)
+                                        const greenEnd = (offset + greenDuration) % cycleLength;
+                                        const orangeEnd = (greenEnd + orangeDur) % cycleLength;
+                                        const orangeWrapsAround = (isPedestrian || isCyclist) && (greenEnd + orangeDur > cycleLength);
 
-                                        if (wrapsAround) {
-                                            // Split into two bars
+                                        if (greenWrapsAround) {
+                                            // Green bar wraps around
                                             const firstPartWidth = (cycleLength - offset) * pixelsPerSecond;
                                             const secondPartWidth = ((offset + greenDuration) % cycleLength) * pixelsPerSecond;
+
+                                            // Check if orange also wraps
+                                            if (orangeWrapsAround) {
+                                                const orangeFirstPartWidth = (cycleLength - greenEnd) * pixelsPerSecond;
+                                                const orangeSecondPartWidth = orangeEnd * pixelsPerSecond;
+
+                                                return (
+                                                    <React.Fragment>
+                                                        {/* First part: from offset to end of cycle */}
+                                                        <div
+                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                            style={{ left: `${offset * pixelsPerSecond}px` }}
+                                                        >
+                                                            <div
+                                                                className="drag-handle drag-handle-start"
+                                                                onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
+                                                                title="Glisser pour modifier le début"
+                                                            />
+                                                            <div className="phase-bar green" style={{ width: `${firstPartWidth}px` }}></div>
+                                                        </div>
+                                                        {/* Second part: green from 0 + orange first part to end of cycle */}
+                                                        <div
+                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                            style={{ left: '0px' }}
+                                                        >
+                                                            <div className="phase-bar green" style={{ width: `${secondPartWidth}px` }}></div>
+                                                            <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeFirstPartWidth}px` }}></div>
+                                                            <div
+                                                                className="drag-handle drag-handle-end"
+                                                                onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
+                                                                style={{ left: `${secondPartWidth}px` }}
+                                                                title="Glisser pour modifier la fin"
+                                                            />
+                                                        </div>
+                                                        {/* Third part: orange continuation at start of cycle */}
+                                                        <div
+                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                            style={{ left: '0px' }}
+                                                        >
+                                                            <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeSecondPartWidth}px` }}></div>
+                                                        </div>
+                                                    </React.Fragment>
+                                                );
+                                            }
 
                                             return (
                                                 <React.Fragment>
@@ -460,8 +519,46 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             );
                                         }
 
-                                        // Normal case: bar doesn't wrap
+                                        // Green doesn't wrap, but orange might wrap (for pedestrians/cyclists)
                                         const greenWidth = greenDuration * pixelsPerSecond;
+
+                                        if (orangeWrapsAround) {
+                                            const orangeFirstPartWidth = (cycleLength - greenEnd) * pixelsPerSecond;
+                                            const orangeSecondPartWidth = orangeEnd * pixelsPerSecond;
+
+                                            return (
+                                                <React.Fragment>
+                                                    {/* Main part: green + first part of orange */}
+                                                    <div
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                        style={{ left: `${offset * pixelsPerSecond}px` }}
+                                                    >
+                                                        <div
+                                                            className="drag-handle drag-handle-start"
+                                                            onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
+                                                            title="Glisser pour modifier le début"
+                                                        />
+                                                        <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
+                                                        <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeFirstPartWidth}px` }}></div>
+                                                        <div
+                                                            className="drag-handle drag-handle-end"
+                                                            onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
+                                                            style={{ left: `${greenWidth}px` }}
+                                                            title="Glisser pour modifier la fin"
+                                                        />
+                                                    </div>
+                                                    {/* Orange continuation at start of cycle */}
+                                                    <div
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                        style={{ left: '0px' }}
+                                                    >
+                                                        <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeSecondPartWidth}px` }}></div>
+                                                    </div>
+                                                </React.Fragment>
+                                            );
+                                        }
+
+                                        // Normal case: neither wraps
                                         return (
                                             <div
                                                 className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
