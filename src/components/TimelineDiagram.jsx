@@ -412,8 +412,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                                         return (
                                             <React.Fragment key={`action-${idx}`}>
-                                                {/* Abrv label on the bar */}
-                                                {abrv && (
+                                                {/* Abrv label on the bar (not for Ouverture anticipée which has its own label) */}
+                                                {abrv && action.action !== 'Ouverture anticipée' && (
                                                     <div
                                                         className="bar-label"
                                                         style={{
@@ -567,6 +567,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
                                                                         title="Glisser pour modifier le début"
                                                                     />
+                                                                    {abrv && (
+                                                                        <span className="ouverture-anticipee-label">{abrv}</span>
+                                                                    )}
                                                                 </div>
                                                                 <div
                                                                     className={`ouverture-anticipee ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
@@ -600,6 +603,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
                                                                 title="Glisser pour modifier la fin"
                                                             />
+                                                            {abrv && (
+                                                                <span className="ouverture-anticipee-label">{abrv}</span>
+                                                            )}
                                                         </div>
                                                     );
                                                 })()}
@@ -1024,7 +1030,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             refY="3"
                                             orient="auto"
                                         >
-                                            <polygon points="0 0, 8 3, 0 6" fill="#64B5F6" />
+                                            <polygon points="0 0, 8 3, 0 6" fill="#1565C0" />
                                         </marker>
                                         <pattern
                                             id={`escam-hatch-${idx}`}
@@ -1033,7 +1039,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             height="6"
                                             patternTransform="rotate(-45)"
                                         >
-                                            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(100,180,255,0.7)" strokeWidth="1.5" />
+                                            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(21,101,192,0.7)" strokeWidth="1.5" />
                                         </pattern>
                                     </defs>
                                     {/* Hatched rectangle between arrow endpoints */}
@@ -1043,7 +1049,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         width={rectWidth}
                                         height={rectHeight}
                                         fill={`url(#escam-hatch-${idx})`}
-                                        stroke="#64B5F6"
+                                        stroke="#1565C0"
                                         strokeWidth="0.5"
                                         strokeDasharray="2,2"
                                     />
@@ -1053,7 +1059,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         y1={sourceY}
                                         x2={arrow1TargetX}
                                         y2={targetY}
-                                        stroke="#64B5F6"
+                                        stroke="#1565C0"
                                         strokeWidth="1"
                                         strokeDasharray="4,2"
                                         markerEnd={`url(#escam-arrowhead-${idx})`}
@@ -1064,7 +1070,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         y1={sourceY}
                                         x2={arrow2TargetX}
                                         y2={targetY}
-                                        stroke="#64B5F6"
+                                        stroke="#1565C0"
                                         strokeWidth="1"
                                         strokeDasharray="4,2"
                                         markerEnd={`url(#escam-arrowhead-${idx})`}

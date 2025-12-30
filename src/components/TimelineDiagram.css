@@ -514,16 +514,29 @@
     position: absolute;
     height: 25%;
     bottom: 7px;
-    border: 1px solid #000;
+    border: 0.5px solid rgba(0, 0, 0, 0.5);
     border-radius: 2px;
     background: repeating-linear-gradient(
         45deg,
-        #00cc00,
-        #00cc00 1px,
+        rgba(0, 204, 0, 0.7),
+        rgba(0, 204, 0, 0.7) 1px,
         transparent 1px,
-        transparent 3px
+        transparent 2px
     );
-    z-index: 20;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.ouverture-anticipee-label {
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 2px;
+    font-size: 0.65em;
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8), 0 0 1px #000;
+    white-space: nowrap;
+    z-index: 101;
     pointer-events: none;
 }
 
@@ -614,17 +627,17 @@
 }
 
 .escamotage-arrows.highlighted line {
-    stroke: #2196F3;
+    stroke: #0D47A1;
     stroke-width: 2;
 }
 
 .escamotage-arrows.highlighted rect {
-    stroke: #2196F3;
+    stroke: #0D47A1;
     stroke-width: 2;
 }
 
 .escamotage-arrows.highlighted polygon {
-    fill: #2196F3;
+    fill: #0D47A1;
 }
 
 .signa-orange-bar.highlighted,
