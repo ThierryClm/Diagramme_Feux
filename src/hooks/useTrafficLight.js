@@ -339,6 +339,18 @@ export const useTrafficLight = () => {
         return saves;
     };
 
+    // Get project data without applying to state (for green wave)
+    const getProjectData = (name) => {
+        try {
+            const raw = localStorage.getItem(`traffic_project_${name}`);
+            if (!raw) return null;
+            return JSON.parse(raw);
+        } catch (e) {
+            console.error("Get project data failed", e);
+            return null;
+        }
+    };
+
     // Load full state (for duplication)
     const loadFullState = (state) => {
         try {
@@ -888,6 +900,7 @@ export const useTrafficLight = () => {
         saveProject,
         loadProject,
         getAllSaves,
+        getProjectData,
         deleteSave,
         getFullState,
         loadFullState,

@@ -8,6 +8,8 @@ import ActionTable from './components/ActionTable';
 import ProjectManager from './components/ProjectManager';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
+import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
+import GreenWaveViewer from './components/GreenWaveViewer';
 
 import './components/GroupTable.css';
 import './components/IntergreenMatrix.css';
@@ -31,6 +33,7 @@ function App() {
         saveProject,
         loadProject,
         getAllSaves,
+        getProjectData,
         deleteSave,
         getFullState,
         loadFullState,
@@ -69,6 +72,11 @@ function App() {
     const [selectedProject, setSelectedProject] = useState(null);
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
+
+    // Green wave states
+    const [createGreenWaveModal, setCreateGreenWaveModal] = useState(false);
+    const [greenWaveViewer, setGreenWaveViewer] = useState(false);
+    const [greenWaveData, setGreenWaveData] = useState(null);
 
     // Check for duplicated state on load
     useEffect(() => {
@@ -141,9 +149,35 @@ function App() {
             case 'credit':
                 alert('Diagramme de Feux\n\nDéveloppé avec React + Vite\n2024');
                 break;
+            // Green wave actions
+            case 'createGreenWave':
+                setCreateGreenWaveModal(true);
+                break;
+            case 'openGreenWave':
+                // TODO: implement open green wave from file
+                alert('Fonctionnalité à venir');
+                break;
+            case 'closeGreenWave':
+                setGreenWaveViewer(false);
+                setGreenWaveData(null);
+                break;
             default:
                 console.log('Action non implémentée:', action);
         }
+    };
+
+    // Handle green wave creation - opens in new tab
+    const handleCreateGreenWave = (intersections) => {
+        // Generate unique ID
+        const greenWaveId = Date.now().toString();
+
+        // Save data to sessionStorage
+        sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(intersections));
+
+        // Open new tab with green wave page
+        window.open(`${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
+
+        setCreateGreenWaveModal(false);
     };
 
     // Handle project selection from open modal
@@ -820,6 +854,22 @@ function App() {
                     </button>
                 </div>
             </Modal>
+
+            {/* Create Green Wave Dialog */}
+            <CreateGreenWaveDialog
+                isOpen={createGreenWaveModal}
+                onClose={() => setCreateGreenWaveModal(false)}
+                onConfirm={handleCreateGreenWave}
+                getAllSaves={getAllSaves}
+                loadProjectData={getProjectData}
+            />
+
+            {/* Green Wave Viewer */}
+            <GreenWaveViewer
+                isOpen={greenWaveViewer}
+                onClose={() => setGreenWaveViewer(false)}
+                intersections={greenWaveData}
+            />
         </div>
     )
 }

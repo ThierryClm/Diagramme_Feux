@@ -1,10 +1,15 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import GreenWavePage from './GreenWavePage.jsx'
 import './index.css'
+
+// Check URL parameters to decide which component to render
+const urlParams = new URLSearchParams(window.location.search);
+const isGreenWavePage = urlParams.has('greenwave');
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
-        <App />
+        {isGreenWavePage ? <GreenWavePage /> : <App />}
     </StrictMode>,
 )
