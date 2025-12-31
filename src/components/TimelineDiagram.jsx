@@ -332,7 +332,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         return (
                             <div key={g.id} className="row-label-container" onClick={() => onGroupClick(g)}>
                                 <span className="label-id">{g.id}</span>
-                                <span className="label-name" title={g.name}>{g.name || '-'}</span>
+                                <span
+                                    className="label-name"
+                                    title={g.name}
+                                    style={{
+                                        backgroundColor:
+                                            g.type === 'VL' ? 'rgba(0, 0, 255, 0.1)' :
+                                            g.type === 'TC' ? 'rgba(148, 0, 211, 0.1)' :
+                                            g.type === 'Piéton' ? 'rgba(0, 255, 0, 0.1)' :
+                                            g.type === 'Cycliste' ? 'rgba(255, 255, 0, 0.1)' :
+                                            'transparent'
+                                    }}
+                                >{g.name || '-'}</span>
                                 <input
                                     type="number"
                                     className="input-time-sm"

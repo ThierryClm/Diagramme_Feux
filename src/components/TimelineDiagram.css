@@ -28,7 +28,7 @@
 }
 
 .timeline-sidebar {
-    width: 220px;
+    width: 325px;
     background: #1a1a1a;
     border-right: 1px solid #444;
     flex-shrink: 0;
@@ -62,7 +62,7 @@
 }
 
 .col-label.col-name {
-    width: 55px;
+    width: 160px;
     flex-shrink: 0;
     text-align: left;
 }
@@ -95,7 +95,7 @@
 }
 
 .label-name {
-    width: 55px;
+    width: 160px;
     flex-shrink: 0;
     font-size: 0.75em;
     color: #aaa;
@@ -103,6 +103,8 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     box-sizing: border-box;
+    padding: 2px 4px;
+    border-radius: 3px;
 }
 
 .input-time-sm {
