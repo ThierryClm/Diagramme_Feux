@@ -51,6 +51,7 @@
     cursor: pointer;
     font-size: 0.85em;
     transition: background-color 0.15s;
+    white-space: nowrap;
 }
 
 .menu-item:hover {

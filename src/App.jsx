@@ -582,6 +582,14 @@ function App() {
                                 key={pf.id}
                                 className={`pf-tab ${activePFId === pf.id ? 'active' : ''}`}
                                 onClick={() => setActivePFId(pf.id)}
+                                onDoubleClick={(e) => {
+                                    e.stopPropagation();
+                                    const newName = prompt('Nouveau nom de l\'onglet:', pf.name);
+                                    if (newName && newName.trim() !== '') {
+                                        renamePF(pf.id, newName.trim());
+                                    }
+                                }}
+                                title="Double-cliquez pour renommer"
                             >
                                 <span className="pf-tab-name">{pf.name}</span>
                                 {pfTabs.length > 1 && (
@@ -589,7 +597,7 @@ function App() {
                                         className="pf-tab-close"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (confirm(`Supprimer ${pf.name} ?`)) {
+                                            if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'onglet "${pf.name}" ?\nCette action est irréversible.`)) {
                                                 deletePF(pf.id);
                                             }
                                         }}
