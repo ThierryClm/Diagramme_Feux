@@ -39,6 +39,7 @@ function App() {
         loadFullState,
         actionData,
         updateActionRow,
+        reorderActions,
         pfTabs,
         activePFId,
         setActivePFId,
@@ -553,9 +554,9 @@ function App() {
                                 {conflicts.map((c, i) => (
                                     <li key={i}>
                                         {c.type === 'intergreen' ? (
-                                            <>G{c.from} → G{c.to} : Dégagement insuffisant ({c.actual.toFixed(1)}s / {c.required}s requis)</>
+                                            <>GF{c.from} → GF{c.to} : Dégagement insuffisant ({c.actual.toFixed(1)}s / {c.required}s requis)</>
                                         ) : (
-                                            <>G{c.from} ↔ G{c.to} : {c.message}</>
+                                            <>GF{c.from} ↔ GF{c.to} : {c.message}</>
                                         )}
                                     </li>
                                 ))}
@@ -617,6 +618,7 @@ function App() {
                         <ActionTable
                             actionData={actionData}
                             updateActionRow={updateActionRow}
+                            reorderActions={reorderActions}
                             cycleLength={cycleLength}
                             maxGroup={groups.length}
                             hoveredActionId={hoveredActionId}

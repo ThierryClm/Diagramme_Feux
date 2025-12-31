@@ -634,6 +634,16 @@ export const useTrafficLight = () => {
         ));
     }, [activePFId]);
 
+    // Reorder actions (for sorting)
+    const reorderActions = useCallback((sortedData) => {
+        // Reassign IDs to maintain order
+        const reorderedData = sortedData.map((row, index) => ({
+            ...row,
+            id: index + 1
+        }));
+        setActionData(reorderedData);
+    }, [setActionData]);
+
     // Duplicate current PF
     const duplicatePF = useCallback(() => {
         const nextId = Math.max(...pfTabs.map(pf => pf.id)) + 1;
@@ -945,6 +955,7 @@ export const useTrafficLight = () => {
         // Action Table
         actionData,
         updateActionRow: updateActionRowWithHistory,
+        reorderActions,
         // PF (Plans de Feux) management
         pfTabs,
         activePFId,
