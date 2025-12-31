@@ -50,10 +50,17 @@ const GreenWavePage = () => {
                     const projectData = JSON.parse(projectRaw);
                     if (projectData.groups) {
                         updatedCount++;
+                        // Get pfTabs and actionData from the selected plan de feu
+                        const pfTabs = projectData.pfTabs || [{ id: 1, name: 'PF1', data: [] }];
+                        const selectedPfId = intersection.selectedPfId || pfTabs[0]?.id || 1;
+                        const selectedPf = pfTabs.find(pf => pf.id === selectedPfId);
+
                         return {
                             ...intersection,
                             groups: projectData.groups,
-                            cycleLength: projectData.cycleLength || intersection.cycleLength
+                            cycleLength: projectData.cycleLength || intersection.cycleLength,
+                            pfTabs: pfTabs,
+                            actionData: selectedPf?.data || []
                         };
                     }
                 } catch (e) {
@@ -588,8 +595,25 @@ const GreenWavePage = () => {
 
                             // Render actions (Seconde lucarne, Ouverture anticipée) for selected groups
                             const actions = intersection.actionData || [];
+                            // Debug: log actions data
+                            if (cycle === 0) {
+                                const relevantActions = actions.filter(a => a.action === 'Seconde lucarne' || a.action === 'Ouverture anticipée');
+                                console.log('=== Debug Actions ===');
+                                console.log('Intersection:', intersection.projectName);
+                                console.log('Selected Group1:', intersection.selectedGroup1, 'Group2:', intersection.selectedGroup2);
+                                console.log('Total actions in actionData:', actions.length);
+                                console.log('Relevant actions (Seconde lucarne / Ouverture anticipée):', relevantActions);
+                                if (relevantActions.length > 0) {
+                                    relevantActions.forEach(a => console.log('  - GF:', a.gf, 'Action:', a.action, 'Deb:', a.deb, 'Fin:', a.fin));
+                                }
+                            }
                             actions.forEach((action, actionIdx) => {
-                                if (!action.gf || action.deb === '' || action.fin === '') return;
+                                // Skip if no group, or no start/end time
+                                if (!action.gf || action.deb === '' || action.deb === undefined ||
+                                    action.fin === '' || action.fin === undefined) return;
+                                // Skip if not the right action type
+                                if (action.action !== 'Seconde lucarne' && action.action !== 'Ouverture anticipée') return;
+
                                 const actionGroupId = parseInt(action.gf);
                                 const isGroup1 = actionGroupId === intersection.selectedGroup1;
                                 const isGroup2 = actionGroupId === intersection.selectedGroup2;
