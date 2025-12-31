@@ -955,15 +955,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <defs>
                                                 <marker
                                                     id={`arrowhead-${idx}-${tIdx}`}
-                                                    markerWidth="8"
-                                                    markerHeight="6"
-                                                    refX="8"
-                                                    refY="3"
+                                                    markerWidth="6"
+                                                    markerHeight="4"
+                                                    refX="6"
+                                                    refY="2"
                                                     orient="auto"
                                                 >
                                                     <polygon
-                                                        points="0 0, 8 3, 0 6"
-                                                        fill="#ff4444"
+                                                        points="0 0, 6 2, 0 4"
+                                                        fill="#ff0000"
                                                     />
                                                 </marker>
                                             </defs>
@@ -973,8 +973,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 y1={sourceY}
                                                 x2={cycleEndX}
                                                 y2={sourceY + (targetY - sourceY) * ((cycleEndX - sourceX) / (cycleEndX - sourceX + targetX))}
-                                                stroke="#ff4444"
-                                                strokeWidth="2"
+                                                stroke="#ff0000"
+                                                strokeWidth="1.5"
                                             />
                                             {/* Second segment: from start of cycle to target */}
                                             <line
@@ -982,8 +982,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 y1={sourceY + (targetY - sourceY) * ((cycleEndX - sourceX) / (cycleEndX - sourceX + targetX))}
                                                 x2={targetX}
                                                 y2={targetY}
-                                                stroke="#ff4444"
-                                                strokeWidth="2"
+                                                stroke="#ff0000"
+                                                strokeWidth="1.5"
                                                 markerEnd={`url(#arrowhead-${idx}-${tIdx})`}
                                             />
                                         </svg>
@@ -1007,15 +1007,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         <defs>
                                             <marker
                                                 id={`arrowhead-${idx}-${tIdx}`}
-                                                markerWidth="8"
-                                                markerHeight="6"
-                                                refX="8"
-                                                refY="3"
+                                                markerWidth="6"
+                                                markerHeight="4"
+                                                refX="6"
+                                                refY="2"
                                                 orient="auto"
                                             >
                                                 <polygon
-                                                    points="0 0, 8 3, 0 6"
-                                                    fill="#ff4444"
+                                                    points="0 0, 6 2, 0 4"
+                                                    fill="#ff0000"
                                                 />
                                             </marker>
                                         </defs>
@@ -1024,8 +1024,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             y1={sourceY}
                                             x2={targetX}
                                             y2={targetY}
-                                            stroke="#ff4444"
-                                            strokeWidth="2"
+                                            stroke="#ff0000"
+                                            strokeWidth="1.5"
                                             markerEnd={`url(#arrowhead-${idx}-${tIdx})`}
                                         />
                                     </svg>
@@ -1223,7 +1223,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             height="6"
                                             patternTransform="rotate(-45)"
                                         >
-                                            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(21,101,192,0.7)" strokeWidth="1.5" />
+                                            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(21,101,192,0.9)" strokeWidth="3" />
                                         </pattern>
                                     </defs>
                                     {/* Hatched rectangle between arrow endpoints */}
@@ -1708,7 +1708,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={cycleEndX}
                                                 y2={intermediateY}
                                                 stroke="#00cc00"
-                                                strokeWidth="1"
+                                                strokeWidth="0.5"
                                                 strokeDasharray="4,3"
                                             />
                                             {/* Second segment: from start of cycle to end */}
@@ -1718,7 +1718,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={endX}
                                                 y2={endY}
                                                 stroke="#00cc00"
-                                                strokeWidth="1"
+                                                strokeWidth="0.5"
                                                 strokeDasharray="4,3"
                                             />
                                             {/* Arrow head at end */}
@@ -1759,7 +1759,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             x2={endX}
                                             y2={endY}
                                             stroke="#00cc00"
-                                            strokeWidth="1"
+                                            strokeWidth="0.5"
                                             strokeDasharray="4,3"
                                         />
                                         {/* Arrow head at end */}
@@ -1835,7 +1835,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={cycleEndX}
                                                 y2={intermediateY}
                                                 stroke="#00cc00"
-                                                strokeWidth="1"
+                                                strokeWidth="0.5"
                                                 strokeDasharray="4,3"
                                             />
                                             {/* Second segment: from start of cycle to end */}
@@ -1845,7 +1845,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={endX}
                                                 y2={endY}
                                                 stroke="#00cc00"
-                                                strokeWidth="1"
+                                                strokeWidth="0.5"
                                                 strokeDasharray="4,3"
                                             />
                                             {/* Arrow head at end */}
@@ -1886,7 +1886,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             x2={endX}
                                             y2={endY}
                                             stroke="#00cc00"
-                                            strokeWidth="1"
+                                            strokeWidth="0.5"
                                             strokeDasharray="4,3"
                                         />
                                         {/* Arrow head at end */}
