@@ -22,7 +22,8 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
         if (!projectData) return;
 
         // Get pfTabs (plans de feu) from project
-        const pfTabs = projectData.pfTabs || [{ id: 1, name: 'PF1', actions: projectData.actionData || [] }];
+        // Note: pfTabs stores actions under the key 'data', not 'actions'
+        const pfTabs = projectData.pfTabs || [{ id: 1, name: 'PF1', data: projectData.actionData || [] }];
         const selectedPfId = pfTabs[0]?.id || 1;
         const selectedPf = pfTabs.find(pf => pf.id === selectedPfId);
 
@@ -38,7 +39,7 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
             selectedGroup2: projectData.groups?.[1]?.id || 2,
             pfTabs: pfTabs,
             selectedPfId: selectedPfId,
-            actionData: selectedPf?.actions || []
+            actionData: selectedPf?.data || []
         };
 
         setIntersections([...intersections, newIntersection]);
@@ -62,7 +63,7 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                 return {
                     ...i,
                     selectedPfId: pfId,
-                    actionData: selectedPf?.actions || []
+                    actionData: selectedPf?.data || []
                 };
             }
             return i;

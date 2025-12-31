@@ -79,6 +79,7 @@ function App() {
     const [selectedGreenWave, setSelectedGreenWave] = useState(null);
     const [greenWaveViewer, setGreenWaveViewer] = useState(false);
     const [greenWaveData, setGreenWaveData] = useState(null);
+    const [greenWaveListKey, setGreenWaveListKey] = useState(0);
 
     // Get all saved green waves
     const getSavedGreenWaves = () => {
@@ -95,6 +96,28 @@ function App() {
             console.error('Failed to get saved green waves', e);
         }
         return [];
+    };
+
+    // Delete a saved green wave
+    const deleteGreenWave = (name) => {
+        if (!window.confirm(`Êtes-vous sûr de vouloir supprimer l'onde verte "${name}" ?`)) {
+            return;
+        }
+        try {
+            const saved = localStorage.getItem('savedGreenWaves');
+            if (saved) {
+                const greenWaves = JSON.parse(saved);
+                delete greenWaves[name];
+                localStorage.setItem('savedGreenWaves', JSON.stringify(greenWaves));
+                if (selectedGreenWave === name) {
+                    setSelectedGreenWave(null);
+                }
+                // Force list refresh
+                setGreenWaveListKey(prev => prev + 1);
+            }
+        } catch (e) {
+            console.error('Failed to delete green wave', e);
+        }
     };
 
     // Check for duplicated state on load
@@ -943,9 +966,19 @@ function App() {
                                             <div className="project-info">
                                                 <span className="project-name">{gw.name}</span>
                                                 <span className="project-details">
-                                                    {gw.intersections?.length || 0} carrefours • {gw.speed || 50} km/h
+                                                    {gw.intersections?.length || 0} carrefours • {gw.speedUp || gw.speed || 50} km/h
                                                 </span>
                                             </div>
+                                            <button
+                                                className="btn-delete-item"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    deleteGreenWave(gw.name);
+                                                }}
+                                                title="Supprimer"
+                                            >
+                                                ×
+                                            </button>
                                         </div>
                                     ))}
                                 </div>

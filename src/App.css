@@ -589,6 +589,26 @@
     background: #3a5a8a;
 }
 
+/* Delete button for list items */
+.btn-delete-item {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    opacity: 0.5;
+    transition: all 0.15s;
+    margin-left: auto;
+}
+
+.btn-delete-item:hover {
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+    opacity: 1;
+}
+
 /* Disabled button state */
 .modal-btn:disabled {
     opacity: 0.5;
