@@ -152,10 +152,18 @@ const GreenWavePage = () => {
     const moveIntersection = (index, direction) => {
         setIntersections(prev => {
             if (!prev) return prev;
-            const newList = [...prev];
+            const newList = [...prev].map(item => ({ ...item }));
             const targetIndex = direction === 'up' ? index - 1 : index + 1;
 
             if (targetIndex < 0 || targetIndex >= newList.length) return prev;
+
+            // Swap distances as well so the diagram updates
+            const tempDistance = newList[index].distance;
+            const tempDistanceG2 = newList[index].distanceG2;
+            newList[index].distance = newList[targetIndex].distance;
+            newList[index].distanceG2 = newList[targetIndex].distanceG2;
+            newList[targetIndex].distance = tempDistance;
+            newList[targetIndex].distanceG2 = tempDistanceG2;
 
             // Swap intersections
             [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];

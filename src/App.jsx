@@ -81,21 +81,45 @@ function App() {
     const [greenWaveData, setGreenWaveData] = useState(null);
     const [greenWaveListKey, setGreenWaveListKey] = useState(0);
 
-    // Get all saved green waves
+    // Get all saved green waves (sorted by most recent first)
     const getSavedGreenWaves = () => {
         try {
             const saved = localStorage.getItem('savedGreenWaves');
             if (saved) {
                 const greenWaves = JSON.parse(saved);
-                return Object.keys(greenWaves).map(name => ({
-                    name,
-                    ...greenWaves[name]
-                }));
+                return Object.keys(greenWaves)
+                    .map(name => ({
+                        name,
+                        ...greenWaves[name]
+                    }))
+                    .sort((a, b) => {
+                        // Sort by savedAt date, most recent first
+                        const dateA = a.savedAt ? new Date(a.savedAt) : new Date(0);
+                        const dateB = b.savedAt ? new Date(b.savedAt) : new Date(0);
+                        return dateB - dateA;
+                    });
             }
         } catch (e) {
             console.error('Failed to get saved green waves', e);
         }
         return [];
+    };
+
+    // Format date for display
+    const formatDate = (isoString) => {
+        if (!isoString) return '';
+        try {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return '';
+        }
     };
 
     // Delete a saved green wave
@@ -967,6 +991,7 @@ function App() {
                                                 <span className="project-name">{gw.name}</span>
                                                 <span className="project-details">
                                                     {gw.intersections?.length || 0} carrefours • {gw.speedUp || gw.speed || 50} km/h
+                                                    {gw.savedAt && ` • ${formatDate(gw.savedAt)}`}
                                                 </span>
                                             </div>
                                             <button
