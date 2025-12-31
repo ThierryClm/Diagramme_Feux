@@ -129,25 +129,6 @@ const GreenWavePage = () => {
         };
     }, [intersections]);
 
-    // Update group parameter in intersection
-    const updateGroupParam = (intersectionIdx, groupId, field, value) => {
-        setIntersections(prev => {
-            const updated = [...prev];
-            const intersection = { ...updated[intersectionIdx] };
-            intersection.groups = intersection.groups.map(g => {
-                if (g.id === groupId) {
-                    if (field === 'offset') {
-                        return { ...g, offset: parseInt(value) || 0 };
-                    } else if (field === 'green') {
-                        return { ...g, durations: { ...g.durations, green: parseInt(value) || 0 } };
-                    }
-                }
-                return g;
-            });
-            updated[intersectionIdx] = intersection;
-            return updated;
-        });
-    };
 
     // Update intersection distance for group 1
     const updateDistance = (intersectionIdx, value) => {
@@ -674,9 +655,9 @@ const GreenWavePage = () => {
                                         y={yG1 + 4}
                                         textAnchor="end"
                                         fill="#FF9800"
-                                        fontSize="9"
+                                        fontSize="11"
                                     >
-                                        G{group1.id} ({intersection.distance}m)
+                                        {group1.name || `G${group1.id}`}
                                     </text>
                                 )}
 
@@ -687,9 +668,9 @@ const GreenWavePage = () => {
                                         y={yG2 + 4}
                                         textAnchor="end"
                                         fill="#8BC34A"
-                                        fontSize="9"
+                                        fontSize="11"
                                     >
-                                        G{group2.id} ({intersection.distanceG2 ?? intersection.distance}m)
+                                        {group2.name || `G${group2.id}`}
                                     </text>
                                 )}
 
@@ -860,16 +841,14 @@ const GreenWavePage = () => {
                             <th rowSpan="2">Ordre</th>
                             <th rowSpan="2">Carrefour</th>
                             <th rowSpan="2">Cycle</th>
-                            <th colSpan="3" style={{ background: '#2d4a2d' }}>Groupe 1 (Descendant)</th>
-                            <th colSpan="3" style={{ background: '#3d4a2d' }}>Groupe 2 (Montant)</th>
+                            <th colSpan="2" style={{ background: '#2d4a2d' }}>Groupe 1 (Descendant)</th>
+                            <th colSpan="2" style={{ background: '#3d4a2d' }}>Groupe 2 (Montant)</th>
                         </tr>
                         <tr className="sub-header">
                             <th style={{ color: '#FF9800' }}>Nom</th>
                             <th style={{ color: '#FF9800' }}>Dist</th>
-                            <th style={{ color: '#FF9800' }}>Vert</th>
                             <th style={{ color: '#4CAF50' }}>Nom</th>
                             <th style={{ color: '#4CAF50' }}>Dist</th>
-                            <th style={{ color: '#4CAF50' }}>Vert</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -910,16 +889,9 @@ const GreenWavePage = () => {
                                                     onChange={(e) => updateDistance(idx, e.target.value)}
                                                 />
                                             </td>
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    value={group1.durations?.green || 0}
-                                                    onChange={(e) => updateGroupParam(idx, group1.id, 'green', e.target.value)}
-                                                />
-                                            </td>
                                         </>
                                     ) : (
-                                        <><td>-</td><td>-</td><td>-</td></>
+                                        <><td>-</td><td>-</td></>
                                     )}
                                     {group2 ? (
                                         <>
@@ -933,31 +905,15 @@ const GreenWavePage = () => {
                                                     onChange={(e) => updateDistanceG2(idx, e.target.value)}
                                                 />
                                             </td>
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    value={group2.durations?.green || 0}
-                                                    onChange={(e) => updateGroupParam(idx, group2.id, 'green', e.target.value)}
-                                                />
-                                            </td>
                                         </>
                                     ) : (
-                                        <><td>-</td><td>-</td><td>-</td></>
+                                        <><td>-</td><td>-</td></>
                                     )}
                                 </tr>
                             );
                         })}
                     </tbody>
                 </table>
-
-                <div className="green-wave-actions">
-                    <button className="btn-action btn-sync" onClick={handleSyncGreenWave}>
-                        Synchroniser les données
-                    </button>
-                    <button className="btn-action btn-save" onClick={handleSaveGreenWave}>
-                        Sauvegarder l'onde verte
-                    </button>
-                </div>
             </div>
         </div>
     );

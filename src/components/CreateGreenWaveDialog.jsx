@@ -8,6 +8,8 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
 
     useEffect(() => {
         if (isOpen) {
+            setIntersections([]);
+            setSelectedProject('');
             setAvailableProjects(getAllSaves());
         }
     }, [isOpen, getAllSaves]);
