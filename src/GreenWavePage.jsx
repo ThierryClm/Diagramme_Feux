@@ -666,6 +666,12 @@ const GreenWavePage = () => {
                             });
                         }
 
+                        // Helper to truncate names to 25 characters
+                        const truncateName = (name, maxLen = 25) => {
+                            if (!name) return '';
+                            return name.length > maxLen ? name.substring(0, maxLen) + '…' : name;
+                        };
+
                         return (
                             <g key={`intersection-${idx}`}>
                                 {/* Project name at average Y */}
@@ -677,7 +683,7 @@ const GreenWavePage = () => {
                                     fontSize="10"
                                     fontWeight="bold"
                                 >
-                                    {intersection.projectName}
+                                    {truncateName(intersection.projectName)}
                                 </text>
 
                                 {/* Group 1 name (Descendant) */}
@@ -689,7 +695,7 @@ const GreenWavePage = () => {
                                         fill="#FF9800"
                                         fontSize="11"
                                     >
-                                        {group1.name || `G${group1.id}`}
+                                        {truncateName(group1.name) || `G${group1.id}`}
                                     </text>
                                 )}
 
@@ -702,7 +708,7 @@ const GreenWavePage = () => {
                                         fill="#8BC34A"
                                         fontSize="11"
                                     >
-                                        {group2.name || `G${group2.id}`}
+                                        {truncateName(group2.name) || `G${group2.id}`}
                                     </text>
                                 )}
 
@@ -873,8 +879,8 @@ const GreenWavePage = () => {
                             <th rowSpan="2">Ordre</th>
                             <th rowSpan="2">Carrefour</th>
                             <th rowSpan="2">Cycle</th>
-                            <th colSpan="2" style={{ background: '#2d4a2d' }}>Groupe 1 (Descendant)</th>
-                            <th colSpan="2" style={{ background: '#3d4a2d' }}>Groupe 2 (Montant)</th>
+                            <th colSpan="2" style={{ background: '#2d4a2d' }}>Bande passante (Descendant)</th>
+                            <th colSpan="2" style={{ background: '#3d4a2d' }}>Bande passante (Montant)</th>
                         </tr>
                         <tr className="sub-header">
                             <th style={{ color: '#FF9800' }}>Nom</th>
