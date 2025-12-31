@@ -614,3 +614,104 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* Print Preview Modal */
+.print-preview-modal {
+    max-width: 500px;
+}
+
+.print-preview-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.print-preview-content {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.print-section h4 {
+    color: #fff;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.print-section p {
+    color: #aaa;
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.print-info {
+    color: #888;
+    font-size: 0.85rem;
+    font-style: italic;
+    margin: 0;
+}
+
+/* Print Media Queries */
+@media print {
+    /* Hide everything by default */
+    body * {
+        visibility: hidden;
+    }
+
+    /* Matrix print */
+    body.print-matrix .intergreen-matrix,
+    body.print-matrix .intergreen-matrix * {
+        visibility: visible;
+    }
+    body.print-matrix .intergreen-matrix {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+    }
+
+    /* Form print */
+    body.print-form .group-table-container,
+    body.print-form .group-table-container * {
+        visibility: visible;
+    }
+    body.print-form .group-table-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+    }
+
+    /* Diagram print */
+    body.print-diagram .diagram-section,
+    body.print-diagram .diagram-section *,
+    body.print-diagram .action-table-container,
+    body.print-diagram .action-table-container * {
+        visibility: visible;
+    }
+    body.print-diagram .diagram-section {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    body.print-diagram .action-table-container {
+        position: absolute;
+        left: 0;
+        top: 60%;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+    }
+
+    /* General print styles */
+    @page {
+        size: landscape;
+        margin: 1cm;
+    }
+}

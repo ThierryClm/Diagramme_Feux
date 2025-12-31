@@ -82,6 +82,10 @@ function App() {
     const [greenWaveData, setGreenWaveData] = useState(null);
     const [greenWaveListKey, setGreenWaveListKey] = useState(0);
 
+    // Print preview states
+    const [printPreviewModal, setPrintPreviewModal] = useState(false);
+    const [printType, setPrintType] = useState(null); // 'matrix', 'form', 'diagram'
+
     // Get all saved green waves (sorted by most recent first)
     const getSavedGreenWaves = () => {
         try {
@@ -184,8 +188,17 @@ function App() {
                     saveProject(name);
                 }
                 break;
-            case 'print':
-                window.print();
+            case 'printMatrix':
+                setPrintType('matrix');
+                setPrintPreviewModal(true);
+                break;
+            case 'printForm':
+                setPrintType('form');
+                setPrintPreviewModal(true);
+                break;
+            case 'printDiagram':
+                setPrintType('diagram');
+                setPrintPreviewModal(true);
                 break;
             case 'close':
                 window.close();
@@ -223,10 +236,6 @@ function App() {
             case 'openGreenWave':
                 setOpenGreenWaveModal(true);
                 setSelectedGreenWave(null);
-                break;
-            case 'saveGreenWave':
-                // Save is handled in the GreenWavePage window
-                alert('L\'enregistrement se fait depuis la fenêtre Onde Verte.');
                 break;
             case 'closeGreenWave':
                 setGreenWaveViewer(false);
@@ -1044,6 +1053,72 @@ function App() {
                 onClose={() => setGreenWaveViewer(false)}
                 intersections={greenWaveData}
             />
+
+            {/* Print Preview Modal */}
+            {printPreviewModal && (
+                <div className="modal-overlay" onClick={() => setPrintPreviewModal(false)}>
+                    <div className="modal-content print-preview-modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>
+                                {printType === 'matrix' && 'Imprimer la matrice'}
+                                {printType === 'form' && 'Imprimer le formulaire'}
+                                {printType === 'diagram' && 'Imprimer le diagramme'}
+                            </h3>
+                            <button className="modal-close" onClick={() => setPrintPreviewModal(false)}>×</button>
+                        </div>
+                        <div className="modal-body print-preview-body">
+                            <div className="print-preview-content">
+                                {printType === 'matrix' && (
+                                    <div className="print-section">
+                                        <h4>{intersectionName || 'Sans titre'}</h4>
+                                        <p>Matrice des temps intervert - {groups.length} groupes</p>
+                                        <p>Durée du cycle: {cycleLength}s</p>
+                                    </div>
+                                )}
+                                {printType === 'form' && (
+                                    <div className="print-section">
+                                        <h4>{intersectionName || 'Sans titre'}</h4>
+                                        <p>Formulaire de configuration</p>
+                                        <p>{groups.length} groupes - Cycle: {cycleLength}s</p>
+                                    </div>
+                                )}
+                                {printType === 'diagram' && (
+                                    <div className="print-section">
+                                        <h4>{intersectionName || 'Sans titre'}</h4>
+                                        <p>Diagramme avec tableau des actions</p>
+                                        <p>{groups.length} groupes - Cycle: {cycleLength}s</p>
+                                        <p>{actionData.filter(a => a.gf || a.action).length} actions définies</p>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="print-info">
+                                Cliquez sur "Imprimer" pour ouvrir la boîte de dialogue d'impression.
+                                Vous pourrez y choisir l'imprimante et les options d'impression.
+                            </p>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-cancel" onClick={() => setPrintPreviewModal(false)}>
+                                Annuler
+                            </button>
+                            <button
+                                className="btn-confirm"
+                                onClick={() => {
+                                    setPrintPreviewModal(false);
+                                    // Add print class to body for CSS targeting
+                                    document.body.classList.add(`print-${printType}`);
+                                    window.print();
+                                    // Remove class after print dialog closes
+                                    setTimeout(() => {
+                                        document.body.classList.remove(`print-${printType}`);
+                                    }, 100);
+                                }}
+                            >
+                                Imprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

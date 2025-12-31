@@ -38,7 +38,9 @@ const MenuBar = ({ onAction }) => {
                 { label: 'Importer...', action: 'import' },
                 { label: 'Exporter...', action: 'export' },
                 { type: 'separator' },
-                { label: 'Imprimer...', action: 'print' },
+                { label: 'Imprimer la matrice...', action: 'printMatrix' },
+                { label: 'Imprimer le formulaire...', action: 'printForm' },
+                { label: 'Imprimer le diagramme...', action: 'printDiagram' },
                 { type: 'separator' },
                 { label: 'Fermer', action: 'close' }
             ]
@@ -60,7 +62,6 @@ const MenuBar = ({ onAction }) => {
             items: [
                 { label: 'Ouvrir une onde verte...', action: 'openGreenWave' },
                 { label: 'Créer une onde verte...', action: 'createGreenWave' },
-                { label: 'Enregistrer', action: 'saveGreenWave' },
                 { type: 'separator' },
                 { label: 'Fermer', action: 'closeGreenWave' }
             ]
