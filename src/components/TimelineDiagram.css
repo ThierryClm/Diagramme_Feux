@@ -53,6 +53,7 @@
     font-size: 0.75em;
     color: #888;
     text-align: center;
+    box-sizing: border-box;
 }
 
 .col-label.col-grp {
@@ -90,6 +91,7 @@
     width: 28px;
     font-weight: bold;
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .label-name {
@@ -100,6 +102,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    box-sizing: border-box;
 }
 
 .input-time-sm {
@@ -112,6 +115,7 @@
     text-align: center;
     font-size: 0.75em;
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .input-time-sm:focus {
@@ -130,6 +134,7 @@
     text-align: center;
     font-size: 0.75em;
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .input-da:focus {
