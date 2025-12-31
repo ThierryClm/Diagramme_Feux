@@ -5,7 +5,8 @@ const GreenWavePage = () => {
     const [intersections, setIntersections] = useState(null);
     const [pixelsPerSecond, setPixelsPerSecond] = useState(8);
     const [pixelsPerMeter, setPixelsPerMeter] = useState(1);
-    const [speed, setSpeed] = useState(50); // km/h
+    const [speedUp, setSpeedUp] = useState(50); // km/h - vitesse montante
+    const [speedDown, setSpeedDown] = useState(50); // km/h - vitesse descendante
     const [greenWaveName, setGreenWaveName] = useState('');
 
     // Save green wave data to localStorage
@@ -18,7 +19,8 @@ const GreenWavePage = () => {
         const greenWaveData = {
             name,
             intersections,
-            speed,
+            speedUp,
+            speedDown,
             pixelsPerSecond,
             pixelsPerMeter,
             savedAt: new Date().toISOString()
@@ -75,6 +77,7 @@ const GreenWavePage = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const greenWaveId = urlParams.get('id');
         if (greenWaveId) {
+            // Load intersections data
             const savedData = sessionStorage.getItem(`greenwave_${greenWaveId}`);
             if (savedData) {
                 try {
@@ -84,6 +87,27 @@ const GreenWavePage = () => {
                     document.title = `Onde Verte - ${data.length} carrefours`;
                 } catch (e) {
                     console.error('Failed to load green wave data', e);
+                }
+            }
+
+            // Load settings if available (from saved green wave)
+            const savedSettings = sessionStorage.getItem(`greenwave_settings_${greenWaveId}`);
+            if (savedSettings) {
+                try {
+                    const settings = JSON.parse(savedSettings);
+                    if (settings.name) setGreenWaveName(settings.name);
+                    if (settings.speedUp) setSpeedUp(settings.speedUp);
+                    else if (settings.speed) setSpeedUp(settings.speed); // Backward compatibility
+                    if (settings.speedDown) setSpeedDown(settings.speedDown);
+                    else if (settings.speed) setSpeedDown(settings.speed); // Backward compatibility
+                    if (settings.pixelsPerSecond) setPixelsPerSecond(settings.pixelsPerSecond);
+                    if (settings.pixelsPerMeter) setPixelsPerMeter(settings.pixelsPerMeter);
+                    // Update title with name
+                    if (settings.name) {
+                        document.title = `Onde Verte - ${settings.name}`;
+                    }
+                } catch (e) {
+                    console.error('Failed to load green wave settings', e);
                 }
             }
         }
@@ -125,7 +149,7 @@ const GreenWavePage = () => {
         });
     };
 
-    // Update intersection distance
+    // Update intersection distance for group 1
     const updateDistance = (intersectionIdx, value) => {
         setIntersections(prev => {
             const updated = [...prev];
@@ -134,8 +158,33 @@ const GreenWavePage = () => {
         });
     };
 
+    // Update intersection distance for group 2
+    const updateDistanceG2 = (intersectionIdx, value) => {
+        setIntersections(prev => {
+            const updated = [...prev];
+            updated[intersectionIdx] = { ...updated[intersectionIdx], distanceG2: parseInt(value) || 0 };
+            return updated;
+        });
+    };
+
+    // Move intersection up or down in the list
+    const moveIntersection = (index, direction) => {
+        setIntersections(prev => {
+            if (!prev) return prev;
+            const newList = [...prev];
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+            if (targetIndex < 0 || targetIndex >= newList.length) return prev;
+
+            // Swap intersections
+            [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
+            return newList;
+        });
+    };
+
     // Calculate speed line slope (meters per second)
-    const speedMps = (speed * 1000) / 3600; // Convert km/h to m/s
+    const speedUpMps = (speedUp * 1000) / 3600; // Convert km/h to m/s - ascending
+    const speedDownMps = (speedDown * 1000) / 3600; // Convert km/h to m/s - descending
 
     const PADDING_LEFT = 150;
     const PADDING_BOTTOM = 50;
@@ -166,60 +215,71 @@ const GreenWavePage = () => {
     const bandwidthData = useMemo(() => {
         if (!intersections || intersections.length === 0) return null;
 
-        // Sort intersections by distance
-        const sortedIntersections = [...intersections].sort((a, b) => a.distance - b.distance);
-        if (sortedIntersections.length === 0) return null;
+        // Sort intersections by distance for G1 (descending) and distanceG2 for G2 (ascending)
+        const sortedByDistG1 = [...intersections].sort((a, b) => a.distance - b.distance);
+        const sortedByDistG2 = [...intersections].sort((a, b) =>
+            (a.distanceG2 ?? a.distance) - (b.distanceG2 ?? b.distance)
+        );
 
-        // Reference = bottom intersection (min distance)
-        const bottomIntersection = sortedIntersections[0];
-        const topIntersection = sortedIntersections[sortedIntersections.length - 1];
+        if (sortedByDistG1.length === 0) return null;
 
-        // ASCENDING bandwidth (bottom to top, positive slope)
-        // At reference (bottom), find the time window that passes through all greens going up
-        const bottomGroup = bottomIntersection.groups.find(g => g.id === bottomIntersection.selectedGroup1);
-        if (!bottomGroup) return null;
+        // Reference = bottom intersection (min distance) for each group
+        const bottomIntersectionG2 = sortedByDistG2[0];
+        const topIntersectionG1 = sortedByDistG1[sortedByDistG1.length - 1];
 
-        let ascStart = bottomGroup.offset;
-        let ascEnd = bottomGroup.offset + (bottomGroup.durations?.green || 0);
+        // ASCENDING bandwidth (bottom to top, positive slope) - uses Group 2 with distanceG2
+        const bottomGroupAsc = bottomIntersectionG2.groups.find(g => g.id === bottomIntersectionG2.selectedGroup2);
 
-        sortedIntersections.forEach((intersection) => {
-            const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
-            if (!group) return;
+        let ascStart = 0;
+        let ascEnd = cycleLength;
+        const bottomDistG2 = bottomIntersectionG2.distanceG2 ?? bottomIntersectionG2.distance;
 
-            // Time to travel from bottom to this intersection
-            const travelTime = (intersection.distance - bottomIntersection.distance) / speedMps;
+        if (bottomGroupAsc) {
+            ascStart = bottomGroupAsc.offset;
+            ascEnd = bottomGroupAsc.offset + (bottomGroupAsc.durations?.green || 0);
 
-            // Green window at this intersection
-            const greenStart = group.offset;
-            const greenEnd = greenStart + (group.durations?.green || 0);
+            sortedByDistG2.forEach((intersection) => {
+                const group = intersection.groups.find(g => g.id === intersection.selectedGroup2);
+                if (!group) return;
 
-            // Shift back to bottom reference time
-            const greenStartAtBottom = greenStart - travelTime;
-            const greenEndAtBottom = greenEnd - travelTime;
+                // Use distanceG2 for Group 2
+                const distG2 = intersection.distanceG2 ?? intersection.distance;
 
-            // Intersect windows
-            ascStart = Math.max(ascStart, greenStartAtBottom);
-            ascEnd = Math.min(ascEnd, greenEndAtBottom);
-        });
+                // Time to travel from bottom to this intersection
+                const travelTime = (distG2 - bottomDistG2) / speedUpMps;
+
+                // Green window at this intersection
+                const greenStart = group.offset;
+                const greenEnd = greenStart + (group.durations?.green || 0);
+
+                // Shift back to bottom reference time
+                const greenStartAtBottom = greenStart - travelTime;
+                const greenEndAtBottom = greenEnd - travelTime;
+
+                // Intersect windows
+                ascStart = Math.max(ascStart, greenStartAtBottom);
+                ascEnd = Math.min(ascEnd, greenEndAtBottom);
+            });
+        }
 
         const ascWidth = ascEnd - ascStart;
 
-        // DESCENDING bandwidth (top to bottom, negative slope)
-        const topGroup = topIntersection.groups.find(g => g.id === topIntersection.selectedGroup1);
+        // DESCENDING bandwidth (top to bottom, negative slope) - uses Group 1 with distance
+        const topGroupDesc = topIntersectionG1.groups.find(g => g.id === topIntersectionG1.selectedGroup1);
 
         let descStart = 0;
         let descEnd = cycleLength;
 
-        if (topGroup) {
-            descStart = topGroup.offset;
-            descEnd = topGroup.offset + (topGroup.durations?.green || 0);
+        if (topGroupDesc) {
+            descStart = topGroupDesc.offset;
+            descEnd = topGroupDesc.offset + (topGroupDesc.durations?.green || 0);
 
-            sortedIntersections.forEach((intersection) => {
+            sortedByDistG1.forEach((intersection) => {
                 const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
                 if (!group) return;
 
                 // Time to travel from top to this intersection (going down)
-                const travelTime = (topIntersection.distance - intersection.distance) / speedMps;
+                const travelTime = (topIntersectionG1.distance - intersection.distance) / speedDownMps;
 
                 // Green window at this intersection
                 const greenStart = group.offset;
@@ -237,29 +297,37 @@ const GreenWavePage = () => {
         const descWidth = descEnd - descStart;
 
         return {
-            ascending: ascWidth > 0 ? {
+            ascending: (bottomGroupAsc && ascWidth > 0) ? {
                 start: ascStart,
                 width: ascWidth,
-                refDistance: bottomIntersection.distance
+                refDistance: bottomDistG2
             } : null,
-            descending: descWidth > 0 ? {
+            descending: (topGroupDesc && descWidth > 0) ? {
                 start: descStart,
                 width: descWidth,
-                refDistance: topIntersection.distance
+                refDistance: topIntersectionG1.distance
             } : null
         };
-    }, [intersections, speedMps, cycleLength]);
+    }, [intersections, speedUpMps, speedDownMps, cycleLength]);
 
-    // Generate speed lines (green wave corridors)
-    const speedLines = [];
+    // Generate speed lines (green wave corridors) - ascending and descending
+    const speedLinesUp = [];
+    const speedLinesDown = [];
     for (let startTime = 0; startTime < maxTime; startTime += cycleLength) {
-        const line = {
+        // Ascending lines (bottom to top)
+        speedLinesUp.push({
             x1: timeToX(startTime),
             y1: distanceToY(0),
-            x2: timeToX(startTime + maxDistance / speedMps),
+            x2: timeToX(startTime + maxDistance / speedUpMps),
             y2: distanceToY(maxDistance)
-        };
-        speedLines.push(line);
+        });
+        // Descending lines (top to bottom)
+        speedLinesDown.push({
+            x1: timeToX(startTime),
+            y1: distanceToY(maxDistance),
+            x2: timeToX(startTime + maxDistance / speedDownMps),
+            y2: distanceToY(0)
+        });
     }
 
     if (!intersections) {
@@ -278,11 +346,22 @@ const GreenWavePage = () => {
                 <h1>Onde Verte</h1>
                 <div className="green-wave-controls">
                     <label>
-                        Vitesse :
+                        V. montante :
                         <input
                             type="number"
-                            value={speed}
-                            onChange={(e) => setSpeed(parseInt(e.target.value) || 50)}
+                            value={speedUp}
+                            onChange={(e) => setSpeedUp(parseInt(e.target.value) || 50)}
+                            min="10"
+                            max="130"
+                        />
+                        km/h
+                    </label>
+                    <label>
+                        V. descendante :
+                        <input
+                            type="number"
+                            value={speedDown}
+                            onChange={(e) => setSpeedDown(parseInt(e.target.value) || 50)}
                             min="10"
                             max="130"
                         />
@@ -361,11 +440,14 @@ const GreenWavePage = () => {
                         />
                     ))}
 
-                    {/* Ascending bandwidth corridor (bottom to top) */}
+                    {/* Ascending bandwidth corridor (bottom to top) - uses Group 2 distanceG2 */}
                     {bandwidthData?.ascending && intersections && (() => {
-                        const sortedIntersections = [...intersections].sort((a, b) => a.distance - b.distance);
-                        const bottomDist = sortedIntersections[0].distance;
-                        const topDist = sortedIntersections[sortedIntersections.length - 1].distance;
+                        // Sort by distanceG2 for ascending (Group 2)
+                        const sortedByDistG2 = [...intersections].sort((a, b) =>
+                            (a.distanceG2 ?? a.distance) - (b.distanceG2 ?? b.distance)
+                        );
+                        const bottomDist = sortedByDistG2[0].distanceG2 ?? sortedByDistG2[0].distance;
+                        const topDist = sortedByDistG2[sortedByDistG2.length - 1].distanceG2 ?? sortedByDistG2[sortedByDistG2.length - 1].distance;
                         const { start, width } = bandwidthData.ascending;
 
                         // Draw parallelogram for each cycle
@@ -376,7 +458,7 @@ const GreenWavePage = () => {
                             const endTime = startTime + width;
 
                             // Bottom left, bottom right, top right, top left
-                            const travelTimeToTop = (topDist - bottomDist) / speedMps;
+                            const travelTimeToTop = (topDist - bottomDist) / speedUpMps;
                             const points = [
                                 `${timeToX(startTime)},${distanceToY(bottomDist)}`,
                                 `${timeToX(endTime)},${distanceToY(bottomDist)}`,
@@ -398,11 +480,12 @@ const GreenWavePage = () => {
                         return polygons;
                     })()}
 
-                    {/* Descending bandwidth corridor (top to bottom) */}
+                    {/* Descending bandwidth corridor (top to bottom) - uses Group 1 distance */}
                     {bandwidthData?.descending && intersections && (() => {
-                        const sortedIntersections = [...intersections].sort((a, b) => a.distance - b.distance);
-                        const bottomDist = sortedIntersections[0].distance;
-                        const topDist = sortedIntersections[sortedIntersections.length - 1].distance;
+                        // Sort by distance for descending (Group 1)
+                        const sortedByDistG1 = [...intersections].sort((a, b) => a.distance - b.distance);
+                        const bottomDist = sortedByDistG1[0].distance;
+                        const topDist = sortedByDistG1[sortedByDistG1.length - 1].distance;
                         const { start, width } = bandwidthData.descending;
 
                         // Draw parallelogram for each cycle
@@ -413,7 +496,7 @@ const GreenWavePage = () => {
                             const endTime = startTime + width;
 
                             // Top left, top right, bottom right, bottom left (going down = time increases)
-                            const travelTimeToBottom = (topDist - bottomDist) / speedMps;
+                            const travelTimeToBottom = (topDist - bottomDist) / speedDownMps;
                             const points = [
                                 `${timeToX(startTime)},${distanceToY(topDist)}`,
                                 `${timeToX(endTime)},${distanceToY(topDist)}`,
@@ -435,10 +518,10 @@ const GreenWavePage = () => {
                         return polygons;
                     })()}
 
-                    {/* Speed lines (green wave corridor) */}
-                    {speedLines.map((line, idx) => (
+                    {/* Speed lines ascending (green wave corridor) */}
+                    {speedLinesUp.map((line, idx) => (
                         <line
-                            key={`speed-${idx}`}
+                            key={`speed-up-${idx}`}
                             x1={line.x1}
                             y1={line.y1}
                             x2={line.x2}
@@ -449,11 +532,26 @@ const GreenWavePage = () => {
                             opacity={0.6}
                         />
                     ))}
+                    {/* Speed lines descending (green wave corridor) */}
+                    {speedLinesDown.map((line, idx) => (
+                        <line
+                            key={`speed-down-${idx}`}
+                            x1={line.x1}
+                            y1={line.y1}
+                            x2={line.x2}
+                            y2={line.y2}
+                            stroke="#FF9800"
+                            strokeWidth={2}
+                            strokeDasharray="8,4"
+                            opacity={0.6}
+                        />
+                    ))}
 
                     {/* Intersection bars */}
                     {intersections?.map((intersection, idx) => {
-                        const y = distanceToY(intersection.distance);
-                        const barHeight = 16;
+                        const yG1 = distanceToY(intersection.distance);
+                        const yG2 = distanceToY(intersection.distanceG2 ?? intersection.distance);
+                        const barHeight = 12;
 
                         // Get the two selected groups
                         const group1 = intersection.groups.find(g => g.id === intersection.selectedGroup1);
@@ -465,7 +563,7 @@ const GreenWavePage = () => {
                         for (let cycle = 0; cycle < 2; cycle++) {
                             const cycleOffset = cycle * intersection.cycleLength;
 
-                            // Group 1 bar
+                            // Group 1 bar (Descendant - Orange) at distance
                             if (group1) {
                                 const start1 = group1.offset + cycleOffset;
                                 const duration1 = group1.durations?.green || 0;
@@ -473,16 +571,16 @@ const GreenWavePage = () => {
                                     <rect
                                         key={`bar-${idx}-g1-c${cycle}`}
                                         x={timeToX(start1)}
-                                        y={y - barHeight / 2 - 4}
+                                        y={yG1 - barHeight / 2}
                                         width={duration1 * pixelsPerSecond}
-                                        height={barHeight / 2}
-                                        fill="#4CAF50"
+                                        height={barHeight}
+                                        fill="#FF9800"
                                         opacity={0.9}
                                     />
                                 );
                             }
 
-                            // Group 2 bar
+                            // Group 2 bar (Montant - Vert) at distanceG2
                             if (group2) {
                                 const start2 = group2.offset + cycleOffset;
                                 const duration2 = group2.durations?.green || 0;
@@ -490,22 +588,77 @@ const GreenWavePage = () => {
                                     <rect
                                         key={`bar-${idx}-g2-c${cycle}`}
                                         x={timeToX(start2)}
-                                        y={y + 4}
+                                        y={yG2 - barHeight / 2}
                                         width={duration2 * pixelsPerSecond}
-                                        height={barHeight / 2}
-                                        fill="#8BC34A"
+                                        height={barHeight}
+                                        fill="#4CAF50"
                                         opacity={0.9}
                                     />
                                 );
                             }
+
+                            // Render actions (Seconde lucarne, Ouverture anticipée) for selected groups
+                            const actions = intersection.actionData || [];
+                            actions.forEach((action, actionIdx) => {
+                                if (!action.gf || action.deb === '' || action.fin === '') return;
+                                const actionGroupId = parseInt(action.gf);
+                                const isGroup1 = actionGroupId === intersection.selectedGroup1;
+                                const isGroup2 = actionGroupId === intersection.selectedGroup2;
+                                if (!isGroup1 && !isGroup2) return;
+
+                                const yAction = isGroup1 ? yG1 : yG2;
+                                const actionStart = parseInt(action.deb) + cycleOffset;
+                                const actionEnd = parseInt(action.fin) + cycleOffset;
+                                const actionDuration = actionEnd - actionStart;
+
+                                if (action.action === 'Seconde lucarne') {
+                                    // Seconde lucarne - darker green bar
+                                    bars.push(
+                                        <rect
+                                            key={`lucarne-${idx}-${actionIdx}-c${cycle}`}
+                                            x={timeToX(actionStart)}
+                                            y={yAction - barHeight / 2 - 2}
+                                            width={actionDuration * pixelsPerSecond}
+                                            height={barHeight}
+                                            fill={isGroup1 ? '#E65100' : '#2E7D32'}
+                                            opacity={0.9}
+                                            stroke={isGroup1 ? '#FF9800' : '#4CAF50'}
+                                            strokeWidth={1}
+                                        />
+                                    );
+                                } else if (action.action === 'Ouverture anticipée') {
+                                    // Ouverture anticipée - hatched rectangle
+                                    const patternId = `hatch-${idx}-${actionIdx}-${cycle}`;
+                                    bars.push(
+                                        <g key={`oa-${idx}-${actionIdx}-c${cycle}`}>
+                                            <defs>
+                                                <pattern id={patternId} patternUnits="userSpaceOnUse" width="4" height="4">
+                                                    <path d="M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2"
+                                                          stroke={isGroup1 ? '#FF9800' : '#4CAF50'}
+                                                          strokeWidth="1" />
+                                                </pattern>
+                                            </defs>
+                                            <rect
+                                                x={timeToX(actionStart)}
+                                                y={yAction - barHeight / 2}
+                                                width={actionDuration * pixelsPerSecond}
+                                                height={barHeight}
+                                                fill={`url(#${patternId})`}
+                                                stroke={isGroup1 ? '#FF9800' : '#4CAF50'}
+                                                strokeWidth={1}
+                                            />
+                                        </g>
+                                    );
+                                }
+                            });
                         }
 
                         return (
                             <g key={`intersection-${idx}`}>
-                                {/* Project name */}
+                                {/* Project name at average Y */}
                                 <text
                                     x={PADDING_LEFT - 5}
-                                    y={y - 12}
+                                    y={(yG1 + yG2) / 2 - 15}
                                     textAnchor="end"
                                     fill="#fff"
                                     fontSize="10"
@@ -514,52 +667,52 @@ const GreenWavePage = () => {
                                     {intersection.projectName}
                                 </text>
 
-                                {/* Group 1 name */}
+                                {/* Group 1 name (Descendant) */}
                                 {group1 && (
                                     <text
                                         x={PADDING_LEFT - 5}
-                                        y={y}
+                                        y={yG1 + 4}
                                         textAnchor="end"
-                                        fill="#4CAF50"
+                                        fill="#FF9800"
                                         fontSize="9"
                                     >
-                                        G{group1.id}: {group1.name || `Groupe ${group1.id}`}
+                                        G{group1.id} ({intersection.distance}m)
                                     </text>
                                 )}
 
-                                {/* Group 2 name */}
+                                {/* Group 2 name (Montant) */}
                                 {group2 && (
                                     <text
                                         x={PADDING_LEFT - 5}
-                                        y={y + 12}
+                                        y={yG2 + 4}
                                         textAnchor="end"
                                         fill="#8BC34A"
                                         fontSize="9"
                                     >
-                                        G{group2.id}: {group2.name || `Groupe ${group2.id}`}
+                                        G{group2.id} ({intersection.distanceG2 ?? intersection.distance}m)
                                     </text>
                                 )}
 
-                                {/* Distance label */}
-                                <text
-                                    x={PADDING_LEFT - 5}
-                                    y={y + 24}
-                                    textAnchor="end"
-                                    fill="#888"
-                                    fontSize="9"
-                                >
-                                    ({intersection.distance}m)
-                                </text>
-
-                                {/* Horizontal line at intersection */}
+                                {/* Horizontal lines at each group position */}
                                 <line
                                     x1={PADDING_LEFT}
-                                    y1={y}
+                                    y1={yG1}
                                     x2={diagramWidth - PADDING_RIGHT}
-                                    y2={y}
-                                    stroke="#666"
+                                    y2={yG1}
+                                    stroke="#FF9800"
                                     strokeWidth={0.5}
                                     strokeDasharray="2,2"
+                                    opacity={0.3}
+                                />
+                                <line
+                                    x1={PADDING_LEFT}
+                                    y1={yG2}
+                                    x2={diagramWidth - PADDING_RIGHT}
+                                    y2={yG2}
+                                    stroke="#8BC34A"
+                                    strokeWidth={0.5}
+                                    strokeDasharray="2,2"
+                                    opacity={0.3}
                                 />
 
                                 {bars}
@@ -658,16 +811,20 @@ const GreenWavePage = () => {
 
             <div className="green-wave-legend">
                 <div className="legend-item">
-                    <div className="legend-color" style={{ background: '#4CAF50' }}></div>
-                    <span>Groupe 1 (vert)</span>
+                    <div className="legend-color" style={{ background: '#FF9800' }}></div>
+                    <span>Groupe 1 (descendant)</span>
                 </div>
                 <div className="legend-item">
                     <div className="legend-color" style={{ background: '#8BC34A' }}></div>
-                    <span>Groupe 2 (vert clair)</span>
+                    <span>Groupe 2 (montant)</span>
                 </div>
                 <div className="legend-item">
-                    <div className="legend-line"></div>
-                    <span>Vitesse: {speed} km/h</span>
+                    <div className="legend-line" style={{ borderColor: '#4CAF50' }}></div>
+                    <span>V. montante: {speedUp} km/h</span>
+                </div>
+                <div className="legend-item">
+                    <div className="legend-line" style={{ borderColor: '#FF9800' }}></div>
+                    <span>V. descendante: {speedDown} km/h</span>
                 </div>
                 {bandwidthData?.ascending && (
                     <div className="legend-item">
@@ -681,76 +838,125 @@ const GreenWavePage = () => {
                         <span>Descendant: {bandwidthData.descending.width.toFixed(1)}s</span>
                     </div>
                 )}
+                <div className="legend-item">
+                    <div className="legend-color" style={{ background: '#2E7D32', border: '1px solid #4CAF50' }}></div>
+                    <span>Seconde lucarne</span>
+                </div>
+                <div className="legend-item">
+                    <div className="legend-color" style={{
+                        background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, #4CAF50 2px, #4CAF50 4px)',
+                        border: '1px solid #4CAF50'
+                    }}></div>
+                    <span>Ouverture anticipée</span>
+                </div>
             </div>
 
             {/* Parameters panel */}
             <div className="green-wave-params-panel">
-                <h3>Paramètres des carrefours</h3>
-                <div className="params-table">
-                    <div className="params-header">
-                        <span className="param-col-name">Carrefour</span>
-                        <span className="param-col-dist">Dist (m)</span>
-                        <span className="param-col-group">Groupe</span>
-                        <span className="param-col-offset">Décal</span>
-                        <span className="param-col-green">Vert</span>
-                    </div>
-                    {intersections?.map((intersection, idx) => {
-                        const group1 = intersection.groups.find(g => g.id === intersection.selectedGroup1);
-                        const group2 = intersection.groups.find(g => g.id === intersection.selectedGroup2);
+                <h3>Tableau des données saisies</h3>
+                <table className="green-wave-data-table">
+                    <thead>
+                        <tr>
+                            <th rowSpan="2">Ordre</th>
+                            <th rowSpan="2">Carrefour</th>
+                            <th rowSpan="2">Cycle</th>
+                            <th colSpan="3" style={{ background: '#2d4a2d' }}>Groupe 1 (Descendant)</th>
+                            <th colSpan="3" style={{ background: '#3d4a2d' }}>Groupe 2 (Montant)</th>
+                        </tr>
+                        <tr className="sub-header">
+                            <th style={{ color: '#FF9800' }}>Nom</th>
+                            <th style={{ color: '#FF9800' }}>Dist</th>
+                            <th style={{ color: '#FF9800' }}>Vert</th>
+                            <th style={{ color: '#4CAF50' }}>Nom</th>
+                            <th style={{ color: '#4CAF50' }}>Dist</th>
+                            <th style={{ color: '#4CAF50' }}>Vert</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {intersections?.map((intersection, idx) => {
+                            const group1 = intersection.groups.find(g => g.id === intersection.selectedGroup1);
+                            const group2 = intersection.groups.find(g => g.id === intersection.selectedGroup2);
 
-                        return (
-                            <div key={idx} className="params-row">
-                                <span className="param-col-name">{intersection.projectName}</span>
-                                <input
-                                    type="number"
-                                    className="param-col-dist"
-                                    value={intersection.distance}
-                                    onChange={(e) => updateDistance(idx, e.target.value)}
-                                />
-                                {group1 && (
-                                    <>
-                                        <span className="param-col-group" style={{ color: '#4CAF50' }}>G{group1.id}</span>
-                                        <input
-                                            type="number"
-                                            className="param-col-offset"
-                                            value={group1.offset}
-                                            onChange={(e) => updateGroupParam(idx, group1.id, 'offset', e.target.value)}
-                                        />
-                                        <input
-                                            type="number"
-                                            className="param-col-green"
-                                            value={group1.durations?.green || 0}
-                                            onChange={(e) => updateGroupParam(idx, group1.id, 'green', e.target.value)}
-                                        />
-                                    </>
-                                )}
-                            </div>
-                        );
-                    })}
-                    {intersections?.map((intersection, idx) => {
-                        const group2 = intersection.groups.find(g => g.id === intersection.selectedGroup2);
-                        if (!group2) return null;
+                            return (
+                                <tr key={idx}>
+                                    <td className="col-order">
+                                        <div className="order-controls">
+                                            <button
+                                                className="btn-move"
+                                                onClick={() => moveIntersection(idx, 'up')}
+                                                disabled={idx === 0}
+                                                title="Monter"
+                                            >↑</button>
+                                            <span>{idx + 1}</span>
+                                            <button
+                                                className="btn-move"
+                                                onClick={() => moveIntersection(idx, 'down')}
+                                                disabled={idx === intersections.length - 1}
+                                                title="Descendre"
+                                            >↓</button>
+                                        </div>
+                                    </td>
+                                    <td className="col-name">{intersection.projectName}</td>
+                                    <td className="col-cycle">{intersection.cycleLength}</td>
+                                    {group1 ? (
+                                        <>
+                                            <td className="col-group-name" style={{ color: '#FF9800' }} title={`G${group1.id}`}>
+                                                {group1.name || `G${group1.id}`}
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={intersection.distance}
+                                                    onChange={(e) => updateDistance(idx, e.target.value)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={group1.durations?.green || 0}
+                                                    onChange={(e) => updateGroupParam(idx, group1.id, 'green', e.target.value)}
+                                                />
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <><td>-</td><td>-</td><td>-</td></>
+                                    )}
+                                    {group2 ? (
+                                        <>
+                                            <td className="col-group-name" style={{ color: '#4CAF50' }} title={`G${group2.id}`}>
+                                                {group2.name || `G${group2.id}`}
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={intersection.distanceG2 ?? intersection.distance}
+                                                    onChange={(e) => updateDistanceG2(idx, e.target.value)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={group2.durations?.green || 0}
+                                                    onChange={(e) => updateGroupParam(idx, group2.id, 'green', e.target.value)}
+                                                />
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <><td>-</td><td>-</td><td>-</td></>
+                                    )}
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
 
-                        return (
-                            <div key={`g2-${idx}`} className="params-row params-row-g2">
-                                <span className="param-col-name"></span>
-                                <span className="param-col-dist"></span>
-                                <span className="param-col-group" style={{ color: '#8BC34A' }}>G{group2.id}</span>
-                                <input
-                                    type="number"
-                                    className="param-col-offset"
-                                    value={group2.offset}
-                                    onChange={(e) => updateGroupParam(idx, group2.id, 'offset', e.target.value)}
-                                />
-                                <input
-                                    type="number"
-                                    className="param-col-green"
-                                    value={group2.durations?.green || 0}
-                                    onChange={(e) => updateGroupParam(idx, group2.id, 'green', e.target.value)}
-                                />
-                            </div>
-                        );
-                    })}
+                <div className="green-wave-actions">
+                    <button className="btn-action btn-sync" onClick={handleSyncGreenWave}>
+                        Synchroniser les données
+                    </button>
+                    <button className="btn-action btn-save" onClick={handleSaveGreenWave}>
+                        Sauvegarder l'onde verte
+                    </button>
                 </div>
             </div>
         </div>

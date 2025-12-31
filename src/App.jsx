@@ -75,8 +75,27 @@ function App() {
 
     // Green wave states
     const [createGreenWaveModal, setCreateGreenWaveModal] = useState(false);
+    const [openGreenWaveModal, setOpenGreenWaveModal] = useState(false);
+    const [selectedGreenWave, setSelectedGreenWave] = useState(null);
     const [greenWaveViewer, setGreenWaveViewer] = useState(false);
     const [greenWaveData, setGreenWaveData] = useState(null);
+
+    // Get all saved green waves
+    const getSavedGreenWaves = () => {
+        try {
+            const saved = localStorage.getItem('savedGreenWaves');
+            if (saved) {
+                const greenWaves = JSON.parse(saved);
+                return Object.keys(greenWaves).map(name => ({
+                    name,
+                    ...greenWaves[name]
+                }));
+            }
+        } catch (e) {
+            console.error('Failed to get saved green waves', e);
+        }
+        return [];
+    };
 
     // Check for duplicated state on load
     useEffect(() => {
@@ -154,8 +173,8 @@ function App() {
                 setCreateGreenWaveModal(true);
                 break;
             case 'openGreenWave':
-                // TODO: implement open green wave from file
-                alert('Fonctionnalité à venir');
+                setOpenGreenWaveModal(true);
+                setSelectedGreenWave(null);
                 break;
             case 'saveGreenWave':
                 // Save is handled in the GreenWavePage window
@@ -182,6 +201,46 @@ function App() {
         window.open(`${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
 
         setCreateGreenWaveModal(false);
+    };
+
+    // Handle opening a saved green wave
+    const handleOpenSavedGreenWave = () => {
+        if (!selectedGreenWave) return;
+
+        try {
+            const saved = localStorage.getItem('savedGreenWaves');
+            if (saved) {
+                const greenWaves = JSON.parse(saved);
+                const greenWaveData = greenWaves[selectedGreenWave];
+
+                if (greenWaveData && greenWaveData.intersections) {
+                    // Generate unique ID
+                    const greenWaveId = Date.now().toString();
+
+                    // Save data to sessionStorage
+                    sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
+
+                    // Also save additional settings
+                    sessionStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
+                        name: selectedGreenWave,
+                        speed: greenWaveData.speed, // Backward compatibility
+                        speedUp: greenWaveData.speedUp,
+                        speedDown: greenWaveData.speedDown,
+                        pixelsPerSecond: greenWaveData.pixelsPerSecond,
+                        pixelsPerMeter: greenWaveData.pixelsPerMeter
+                    }));
+
+                    // Open new tab with green wave page
+                    window.open(`${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
+
+                    setOpenGreenWaveModal(false);
+                    setSelectedGreenWave(null);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to open green wave', e);
+            alert('Erreur lors de l\'ouverture de l\'onde verte');
+        }
     };
 
     // Handle project selection from open modal
@@ -858,6 +917,57 @@ function App() {
                     </button>
                 </div>
             </Modal>
+
+            {/* Open Green Wave Modal */}
+            {openGreenWaveModal && (
+                <div className="modal-overlay" onClick={() => setOpenGreenWaveModal(false)}>
+                    <div className="modal-content open-greenwave-modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Ouvrir une onde verte</h3>
+                            <button className="modal-close" onClick={() => setOpenGreenWaveModal(false)}>×</button>
+                        </div>
+                        <div className="modal-body">
+                            {getSavedGreenWaves().length > 0 ? (
+                                <div className="project-list">
+                                    {getSavedGreenWaves().map((gw) => (
+                                        <div
+                                            key={gw.name}
+                                            className={`project-item ${selectedGreenWave === gw.name ? 'selected' : ''}`}
+                                            onClick={() => setSelectedGreenWave(gw.name)}
+                                            onDoubleClick={() => {
+                                                setSelectedGreenWave(gw.name);
+                                                setTimeout(handleOpenSavedGreenWave, 0);
+                                            }}
+                                        >
+                                            <div className="project-icon green-wave-icon"></div>
+                                            <div className="project-info">
+                                                <span className="project-name">{gw.name}</span>
+                                                <span className="project-details">
+                                                    {gw.intersections?.length || 0} carrefours • {gw.speed || 50} km/h
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="no-projects">Aucune onde verte sauvegardée.</p>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-cancel" onClick={() => setOpenGreenWaveModal(false)}>
+                                Annuler
+                            </button>
+                            <button
+                                className="btn-confirm"
+                                onClick={handleOpenSavedGreenWave}
+                                disabled={!selectedGreenWave}
+                            >
+                                Ouvrir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Create Green Wave Dialog */}
             <CreateGreenWaveDialog

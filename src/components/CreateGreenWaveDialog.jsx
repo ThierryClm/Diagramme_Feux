@@ -19,6 +19,11 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
         const projectData = loadProjectData(selectedProject);
         if (!projectData) return;
 
+        // Get pfTabs (plans de feu) from project
+        const pfTabs = projectData.pfTabs || [{ id: 1, name: 'PF1', actions: projectData.actionData || [] }];
+        const selectedPfId = pfTabs[0]?.id || 1;
+        const selectedPf = pfTabs.find(pf => pf.id === selectedPfId);
+
         const newIntersection = {
             id: Date.now(),
             projectName: selectedProject,
@@ -28,7 +33,10 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
             groups: projectData.groups || [],
             cycleLength: projectData.cycleLength || 100,
             selectedGroup1: projectData.groups?.[0]?.id || 1,
-            selectedGroup2: projectData.groups?.[1]?.id || 2
+            selectedGroup2: projectData.groups?.[1]?.id || 2,
+            pfTabs: pfTabs,
+            selectedPfId: selectedPfId,
+            actionData: selectedPf?.actions || []
         };
 
         setIntersections([...intersections, newIntersection]);
@@ -43,6 +51,20 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
         setIntersections(intersections.map(i =>
             i.id === id ? { ...i, [field]: value } : i
         ));
+    };
+
+    const updateSelectedPf = (id, pfId) => {
+        setIntersections(intersections.map(i => {
+            if (i.id === id) {
+                const selectedPf = i.pfTabs.find(pf => pf.id === pfId);
+                return {
+                    ...i,
+                    selectedPfId: pfId,
+                    actionData: selectedPf?.actions || []
+                };
+            }
+            return i;
+        }));
     };
 
     const moveIntersection = (index, direction) => {
@@ -102,6 +124,7 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                             <div className="intersections-header">
                                 <span className="col-order">#</span>
                                 <span className="col-name">Carrefour</span>
+                                <span className="col-pf">Plan de feu</span>
                                 <span className="col-distance">Distance (m)</span>
                                 <span className="col-group">Groupe 1</span>
                                 <span className="col-group">Groupe 2</span>
@@ -111,6 +134,20 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                                 <div key={intersection.id} className="intersection-row">
                                     <span className="col-order">{index + 1}</span>
                                     <span className="col-name">{intersection.projectName}</span>
+                                    <select
+                                        className="col-pf"
+                                        value={intersection.selectedPfId}
+                                        onChange={(e) => updateSelectedPf(
+                                            intersection.id,
+                                            parseInt(e.target.value)
+                                        )}
+                                    >
+                                        {intersection.pfTabs?.map(pf => (
+                                            <option key={pf.id} value={pf.id}>
+                                                {pf.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                     <input
                                         type="number"
                                         className="col-distance"

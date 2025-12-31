@@ -516,6 +516,79 @@
     font-style: italic;
 }
 
+/* Green wave icon */
+.green-wave-icon {
+    width: 18px;
+    height: 14px;
+    background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+    border-radius: 3px;
+    position: relative;
+}
+
+.green-wave-icon::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    right: 3px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 1px;
+}
+
+.green-wave-icon::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    right: 3px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 1px;
+}
+
+/* Project info in list */
+.project-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.project-details {
+    font-size: 0.8em;
+    color: #888;
+}
+
+.project-item.selected .project-details {
+    color: #aaa;
+}
+
+/* Open green wave modal */
+.open-greenwave-modal {
+    min-width: 400px;
+}
+
+.open-greenwave-modal .project-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    background: #2a2a2a;
+    transition: background 0.15s;
+}
+
+.open-greenwave-modal .project-item:hover {
+    background: #333;
+}
+
+.open-greenwave-modal .project-item.selected {
+    background: #3a5a8a;
+}
+
 /* Disabled button state */
 .modal-btn:disabled {
     opacity: 0.5;

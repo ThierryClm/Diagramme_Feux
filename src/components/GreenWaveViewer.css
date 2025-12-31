@@ -5,6 +5,7 @@
     display: flex;
     flex-direction: column;
     color: #fff;
+    overflow: auto;
 }
 
 .green-wave-page-header {
@@ -13,6 +14,7 @@
     padding: 15px 20px;
     background: #333;
     border-bottom: 1px solid #444;
+    flex-shrink: 0;
 }
 
 .green-wave-page-header h1 {
@@ -27,7 +29,7 @@
 }
 
 .green-wave-page .green-wave-diagram-scroll {
-    flex: 1;
+    flex-shrink: 0;
     overflow: auto;
     padding: 20px;
 }
@@ -169,11 +171,13 @@
 
 .green-wave-legend {
     display: flex;
-    gap: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
     padding: 12px 20px;
     border-top: 1px solid #444;
     background: #333;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .legend-item {
@@ -206,16 +210,29 @@
 
 /* Parameters panel */
 .green-wave-params-panel {
-    padding: 15px 20px;
-    background: #2a2a2a;
-    border-top: 1px solid #444;
+    padding: 20px;
+    background: #252525;
+    border-top: 2px solid #4CAF50;
+    flex-shrink: 0;
 }
 
 .green-wave-params-panel h3 {
-    margin: 0 0 10px 0;
-    font-size: 0.9em;
-    color: #aaa;
-    font-weight: normal;
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+    color: #4CAF50;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.green-wave-params-panel h3::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    background: #4CAF50;
+    border-radius: 2px;
 }
 
 .params-table {
@@ -284,4 +301,167 @@
     outline: none;
     border-color: #4CAF50;
     background: #3a3a3a;
+}
+
+/* Data table styles */
+.green-wave-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+    margin-top: 10px;
+}
+
+.green-wave-data-table th,
+.green-wave-data-table td {
+    padding: 8px 10px;
+    text-align: center;
+    border: 1px solid #444;
+}
+
+.green-wave-data-table thead th {
+    background: #333;
+    color: #ccc;
+    font-weight: normal;
+}
+
+.green-wave-data-table thead .sub-header th {
+    background: #2a2a2a;
+    font-size: 0.9em;
+    padding: 4px 8px;
+}
+
+.green-wave-data-table tbody tr {
+    background: #252525;
+}
+
+.green-wave-data-table tbody tr:hover {
+    background: #2d2d2d;
+}
+
+.green-wave-data-table tbody tr:nth-child(even) {
+    background: #2a2a2a;
+}
+
+.green-wave-data-table .col-index {
+    width: 30px;
+    color: #888;
+}
+
+.green-wave-data-table .col-name {
+    text-align: left;
+    font-weight: bold;
+    color: #fff;
+    min-width: 120px;
+}
+
+.green-wave-data-table .col-cycle {
+    color: #888;
+}
+
+.green-wave-data-table .col-group-name {
+    text-align: left;
+    font-size: 0.9em;
+    min-width: 100px;
+}
+
+.green-wave-data-table input {
+    width: 50px;
+    background: #333;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 4px 6px;
+    border-radius: 3px;
+    text-align: center;
+    font-size: 0.95em;
+}
+
+.green-wave-data-table input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background: #3a3a3a;
+}
+
+/* Order controls */
+.col-order {
+    width: 70px;
+}
+
+.order-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.order-controls span {
+    min-width: 20px;
+    text-align: center;
+    font-weight: bold;
+    color: #888;
+}
+
+.order-controls .btn-move {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid #555;
+    background: #333;
+    color: #aaa;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.order-controls .btn-move:hover:not(:disabled) {
+    background: #444;
+    color: #fff;
+    border-color: #666;
+}
+
+.order-controls .btn-move:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Action buttons */
+.green-wave-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #444;
+}
+
+.btn-action {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-action.btn-sync {
+    background: #2196F3;
+    color: #fff;
+}
+
+.btn-action.btn-sync:hover {
+    background: #1976D2;
+    transform: translateY(-1px);
+}
+
+.btn-action.btn-save {
+    background: #4CAF50;
+    color: #fff;
+}
+
+.btn-action.btn-save:hover {
+    background: #388E3C;
+    transform: translateY(-1px);
 }
