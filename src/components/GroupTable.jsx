@@ -31,6 +31,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, moveGroup }) => {
 
     return (
         <div className="group-table-container">
+            <h3 className="group-table-title">Formulaire</h3>
             <table className="group-table">
                 <thead>
                     <tr>

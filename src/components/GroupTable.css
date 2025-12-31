@@ -5,7 +5,17 @@
     border: 1px solid #333;
     overflow: visible;
     max-height: none;
-    margin-top: calc(0.5rem + 1rem + 0.5rem + 1px); /* Align with diagram title height */
+    margin-top: 0;
+}
+
+.group-table-title {
+    margin: 0;
+    padding: 8px 10px;
+    font-size: 1em;
+    font-weight: bold;
+    color: #fff;
+    background: #222;
+    border-bottom: 1px solid #444;
 }
 
 .group-table {
@@ -75,7 +85,7 @@
 }
 
 .input-name-cell {
-    width: 70px !important;
+    width: 160px !important;
     text-align: left !important;
     font-size: 0.8em;
     color: #aaa !important;
