@@ -404,7 +404,9 @@ export const useTrafficLight = () => {
             cycleLength,
             conflictMatrix,
             pfTabs,
-            activePFId
+            activePFId,
+            simulationEnabled,
+            simulationSelectedActions
         };
         try {
             localStorage.setItem(`traffic_project_${name}`, JSON.stringify(projectData));
@@ -442,6 +444,14 @@ export const useTrafficLight = () => {
                 // Handle old format for backward compatibility
                 setPfTabs([{ id: 1, name: 'PF1', data: data.actionData }]);
                 setActivePFId(1);
+            }
+
+            // Load simulation state
+            if (data.simulationEnabled !== undefined) {
+                setSimulationEnabled(data.simulationEnabled);
+            }
+            if (data.simulationSelectedActions) {
+                setSimulationSelectedActions(data.simulationSelectedActions);
             }
 
             // Move project to top of the order list
@@ -534,6 +544,13 @@ export const useTrafficLight = () => {
                 setPfTabs([{ id: 1, name: 'PF1', data: state.actionData }]);
                 setActivePFId(1);
             }
+            // Load simulation state
+            if (state.simulationEnabled !== undefined) {
+                setSimulationEnabled(state.simulationEnabled);
+            }
+            if (state.simulationSelectedActions) {
+                setSimulationSelectedActions(state.simulationSelectedActions);
+            }
             return true;
         } catch (e) {
             console.error("Load full state failed", e);
@@ -548,7 +565,9 @@ export const useTrafficLight = () => {
         cycleLength,
         conflictMatrix,
         pfTabs,
-        activePFId
+        activePFId,
+        simulationEnabled,
+        simulationSelectedActions
     });
 
     const deleteSave = (name) => {
@@ -599,6 +618,25 @@ export const useTrafficLight = () => {
             return saved ? parseInt(saved) : 1;
         } catch (e) {
             return 1;
+        }
+    });
+
+    // Simulation mode state
+    const [simulationEnabled, setSimulationEnabled] = useState(() => {
+        try {
+            const saved = localStorage.getItem('trafficSimulationEnabled');
+            return saved === 'true';
+        } catch (e) {
+            return false;
+        }
+    });
+
+    const [simulationSelectedActions, setSimulationSelectedActions] = useState(() => {
+        try {
+            const saved = localStorage.getItem('trafficSimulationSelected');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
         }
     });
 
@@ -795,11 +833,39 @@ export const useTrafficLight = () => {
         ));
     }, []);
 
+    // Simulation functions
+    const toggleSimulationAction = useCallback((actionId) => {
+        setSimulationSelectedActions(prev => {
+            if (prev.includes(actionId)) {
+                return prev.filter(id => id !== actionId);
+            } else {
+                return [...prev, actionId];
+            }
+        });
+    }, []);
+
+    const selectAllSimulationActions = useCallback(() => {
+        const activeIds = actionData
+            .filter(a => a.action && a.action !== '')
+            .map(a => a.id);
+        setSimulationSelectedActions(activeIds);
+    }, [actionData]);
+
+    const deselectAllSimulationActions = useCallback(() => {
+        setSimulationSelectedActions([]);
+    }, []);
+
     // Save pfTabs to localStorage
     useEffect(() => {
         localStorage.setItem('trafficPfTabs', JSON.stringify(pfTabs));
         localStorage.setItem('trafficActivePF', activePFId.toString());
     }, [pfTabs, activePFId]);
+
+    // Save simulation state to localStorage
+    useEffect(() => {
+        localStorage.setItem('trafficSimulationEnabled', simulationEnabled.toString());
+        localStorage.setItem('trafficSimulationSelected', JSON.stringify(simulationSelectedActions));
+    }, [simulationEnabled, simulationSelectedActions]);
 
     // Save current state to history (for undo)
     const saveToHistory = useCallback(() => {
@@ -1166,6 +1232,13 @@ export const useTrafficLight = () => {
         endDrag,
         // Diagram operations
         slideAllGroups,
-        insertTime
+        insertTime,
+        // Simulation mode
+        simulationEnabled,
+        setSimulationEnabled,
+        simulationSelectedActions,
+        toggleSimulationAction,
+        selectAllSimulationActions,
+        deselectAllSimulationActions
     };
 };

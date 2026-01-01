@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTrafficLight } from './hooks/useTrafficLight';
 import TimelineDiagram from './components/TimelineDiagram';
 import GroupTable from './components/GroupTable';
@@ -9,6 +9,8 @@ import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import GreenWaveViewer from './components/GreenWaveViewer';
+import SimulationPanel from './components/SimulationPanel';
+import { calculateSimulatedDiagram } from './utils/simulationCalculator';
 
 import './components/GroupTable.css';
 import './components/IntergreenMatrix.css';
@@ -52,7 +54,13 @@ function App() {
         startDrag,
         endDrag,
         slideAllGroups,
-        insertTime
+        insertTime,
+        simulationEnabled,
+        setSimulationEnabled,
+        simulationSelectedActions,
+        toggleSimulationAction,
+        selectAllSimulationActions,
+        deselectAllSimulationActions
     } = useTrafficLight();
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -60,6 +68,18 @@ function App() {
     const [activeTab, setActiveTab] = useState('config'); // 'config', 'traffic'
     const [showDependencies, setShowDependencies] = useState(false);
     const [hoveredActionId, setHoveredActionId] = useState(null);
+
+    // Calculate simulated diagram when in simulation mode
+    const simulationResult = useMemo(() => {
+        if (!simulationEnabled) return null;
+        return calculateSimulatedDiagram(
+            groups,
+            actionData,
+            simulationSelectedActions,
+            cycleLength,
+            conflictMatrix
+        );
+    }, [simulationEnabled, groups, actionData, simulationSelectedActions, cycleLength, conflictMatrix]);
 
     // Local input states for validation on Enter/blur
     const [groupCountInput, setGroupCountInput] = useState(groups.length.toString());
@@ -562,63 +582,78 @@ function App() {
 
             <main className="split-view">
                 <aside className="sidebar">
-                    <div className="sidebar-tabs">
-                        <button
-                            className={`tab-btn ${activeTab === 'config' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('config')}
-                        >
-                            Configuration
-                        </button>
-                        <button
-                            className={`tab-btn ${activeTab === 'traffic' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('traffic')}
-                        >
-                            Trafic
-                        </button>
-                    </div>
-
-                    {activeTab === 'config' && (
-                        <>
-                            <GroupTable
-                                groups={groups}
-                                updateGroupParams={updateGroupParams}
-                                cycleLength={cycleLength}
-                            />
-                            <div style={{ marginTop: '2rem' }}>
-                                <IntergreenMatrix
-                                    conflictMatrix={conflictMatrix}
-                                    setMatrixValue={setMatrixValue}
-                                    groups={groups}
-                                    cycleLength={cycleLength}
-                                    actionData={actionData}
-                                />
-                            </div>
-                        </>
-                    )}
-
-                    {activeTab === 'traffic' && (
-                        <TrafficTable
+                    {simulationEnabled ? (
+                        <SimulationPanel
+                            actionData={actionData}
+                            selectedActions={simulationSelectedActions}
+                            onToggle={toggleSimulationAction}
+                            onSelectAll={selectAllSimulationActions}
+                            onDeselectAll={deselectAllSimulationActions}
                             groups={groups}
-                            updateGroupParams={updateGroupParams}
                             cycleLength={cycleLength}
+                            conflictMatrix={conflictMatrix}
                         />
-                    )}
+                    ) : (
+                        <>
+                            <div className="sidebar-tabs">
+                                <button
+                                    className={`tab-btn ${activeTab === 'config' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('config')}
+                                >
+                                    Configuration
+                                </button>
+                                <button
+                                    className={`tab-btn ${activeTab === 'traffic' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('traffic')}
+                                >
+                                    Trafic
+                                </button>
+                            </div>
 
-                    {conflicts.length > 0 && (
-                        <div className="conflict-list">
-                            <h4>Conflits:</h4>
-                            <ul>
-                                {conflicts.map((c, i) => (
-                                    <li key={i}>
-                                        {c.type === 'intergreen' ? (
-                                            <>GF{c.from} → GF{c.to} : Dégagement insuffisant ({c.actual.toFixed(1)}s / {c.required}s requis)</>
-                                        ) : (
-                                            <>GF{c.from} ↔ GF{c.to} : {c.message}</>
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                            {activeTab === 'config' && (
+                                <>
+                                    <GroupTable
+                                        groups={groups}
+                                        updateGroupParams={updateGroupParams}
+                                        cycleLength={cycleLength}
+                                    />
+                                    <div style={{ marginTop: '2rem' }}>
+                                        <IntergreenMatrix
+                                            conflictMatrix={conflictMatrix}
+                                            setMatrixValue={setMatrixValue}
+                                            groups={groups}
+                                            cycleLength={cycleLength}
+                                            actionData={actionData}
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            {activeTab === 'traffic' && (
+                                <TrafficTable
+                                    groups={groups}
+                                    updateGroupParams={updateGroupParams}
+                                    cycleLength={cycleLength}
+                                />
+                            )}
+
+                            {conflicts.length > 0 && (
+                                <div className="conflict-list">
+                                    <h4>Conflits:</h4>
+                                    <ul>
+                                        {conflicts.map((c, i) => (
+                                            <li key={i}>
+                                                {c.type === 'intergreen' ? (
+                                                    <>GF{c.from} → GF{c.to} : Dégagement insuffisant ({c.actual.toFixed(1)}s / {c.required}s requis)</>
+                                                ) : (
+                                                    <>GF{c.from} ↔ GF{c.to} : {c.message}</>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </>
                     )}
                 </aside>
 
@@ -628,8 +663,11 @@ function App() {
                         {pfTabs.map((pf) => (
                             <div
                                 key={pf.id}
-                                className={`pf-tab ${activePFId === pf.id ? 'active' : ''}`}
-                                onClick={() => setActivePFId(pf.id)}
+                                className={`pf-tab ${activePFId === pf.id && !simulationEnabled ? 'active' : ''}`}
+                                onClick={() => {
+                                    setSimulationEnabled(false);
+                                    setActivePFId(pf.id);
+                                }}
                                 onDoubleClick={(e) => {
                                     e.stopPropagation();
                                     const newName = prompt('Nouveau nom de l\'onglet:', pf.name);
@@ -656,6 +694,13 @@ function App() {
                                 )}
                             </div>
                         ))}
+                        <div
+                            className={`pf-tab simulation-tab ${simulationEnabled ? 'active' : ''}`}
+                            onClick={() => setSimulationEnabled(!simulationEnabled)}
+                            title="Activer/désactiver le mode simulation"
+                        >
+                            <span className="pf-tab-name">Simulation</span>
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -676,6 +721,8 @@ function App() {
                             showDependencies={showDependencies}
                             hoveredActionId={hoveredActionId}
                             setHoveredActionId={setHoveredActionId}
+                            simulationFilter={simulationEnabled ? new Set(simulationSelectedActions) : null}
+                            simulationResult={simulationResult}
                         />
                     </div>
 

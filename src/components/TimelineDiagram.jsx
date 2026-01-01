@@ -1,17 +1,25 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, hoveredActionId, setHoveredActionId }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
     const [dragState, setDragState] = useState(null);
     // dragState = { groupId, type: 'start' | 'end', initialMouseX, initialValue }
     // OR dragState = { actionId, field: 'deb' | 'fin', initialMouseX, initialValue }
-    const TIME_WINDOW = cycleLength || 100; // Use cycle length as time window
+    // Use simulated cycle length when in simulation mode
+    const effectiveCycleLength = simulationResult ? simulationResult.simulatedCycleLength : cycleLength;
+    const TIME_WINDOW = effectiveCycleLength || 100; // Use cycle length as time window
 
     // Determine total width in pixels
     const totalWidth = TIME_WINDOW * pixelsPerSecond;
+
+    // Helper to get simulated group data
+    const getSimulatedGroup = (groupId) => {
+        if (!simulationResult) return null;
+        return simulationResult.simulatedGroups.find(g => g.id === groupId);
+    };
 
     // Handlers (Duplicated from GroupTable logic, could be extracted to hook)
     const handleStartChange = (id, value) => {
@@ -213,39 +221,51 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     }, [dragState, handleDragMove, handleDragEnd]);
 
     // Helper to get actions for a specific group
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const getActionsForGroup = (groupId) => {
         return actionData.filter(action => {
             const gf = action.gf?.toString().replace(/[Gg]/g, '').trim();
-            return gf === groupId.toString() && action.deb !== '' && action.fin !== '';
+            return gf === groupId.toString() && action.deb !== '' && action.fin !== '' &&
+                (!simulationFilter || !simulationFilter.has(action.id));
         });
     };
 
     // Get all "Adaptatif vertical" actions
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const adaptatifActions = actionData.filter(action =>
-        action.action === 'Adaptatif vertical' && action.deb !== '' && action.fin !== ''
+        action.action === 'Adaptatif vertical' && action.deb !== '' && action.fin !== '' &&
+        (!simulationFilter || !simulationFilter.has(action.id))
     );
 
     // Get all "Fermeture anticipée" actions with arrows
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const fermetureActions = actionData.filter(action =>
         action.action === 'Fermeture anticipée' && action.deb !== '' && action.fin !== '' &&
-        (action.actGf1 || action.actGf1Gf2 || action.actGf1Gf3 || action.actGf1Gf4)
+        (action.actGf1 || action.actGf1Gf2 || action.actGf1Gf3 || action.actGf1Gf4) &&
+        (!simulationFilter || !simulationFilter.has(action.id))
     );
 
     // Get all "Escamotage de phase" actions
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const escamotageActions = actionData.filter(action =>
-        action.action === 'Escamotage de phase' && action.deb !== '' && action.fin !== ''
+        action.action === 'Escamotage de phase' && action.deb !== '' && action.fin !== '' &&
+        (!simulationFilter || !simulationFilter.has(action.id))
     );
 
     // Get all "Escamotage" actions (linked to specific group via actGf1)
     // No deb/fin required - arrows are calculated from group times and intergreen
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const escamotageGroupActions = actionData.filter(action =>
-        action.action === 'Escamotage' && action.gf && action.actGf1
+        action.action === 'Escamotage' && action.gf && action.actGf1 &&
+        (!simulationFilter || !simulationFilter.has(action.id))
     );
 
     // Get all "Signa d'aide à la conduite" actions
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const signaActions = actionData.filter(action => {
         if (action.action !== 'Signa d\'aide à la conduite') return false;
         if (action.deb === '' || action.fin === '') return false;
+        if (simulationFilter && simulationFilter.has(action.id)) return false;
         const deb = parseInt(action.deb) || 0;
         const fin = parseInt(action.fin) || 0;
         if (deb === fin) return false;
@@ -255,45 +275,55 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     });
 
     // Get all "Point de repos" actions
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const pointReposActions = actionData.filter(action =>
         action.action === 'Point de repos' &&
         action.deb !== '' &&
         action.plage1 !== '' &&
-        action.plage2 !== ''
+        action.plage2 !== '' &&
+        (!simulationFilter || !simulationFilter.has(action.id))
     );
 
     // Get all "Synchro BTS" actions
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const synchroBtsActions = actionData.filter(action =>
         action.action === 'Synchro BTS' &&
         action.deb !== '' &&
         action.plage1 !== '' &&
-        action.plage2 !== ''
+        action.plage2 !== '' &&
+        (!simulationFilter || !simulationFilter.has(action.id))
     );
 
     // Get all "Priorité piétons" actions
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const prioritePietonsActions = actionData.filter(action =>
         action.action === 'Priorité piétons' &&
         action.gf !== '' &&
         action.deb !== '' &&
-        action.fin !== ''
+        action.fin !== '' &&
+        (!simulationFilter || !simulationFilter.has(action.id))
     );
 
     // Get all "Début de bande passante" actions
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const debutBandeActions = actionData.filter(action =>
         action.action === 'Début de bande passante' &&
         action.gf !== '' &&
         action.deb !== '' &&
         action.fin !== '' &&
-        action.actGf1 !== ''
+        action.actGf1 !== '' &&
+        (!simulationFilter || !simulationFilter.has(action.id))
     );
 
     // Get all "Fin de bande passante" actions
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const finBandeActions = actionData.filter(action =>
         action.action === 'Fin de bande passante' &&
         action.gf !== '' &&
         action.deb !== '' &&
         action.fin !== '' &&
-        action.actGf1 !== ''
+        action.actGf1 !== '' &&
+        (!simulationFilter || !simulationFilter.has(action.id))
     );
 
     const ROW_HEIGHT = 30; // Height of each row in pixels
@@ -417,11 +447,19 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const isConflict = conflicts && conflicts.some(c => c.from === group.id || c.to === group.id);
                             const orangeDuration = group.durations.orange || 3;
 
-                            // Check if group has a phase (not all zeros)
-                            const offset = group.offset % cycleLength;
-                            const greenDuration = group.durations.green;
-                            const endValue = (offset + greenDuration) % cycleLength;
-                            const hasPhase = greenDuration > 0 || offset > 0 || endValue > 0;
+                            // Get simulated group data if in simulation mode
+                            const simGroup = getSimulatedGroup(group.id);
+                            const isEscamoted = simGroup?.isEscamoted || false;
+
+                            // Use simulated values when in simulation mode, otherwise use original values
+                            const offset = simGroup
+                                ? (simGroup.simulatedOffset % effectiveCycleLength)
+                                : (group.offset % cycleLength);
+                            const greenDuration = simGroup
+                                ? simGroup.simulatedGreen
+                                : group.durations.green;
+                            const endValue = (offset + greenDuration) % effectiveCycleLength;
+                            const hasPhase = !isEscamoted && (greenDuration > 0 || offset > 0 || endValue > 0);
 
                             // Calculate base bars from group offset/duration
                             const totalDuration = group.durations.green + group.durations.orange + group.durations.red;
@@ -443,20 +481,21 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const orangeWidth = orangeDur * pixelsPerSecond;
 
                                         // Check if green bar wraps around cycle
-                                        const greenWrapsAround = offset + greenDuration > cycleLength;
+                                        const currentCycleLen = simGroup ? effectiveCycleLength : cycleLength;
+                                        const greenWrapsAround = offset + greenDuration > currentCycleLen;
                                         // Check if orange bar wraps around cycle (only for pedestrians and cyclists)
-                                        const greenEnd = (offset + greenDuration) % cycleLength;
-                                        const orangeEnd = (greenEnd + orangeDur) % cycleLength;
-                                        const orangeWrapsAround = (isPedestrian || isCyclist) && (greenEnd + orangeDur > cycleLength);
+                                        const greenEnd = (offset + greenDuration) % currentCycleLen;
+                                        const orangeEnd = (greenEnd + orangeDur) % currentCycleLen;
+                                        const orangeWrapsAround = (isPedestrian || isCyclist) && (greenEnd + orangeDur > currentCycleLen);
 
                                         if (greenWrapsAround) {
                                             // Green bar wraps around
-                                            const firstPartWidth = (cycleLength - offset) * pixelsPerSecond;
-                                            const secondPartWidth = ((offset + greenDuration) % cycleLength) * pixelsPerSecond;
+                                            const firstPartWidth = (currentCycleLen - offset) * pixelsPerSecond;
+                                            const secondPartWidth = ((offset + greenDuration) % currentCycleLen) * pixelsPerSecond;
 
                                             // Check if orange also wraps
                                             if (orangeWrapsAround) {
-                                                const orangeFirstPartWidth = (cycleLength - greenEnd) * pixelsPerSecond;
+                                                const orangeFirstPartWidth = (currentCycleLen - greenEnd) * pixelsPerSecond;
                                                 const orangeSecondPartWidth = orangeEnd * pixelsPerSecond;
 
                                                 return (
@@ -534,7 +573,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const greenWidth = greenDuration * pixelsPerSecond;
 
                                         if (orangeWrapsAround) {
-                                            const orangeFirstPartWidth = (cycleLength - greenEnd) * pixelsPerSecond;
+                                            const orangeFirstPartWidth = (currentCycleLen - greenEnd) * pixelsPerSecond;
                                             const orangeSecondPartWidth = orangeEnd * pixelsPerSecond;
 
                                             return (
@@ -2025,7 +2064,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 })}
 
                                 {/* Arrows from Seconde lucarne phases */}
-                                {actionData.filter(a => a.action === 'Seconde lucarne' && a.gf && a.fin !== '').map((lucarne, lIdx) => {
+                                {actionData.filter(a => a.action === 'Seconde lucarne' && a.gf && a.fin !== '' && (!simulationFilter || simulationFilter.has(a.id))).map((lucarne, lIdx) => {
                                     const fromId = parseInt(lucarne.gf);
                                     if (isNaN(fromId) || fromId < 1 || fromId > groups.length) return null;
 

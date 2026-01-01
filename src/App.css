@@ -431,6 +431,25 @@
     border-color: #666;
 }
 
+/* Simulation tab styling */
+.pf-tab.simulation-tab {
+    background: #1a2a2a;
+    border-color: #2a4a4a;
+    color: #6cc;
+    margin-left: 8px;
+}
+
+.pf-tab.simulation-tab:hover {
+    background: #2a3a3a;
+    color: #8ee;
+}
+
+.pf-tab.simulation-tab.active {
+    background: #2a4040;
+    color: #4ecdc4;
+    border-color: #4ecdc4;
+}
+
 /* Project list styles for Open modal */
 .project-list-container {
     max-height: 300px;
