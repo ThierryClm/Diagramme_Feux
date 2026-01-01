@@ -5,7 +5,6 @@ import GroupTable from './components/GroupTable';
 import TrafficTable from './components/TrafficTable';
 import IntergreenMatrix from './components/IntergreenMatrix';
 import ActionTable from './components/ActionTable';
-import ProjectManager from './components/ProjectManager';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
@@ -29,7 +28,6 @@ function App() {
         globalTime,
         getGroupState,
         updateGroupParams,
-        moveGroup,
         moveGroupToPosition,
         saveProject,
         loadProject,
@@ -59,9 +57,22 @@ function App() {
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
     const [pixelsPerSecond, setPixelsPerSecond] = useState(10);
-    const [activeTab, setActiveTab] = useState('config'); // 'config', 'traffic', 'projects'
+    const [activeTab, setActiveTab] = useState('config'); // 'config', 'traffic'
     const [showDependencies, setShowDependencies] = useState(false);
     const [hoveredActionId, setHoveredActionId] = useState(null);
+
+    // Local input states for validation on Enter/blur
+    const [groupCountInput, setGroupCountInput] = useState(groups.length.toString());
+    const [cycleLengthInput, setCycleLengthInput] = useState(cycleLength.toString());
+
+    // Sync local inputs when actual values change (e.g., after undo/redo or project load)
+    useEffect(() => {
+        setGroupCountInput(groups.length.toString());
+    }, [groups.length]);
+
+    useEffect(() => {
+        setCycleLengthInput(cycleLength.toString());
+    }, [cycleLength]);
 
     // Modal states
     const [openModal, setOpenModal] = useState(false);
@@ -458,8 +469,21 @@ function App() {
                         <input
                             type="number"
                             min="1" max="32"
-                            value={groups.length}
-                            onChange={(e) => setGroupCount(e.target.value)}
+                            value={groupCountInput}
+                            onChange={(e) => setGroupCountInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.target.blur();
+                                }
+                            }}
+                            onBlur={() => {
+                                const newCount = parseInt(groupCountInput);
+                                if (!isNaN(newCount) && newCount >= 1 && newCount <= 32 && newCount !== groups.length) {
+                                    setGroupCount(newCount);
+                                } else {
+                                    setGroupCountInput(groups.length.toString());
+                                }
+                            }}
                             className="input-count"
                         />
                     </label>
@@ -468,8 +492,21 @@ function App() {
                         <input
                             type="number"
                             min="10"
-                            value={cycleLength}
-                            onChange={(e) => setCycleLength(parseInt(e.target.value) || 100)}
+                            value={cycleLengthInput}
+                            onChange={(e) => setCycleLengthInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.target.blur();
+                                }
+                            }}
+                            onBlur={() => {
+                                const newCycle = parseInt(cycleLengthInput);
+                                if (!isNaN(newCycle) && newCycle >= 10 && newCycle !== cycleLength) {
+                                    setCycleLength(newCycle);
+                                } else {
+                                    setCycleLengthInput(cycleLength.toString());
+                                }
+                            }}
                             className="input-count"
                         />
                     </label>
@@ -527,12 +564,6 @@ function App() {
                 <aside className="sidebar">
                     <div className="sidebar-tabs">
                         <button
-                            className={`tab-btn ${activeTab === 'projects' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('projects')}
-                        >
-                            Projets
-                        </button>
-                        <button
                             className={`tab-btn ${activeTab === 'config' ? 'active' : ''}`}
                             onClick={() => setActiveTab('config')}
                         >
@@ -552,7 +583,6 @@ function App() {
                                 groups={groups}
                                 updateGroupParams={updateGroupParams}
                                 cycleLength={cycleLength}
-                                moveGroup={moveGroup}
                             />
                             <div style={{ marginTop: '2rem' }}>
                                 <IntergreenMatrix
@@ -571,16 +601,6 @@ function App() {
                             groups={groups}
                             updateGroupParams={updateGroupParams}
                             cycleLength={cycleLength}
-                        />
-                    )}
-
-                    {activeTab === 'projects' && (
-                        <ProjectManager
-                            saveProject={saveProject}
-                            loadProject={loadProject}
-                            getAllSaves={getAllSaves}
-                            deleteSave={deleteSave}
-                            currentName={intersectionName}
                         />
                     )}
 

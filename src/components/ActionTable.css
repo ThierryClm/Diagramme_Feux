@@ -15,9 +15,10 @@
 }
 
 .action-table-scroll {
-    overflow: visible;
+    overflow: auto;
     flex-grow: 1;
     border: 1px solid #333;
+    max-height: 400px;
 }
 
 .action-table {

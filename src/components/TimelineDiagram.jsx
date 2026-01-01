@@ -228,7 +228,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     // Get all "Fermeture anticipée" actions with arrows
     const fermetureActions = actionData.filter(action =>
         action.action === 'Fermeture anticipée' && action.deb !== '' && action.fin !== '' &&
-        (action.actGf1 || action.actGf1Gf2)
+        (action.actGf1 || action.actGf1Gf2 || action.actGf1Gf3 || action.actGf1Gf4)
     );
 
     // Get all "Escamotage de phase" actions
@@ -337,7 +337,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     title={g.name}
                                     style={{
                                         backgroundColor:
-                                            g.type === 'VL' ? 'rgba(0, 0, 255, 0.1)' :
+                                            g.type === 'VL' ? 'rgba(100, 180, 255, 0.25)' :
                                             g.type === 'TC' ? 'rgba(148, 0, 211, 0.1)' :
                                             g.type === 'Piéton' ? 'rgba(0, 255, 0, 0.1)' :
                                             g.type === 'Cycliste' ? 'rgba(255, 255, 0, 0.1)' :
@@ -925,7 +925,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const sourceGf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
                             const fin = parseInt(action.fin) || 0;
 
-                            // Get target groups from ActGF1 or ActGF1GF2
+                            // Get target groups from ActGF1, ActGF2, ActGF3, ActGF4
                             const targets = [];
                             if (action.actGf1) {
                                 const targetId = parseInt(action.actGf1.toString().replace(/[Gg]/g, '').trim());
@@ -933,6 +933,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             }
                             if (action.actGf1Gf2) {
                                 const targetId = parseInt(action.actGf1Gf2.toString().replace(/[Gg]/g, '').trim());
+                                if (targetId) targets.push(targetId);
+                            }
+                            if (action.actGf1Gf3) {
+                                const targetId = parseInt(action.actGf1Gf3.toString().replace(/[Gg]/g, '').trim());
+                                if (targetId) targets.push(targetId);
+                            }
+                            if (action.actGf1Gf4) {
+                                const targetId = parseInt(action.actGf1Gf4.toString().replace(/[Gg]/g, '').trim());
                                 if (targetId) targets.push(targetId);
                             }
 
@@ -1299,9 +1307,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             // Calculate stripe width based on 1 second interval
                             const stripeWidth = pixelsPerSecond;
 
-                            // Vertical position based on group index
-                            const topPos = RULER_HEIGHT + (groupIndex * ROW_HEIGHT) + 7;
-                            const height = ROW_HEIGHT - 14;
+                            // Vertical position based on group index (height reduced by 2/3 total)
+                            const height = Math.round((ROW_HEIGHT - 14) * 4 / 9);
+                            const topPos = RULER_HEIGHT + (groupIndex * ROW_HEIGHT) + Math.floor((ROW_HEIGHT - height) / 2);
 
                             return (
                                 <React.Fragment key={`signa-${idx}`}>
@@ -1579,8 +1587,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const barWidth = duration * pixelsPerSecond;
 
                             // Vertical position based on group index (centered in row)
-                            const topPos = RULER_HEIGHT + (groupIndex * ROW_HEIGHT) + 7;
                             const height = ROW_HEIGHT - 14;
+                            const topPos = RULER_HEIGHT + (groupIndex * ROW_HEIGHT) + Math.floor((ROW_HEIGHT - height) / 2);
 
                             // Stripe width based on 1 second interval
                             const stripeWidth = pixelsPerSecond;
@@ -1642,8 +1650,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <span className="priorite-pietons-label" style={{
                                                 position: 'absolute',
                                                 top: '50%',
-                                                left: '2px',
-                                                transform: 'translateY(-50%)',
+                                                left: '50%',
+                                                transform: 'translate(-50%, -50%)',
                                                 fontSize: '0.65em',
                                                 color: '#000',
                                                 fontWeight: 'bold',

@@ -1,7 +1,7 @@
 import React from 'react';
 import './GroupTable.css';
 
-const GroupTable = ({ groups, updateGroupParams, cycleLength, moveGroup }) => {
+const GroupTable = ({ groups, updateGroupParams, cycleLength }) => {
 
     const handleStartChange = (id, value) => {
         updateGroupParams(id, { offset: parseInt(value) || 0 });
@@ -36,9 +36,9 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, moveGroup }) => {
                 <thead>
                     <tr>
                         <th>Grp</th>
-                        <th>Ordre</th>
                         <th>Nom</th>
                         <th>Type</th>
+                        <th>Courant</th>
                         <th>Mini</th>
                         <th>Jaune</th>
                     </tr>
@@ -52,22 +52,6 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, moveGroup }) => {
                         return (
                             <tr key={g.id}>
                                 <td className="col-id">{g.id}</td>
-                                <td>
-                                    <button
-                                        className="btn-move"
-                                        onClick={() => moveGroup(index, 'up')}
-                                        disabled={index === 0}
-                                    >
-                                        ▲
-                                    </button>
-                                    <button
-                                        className="btn-move"
-                                        onClick={() => moveGroup(index, 'down')}
-                                        disabled={index === groups.length - 1}
-                                    >
-                                        ▼
-                                    </button>
-                                </td>
                                 {/* Name Input */}
                                 <td>
                                     <input
@@ -86,9 +70,18 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, moveGroup }) => {
                                     >
                                         <option value="VL">VL</option>
                                         <option value="TC">TC</option>
-                                        <option value="Cycliste">Vélo</option>
+                                        <option value="Cycliste">Cycliste</option>
                                         <option value="Piéton">Piéton</option>
                                     </select>
+                                </td>
+                                {/* Courant */}
+                                <td>
+                                    <input
+                                        type="text"
+                                        className="input-courant"
+                                        value={g.courant || ''}
+                                        onChange={(e) => updateGroupParams(g.id, { courant: e.target.value })}
+                                    />
                                 </td>
                                 {/* Min Green */}
                                 <td>

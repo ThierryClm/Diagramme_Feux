@@ -22,8 +22,8 @@ export const useTrafficLight = () => {
         name: `Groupe ${id}`, // Default name
         type: 'VL', // VL, TC, Cycliste, Piéton
         minGreen: 6,
-        durations: { green: 30, orange: 3, red: 67 }, // Default orange is now 3s? Or 5s? Standard is usually 3s for VL.
-        offset: (id - 1) * 5,
+        durations: { green: 0, orange: 3, red: 0 }, // New groups start with no green duration
+        offset: 0, // New groups start at 0
         da: '', // DA field (2 characters)
         // Traffic Engineering Props
         trafficStream: '', // Courant de circulation
@@ -73,17 +73,49 @@ export const useTrafficLight = () => {
         localStorage.setItem('trafficCycle', cycleLength.toString());
     }, [groups, conflictMatrix, intersectionName, cycleLength]);
 
-    const setGroupCount = (count) => {
+    const setGroupCountInternal = (count) => {
         const newCount = Math.max(1, parseInt(count) || 1);
+
         setGroups(prev => {
-            if (newCount > prev.length) {
+            const oldCount = prev.length;
+
+            // Update action data when increasing group count
+            if (newCount > oldCount) {
+                setActionData(currentData => {
+                    return currentData.map(row => {
+                        const updatedRow = { ...row };
+                        // Update plage1, plage2 if they equal old count
+                        if (parseInt(row.plage1) === oldCount) {
+                            updatedRow.plage1 = newCount.toString();
+                        }
+                        if (parseInt(row.plage2) === oldCount) {
+                            updatedRow.plage2 = newCount.toString();
+                        }
+                        // Update actGf1, actGf1Gf2, actGf1Gf3, actGf1Gf4 if they equal old count
+                        if (parseInt(row.actGf1?.toString().replace(/[Gg]/g, '').trim()) === oldCount) {
+                            updatedRow.actGf1 = newCount.toString();
+                        }
+                        if (parseInt(row.actGf1Gf2?.toString().replace(/[Gg]/g, '').trim()) === oldCount) {
+                            updatedRow.actGf1Gf2 = newCount.toString();
+                        }
+                        if (parseInt(row.actGf1Gf3?.toString().replace(/[Gg]/g, '').trim()) === oldCount) {
+                            updatedRow.actGf1Gf3 = newCount.toString();
+                        }
+                        if (parseInt(row.actGf1Gf4?.toString().replace(/[Gg]/g, '').trim()) === oldCount) {
+                            updatedRow.actGf1Gf4 = newCount.toString();
+                        }
+                        return updatedRow;
+                    });
+                });
+
                 // Add groups
-                const added = Array.from({ length: newCount - prev.length }, (_, i) => createGroup(prev.length + i + 1));
+                const added = Array.from({ length: newCount - oldCount }, (_, i) => createGroup(oldCount + i + 1));
                 return [...prev, ...added];
-            } else {
+            } else if (newCount < prev.length) {
                 // Remove groups
                 return prev.slice(0, newCount);
             }
+            return prev;
         });
 
         setConflictMatrix(prev => {
@@ -903,6 +935,21 @@ export const useTrafficLight = () => {
         ));
     }, [saveToHistory]);
 
+    // Wrapped setCycleLength that saves to history
+    const setCycleLengthWithHistory = useCallback((newCycle) => {
+        if (newCycle === cycleLength) return; // No change
+        saveToHistory();
+        setCycleLength(newCycle);
+    }, [saveToHistory, cycleLength]);
+
+    // Wrapped setGroupCount that saves to history
+    const setGroupCountWithHistory = useCallback((count) => {
+        const newCount = Math.max(1, parseInt(count) || 1);
+        if (newCount === groups.length) return; // No change
+        saveToHistory();
+        setGroupCountInternal(count);
+    }, [saveToHistory, groups.length]);
+
     const updateGroupParamsWithHistory = useCallback((id, params) => {
         if (!isDragging.current) {
             saveToHistory();
@@ -1076,9 +1123,9 @@ export const useTrafficLight = () => {
         intersectionName,
         setIntersectionName,
         groups,
-        setGroupCount,
+        setGroupCount: setGroupCountWithHistory,
         cycleLength,
-        setCycleLength,
+        setCycleLength: setCycleLengthWithHistory,
         conflictMatrix,
         setMatrixValue: setMatrixValueWithHistory,
         conflicts,
