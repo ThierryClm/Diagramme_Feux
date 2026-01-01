@@ -278,3 +278,10 @@
     border-color: #f90;
     border-left: 3px solid #f90;
 }
+
+/* Hovered state - highlight when hovering in diagram or in list */
+.simulation-item.hovered {
+    background: #3a3a50 !important;
+    border-color: #66f !important;
+    box-shadow: 0 0 5px rgba(100, 100, 255, 0.5);
+}

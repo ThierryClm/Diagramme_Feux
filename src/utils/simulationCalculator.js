@@ -289,12 +289,44 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
             });
         } else {
             // Only affects groups in range - just shift their offsets
+            // But stop at "Point de repos" or "Synchro BTS" actions
             timeShifts.push({ from: fin, amount: shiftAmount, plage1, plage2 });
+
+            // Find stopping points from ALL actions (not just selected)
+            // These are global stopping points - no group can shift below them
+            const stoppingActions = actionData.filter(a =>
+                (a.action === 'Point de repos' || a.action === 'Synchro BTS') &&
+                a.deb !== ''
+            );
+
+            // Find the maximum stopping point (the floor)
+            let maxStopTime = -1;
+            stoppingActions.forEach(stopAction => {
+                const stopTime = parseInt(stopAction.deb) || 0;
+                if (stopTime > maxStopTime) {
+                    maxStopTime = stopTime;
+                }
+            });
 
             simulatedGroups.forEach(g => {
                 if (g.id >= plage1 && g.id <= plage2 && !g.isEscamoted) {
-                    g.simulatedOffset =
-                        (g.simulatedOffset - shiftAmount + simulatedCycleLength) % simulatedCycleLength;
+                    const originalOffset = g.simulatedOffset;
+
+                    // Only shift groups whose START (offset) is within the affected zone
+                    // Groups with offset before 'fin' are NOT affected (even if their green bar extends into the zone)
+
+                    if (maxStopTime >= 0) {
+                        // There's a stopping point
+                        // Only shift groups with offset in [fin, maxStopTime]
+                        if (originalOffset >= fin && originalOffset <= maxStopTime) {
+                            g.simulatedOffset = Math.max(0, originalOffset - shiftAmount);
+                        }
+                    } else {
+                        // No stopping point - apply shift to groups with offset >= fin
+                        if (originalOffset >= fin) {
+                            g.simulatedOffset = (originalOffset - shiftAmount + simulatedCycleLength) % simulatedCycleLength;
+                        }
+                    }
                 }
             });
         }

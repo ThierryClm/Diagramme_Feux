@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -19,6 +19,21 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     const getSimulatedGroup = (groupId) => {
         if (!simulationResult) return null;
         return simulationResult.simulatedGroups.find(g => g.id === groupId);
+    };
+
+    // Helper to get the shift amount for a group (how much its offset changed)
+    // Returns the difference: originalOffset - simulatedOffset (positive = shifted left)
+    const getGroupShift = (groupId) => {
+        if (!simulationResult) return 0;
+        const originalGroup = groups.find(g => g.id === parseInt(groupId));
+        const simGroup = simulationResult.simulatedGroups.find(g => g.id === parseInt(groupId));
+        if (!originalGroup || !simGroup) return 0;
+        // Calculate shift (positive = moved left/earlier)
+        let shift = originalGroup.offset - simGroup.simulatedOffset;
+        // Handle wrap-around
+        if (shift < 0) shift += cycleLength;
+        if (shift > cycleLength / 2) shift = shift - cycleLength; // Take the smaller shift direction
+        return Math.max(0, shift); // Only positive shifts (moved earlier)
     };
 
     // Helper to calculate shifted position for action overlays
@@ -47,15 +62,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             }
         }
 
-        // Apply time shifts
+        // If we have a groupId, use the actual group shift (more accurate for Adaptatif vertical)
+        if (groupId && simulationResult) {
+            const groupShift = getGroupShift(groupId);
+            if (groupShift > 0) {
+                totalShift = groupShift;
+            }
+        }
+
+        // Also apply global time shifts (from Escamotage de phase)
         if (simulationResult?.timeShifts?.length) {
             simulationResult.timeShifts.forEach(shift => {
-                // Check if this shift applies to this group (if plage1/plage2 are specified)
+                // Skip shifts with plage (these are Adaptatif vertical, handled by getGroupShift above)
                 if (shift.plage1 && shift.plage2) {
-                    // Only apply if groupId is within the plage
-                    if (!groupId || groupId < shift.plage1 || groupId > shift.plage2) {
-                        return; // Skip this shift
-                    }
+                    return;
                 }
 
                 // Apply shift if position is after the shift point
@@ -380,9 +400,19 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     const RULER_HEIGHT = 50; // Height of the ruler
 
     // Helper to get group start position (beginning of green bar on screen)
+    // Uses simulated offset when in simulation mode
     const getGroupStartPos = (groupId) => {
         const group = groups.find(g => g.id === parseInt(groupId));
         if (!group) return null;
+
+        // In simulation mode, use simulated offset if available
+        if (simulationResult) {
+            const simGroup = simulationResult.simulatedGroups.find(g => g.id === parseInt(groupId));
+            if (simGroup) {
+                return simGroup.simulatedOffset % effectiveCycleLength;
+            }
+        }
+
         // The sidebar shows start = offset, so the green begins at position offset
         return group.offset % cycleLength;
     };
@@ -491,6 +521,19 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             ))}
                         </div>
 
+                        {/* Playhead - Simulation time cursor */}
+                        {simulationCurrentTime !== null && (
+                            <div
+                                className={`simulation-playhead ${isPlayingSimulation ? 'playing' : ''}`}
+                                style={{
+                                    left: `${simulationCurrentTime * pixelsPerSecond}px`,
+                                    height: `${RULER_HEIGHT + (groups.length * ROW_HEIGHT) + 30}px`
+                                }}
+                            >
+                                <div className="playhead-time">{simulationCurrentTime}s</div>
+                            </div>
+                        )}
+
                         {/* Rows */}
                         {groups.map((group) => {
                             const groupActions = getActionsForGroup(group.id);
@@ -515,12 +558,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const totalDuration = group.durations.green + group.durations.orange + group.durations.red;
                             const cyclesToRender = Math.ceil(TIME_WINDOW / totalDuration) + 1;
 
+                            const isHighlightedByArrow = hoveredArrowGroupId === group.id;
+
                             return (
                                 <div
                                     key={group.id}
-                                    className={`timeline-row-track ${isConflict ? 'row-conflict' : ''}`}
+                                    className={`timeline-row-track ${isConflict ? 'row-conflict' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
                                     onClick={() => onGroupClick(group)}
-                                    style={{ backgroundColor: isConflict ? 'rgba(231, 76, 60, 0.1)' : 'transparent' }}
+                                    style={{ backgroundColor: isConflict ? 'rgba(231, 76, 60, 0.1)' : isHighlightedByArrow ? 'rgba(100, 100, 255, 0.15)' : 'transparent' }}
                                 >
                                     {/* Base bars from group Début/Fin (sidebar values) - only if phase exists */}
                                     {hasPhase && (() => {
@@ -1097,9 +1142,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 // Calculate positions
                                 const sourceY = RULER_HEIGHT + ((sourceGf - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
                                 const targetY = RULER_HEIGHT + ((targetGf - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
-                                const sourceX = fin * pixelsPerSecond;
+                                // Apply group shift to source position in simulation mode
+                                const sourceShift = getGroupShift(sourceGf);
+                                const shiftedFin = Math.max(0, fin - sourceShift);
+                                const sourceX = shiftedFin * pixelsPerSecond;
                                 const targetX = targetStartPos * pixelsPerSecond;
-                                const cycleEndX = cycleLength * pixelsPerSecond;
+                                const cycleEndX = effectiveCycleLength * pixelsPerSecond;
 
                                 // If arrow would go backwards, split into two segments
                                 if (sourceX > targetX) {

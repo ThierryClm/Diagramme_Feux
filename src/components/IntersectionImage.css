@@ -1,0 +1,344 @@
+.intersection-image-container {
+    display: flex;
+    flex-direction: column;
+    background: #1e1e1e;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 1rem;
+}
+
+.intersection-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.intersection-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #eee;
+    flex: 1;
+}
+
+.upload-btn {
+    padding: 4px 10px;
+    background: #4a4a6a;
+    border: 1px solid #666;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+.upload-btn:hover {
+    background: #5a5a7a;
+}
+
+.intersection-image-area {
+    position: relative;
+    /* A4 landscape ratio: 297/210 = 1.414 */
+    width: 100%;
+    aspect-ratio: 297 / 210;
+    min-height: 300px;
+    max-height: 500px;
+    background: #252525;
+    border: 1px solid #444;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: crosshair;
+}
+
+.intersection-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.no-image-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #666;
+    cursor: pointer;
+}
+
+.no-image-placeholder p {
+    margin: 5px 0;
+}
+
+.no-image-placeholder .hint {
+    font-size: 0.8em;
+    color: #555;
+}
+
+/* Arrow markers */
+.arrow-marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: move;
+    z-index: 10;
+    user-select: none;
+}
+
+.arrow-marker .arrow-symbol {
+    font-size: 72px;
+    color: #4ecdc4;
+    text-shadow: 0 0 4px #000, 0 0 8px #000, 0 0 12px #000;
+    line-height: 1;
+    display: inline-block;
+    transition: transform 0.15s ease;
+}
+
+.arrow-marker .arrow-label {
+    font-size: 14px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 4px;
+    white-space: nowrap;
+    font-weight: bold;
+}
+
+.arrow-marker.selected {
+    z-index: 20;
+}
+
+.arrow-marker.selected .arrow-symbol {
+    color: #ff6b6b;
+    filter: drop-shadow(0 0 6px #ff6b6b);
+}
+
+.arrow-marker.selected .arrow-label {
+    background: #ff6b6b;
+}
+
+/* Arrow editor panel */
+.arrow-editor {
+    margin-top: 10px;
+    padding: 10px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+.editor-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.editor-row label {
+    color: #888;
+    font-size: 0.85em;
+    min-width: 60px;
+}
+
+.editor-row select {
+    flex: 1;
+    padding: 4px;
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 3px;
+    font-size: 0.85em;
+}
+
+/* Rotation controls */
+.rotation-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.rotation-slider {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #333;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.rotation-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #4ecdc4;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.rotation-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #4ecdc4;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.rotation-input {
+    width: 50px;
+    padding: 4px 6px;
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 3px;
+    font-size: 0.85em;
+    text-align: center;
+}
+
+.rotation-input::-webkit-inner-spin-button,
+.rotation-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+.rotation-unit {
+    color: #888;
+    font-size: 0.9em;
+}
+
+.delete-arrow-btn {
+    width: 100%;
+    padding: 6px;
+    background: #633;
+    border: 1px solid #844;
+    color: #faa;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+}
+
+.delete-arrow-btn:hover {
+    background: #744;
+}
+
+.intersection-image-container > .hint {
+    margin-top: 8px;
+    font-size: 0.75em;
+    color: #666;
+    text-align: center;
+}
+
+/* Intersection controls */
+.intersection-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Simulation controls */
+.simulation-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: #2a2a3a;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+.sim-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: #3a3a5a;
+    border: 1px solid #555;
+    color: #4ecdc4;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.sim-btn:hover {
+    background: #4a4a6a;
+    border-color: #4ecdc4;
+}
+
+.sim-btn.playing {
+    background: #2a5a3a;
+    border-color: #4c4;
+    color: #4c4;
+}
+
+.sim-btn.reset-btn {
+    color: #f66;
+}
+
+.sim-btn.reset-btn:hover {
+    background: #5a3a3a;
+    border-color: #f66;
+}
+
+.sim-time {
+    color: #aaa;
+    font-size: 0.85em;
+    font-family: monospace;
+    min-width: 80px;
+    text-align: center;
+}
+
+/* Time slider */
+.time-slider {
+    width: 120px;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #333;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.time-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #f90;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.time-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #f90;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+/* Animating arrows */
+.arrow-marker.animating .arrow-symbol {
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* Hovered arrow (when diagram row should be highlighted) */
+.arrow-marker.hovered {
+    z-index: 25;
+}
+
+.arrow-marker.hovered .arrow-symbol {
+    filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 20px #fff);
+}
+
+.arrow-marker.hovered .arrow-label {
+    background: #66f;
+    box-shadow: 0 0 8px rgba(100, 100, 255, 0.8);
+}

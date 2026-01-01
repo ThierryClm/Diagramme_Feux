@@ -5,6 +5,7 @@ import GroupTable from './components/GroupTable';
 import TrafficTable from './components/TrafficTable';
 import IntergreenMatrix from './components/IntergreenMatrix';
 import ActionTable from './components/ActionTable';
+import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
@@ -60,7 +61,11 @@ function App() {
         simulationSelectedActions,
         toggleSimulationAction,
         selectAllSimulationActions,
-        deselectAllSimulationActions
+        deselectAllSimulationActions,
+        intersectionImage,
+        setIntersectionImage,
+        intersectionArrows,
+        setIntersectionArrows
     } = useTrafficLight();
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -68,6 +73,11 @@ function App() {
     const [activeTab, setActiveTab] = useState('config'); // 'config', 'traffic'
     const [showDependencies, setShowDependencies] = useState(false);
     const [hoveredActionId, setHoveredActionId] = useState(null);
+
+    // Intersection image animation state
+    const [isPlayingSimulation, setIsPlayingSimulation] = useState(false);
+    const [simulationCurrentTime, setSimulationCurrentTime] = useState(0);
+    const [hoveredArrowGroupId, setHoveredArrowGroupId] = useState(null);
 
     // Calculate simulated diagram when in simulation mode
     const simulationResult = useMemo(() => {
@@ -592,6 +602,8 @@ function App() {
                             groups={groups}
                             cycleLength={cycleLength}
                             conflictMatrix={conflictMatrix}
+                            hoveredActionId={hoveredActionId}
+                            setHoveredActionId={setHoveredActionId}
                         />
                     ) : (
                         <>
@@ -723,19 +735,40 @@ function App() {
                             setHoveredActionId={setHoveredActionId}
                             simulationFilter={simulationEnabled ? new Set(simulationSelectedActions) : null}
                             simulationResult={simulationResult}
+                            simulationCurrentTime={simulationEnabled ? simulationCurrentTime : null}
+                            isPlayingSimulation={simulationEnabled && isPlayingSimulation}
+                            hoveredArrowGroupId={hoveredArrowGroupId}
                         />
                     </div>
 
                     <div style={{ borderTop: '1px solid #333', marginTop: '1rem' }}>
-                        <ActionTable
-                            actionData={actionData}
-                            updateActionRow={updateActionRow}
-                            reorderActions={reorderActions}
-                            cycleLength={cycleLength}
-                            maxGroup={groups.length}
-                            hoveredActionId={hoveredActionId}
-                            setHoveredActionId={setHoveredActionId}
-                        />
+                        {simulationEnabled ? (
+                            <IntersectionImage
+                                groups={groups}
+                                imageData={intersectionImage}
+                                onImageChange={setIntersectionImage}
+                                arrows={intersectionArrows}
+                                onArrowsChange={setIntersectionArrows}
+                                cycleLength={cycleLength}
+                                simulationResult={simulationResult}
+                                isPlaying={isPlayingSimulation}
+                                setIsPlaying={setIsPlayingSimulation}
+                                currentTime={simulationCurrentTime}
+                                setCurrentTime={setSimulationCurrentTime}
+                                hoveredArrowGroupId={hoveredArrowGroupId}
+                                setHoveredArrowGroupId={setHoveredArrowGroupId}
+                            />
+                        ) : (
+                            <ActionTable
+                                actionData={actionData}
+                                updateActionRow={updateActionRow}
+                                reorderActions={reorderActions}
+                                cycleLength={cycleLength}
+                                maxGroup={groups.length}
+                                hoveredActionId={hoveredActionId}
+                                setHoveredActionId={setHoveredActionId}
+                            />
+                        )}
                     </div>
                 </section>
             </main>

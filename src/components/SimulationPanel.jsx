@@ -10,7 +10,9 @@ const SimulationPanel = ({
     onDeselectAll,
     groups,
     cycleLength,
-    conflictMatrix
+    conflictMatrix,
+    hoveredActionId,
+    setHoveredActionId
 }) => {
     // Filter to only show actions that have a type selected
     // Exclude actions that don't affect simulation
@@ -87,10 +89,13 @@ const SimulationPanel = ({
                     activeActions.map(action => {
                         const isChecked = selectedActions.includes(action.id);
                         const isModifying = ['Escamotage de phase', 'Ouverture anticipée', 'Adaptatif vertical'].includes(action.action);
+                        const isHovered = hoveredActionId === action.id;
                         return (
                             <label
                                 key={action.id}
-                                className={`simulation-item ${isChecked ? 'checked' : ''} ${isModifying ? 'modifying' : ''}`}
+                                className={`simulation-item ${isChecked ? 'checked' : ''} ${isModifying ? 'modifying' : ''} ${isHovered ? 'hovered' : ''}`}
+                                onMouseEnter={() => setHoveredActionId(action.id)}
+                                onMouseLeave={() => setHoveredActionId(null)}
                             >
                                 <input
                                     type="checkbox"

@@ -404,7 +404,9 @@ export const useTrafficLight = () => {
             cycleLength,
             conflictMatrix,
             pfTabs,
-            activePFId
+            activePFId,
+            intersectionImage,
+            intersectionArrows
             // Note: simulation state is NOT saved with project (per user request)
         };
         try {
@@ -443,6 +445,14 @@ export const useTrafficLight = () => {
                 // Handle old format for backward compatibility
                 setPfTabs([{ id: 1, name: 'PF1', data: data.actionData }]);
                 setActivePFId(1);
+            }
+
+            // Load intersection image and arrows
+            if (data.intersectionImage !== undefined) {
+                setIntersectionImage(data.intersectionImage);
+            }
+            if (data.intersectionArrows) {
+                setIntersectionArrows(data.intersectionArrows);
             }
 
             // Reset simulation state when loading a project
@@ -614,6 +624,24 @@ export const useTrafficLight = () => {
     // Simulation mode state (not persisted - resets on page load)
     const [simulationEnabled, setSimulationEnabled] = useState(false);
     const [simulationSelectedActions, setSimulationSelectedActions] = useState([]);
+
+    // Intersection image state (persisted with project)
+    const [intersectionImage, setIntersectionImage] = useState(() => {
+        try {
+            const saved = localStorage.getItem('trafficIntersectionImage');
+            return saved ? JSON.parse(saved) : null;
+        } catch (e) {
+            return null;
+        }
+    });
+    const [intersectionArrows, setIntersectionArrows] = useState(() => {
+        try {
+            const saved = localStorage.getItem('trafficIntersectionArrows');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
+    });
 
     // Get current actionData based on active PF
     const actionData = useMemo(() => {
@@ -835,6 +863,19 @@ export const useTrafficLight = () => {
         localStorage.setItem('trafficPfTabs', JSON.stringify(pfTabs));
         localStorage.setItem('trafficActivePF', activePFId.toString());
     }, [pfTabs, activePFId]);
+
+    // Save intersection image to localStorage
+    useEffect(() => {
+        if (intersectionImage) {
+            localStorage.setItem('trafficIntersectionImage', JSON.stringify(intersectionImage));
+        } else {
+            localStorage.removeItem('trafficIntersectionImage');
+        }
+    }, [intersectionImage]);
+
+    useEffect(() => {
+        localStorage.setItem('trafficIntersectionArrows', JSON.stringify(intersectionArrows));
+    }, [intersectionArrows]);
 
     // Note: Simulation state is NOT saved to localStorage (per user request)
 
@@ -1210,6 +1251,11 @@ export const useTrafficLight = () => {
         simulationSelectedActions,
         toggleSimulationAction,
         selectAllSimulationActions,
-        deselectAllSimulationActions
+        deselectAllSimulationActions,
+        // Intersection image
+        intersectionImage,
+        setIntersectionImage,
+        intersectionArrows,
+        setIntersectionArrows
     };
 };
