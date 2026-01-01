@@ -1376,8 +1376,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             // X position at deb
                             const xPos = deb * pixelsPerSecond;
 
-                            // Arrow length fixed at 16 pixels
-                            const arrowLength = 16;
+                            // Arrow length fixed at 13 pixels
+                            const arrowLength = 13;
 
                             // Downward arrow: ends just above plage1 row
                             const downArrowEndY = RULER_HEIGHT + (plage1 - 1) * ROW_HEIGHT - 2;

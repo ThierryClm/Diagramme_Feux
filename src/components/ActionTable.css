@@ -110,6 +110,13 @@
     color: #ddd;
 }
 
+.action-table input.input-disabled,
+.action-table input:disabled {
+    background: #2a2a2a;
+    color: #666;
+    cursor: not-allowed;
+}
+
 .idx-col {
     color: #666;
     text-align: center;

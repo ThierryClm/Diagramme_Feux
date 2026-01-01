@@ -26,6 +26,31 @@ const ACTION_OPTIONS = [
     'Synchro BTS'
 ];
 
+// Actions where Action GF fields should be disabled
+const GF_DISABLED_ACTIONS = [
+    'Adaptatif vertical',
+    'Escamotage de phase',
+    'Ouverture anticipée',
+    'Point de repos',
+    'Priorité piétons',
+    'Seconde lucarne',
+    'Signa d\'aide à la conduite',
+    'Synchro BTS'
+];
+
+// Actions where Plage 1 and Plage 2 fields should be disabled
+const PLAGE_DISABLED_ACTIONS = [
+    'Début de bande passante',
+    'Escamotage',
+    'Escamotage de phase',
+    'Fermeture anticipée',
+    'Fin de bande passante',
+    'Ouverture anticipée',
+    'Priorité piétons',
+    'Seconde lucarne',
+    'Signa d\'aide à la conduite'
+];
+
 // Check if a row has any data
 const isRowFilled = (row) => {
     return row.gf || row.action || row.description || row.deb !== '' || row.fin !== '' ||
@@ -237,9 +262,10 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                         type="number"
                                         min="1"
                                         max={maxGroup}
-                                        className="input-small"
+                                        className={`input-small ${PLAGE_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
                                         value={row.plage1}
                                         onChange={(e) => handleGroupFieldChange(row.id, 'plage1', e.target.value)}
+                                        disabled={PLAGE_DISABLED_ACTIONS.includes(row.action)}
                                     />
                                 </td>
                                 <td>
@@ -247,9 +273,10 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                         type="number"
                                         min="1"
                                         max={maxGroup}
-                                        className="input-small"
+                                        className={`input-small ${PLAGE_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
                                         value={row.plage2}
                                         onChange={(e) => handleGroupFieldChange(row.id, 'plage2', e.target.value)}
+                                        disabled={PLAGE_DISABLED_ACTIONS.includes(row.action)}
                                     />
                                 </td>
                                 <td>
@@ -257,9 +284,10 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                         type="number"
                                         min="1"
                                         max={maxGroup}
-                                        className="input-small"
+                                        className={`input-small ${GF_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
                                         value={row.actGf1}
                                         onChange={(e) => handleGroupFieldChange(row.id, 'actGf1', e.target.value)}
+                                        disabled={GF_DISABLED_ACTIONS.includes(row.action)}
                                     />
                                 </td>
                                 <td>
@@ -267,9 +295,10 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                         type="number"
                                         min="1"
                                         max={maxGroup}
-                                        className="input-small"
+                                        className={`input-small ${GF_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
                                         value={row.actGf1Gf2}
                                         onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf2', e.target.value)}
+                                        disabled={GF_DISABLED_ACTIONS.includes(row.action)}
                                     />
                                 </td>
                                 <td>
@@ -277,9 +306,10 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                         type="number"
                                         min="1"
                                         max={maxGroup}
-                                        className="input-small"
+                                        className={`input-small ${GF_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
                                         value={row.actGf1Gf3}
                                         onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf3', e.target.value)}
+                                        disabled={GF_DISABLED_ACTIONS.includes(row.action)}
                                     />
                                 </td>
                                 <td>
@@ -287,9 +317,10 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                         type="number"
                                         min="1"
                                         max={maxGroup}
-                                        className="input-small"
+                                        className={`input-small ${GF_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
                                         value={row.actGf1Gf4}
                                         onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf4', e.target.value)}
+                                        disabled={GF_DISABLED_ACTIONS.includes(row.action)}
                                     />
                                 </td>
                             </tr>
