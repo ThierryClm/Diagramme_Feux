@@ -21,6 +21,47 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         return simulationResult.simulatedGroups.find(g => g.id === groupId);
     };
 
+    // Helper to calculate shifted position for action overlays
+    // Returns adjusted deb/fin values after applying time shifts
+    // Also returns hidden=true if the action is entirely within a removed period
+    const getShiftedActionPosition = (deb, fin, groupId = null) => {
+        if (!simulationResult?.timeShifts?.length) {
+            return { deb, fin, hidden: false };
+        }
+
+        let totalShift = 0;
+        let hidden = false;
+
+        simulationResult.timeShifts.forEach(shift => {
+            // Check if this shift applies to this group (if plage1/plage2 are specified)
+            if (shift.plage1 && shift.plage2) {
+                // Only apply if groupId is within the plage
+                if (!groupId || groupId < shift.plage1 || groupId > shift.plage2) {
+                    return; // Skip this shift
+                }
+            }
+
+            // The removed period is [shift.from - shift.amount, shift.from)
+            const removedStart = shift.from - shift.amount;
+            const removedEnd = shift.from;
+
+            // Check if action is entirely within the removed period
+            if (deb >= removedStart && fin <= removedEnd) {
+                hidden = true;
+            }
+
+            // Apply shift if position is after the shift point
+            if (deb >= shift.from) {
+                totalShift += shift.amount;
+            }
+        });
+
+        const shiftedDeb = Math.max(0, deb - totalShift);
+        const shiftedFin = Math.max(0, fin - totalShift);
+
+        return { deb: shiftedDeb, fin: shiftedFin, hidden };
+    };
+
     // Handlers (Duplicated from GroupTable logic, could be extracted to hook)
     const handleStartChange = (id, value) => {
         updateGroupParams(id, { offset: parseInt(value) || 0 });
@@ -631,11 +672,68 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         );
                                     })()}
 
+                                    {/* Green cuts from Escamotage actions - mask portions of the green bar */}
+                                    {simGroup?.greenCuts?.map((cut, idx) => {
+                                        const cutDeb = cut.deb;
+                                        const cutFin = cut.fin;
+                                        const currentCycleLen = effectiveCycleLength || cycleLength;
+                                        const wrapsAround = cutDeb > cutFin;
+
+                                        if (wrapsAround) {
+                                            // Cut wraps around cycle
+                                            const firstPartWidth = (currentCycleLen - cutDeb) * pixelsPerSecond;
+                                            const secondPartWidth = cutFin * pixelsPerSecond;
+                                            return (
+                                                <React.Fragment key={`green-cut-${idx}`}>
+                                                    {/* First part: from cutDeb to end of cycle */}
+                                                    <div
+                                                        className="green-cut-overlay"
+                                                        style={{
+                                                            left: `${cutDeb * pixelsPerSecond}px`,
+                                                            width: `${firstPartWidth}px`
+                                                        }}
+                                                    />
+                                                    {/* Second part: from start of cycle to cutFin */}
+                                                    <div
+                                                        className="green-cut-overlay"
+                                                        style={{
+                                                            left: '0px',
+                                                            width: `${secondPartWidth}px`
+                                                        }}
+                                                    />
+                                                </React.Fragment>
+                                            );
+                                        }
+
+                                        // Normal case: cut doesn't wrap
+                                        const cutWidth = (cutFin - cutDeb) * pixelsPerSecond;
+                                        return (
+                                            <div
+                                                key={`green-cut-${idx}`}
+                                                className="green-cut-overlay"
+                                                style={{
+                                                    left: `${cutDeb * pixelsPerSecond}px`,
+                                                    width: `${cutWidth}px`
+                                                }}
+                                            />
+                                        );
+                                    })}
+
                                     {/* Action-based overlays */}
                                     {groupActions.map((action, idx) => {
-                                        const deb = parseInt(action.deb) || 0;
-                                        const fin = parseInt(action.fin) || 0;
-                                        const duration = fin >= deb ? fin - deb : (cycleLength - deb + fin);
+                                        const origDeb = parseInt(action.deb) || 0;
+                                        const origFin = parseInt(action.fin) || 0;
+                                        // Apply time shifts from escamotage/adaptatif
+                                        const shifted = getShiftedActionPosition(origDeb, origFin, group.id);
+
+                                        // Skip rendering if action is hidden (entirely within removed period)
+                                        if (shifted.hidden) {
+                                            return null;
+                                        }
+
+                                        const deb = shifted.deb;
+                                        const fin = shifted.fin;
+                                        const duration = fin >= deb ? fin - deb : (effectiveCycleLength - deb + fin);
                                         const leftPos = deb * pixelsPerSecond;
                                         const greenWidth = duration * pixelsPerSecond;
                                         const orangeWidth = orangeDuration * pixelsPerSecond;

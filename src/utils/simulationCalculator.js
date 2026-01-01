@@ -15,13 +15,35 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         durations: { ...g.durations },
         simulatedOffset: g.offset,
         simulatedGreen: g.durations.green,
-        isEscamoted: false
+        isEscamoted: false,
+        greenCuts: [] // Array of {deb, fin} for periods where green is hidden
     }));
 
     let simulatedCycleLength = cycleLength;
 
+    // Track time shifts for action overlays
+    // Each shift: { from: number, amount: number } - positions >= from are shifted left by amount
+    const timeShifts = [];
+
     // Get selected actions
     const selectedActions = actionData.filter(a => selectedActionIds.includes(a.id));
+
+    // Get UNselected Escamotage actions (for hiding the source group)
+    const unselectedEscamotageActions = actionData.filter(a =>
+        !selectedActionIds.includes(a.id) &&
+        a.action === 'Escamotage' &&
+        a.gf !== ''
+    );
+
+    // Process unselected Escamotage first - hide the source group (GF)
+    unselectedEscamotageActions.forEach(action => {
+        const gfId = parseInt(action.gf);
+        const groupIndex = simulatedGroups.findIndex(g => g.id === gfId);
+        if (groupIndex !== -1) {
+            simulatedGroups[groupIndex].isEscamoted = true;
+            simulatedGroups[groupIndex].simulatedGreen = 0;
+        }
+    });
 
     // Process each action type in order
 
@@ -46,6 +68,9 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
                 simulatedGroups[groupIndex].simulatedGreen = 0;
             }
         }
+
+        // Record time shift for action overlays
+        timeShifts.push({ from: fin, amount: duration });
 
         // Reduce cycle length
         simulatedCycleLength -= duration;
@@ -97,6 +122,9 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         const plage2 = parseInt(action.plage2) || groups.length;
         const shiftAmount = fin > deb ? fin - deb : (fin + simulatedCycleLength - deb);
 
+        // Record time shift for action overlays (only for groups in range)
+        timeShifts.push({ from: fin, amount: shiftAmount, plage1, plage2 });
+
         // Shift groups in range plage1 to plage2
         simulatedGroups.forEach(g => {
             if (g.id >= plage1 && g.id <= plage2 && !g.isEscamoted) {
@@ -104,6 +132,30 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
                     (g.simulatedOffset - shiftAmount + simulatedCycleLength) % simulatedCycleLength;
             }
         });
+    });
+
+    // 4. Escamotage - cut green bar of target group (actGf1) for action duration
+    const escamotageActions = selectedActions.filter(a =>
+        a.action === 'Escamotage' &&
+        a.actGf1 !== '' &&
+        a.deb !== '' &&
+        a.fin !== ''
+    );
+
+    escamotageActions.forEach(action => {
+        // Parse actGf1 - might be "G2", "2", or just a number
+        const actGf1Str = action.actGf1?.toString().replace(/[Gg]/g, '').trim() || '';
+        const targetGfId = parseInt(actGf1Str);
+        const deb = parseInt(action.deb) || 0;
+        const fin = parseInt(action.fin) || 0;
+
+        if (!isNaN(targetGfId)) {
+            const groupIndex = simulatedGroups.findIndex(g => g.id === targetGfId);
+            if (groupIndex !== -1 && !simulatedGroups[groupIndex].isEscamoted) {
+                // Add a green cut period for this group
+                simulatedGroups[groupIndex].greenCuts.push({ deb, fin });
+            }
+        }
     });
 
     // Calculate conflicts on simulated diagram
@@ -116,7 +168,8 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
     return {
         simulatedGroups,
         simulatedCycleLength,
-        conflicts
+        conflicts,
+        timeShifts
     };
 };
 

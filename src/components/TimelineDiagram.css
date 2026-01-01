@@ -197,6 +197,18 @@
     overflow: hidden;
 }
 
+/* Green cut overlay - masks portions of green bar for Escamotage actions */
+.green-cut-overlay {
+    position: absolute;
+    top: 7px;
+    bottom: 7px;
+    background: #2a2a2a;
+    z-index: 50;
+    pointer-events: none;
+    border-left: 1px dashed #666;
+    border-right: 1px dashed #666;
+}
+
 .cycle-block {
     position: absolute;
     top: 7px;
