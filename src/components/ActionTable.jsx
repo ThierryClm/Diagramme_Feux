@@ -95,8 +95,8 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
             let valA, valB;
 
             if (field === 'gf') {
-                valA = parseInt(a.gf) || 999;
-                valB = parseInt(b.gf) || 999;
+                valA = parseInt(a.gf) || 0;
+                valB = parseInt(b.gf) || 0;
             } else if (field === 'action') {
                 valA = a.action || '';
                 valB = b.action || '';
@@ -119,18 +119,13 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         reorderActions([...filledRows, ...emptyRows]);
     }, [actionData, reorderActions]);
 
-    // Calculate visible rows: all filled + 1 empty
+    // Calculate visible rows: all filled + 1 empty at the end
     const visibleRows = useMemo(() => {
-        let lastFilledIndex = -1;
-        for (let i = actionData.length - 1; i >= 0; i--) {
-            if (isRowFilled(actionData[i])) {
-                lastFilledIndex = i;
-                break;
-            }
-        }
-        // Show all filled rows + 1 empty (up to max 30)
-        const endIndex = Math.min(lastFilledIndex + 2, actionData.length);
-        return actionData.slice(0, Math.max(endIndex, 1));
+        const filledRows = actionData.filter(isRowFilled);
+        const emptyRows = actionData.filter(row => !isRowFilled(row));
+        // Show all filled rows + only 1 empty row at the end
+        const oneEmpty = emptyRows.length > 0 ? [emptyRows[0]] : [];
+        return [...filledRows, ...oneEmpty];
     }, [actionData]);
 
     // Auto-resize all textareas when data changes
