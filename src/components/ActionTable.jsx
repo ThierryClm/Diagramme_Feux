@@ -83,6 +83,31 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         // Reject invalid values silently
     }, [updateActionRow, maxGroup]);
 
+    // Handle action change - clear disabled fields when action changes
+    const handleActionChange = useCallback((rowId, newAction) => {
+        updateActionRow(rowId, 'action', newAction);
+
+        // Clear plage fields if they become disabled
+        if (PLAGE_DISABLED_ACTIONS.includes(newAction)) {
+            updateActionRow(rowId, 'plage1', '');
+            updateActionRow(rowId, 'plage2', '');
+        }
+
+        // Clear all Action GF fields if they become disabled
+        if (GF_DISABLED_ACTIONS.includes(newAction)) {
+            updateActionRow(rowId, 'actGf1', '');
+            updateActionRow(rowId, 'actGf1Gf2', '');
+            updateActionRow(rowId, 'actGf1Gf3', '');
+            updateActionRow(rowId, 'actGf1Gf4', '');
+        }
+        // Clear only Action GF 2, 3, 4 if they become disabled
+        else if (GF234_DISABLED_ACTIONS.includes(newAction)) {
+            updateActionRow(rowId, 'actGf1Gf2', '');
+            updateActionRow(rowId, 'actGf1Gf3', '');
+            updateActionRow(rowId, 'actGf1Gf4', '');
+        }
+    }, [updateActionRow]);
+
     // Handle sort - actually reorder the data permanently
     const handleSort = useCallback((field, direction = 'asc') => {
         if (!reorderActions) return;
@@ -202,7 +227,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                     <select
                                         className="input-action"
                                         value={row.action}
-                                        onChange={(e) => updateActionRow(row.id, 'action', e.target.value)}
+                                        onChange={(e) => handleActionChange(row.id, e.target.value)}
                                     >
                                         {ACTION_OPTIONS.map((opt) => (
                                             <option key={opt} value={opt}>{opt || '—'}</option>
