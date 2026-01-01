@@ -49,6 +49,7 @@ const MenuBar = ({ onAction }) => {
             label: 'Diagramme',
             items: [
                 { label: 'Dupliquer le diagramme', action: 'duplicate' },
+                { label: 'Déplacer un groupe de feu...', action: 'moveGroup' },
                 { type: 'separator' },
                 { label: 'Glisser...', action: 'slide' },
                 { label: 'Inserer...', action: 'insert' },

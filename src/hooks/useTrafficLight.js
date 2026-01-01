@@ -9,9 +9,11 @@ export const useTrafficLight = () => {
     const [globalTime, setGlobalTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
 
-    // History for undo functionality
+    // History for undo/redo functionality
     const [history, setHistory] = useState([]);
+    const [redoHistory, setRedoHistory] = useState([]);
     const isUndoing = useRef(false);
+    const isRedoing = useRef(false);
     const isDragging = useRef(false);
 
     // Groups State
@@ -166,6 +168,95 @@ export const useTrafficLight = () => {
                         newRow[field] = gfB.toString();
                     } else if (val === gfB) {
                         newRow[field] = gfA.toString();
+                    }
+                });
+                return newRow;
+            });
+        });
+    };
+
+    // Move a group to a new position (after another group)
+    // sourceId: the ID of the group to move
+    // afterId: the ID of the group after which to insert (0 = insert at beginning)
+    const moveGroupToPosition = (sourceId, afterId) => {
+        const sourceIndex = groups.findIndex(g => g.id === sourceId);
+        if (sourceIndex === -1) return;
+
+        // Calculate target index
+        let targetIndex;
+        if (afterId === 0) {
+            targetIndex = 0; // Insert at beginning
+        } else {
+            const afterIndex = groups.findIndex(g => g.id === afterId);
+            if (afterIndex === -1) return;
+            targetIndex = afterIndex + 1;
+        }
+
+        // Adjust target if source is before target
+        if (sourceIndex < targetIndex) {
+            targetIndex--;
+        }
+
+        if (sourceIndex === targetIndex) return; // No change needed
+
+        // Create mapping from old positions to new positions
+        const oldToNew = {};
+        const newToOld = {};
+
+        // Build the new order of groups
+        const newGroups = [...groups];
+        const [movedGroup] = newGroups.splice(sourceIndex, 1);
+        newGroups.splice(targetIndex, 0, movedGroup);
+
+        // Create position mappings (1-based GF numbers)
+        for (let i = 0; i < groups.length; i++) {
+            const oldGf = i + 1;
+            const group = groups[i];
+            const newIndex = newGroups.findIndex(g => g.id === group.id);
+            const newGf = newIndex + 1;
+            oldToNew[oldGf] = newGf;
+            newToOld[newGf] = oldGf;
+        }
+
+        // 1. Reorder groups and reassign IDs to be sequential
+        setGroups(() => {
+            return newGroups.map((g, idx) => ({
+                ...g,
+                id: idx + 1
+            }));
+        });
+
+        // 2. Reorder matrix rows and columns
+        setConflictMatrix(currentMatrix => {
+            if (!currentMatrix || currentMatrix.length === 0) return currentMatrix;
+
+            const size = currentMatrix.length;
+            const newMatrix = Array(size).fill(null).map(() => Array(size).fill(0));
+
+            // Copy values to new positions
+            for (let oldRow = 0; oldRow < size; oldRow++) {
+                for (let oldCol = 0; oldCol < size; oldCol++) {
+                    const newRow = oldToNew[oldRow + 1] - 1;
+                    const newCol = oldToNew[oldCol + 1] - 1;
+                    if (newRow >= 0 && newRow < size && newCol >= 0 && newCol < size) {
+                        newMatrix[newRow][newCol] = currentMatrix[oldRow][oldCol];
+                    }
+                }
+            }
+
+            return newMatrix;
+        });
+
+        // 3. Update GF references in ActionTable
+        const gfFields = ['gf', 'plage1', 'plage2', 'actGf1', 'actGf1Gf2', 'actGf1Gf3', 'actGf1Gf4'];
+
+        setActionData(currentData => {
+            return currentData.map(row => {
+                const newRow = { ...row };
+                gfFields.forEach(field => {
+                    const val = parseInt(newRow[field]);
+                    if (!isNaN(val) && val > 0 && val <= groups.length) {
+                        newRow[field] = oldToNew[val].toString();
                     }
                 });
                 return newRow;
@@ -680,7 +771,7 @@ export const useTrafficLight = () => {
 
     // Save current state to history (for undo)
     const saveToHistory = useCallback(() => {
-        if (isUndoing.current) return; // Don't save during undo
+        if (isUndoing.current || isRedoing.current) return; // Don't save during undo/redo
 
         const currentState = {
             groups: JSON.parse(JSON.stringify(groups)),
@@ -699,6 +790,9 @@ export const useTrafficLight = () => {
             }
             return newHistory;
         });
+
+        // Clear redo history when a new action is performed
+        setRedoHistory([]);
     }, [groups, conflictMatrix, pfTabs, activePFId, cycleLength, intersectionName]);
 
     // Start drag - save history once at the beginning
@@ -719,6 +813,17 @@ export const useTrafficLight = () => {
         if (history.length === 0) return false;
 
         isUndoing.current = true;
+
+        // Save current state to redo history before restoring
+        const currentState = {
+            groups: JSON.parse(JSON.stringify(groups)),
+            conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix)),
+            pfTabs: JSON.parse(JSON.stringify(pfTabs)),
+            activePFId,
+            cycleLength,
+            intersectionName
+        };
+        setRedoHistory(prev => [...prev, currentState]);
 
         const previousState = history[history.length - 1];
 
@@ -746,7 +851,47 @@ export const useTrafficLight = () => {
         }, 100);
 
         return true;
-    }, [history]);
+    }, [history, groups, conflictMatrix, pfTabs, activePFId, cycleLength, intersectionName]);
+
+    // Redo function
+    const redo = useCallback(() => {
+        if (redoHistory.length === 0) return false;
+
+        isRedoing.current = true;
+
+        // Save current state to history before restoring
+        const currentState = {
+            groups: JSON.parse(JSON.stringify(groups)),
+            conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix)),
+            pfTabs: JSON.parse(JSON.stringify(pfTabs)),
+            activePFId,
+            cycleLength,
+            intersectionName
+        };
+        setHistory(prev => [...prev, currentState]);
+
+        const nextState = redoHistory[redoHistory.length - 1];
+
+        // Restore next state
+        setGroups(nextState.groups);
+        setConflictMatrix(nextState.conflictMatrix);
+        if (nextState.pfTabs) {
+            setPfTabs(nextState.pfTabs);
+            setActivePFId(nextState.activePFId);
+        }
+        setCycleLength(nextState.cycleLength);
+        setIntersectionName(nextState.intersectionName);
+
+        // Remove the last redo history entry
+        setRedoHistory(prev => prev.slice(0, -1));
+
+        // Reset the flag after a short delay
+        setTimeout(() => {
+            isRedoing.current = false;
+        }, 100);
+
+        return true;
+    }, [redoHistory, groups, conflictMatrix, pfTabs, activePFId, cycleLength, intersectionName]);
 
     // Wrapped update functions that save to history (skip if dragging)
     const updateActionRowWithHistory = useCallback((rowId, field, value) => {
@@ -944,6 +1089,7 @@ export const useTrafficLight = () => {
         updateGroupParams: updateGroupParamsWithHistory,
         getGroupState,
         moveGroup,
+        moveGroupToPosition,
         // Save/Load
         saveProject,
         loadProject,
@@ -963,9 +1109,11 @@ export const useTrafficLight = () => {
         duplicatePF,
         deletePF,
         renamePF,
-        // Undo
+        // Undo/Redo
         undo,
+        redo,
         canUndo: history.length > 0,
+        canRedo: redoHistory.length > 0,
         // Drag helpers (for saving history only once per drag)
         startDrag,
         endDrag,

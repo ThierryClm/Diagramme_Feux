@@ -30,6 +30,7 @@ function App() {
         getGroupState,
         updateGroupParams,
         moveGroup,
+        moveGroupToPosition,
         saveProject,
         loadProject,
         getAllSaves,
@@ -47,7 +48,9 @@ function App() {
         deletePF,
         renamePF,
         undo,
+        redo,
         canUndo,
+        canRedo,
         startDrag,
         endDrag,
         slideAllGroups,
@@ -85,6 +88,11 @@ function App() {
     // Print preview states
     const [printPreviewModal, setPrintPreviewModal] = useState(false);
     const [printType, setPrintType] = useState(null); // 'matrix', 'form', 'diagram'
+
+    // Move group modal states
+    const [moveGroupModal, setMoveGroupModal] = useState(false);
+    const [groupToMove, setGroupToMove] = useState('');
+    const [moveAfterGroup, setMoveAfterGroup] = useState('0'); // '0' means at the beginning
 
     // Get all saved green waves (sorted by most recent first)
     const getSavedGreenWaves = () => {
@@ -205,6 +213,15 @@ function App() {
                 break;
             case 'duplicate':
                 duplicatePF();
+                break;
+            case 'moveGroup':
+                if (groups.length > 1) {
+                    setGroupToMove(groups[0]?.id?.toString() || '');
+                    setMoveAfterGroup('0');
+                    setMoveGroupModal(true);
+                } else {
+                    alert('Il faut au moins 2 groupes pour effectuer un déplacement.');
+                }
                 break;
             case 'slide':
                 setSlideValue(0);
@@ -408,18 +425,21 @@ function App() {
         reader.readAsText(importFile);
     };
 
-    // Keyboard shortcut for undo (Ctrl+Z)
+    // Keyboard shortcuts for undo (Ctrl+Z) and redo (Ctrl+Y or Ctrl+Shift+Z)
     useEffect(() => {
         const handleKeyDown = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
                 e.preventDefault();
                 undo();
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault();
+                redo();
             }
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [undo]);
+    }, [undo, redo]);
 
     return (
         <div className="app-container">
@@ -474,6 +494,14 @@ function App() {
                         title="Annuler (Ctrl+Z)"
                     >
                         ↶ Annuler
+                    </button>
+                    <button
+                        className="undo-btn"
+                        onClick={redo}
+                        disabled={!canRedo}
+                        title="Refaire (Ctrl+Y)"
+                    >
+                        ↷ Refaire
                     </button>
                     <button
                         className={`toggle-btn ${showDependencies ? 'active' : ''}`}
@@ -905,6 +933,7 @@ function App() {
                         <h4>Raccourcis clavier</h4>
                         <ul>
                             <li><strong>Ctrl+Z :</strong> Annuler la dernière action</li>
+                            <li><strong>Ctrl+Y :</strong> Refaire la dernière action annulée</li>
                         </ul>
                     </section>
 
@@ -1061,6 +1090,62 @@ function App() {
                 onClose={() => setGreenWaveViewer(false)}
                 intersections={greenWaveData}
             />
+
+            {/* Modal Déplacer un groupe */}
+            <Modal isOpen={moveGroupModal} onClose={() => setMoveGroupModal(false)} title="Déplacer un groupe de feu">
+                <div className="form-row">
+                    <label>
+                        Groupe à déplacer :
+                        <select
+                            value={groupToMove}
+                            onChange={(e) => setGroupToMove(e.target.value)}
+                            style={{ marginLeft: '10px', padding: '5px' }}
+                        >
+                            {groups.map((g) => (
+                                <option key={g.id} value={g.id}>
+                                    {g.name || `Groupe ${g.id}`}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
+                <div className="form-row" style={{ marginTop: '15px' }}>
+                    <label>
+                        Insérer après :
+                        <select
+                            value={moveAfterGroup}
+                            onChange={(e) => setMoveAfterGroup(e.target.value)}
+                            style={{ marginLeft: '10px', padding: '5px' }}
+                        >
+                            <option value="0">Au début (première position)</option>
+                            {groups
+                                .filter((g) => g.id.toString() !== groupToMove)
+                                .map((g) => (
+                                    <option key={g.id} value={g.id}>
+                                        {g.name || `Groupe ${g.id}`}
+                                    </option>
+                                ))}
+                        </select>
+                    </label>
+                </div>
+                <p style={{ color: '#888', fontSize: '0.85em', marginTop: '15px' }}>
+                    Cette action met à jour l'ordre des groupes dans la matrice, le diagramme et le tableau des actions.
+                </p>
+                <div className="modal-actions">
+                    <button className="modal-btn modal-btn-secondary" onClick={() => setMoveGroupModal(false)}>
+                        Annuler
+                    </button>
+                    <button
+                        className="modal-btn modal-btn-primary"
+                        onClick={() => {
+                            moveGroupToPosition(parseInt(groupToMove), parseInt(moveAfterGroup));
+                            setMoveGroupModal(false);
+                        }}
+                    >
+                        Déplacer
+                    </button>
+                </div>
+            </Modal>
 
             {/* Print Preview Modal */}
             {printPreviewModal && (
