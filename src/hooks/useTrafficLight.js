@@ -404,9 +404,8 @@ export const useTrafficLight = () => {
             cycleLength,
             conflictMatrix,
             pfTabs,
-            activePFId,
-            simulationEnabled,
-            simulationSelectedActions
+            activePFId
+            // Note: simulation state is NOT saved with project (per user request)
         };
         try {
             localStorage.setItem(`traffic_project_${name}`, JSON.stringify(projectData));
@@ -446,13 +445,9 @@ export const useTrafficLight = () => {
                 setActivePFId(1);
             }
 
-            // Load simulation state
-            if (data.simulationEnabled !== undefined) {
-                setSimulationEnabled(data.simulationEnabled);
-            }
-            if (data.simulationSelectedActions) {
-                setSimulationSelectedActions(data.simulationSelectedActions);
-            }
+            // Reset simulation state when loading a project
+            setSimulationEnabled(false);
+            setSimulationSelectedActions([]);
 
             // Move project to top of the order list
             updateProjectOrder(name);
@@ -544,13 +539,9 @@ export const useTrafficLight = () => {
                 setPfTabs([{ id: 1, name: 'PF1', data: state.actionData }]);
                 setActivePFId(1);
             }
-            // Load simulation state
-            if (state.simulationEnabled !== undefined) {
-                setSimulationEnabled(state.simulationEnabled);
-            }
-            if (state.simulationSelectedActions) {
-                setSimulationSelectedActions(state.simulationSelectedActions);
-            }
+            // Reset simulation state when loading full state
+            setSimulationEnabled(false);
+            setSimulationSelectedActions([]);
             return true;
         } catch (e) {
             console.error("Load full state failed", e);
@@ -565,9 +556,8 @@ export const useTrafficLight = () => {
         cycleLength,
         conflictMatrix,
         pfTabs,
-        activePFId,
-        simulationEnabled,
-        simulationSelectedActions
+        activePFId
+        // Note: simulation state is NOT included (per user request)
     });
 
     const deleteSave = (name) => {
@@ -621,24 +611,9 @@ export const useTrafficLight = () => {
         }
     });
 
-    // Simulation mode state
-    const [simulationEnabled, setSimulationEnabled] = useState(() => {
-        try {
-            const saved = localStorage.getItem('trafficSimulationEnabled');
-            return saved === 'true';
-        } catch (e) {
-            return false;
-        }
-    });
-
-    const [simulationSelectedActions, setSimulationSelectedActions] = useState(() => {
-        try {
-            const saved = localStorage.getItem('trafficSimulationSelected');
-            return saved ? JSON.parse(saved) : [];
-        } catch (e) {
-            return [];
-        }
-    });
+    // Simulation mode state (not persisted - resets on page load)
+    const [simulationEnabled, setSimulationEnabled] = useState(false);
+    const [simulationSelectedActions, setSimulationSelectedActions] = useState([]);
 
     // Get current actionData based on active PF
     const actionData = useMemo(() => {
@@ -861,11 +836,7 @@ export const useTrafficLight = () => {
         localStorage.setItem('trafficActivePF', activePFId.toString());
     }, [pfTabs, activePFId]);
 
-    // Save simulation state to localStorage
-    useEffect(() => {
-        localStorage.setItem('trafficSimulationEnabled', simulationEnabled.toString());
-        localStorage.setItem('trafficSimulationSelected', JSON.stringify(simulationSelectedActions));
-    }, [simulationEnabled, simulationSelectedActions]);
+    // Note: Simulation state is NOT saved to localStorage (per user request)
 
     // Save current state to history (for undo)
     const saveToHistory = useCallback(() => {

@@ -23,38 +23,47 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
     // Helper to calculate shifted position for action overlays
     // Returns adjusted deb/fin values after applying time shifts
-    // Also returns hidden=true if the action is entirely within a removed period
+    // Also returns hidden=true if the action is within a removed period
     const getShiftedActionPosition = (deb, fin, groupId = null) => {
-        if (!simulationResult?.timeShifts?.length) {
-            return { deb, fin, hidden: false };
-        }
-
-        let totalShift = 0;
         let hidden = false;
+        let totalShift = 0;
 
-        simulationResult.timeShifts.forEach(shift => {
-            // Check if this shift applies to this group (if plage1/plage2 are specified)
-            if (shift.plage1 && shift.plage2) {
-                // Only apply if groupId is within the plage
-                if (!groupId || groupId < shift.plage1 || groupId > shift.plage2) {
-                    return; // Skip this shift
+        // Check if action falls within any removed period
+        if (simulationResult?.removedPeriods?.length) {
+            for (const period of simulationResult.removedPeriods) {
+                // Action is hidden if it's entirely within or overlaps the removed period
+                if (deb >= period.deb && deb < period.fin) {
+                    hidden = true;
+                    break;
+                }
+                if (fin > period.deb && fin <= period.fin) {
+                    hidden = true;
+                    break;
+                }
+                if (deb <= period.deb && fin >= period.fin) {
+                    hidden = true;
+                    break;
                 }
             }
+        }
 
-            // The removed period is [shift.from - shift.amount, shift.from)
-            const removedStart = shift.from - shift.amount;
-            const removedEnd = shift.from;
+        // Apply time shifts
+        if (simulationResult?.timeShifts?.length) {
+            simulationResult.timeShifts.forEach(shift => {
+                // Check if this shift applies to this group (if plage1/plage2 are specified)
+                if (shift.plage1 && shift.plage2) {
+                    // Only apply if groupId is within the plage
+                    if (!groupId || groupId < shift.plage1 || groupId > shift.plage2) {
+                        return; // Skip this shift
+                    }
+                }
 
-            // Check if action is entirely within the removed period
-            if (deb >= removedStart && fin <= removedEnd) {
-                hidden = true;
-            }
-
-            // Apply shift if position is after the shift point
-            if (deb >= shift.from) {
-                totalShift += shift.amount;
-            }
-        });
+                // Apply shift if position is after the shift point
+                if (deb >= shift.from) {
+                    totalShift += shift.amount;
+                }
+            });
+        }
 
         const shiftedDeb = Math.max(0, deb - totalShift);
         const shiftedFin = Math.max(0, fin - totalShift);

@@ -16,10 +16,14 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         simulatedOffset: g.offset,
         simulatedGreen: g.durations.green,
         isEscamoted: false,
-        greenCuts: [] // Array of {deb, fin} for periods where green is hidden
+        greenCuts: [] // Array of {deb, fin} for periods where green is hidden (used by Escamotage only)
     }));
 
     let simulatedCycleLength = cycleLength;
+
+    // Track removed periods for filtering actions
+    // Each period: { deb, fin, plage1?, plage2? } - periods to remove from the diagram
+    const removedPeriods = [];
 
     // Track time shifts for action overlays
     // Each shift: { from: number, amount: number } - positions >= from are shifted left by amount
@@ -45,6 +49,33 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         }
     });
 
+    // Helper to calculate intersection of a green bar with a removed period
+    const getGreenIntersection = (offset, greenDuration, deb, fin, cycle) => {
+        const greenEnd = offset + greenDuration;
+
+        // Simple case: no wrap-around for either
+        if (greenEnd <= cycle && fin > deb) {
+            const intersectStart = Math.max(offset, deb);
+            const intersectEnd = Math.min(greenEnd, fin);
+            if (intersectStart < intersectEnd) {
+                return intersectEnd - intersectStart;
+            }
+        }
+        // Handle wrap-around cases more carefully
+        // For now, use a simple approach: check if green period overlaps with [deb, fin]
+        if (fin > deb) {
+            // Normal period [deb, fin]
+            if (offset < fin && greenEnd > deb) {
+                const intersectStart = Math.max(offset, deb);
+                const intersectEnd = Math.min(greenEnd, fin);
+                if (intersectStart < intersectEnd) {
+                    return intersectEnd - intersectStart;
+                }
+            }
+        }
+        return 0;
+    };
+
     // Process each action type in order
 
     // 1. Escamotage de phase - remove the phase and reduce cycle
@@ -69,16 +100,54 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
             }
         }
 
+        // Record removed period for action filtering
+        removedPeriods.push({ deb, fin });
+
         // Record time shift for action overlays
         timeShifts.push({ from: fin, amount: duration });
+
+        // For each group, cut the green bar that intersects with [deb, fin]
+        simulatedGroups.forEach(g => {
+            if (g.isEscamoted) return;
+
+            const offset = g.simulatedOffset;
+            const greenEnd = offset + g.simulatedGreen;
+
+            // Check if green bar intersects with [deb, fin]
+            if (fin > deb) {
+                // Case 1: Green starts before deb and extends into [deb, fin]
+                if (offset < deb && greenEnd > deb) {
+                    // Cut the part after deb
+                    const cutAmount = Math.min(greenEnd, fin) - deb;
+                    g.simulatedGreen = Math.max(0, g.simulatedGreen - cutAmount);
+                }
+                // Case 2: Green starts within [deb, fin]
+                else if (offset >= deb && offset < fin) {
+                    if (greenEnd <= fin) {
+                        // Entirely within - escamote the group
+                        g.isEscamoted = true;
+                        g.simulatedGreen = 0;
+                    } else {
+                        // Starts in [deb, fin] but extends past fin
+                        const cutAmount = fin - offset;
+                        g.simulatedGreen = Math.max(0, g.simulatedGreen - cutAmount);
+                        // Will be shifted later
+                    }
+                }
+            }
+        });
 
         // Reduce cycle length
         simulatedCycleLength -= duration;
 
-        // Shift all groups that start after 'deb' by -duration
+        // Shift all groups that start at or after 'fin' by -duration
+        // (after the removed period, everything shifts left)
         simulatedGroups.forEach(g => {
-            if (g.simulatedOffset >= deb && !g.isEscamoted) {
+            if (!g.isEscamoted && g.simulatedOffset >= fin) {
                 g.simulatedOffset = Math.max(0, g.simulatedOffset - duration);
+            } else if (!g.isEscamoted && g.simulatedOffset >= deb) {
+                // Groups starting within [deb, fin) that weren't escamoted - move to deb
+                g.simulatedOffset = deb;
             }
         });
     });
@@ -106,6 +175,58 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         }
     });
 
+    // 2b. Fermeture anticipée:
+    // - Reduce green duration of the group in GF (end of green moves left)
+    // - Apply "glissement" (shift offset left) to groups in actGf1-4
+    const fermetureActions = selectedActions.filter(a =>
+        a.action === 'Fermeture anticipée' &&
+        a.deb !== '' &&
+        a.fin !== ''
+    );
+
+    fermetureActions.forEach(action => {
+        const deb = parseInt(action.deb) || 0;
+        const fin = parseInt(action.fin) || 0;
+        const shiftAmount = fin > deb ? fin - deb : (fin + simulatedCycleLength - deb);
+
+        // 1. Reduce green duration for the group in GF field
+        if (action.gf && action.gf !== '') {
+            const gfId = parseInt(action.gf);
+            if (!isNaN(gfId)) {
+                const groupIndex = simulatedGroups.findIndex(g => g.id === gfId);
+                if (groupIndex !== -1 && !simulatedGroups[groupIndex].isEscamoted) {
+                    // Reduce green duration (end of green moves left)
+                    simulatedGroups[groupIndex].simulatedGreen = Math.max(0, simulatedGroups[groupIndex].simulatedGreen - shiftAmount);
+                }
+            }
+        }
+
+        // 2. Apply glissement (shift offset left) to groups in Action GF fields
+        const glissementGfIds = [];
+        ['actGf1', 'actGf1Gf2', 'actGf1Gf3', 'actGf1Gf4'].forEach(field => {
+            if (action[field] && action[field] !== '') {
+                const gfStr = action[field]?.toString().replace(/[Gg]/g, '').trim() || '';
+                const gfId = parseInt(gfStr);
+                if (!isNaN(gfId) && !glissementGfIds.includes(gfId)) {
+                    glissementGfIds.push(gfId);
+                }
+            }
+        });
+
+        // Apply glissement to target groups
+        glissementGfIds.forEach(targetGfId => {
+            const groupIndex = simulatedGroups.findIndex(g => g.id === targetGfId);
+            if (groupIndex !== -1 && !simulatedGroups[groupIndex].isEscamoted) {
+                // Glissement: shift the start left, keep the end at the same position
+                // 1. Shift offset left by shiftAmount
+                // 2. Increase green duration by shiftAmount (to keep end position)
+                simulatedGroups[groupIndex].simulatedOffset =
+                    (simulatedGroups[groupIndex].simulatedOffset - shiftAmount + simulatedCycleLength) % simulatedCycleLength;
+                simulatedGroups[groupIndex].simulatedGreen += shiftAmount;
+            }
+        });
+    });
+
     // 3. Adaptatif vertical - shift bars to the left for groups in range
     const adaptatifActions = selectedActions.filter(a =>
         a.action === 'Adaptatif vertical' &&
@@ -115,23 +236,68 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         a.plage2 !== ''
     );
 
+    const totalGroups = groups.length;
+
     adaptatifActions.forEach(action => {
         const deb = parseInt(action.deb) || 0;
         const fin = parseInt(action.fin) || 0;
         const plage1 = parseInt(action.plage1) || 1;
-        const plage2 = parseInt(action.plage2) || groups.length;
+        const plage2 = parseInt(action.plage2) || totalGroups;
         const shiftAmount = fin > deb ? fin - deb : (fin + simulatedCycleLength - deb);
 
-        // Record time shift for action overlays (only for groups in range)
-        timeShifts.push({ from: fin, amount: shiftAmount, plage1, plage2 });
+        // Check if this covers ALL groups
+        const coversAllGroups = plage1 <= 1 && plage2 >= totalGroups;
 
-        // Shift groups in range plage1 to plage2
-        simulatedGroups.forEach(g => {
-            if (g.id >= plage1 && g.id <= plage2 && !g.isEscamoted) {
-                g.simulatedOffset =
-                    (g.simulatedOffset - shiftAmount + simulatedCycleLength) % simulatedCycleLength;
-            }
-        });
+        if (coversAllGroups) {
+            // Same behavior as Escamotage de phase - remove the slice entirely
+            removedPeriods.push({ deb, fin });
+            timeShifts.push({ from: fin, amount: shiftAmount });
+
+            // Cut green bars for all groups
+            simulatedGroups.forEach(g => {
+                if (g.isEscamoted) return;
+
+                const offset = g.simulatedOffset;
+                const greenEnd = offset + g.simulatedGreen;
+
+                if (fin > deb) {
+                    if (offset < deb && greenEnd > deb) {
+                        const cutAmount = Math.min(greenEnd, fin) - deb;
+                        g.simulatedGreen = Math.max(0, g.simulatedGreen - cutAmount);
+                    } else if (offset >= deb && offset < fin) {
+                        if (greenEnd <= fin) {
+                            g.isEscamoted = true;
+                            g.simulatedGreen = 0;
+                        } else {
+                            const cutAmount = fin - offset;
+                            g.simulatedGreen = Math.max(0, g.simulatedGreen - cutAmount);
+                        }
+                    }
+                }
+            });
+
+            // Reduce cycle length
+            simulatedCycleLength -= shiftAmount;
+
+            // Shift groups
+            simulatedGroups.forEach(g => {
+                if (!g.isEscamoted && g.simulatedOffset >= fin) {
+                    g.simulatedOffset = Math.max(0, g.simulatedOffset - shiftAmount);
+                } else if (!g.isEscamoted && g.simulatedOffset >= deb) {
+                    g.simulatedOffset = deb;
+                }
+            });
+        } else {
+            // Only affects groups in range - just shift their offsets
+            timeShifts.push({ from: fin, amount: shiftAmount, plage1, plage2 });
+
+            simulatedGroups.forEach(g => {
+                if (g.id >= plage1 && g.id <= plage2 && !g.isEscamoted) {
+                    g.simulatedOffset =
+                        (g.simulatedOffset - shiftAmount + simulatedCycleLength) % simulatedCycleLength;
+                }
+            });
+        }
     });
 
     // 4. Escamotage - cut green bar of target group (actGf1) for action duration
@@ -169,7 +335,8 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         simulatedGroups,
         simulatedCycleLength,
         conflicts,
-        timeShifts
+        timeShifts,
+        removedPeriods
     };
 };
 
