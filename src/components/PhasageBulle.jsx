@@ -323,12 +323,6 @@ const PhasageBulle = ({
                                             >
                                                 {renderArrowSVG(groupInfo.courant, arrowColor, arrowSize)}
                                             </div>
-                                            <span
-                                                className="phase-arrow-label"
-                                                style={{ fontSize: `${Math.round(12 * scaleFactor)}px` }}
-                                            >
-                                                GF{arrow.groupId}
-                                            </span>
                                         </div>
                                     );
                                 })}
@@ -390,20 +384,59 @@ const PhasageBulle = ({
                 {/* Phase bubbles positioned around the ellipse */}
                 {Array.from({ length: phaseCount }, (_, i) => renderPhaseBubble(i))}
 
-                {/* Connecting lines between phases */}
-                <svg className="connecting-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {/* Curved arrows between phases (clockwise, on outer periphery) */}
+                <svg className="connecting-arrows" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <defs>
+                        <marker
+                            id="arrowhead"
+                            markerWidth="4"
+                            markerHeight="3"
+                            refX="3"
+                            refY="1.5"
+                            orient="auto"
+                            markerUnits="strokeWidth"
+                        >
+                            <polygon
+                                points="0,0 4,1.5 0,3"
+                                fill="rgba(180,140,255,0.7)"
+                            />
+                        </marker>
+                    </defs>
                     {Array.from({ length: phaseCount }, (_, i) => {
-                        const current = getPhasePosition(i, phaseCount);
-                        const next = getPhasePosition((i + 1) % phaseCount, phaseCount);
+                        const { radiusX, radiusY, startAngle } = getEllipseConfig(phaseCount);
+                        const angleStep = (2 * Math.PI) / phaseCount;
+
+                        // Current and next angles
+                        const angle1 = startAngle + angleStep * i;
+                        const angle2 = startAngle + angleStep * (i + 1);
+
+                        // Outer radius offset for the arrow path (further from center)
+                        const outerOffset = 14;
+                        const outerRadiusX = radiusX + outerOffset;
+                        const outerRadiusY = radiusY + outerOffset;
+
+                        // Start and end points on outer ellipse (with larger gap for shorter arrows)
+                        const gapAngle = 0.55; // Larger gap = shorter arrows
+                        const startAngleAdjusted = angle1 + gapAngle;
+                        const endAngleAdjusted = angle2 - gapAngle;
+
+                        const x1 = 50 + outerRadiusX * Math.cos(startAngleAdjusted);
+                        const y1 = 50 + outerRadiusY * Math.sin(startAngleAdjusted);
+                        const x2 = 50 + outerRadiusX * Math.cos(endAngleAdjusted);
+                        const y2 = 50 + outerRadiusY * Math.sin(endAngleAdjusted);
+
+                        // SVG arc: A rx ry x-axis-rotation large-arc-flag sweep-flag x y
+                        // sweep-flag=1 for clockwise
+                        const largeArc = (endAngleAdjusted - startAngleAdjusted) > Math.PI ? 1 : 0;
+
                         return (
-                            <line
+                            <path
                                 key={i}
-                                x1={current.x}
-                                y1={current.y}
-                                x2={next.x}
-                                y2={next.y}
-                                stroke="rgba(150,100,200,0.3)"
-                                strokeWidth="0.3"
+                                d={`M ${x1} ${y1} A ${outerRadiusX} ${outerRadiusY} 0 ${largeArc} 1 ${x2} ${y2}`}
+                                fill="none"
+                                stroke="rgba(180,140,255,0.7)"
+                                strokeWidth="0.8"
+                                markerEnd="url(#arrowhead)"
                             />
                         );
                     })}
