@@ -89,6 +89,9 @@ function App() {
     const [phasageBulleVersion, setPhasageBulleVersion] = useState(0);
     const [hoveredPhasageGroupId, setHoveredPhasageGroupId] = useState(null);
 
+    // Diagram arrow style
+    const [diagramArrowStyle, setDiagramArrowStyle] = useState('solid');
+
     // Calculate simulated diagram when in simulation mode
     const simulationResult = useMemo(() => {
         if (!simulationEnabled) return null;
@@ -516,7 +519,11 @@ function App() {
 
     return (
         <div className="app-container">
-            <MenuBar onAction={handleMenuAction} />
+            <MenuBar
+                    onAction={handleMenuAction}
+                    arrowStyle={diagramArrowStyle}
+                    onArrowStyleChange={setDiagramArrowStyle}
+                />
             <header className="app-header">
                 <div className="header-inputs">
                     <input
