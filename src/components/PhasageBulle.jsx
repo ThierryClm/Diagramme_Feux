@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import './PhasageBulle.css';
 
 const PhasageBulle = ({
@@ -19,12 +19,14 @@ const PhasageBulle = ({
     // Phase times - use initial times from props
     const [phaseTimes, setPhaseTimes] = useState(initialTimes);
 
-    // Update phase time
-    const updatePhaseTime = (index, value) => {
-        const newTimes = [...phaseTimes];
-        newTimes[index] = Math.max(0, Math.min(cycleLength - 1, parseInt(value) || 0));
-        setPhaseTimes(newTimes);
-    };
+    // Sync state when props change (from configuration modal)
+    useEffect(() => {
+        setPhaseCount(initialCount);
+    }, [initialCount]);
+
+    useEffect(() => {
+        setPhaseTimes(initialTimes);
+    }, [initialTimes]);
 
     // Get group info for display
     const getGroupInfo = (groupId) => {
@@ -195,31 +197,33 @@ const PhasageBulle = ({
         }
     };
 
+    // Get ellipse radii based on number of phases
+    const getEllipseRadii = (count) => {
+        switch (count) {
+            case 2:
+                return { radiusX: 30, radiusY: 25 }; // Smaller ellipse for 2 large bubbles
+            case 5:
+                return { radiusX: 40, radiusY: 36 }; // Larger ellipse for 5 smaller bubbles
+            case 6:
+                return { radiusX: 42, radiusY: 38 }; // Even larger for 6 bubbles
+            default:
+                return { radiusX: 36, radiusY: 32 }; // Default for 3-4 phases
+        }
+    };
+
     // Calculate position on ellipse for each phase (clockwise from left)
     const getPhasePosition = (index, total) => {
         // Start from left (180° = PI) and go clockwise
         const angleStep = (2 * Math.PI) / total;
         const angle = Math.PI + angleStep * index;
 
-        // Ellipse radii (percentage of container) - reduced by 15%
-        const radiusX = 36; // horizontal (was 42)
-        const radiusY = 32; // vertical (was 38)
+        // Get dynamic ellipse radii based on phase count
+        const { radiusX, radiusY } = getEllipseRadii(total);
 
         const x = 50 + radiusX * Math.cos(angle);
         const y = 50 + radiusY * Math.sin(angle);
 
         return { x, y, angle };
-    };
-
-    // Determine label position based on angle (left or right of bubble)
-    const getLabelPosition = (angle) => {
-        // Normalize angle to 0-2PI
-        const normalizedAngle = ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-        // If bubble is on the left half (angle between PI/2 and 3PI/2), label goes to the left
-        if (normalizedAngle > Math.PI / 2 && normalizedAngle < 3 * Math.PI / 2) {
-            return 'left';
-        }
-        return 'right';
     };
 
     // Get scale factor based on number of phases
@@ -235,48 +239,39 @@ const PhasageBulle = ({
     // Base sizes
     const BASE_BUBBLE_WIDTH = 500;
     const BASE_BUBBLE_HEIGHT = 400;
-    const BASE_ARROW_SIZE = 64;
+
+    // Arrow size ratio from IntersectionImage (96px arrow / 500px container = 19.2%)
+    const ARROW_SIZE_RATIO = 0.192;
 
     // Calculate scaled sizes
     const scaleFactor = getScaleFactor(phaseCount);
     const bubbleWidth = Math.round(BASE_BUBBLE_WIDTH * scaleFactor);
     const bubbleHeight = Math.round(BASE_BUBBLE_HEIGHT * scaleFactor);
-    const arrowSize = Math.round(BASE_ARROW_SIZE * scaleFactor);
+    // Arrow size proportional to bubble height (same ratio as IntersectionImage)
+    const arrowSize = Math.round(bubbleHeight * ARROW_SIZE_RATIO);
 
-    // Render a phase bubble with label outside
+    // Render a phase bubble with label at top-left
     const renderPhaseBubble = (index) => {
         const time = phaseTimes[index];
         const position = getPhasePosition(index, phaseCount);
         const isSideLabel = (courant) => courant === 'Piéton' || courant === 'Cycle';
-        const labelPosition = getLabelPosition(position.angle);
 
         return (
             <div
                 key={index}
-                className={`phase-bubble label-${labelPosition}`}
+                className="phase-bubble"
                 style={{
                     left: `${position.x}%`,
                     top: `${position.y}%`
                 }}
             >
-                {/* Label section outside the bubble */}
-                <div className="phase-bubble-label">
-                    <span className="phase-number">Phase {index + 1}</span>
-                    <div className="phase-time-control">
-                        <span className="phase-time-prefix">t =</span>
-                        <input
-                            type="number"
-                            min="0"
-                            max={cycleLength - 1}
-                            value={time}
-                            onChange={(e) => updatePhaseTime(index, e.target.value)}
-                            className="phase-time-input"
-                        />
-                        <span className="phase-time-unit">s</span>
-                    </div>
-                </div>
-                {/* Image bubble with dynamic size */}
+                {/* Image bubble with label at top-left */}
                 <div className="phase-bubble-content">
+                    {/* Label overlay at top-left */}
+                    <div className="phase-bubble-label">
+                        <span className="phase-number">Phase {index + 1}</span>
+                        <span className="phase-time-display">Seconde {time}</span>
+                    </div>
                     <div
                         className="phase-bubble-image"
                         style={{
@@ -353,13 +348,13 @@ const PhasageBulle = ({
             </div>
 
             <div className="phasage-circular-container">
-                {/* Ellipse outline */}
+                {/* Ellipse outline - uses dynamic radii based on phase count */}
                 <svg className="ellipse-outline" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <ellipse
                         cx="50"
                         cy="50"
-                        rx="36"
-                        ry="32"
+                        rx={getEllipseRadii(phaseCount).radiusX}
+                        ry={getEllipseRadii(phaseCount).radiusY}
                         fill="none"
                         stroke="rgba(255,255,255,0.15)"
                         strokeWidth="0.5"

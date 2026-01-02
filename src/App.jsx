@@ -86,6 +86,7 @@ function App() {
     const [phasageBulleTimes, setPhasageBulleTimes] = useState([0, 15, 30, 45, 60, 75]);
     const [phasageBulleCount, setPhasageBulleCount] = useState(4);
     const [phasageBulleVisibleGroups, setPhasageBulleVisibleGroups] = useState(new Set());
+    const [phasageBulleVersion, setPhasageBulleVersion] = useState(0);
 
     // Calculate simulated diagram when in simulation mode
     const simulationResult = useMemo(() => {
@@ -846,6 +847,7 @@ function App() {
                     <div style={{ borderTop: phasageBulleEnabled ? 'none' : '1px solid #333', marginTop: phasageBulleEnabled ? 0 : '1rem' }}>
                         {phasageBulleEnabled ? (
                             <PhasageBulle
+                                key={phasageBulleVersion}
                                 groups={groups}
                                 cycleLength={cycleLength}
                                 intersectionImage={intersectionImage}
@@ -1418,6 +1420,7 @@ function App() {
                             setPhasageBulleModal(false);
                             setPhasageBulleEnabled(true);
                             setSimulationEnabled(false);
+                            setPhasageBulleVersion(v => v + 1);
                         }}
                     >
                         Ouvrir Phasage bulle
