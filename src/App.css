@@ -450,6 +450,25 @@
     border-color: #4ecdc4;
 }
 
+/* Phasage bulle tab styling */
+.pf-tab.phasage-tab {
+    background: #2a1a2a;
+    border-color: #4a2a4a;
+    color: #c6c;
+    margin-left: 4px;
+}
+
+.pf-tab.phasage-tab:hover {
+    background: #3a2a3a;
+    color: #e8e;
+}
+
+.pf-tab.phasage-tab.active {
+    background: #402a40;
+    color: #dc4edc;
+    border-color: #dc4edc;
+}
+
 /* Project list styles for Open modal */
 .project-list-container {
     max-height: 300px;
@@ -733,4 +752,160 @@
         size: landscape;
         margin: 1cm;
     }
+}
+
+/* Phasage bulle sidebar styles */
+.phasage-bulle-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.phasage-bulle-sidebar .sidebar-header {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #444;
+    margin-bottom: 1rem;
+}
+
+.phasage-bulle-sidebar .sidebar-header h3 {
+    margin: 0 0 0.25rem 0;
+    color: #dc4edc;
+    font-size: 1.1em;
+}
+
+.phasage-bulle-sidebar .sidebar-subtitle {
+    margin: 0;
+    color: #888;
+    font-size: 0.85em;
+}
+
+.phasage-group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.phasage-group-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #252525;
+    border: 1px solid #333;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.phasage-group-item:hover {
+    background: #2a2a2a;
+    border-color: #444;
+}
+
+.phasage-group-item.checked {
+    background: #2a252a;
+    border-color: #dc4edc;
+}
+
+.phasage-group-item.no-arrow {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.phasage-group-item input[type="checkbox"] {
+    accent-color: #dc4edc;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.phasage-group-item.no-arrow input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+.phasage-group-id {
+    font-weight: bold;
+    color: #dc4edc;
+    min-width: 40px;
+}
+
+.phasage-group-name {
+    flex: 1;
+    color: #ccc;
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px; /* ~30 characters */
+}
+
+.phasage-group-courant {
+    color: #888;
+    font-size: 0.85em;
+    padding: 2px 6px;
+    background: #333;
+    border-radius: 3px;
+    min-width: 50px;
+    text-align: center;
+}
+
+.phasage-no-arrow-hint {
+    color: #666;
+    font-size: 1em;
+    margin-left: auto;
+}
+
+.phasage-group-actions {
+    display: flex;
+    gap: 8px;
+    padding-top: 1rem;
+    border-top: 1px solid #333;
+    margin-top: 1rem;
+}
+
+.phasage-btn-select-all,
+.phasage-btn-deselect-all {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.15s;
+}
+
+.phasage-btn-select-all {
+    background: #2a352a;
+    color: #8f8;
+}
+
+.phasage-btn-select-all:hover {
+    background: #3a453a;
+    border-color: #6a6;
+}
+
+.phasage-btn-deselect-all {
+    background: #352a2a;
+    color: #f88;
+}
+
+.phasage-btn-deselect-all:hover {
+    background: #453a3a;
+    border-color: #a66;
+}
+
+/* Phasage bulle button in header */
+.toggle-btn.phasage-btn {
+    background: #2a1a2a;
+    border-color: #4a2a4a;
+    color: #c6c;
+}
+
+.toggle-btn.phasage-btn:hover {
+    background: #3a2a3a;
+    border-color: #6a4a6a;
+    color: #e8e;
 }

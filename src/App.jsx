@@ -11,6 +11,7 @@ import Modal from './components/Modal';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import GreenWaveViewer from './components/GreenWaveViewer';
 import SimulationPanel from './components/SimulationPanel';
+import PhasageBulle from './components/PhasageBulle';
 import { calculateSimulatedDiagram } from './utils/simulationCalculator';
 
 import './components/GroupTable.css';
@@ -79,6 +80,13 @@ function App() {
     const [simulationCurrentTime, setSimulationCurrentTime] = useState(0);
     const [hoveredArrowGroupId, setHoveredArrowGroupId] = useState(null);
 
+    // Phasage bulle state
+    const [phasageBulleEnabled, setPhasageBulleEnabled] = useState(false);
+    const [phasageBulleModal, setPhasageBulleModal] = useState(false);
+    const [phasageBulleTimes, setPhasageBulleTimes] = useState([0, 15, 30, 45, 60, 75]);
+    const [phasageBulleCount, setPhasageBulleCount] = useState(4);
+    const [phasageBulleVisibleGroups, setPhasageBulleVisibleGroups] = useState(new Set());
+
     // Calculate simulated diagram when in simulation mode
     const simulationResult = useMemo(() => {
         if (!simulationEnabled) return null;
@@ -94,6 +102,28 @@ function App() {
     // Local input states for validation on Enter/blur
     const [groupCountInput, setGroupCountInput] = useState(groups.length.toString());
     const [cycleLengthInput, setCycleLengthInput] = useState(cycleLength.toString());
+
+    // Initialize visible groups when entering phasage bulle mode
+    useEffect(() => {
+        if (phasageBulleEnabled && phasageBulleVisibleGroups.size === 0) {
+            // By default, show all groups that have arrows
+            const arrowGroupIds = new Set(intersectionArrows.map(a => a.groupId));
+            setPhasageBulleVisibleGroups(arrowGroupIds);
+        }
+    }, [phasageBulleEnabled, intersectionArrows]);
+
+    // Toggle group visibility in phasage bulle
+    const togglePhasageBulleGroup = (groupId) => {
+        setPhasageBulleVisibleGroups(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(groupId)) {
+                newSet.delete(groupId);
+            } else {
+                newSet.add(groupId);
+            }
+            return newSet;
+        });
+    };
 
     // Sync local inputs when actual values change (e.g., after undo/redo or project load)
     useEffect(() => {
@@ -577,6 +607,13 @@ function App() {
                     >
                         ⟷ Dépendance
                     </button>
+                    <button
+                        className="toggle-btn phasage-btn"
+                        onClick={() => setPhasageBulleModal(true)}
+                        title="Configurer les instants du phasage bulle"
+                    >
+                        ◉ Phasage bulle
+                    </button>
                 </div>
 
                 <div className="status-bar">
@@ -592,7 +629,56 @@ function App() {
 
             <main className="split-view">
                 <aside className="sidebar">
-                    {simulationEnabled ? (
+                    {phasageBulleEnabled ? (
+                        <div className="phasage-bulle-sidebar">
+                            <div className="sidebar-header">
+                                <h3>Groupe de feux</h3>
+                                <p className="sidebar-subtitle">Sélectionnez les groupes à afficher</p>
+                            </div>
+                            <div className="phasage-group-list">
+                                {groups.map(g => {
+                                    const hasArrow = intersectionArrows.some(a => a.groupId === g.id);
+                                    const isVisible = phasageBulleVisibleGroups.has(g.id);
+                                    return (
+                                        <label
+                                            key={g.id}
+                                            className={`phasage-group-item ${isVisible ? 'checked' : ''} ${!hasArrow ? 'no-arrow' : ''}`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={isVisible}
+                                                onChange={() => togglePhasageBulleGroup(g.id)}
+                                                disabled={!hasArrow}
+                                            />
+                                            <span className="phasage-group-id">GF{g.id}</span>
+                                            <span className="phasage-group-name">{g.name || '-'}</span>
+                                            <span className="phasage-group-courant">{g.courant || '-'}</span>
+                                            {!hasArrow && (
+                                                <span className="phasage-no-arrow-hint" title="Aucune flèche définie pour ce groupe">∅</span>
+                                            )}
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                            <div className="phasage-group-actions">
+                                <button
+                                    className="phasage-btn-select-all"
+                                    onClick={() => {
+                                        const allArrowGroups = new Set(intersectionArrows.map(a => a.groupId));
+                                        setPhasageBulleVisibleGroups(allArrowGroups);
+                                    }}
+                                >
+                                    Tout cocher
+                                </button>
+                                <button
+                                    className="phasage-btn-deselect-all"
+                                    onClick={() => setPhasageBulleVisibleGroups(new Set())}
+                                >
+                                    Tout décocher
+                                </button>
+                            </div>
+                        </div>
+                    ) : simulationEnabled ? (
                         <SimulationPanel
                             actionData={actionData}
                             selectedActions={simulationSelectedActions}
@@ -675,9 +761,10 @@ function App() {
                         {pfTabs.map((pf) => (
                             <div
                                 key={pf.id}
-                                className={`pf-tab ${activePFId === pf.id && !simulationEnabled ? 'active' : ''}`}
+                                className={`pf-tab ${activePFId === pf.id && !simulationEnabled && !phasageBulleEnabled ? 'active' : ''}`}
                                 onClick={() => {
                                     setSimulationEnabled(false);
+                                    setPhasageBulleEnabled(false);
                                     setActivePFId(pf.id);
                                 }}
                                 onDoubleClick={(e) => {
@@ -707,42 +794,70 @@ function App() {
                             </div>
                         ))}
                         <div
-                            className={`pf-tab simulation-tab ${simulationEnabled ? 'active' : ''}`}
-                            onClick={() => setSimulationEnabled(!simulationEnabled)}
+                            className={`pf-tab simulation-tab ${simulationEnabled && !phasageBulleEnabled ? 'active' : ''}`}
+                            onClick={() => {
+                                setPhasageBulleEnabled(false);
+                                setSimulationEnabled(!simulationEnabled);
+                            }}
                             title="Activer/désactiver le mode simulation"
                         >
                             <span className="pf-tab-name">Simulation</span>
                         </div>
+                        <div
+                            className={`pf-tab phasage-tab ${phasageBulleEnabled ? 'active' : ''}`}
+                            onClick={() => {
+                                setSimulationEnabled(false);
+                                setPhasageBulleEnabled(!phasageBulleEnabled);
+                            }}
+                            title="Afficher le phasage en bulles"
+                        >
+                            <span className="pf-tab-name">Phasage bulle</span>
+                        </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <TimelineDiagram
-                            groups={groups}
-                            globalTime={globalTime}
-                            getGroupState={getGroupState}
-                            onGroupClick={(g) => setSelectedGroupId(g.id)}
-                            pixelsPerSecond={pixelsPerSecond}
-                            conflicts={conflicts}
-                            conflictMatrix={conflictMatrix}
-                            updateGroupParams={updateGroupParams}
-                            cycleLength={cycleLength}
-                            actionData={actionData}
-                            updateActionRow={updateActionRow}
-                            startDrag={startDrag}
-                            endDrag={endDrag}
-                            showDependencies={showDependencies}
-                            hoveredActionId={hoveredActionId}
-                            setHoveredActionId={setHoveredActionId}
-                            simulationFilter={simulationEnabled ? new Set(simulationSelectedActions) : null}
-                            simulationResult={simulationResult}
-                            simulationCurrentTime={simulationEnabled ? simulationCurrentTime : null}
-                            isPlayingSimulation={simulationEnabled && isPlayingSimulation}
-                            hoveredArrowGroupId={hoveredArrowGroupId}
-                        />
-                    </div>
+                    {!phasageBulleEnabled && (
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <TimelineDiagram
+                                groups={groups}
+                                globalTime={globalTime}
+                                getGroupState={getGroupState}
+                                onGroupClick={(g) => setSelectedGroupId(g.id)}
+                                pixelsPerSecond={pixelsPerSecond}
+                                conflicts={conflicts}
+                                conflictMatrix={conflictMatrix}
+                                updateGroupParams={updateGroupParams}
+                                cycleLength={cycleLength}
+                                actionData={actionData}
+                                updateActionRow={updateActionRow}
+                                startDrag={startDrag}
+                                endDrag={endDrag}
+                                showDependencies={showDependencies}
+                                hoveredActionId={hoveredActionId}
+                                setHoveredActionId={setHoveredActionId}
+                                simulationFilter={simulationEnabled ? new Set(simulationSelectedActions) : null}
+                                simulationResult={simulationResult}
+                                simulationCurrentTime={simulationEnabled ? simulationCurrentTime : null}
+                                isPlayingSimulation={simulationEnabled && isPlayingSimulation}
+                                hoveredArrowGroupId={hoveredArrowGroupId}
+                            />
+                        </div>
+                    )}
 
-                    <div style={{ borderTop: '1px solid #333', marginTop: '1rem' }}>
-                        {simulationEnabled ? (
+                    <div style={{ borderTop: phasageBulleEnabled ? 'none' : '1px solid #333', marginTop: phasageBulleEnabled ? 0 : '1rem' }}>
+                        {phasageBulleEnabled ? (
+                            <PhasageBulle
+                                groups={groups}
+                                cycleLength={cycleLength}
+                                intersectionImage={intersectionImage}
+                                intersectionArrows={intersectionArrows.filter(a => phasageBulleVisibleGroups.has(a.groupId))}
+                                simulationResult={simulationResult}
+                                actionData={actionData}
+                                selectedActions={simulationSelectedActions}
+                                intersectionName={intersectionName}
+                                initialTimes={phasageBulleTimes}
+                                initialCount={phasageBulleCount}
+                            />
+                        ) : simulationEnabled ? (
                             <IntersectionImage
                                 groups={groups}
                                 imageData={intersectionImage}
@@ -757,6 +872,8 @@ function App() {
                                 setCurrentTime={setSimulationCurrentTime}
                                 hoveredArrowGroupId={hoveredArrowGroupId}
                                 setHoveredArrowGroupId={setHoveredArrowGroupId}
+                                actionData={actionData}
+                                selectedActions={simulationSelectedActions}
                             />
                         ) : (
                             <ActionTable
@@ -1243,6 +1360,67 @@ function App() {
                         }}
                     >
                         Déplacer
+                    </button>
+                </div>
+            </Modal>
+
+            {/* Modal Phasage bulle - Configuration des instants */}
+            <Modal isOpen={phasageBulleModal} onClose={() => setPhasageBulleModal(false)} title="Configuration du phasage bulle">
+                <div className="phasage-config">
+                    <div className="form-row">
+                        <label>
+                            Nombre de phases :
+                            <select
+                                value={phasageBulleCount}
+                                onChange={(e) => setPhasageBulleCount(parseInt(e.target.value))}
+                                style={{ marginLeft: '10px', padding: '5px' }}
+                            >
+                                {[2, 3, 4, 5, 6].map(n => (
+                                    <option key={n} value={n}>{n}</option>
+                                ))}
+                            </select>
+                        </label>
+                    </div>
+                    <div style={{ marginTop: '15px' }}>
+                        <p style={{ color: '#aaa', marginBottom: '10px' }}>Instants des phases (en secondes) :</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                            {Array.from({ length: phasageBulleCount }, (_, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <span style={{ color: '#dc4edc', fontWeight: 'bold', minWidth: '60px' }}>Phase {i + 1}:</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max={cycleLength - 1}
+                                        value={phasageBulleTimes[i] || 0}
+                                        onChange={(e) => {
+                                            const newTimes = [...phasageBulleTimes];
+                                            newTimes[i] = Math.max(0, Math.min(cycleLength - 1, parseInt(e.target.value) || 0));
+                                            setPhasageBulleTimes(newTimes);
+                                        }}
+                                        style={{ width: '60px', padding: '5px', textAlign: 'center' }}
+                                    />
+                                    <span style={{ color: '#888' }}>s</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <p style={{ color: '#888', fontSize: '0.85em', marginTop: '15px' }}>
+                        Cycle: {cycleLength}s. Les phases seront affichées dans l'onglet "Phasage bulle".
+                    </p>
+                </div>
+                <div className="modal-actions">
+                    <button className="modal-btn modal-btn-secondary" onClick={() => setPhasageBulleModal(false)}>
+                        Fermer
+                    </button>
+                    <button
+                        className="modal-btn modal-btn-primary"
+                        onClick={() => {
+                            setPhasageBulleModal(false);
+                            setPhasageBulleEnabled(true);
+                            setSimulationEnabled(false);
+                        }}
+                    >
+                        Ouvrir Phasage bulle
                     </button>
                 </div>
             </Modal>

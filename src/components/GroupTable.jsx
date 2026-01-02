@@ -76,12 +76,29 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength }) => {
                                 </td>
                                 {/* Courant */}
                                 <td>
-                                    <input
-                                        type="text"
+                                    <select
                                         className="input-courant"
                                         value={g.courant || ''}
                                         onChange={(e) => updateGroupParams(g.id, { courant: e.target.value })}
-                                    />
+                                        title={
+                                            g.courant === 'TD' ? 'Flèche tout droit' :
+                                            g.courant === 'TàD' ? 'Flèche tourne à droite' :
+                                            g.courant === 'TàG' ? 'Flèche tourne à gauche' :
+                                            g.courant === 'TDTàD' ? 'Flèche tout droit - tourne à droite' :
+                                            g.courant === 'TDTàG' ? 'Flèche tout droit - tourne à gauche' :
+                                            g.courant === 'Piéton' ? 'Flèche 2 sens' :
+                                            g.courant === 'Cycle' ? 'Flèche 2 sens' : ''
+                                        }
+                                    >
+                                        <option value=""></option>
+                                        <option value="TD">TD</option>
+                                        <option value="TàD">TàD</option>
+                                        <option value="TàG">TàG</option>
+                                        <option value="TDTàD">TDTàD</option>
+                                        <option value="TDTàG">TDTàG</option>
+                                        <option value="Piéton">Piéton</option>
+                                        <option value="Cycle">Cycle</option>
+                                    </select>
                                 </td>
                                 {/* Min Green */}
                                 <td>

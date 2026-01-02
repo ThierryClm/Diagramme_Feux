@@ -1,0 +1,387 @@
+.phasage-bulle-container {
+    background: #1a1a1a;
+    padding: 1rem;
+    min-height: 100%;
+}
+
+.phasage-bulle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #444;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.phasage-title-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.phasage-bulle-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.1em;
+}
+
+.phasage-plan-name {
+    color: #dc4edc;
+    font-size: 0.95em;
+    font-weight: 500;
+    padding: 2px 8px;
+    background: rgba(220, 78, 220, 0.15);
+    border-radius: 4px;
+    border: 1px solid rgba(220, 78, 220, 0.3);
+}
+
+.phasage-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.phase-count-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #aaa;
+    font-size: 0.85em;
+}
+
+.phase-count-select {
+    background: #333;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.phase-count-select:hover {
+    border-color: #777;
+}
+
+.phasage-info {
+    color: #888;
+    font-size: 0.9em;
+}
+
+/* Circular container */
+.phasage-circular-container {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 200px);
+    min-height: 600px;
+    max-height: 900px;
+}
+
+/* Ellipse outline */
+.ellipse-outline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Connecting lines */
+.connecting-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Phase bubble - with external label */
+.phase-bubble {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Label on the left side of bubble */
+.phase-bubble.label-left {
+    flex-direction: row;
+}
+
+/* Label on the right side of bubble */
+.phase-bubble.label-right {
+    flex-direction: row-reverse;
+}
+
+.phase-bubble-content {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    background: #2a2a2a;
+    border: 2px solid #555;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.phase-bubble-content:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(150, 100, 200, 0.4);
+    border-color: #888;
+}
+
+/* Label section - outside the bubble */
+.phase-bubble-label {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 12px;
+    background: rgba(40, 40, 40, 0.95);
+    border-radius: 8px;
+    border: 1px solid #444;
+    min-width: 90px;
+}
+
+/* Align text based on position */
+.phase-bubble.label-left .phase-bubble-label {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.phase-bubble.label-right .phase-bubble-label {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.phase-number {
+    color: #dc4edc;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 6px;
+    white-space: nowrap;
+}
+
+.phase-time-control {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: #aaa;
+    font-size: 0.95em;
+}
+
+.phase-time-prefix {
+    color: #888;
+}
+
+.phase-time-input {
+    width: 50px;
+    background: #222;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 4px 6px;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 1em;
+}
+
+.phase-time-input:focus {
+    outline: none;
+    border-color: #dc4edc;
+}
+
+.phase-time-unit {
+    color: #888;
+}
+
+/* Image section - doubled size (250x200 -> 500x400) */
+.phase-bubble-image {
+    width: 500px;
+    height: 400px;
+    position: relative;
+    background: #1a1a1a;
+}
+
+.phase-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.phase-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.phase-no-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 3em;
+}
+
+/* Arrow markers in phase bubbles - enlarged */
+.phase-arrow-marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+.phase-arrow-symbol {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.phase-arrow-symbol svg {
+    width: 64px;
+    height: 64px;
+}
+
+.phase-arrow-label {
+    font-size: 12px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    font-weight: bold;
+    position: absolute;
+    z-index: 3;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.phase-arrow-marker.side-label .phase-arrow-label {
+    position: absolute;
+    bottom: auto;
+    left: auto;
+    right: -35px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1600px) {
+    .phase-bubble-image {
+        width: 400px;
+        height: 320px;
+    }
+
+    .phase-arrow-symbol svg {
+        width: 56px;
+        height: 56px;
+    }
+
+    .phase-arrow-label {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 1400px) {
+    .phase-bubble-image {
+        width: 320px;
+        height: 256px;
+    }
+
+    .phase-arrow-symbol svg {
+        width: 48px;
+        height: 48px;
+    }
+
+    .phase-arrow-label {
+        font-size: 10px;
+    }
+
+    .phase-bubble-label {
+        min-width: 80px;
+        padding: 6px 10px;
+    }
+
+    .phase-number {
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 1100px) {
+    .phase-bubble-image {
+        width: 250px;
+        height: 200px;
+    }
+
+    .phase-arrow-symbol svg {
+        width: 40px;
+        height: 40px;
+    }
+
+    .phase-arrow-label {
+        font-size: 9px;
+    }
+
+    .phase-bubble-label {
+        min-width: 70px;
+        padding: 5px 8px;
+    }
+
+    .phase-number {
+        font-size: 0.9em;
+    }
+
+    .phase-time-input {
+        width: 42px;
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 800px) {
+    .phasage-circular-container {
+        height: calc(100vh - 250px);
+        min-height: 500px;
+    }
+
+    .phase-bubble-image {
+        width: 180px;
+        height: 144px;
+    }
+
+    .phase-arrow-symbol svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .phase-arrow-label {
+        font-size: 8px;
+    }
+
+    .phase-bubble-label {
+        min-width: 60px;
+        padding: 4px 6px;
+    }
+
+    .phase-number {
+        font-size: 0.8em;
+    }
+
+    .phase-time-input {
+        width: 36px;
+        font-size: 0.85em;
+    }
+
+    .phase-bubble {
+        gap: 8px;
+    }
+}

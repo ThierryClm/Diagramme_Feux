@@ -82,29 +82,49 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     cursor: move;
     z-index: 10;
     user-select: none;
 }
 
 .arrow-marker .arrow-symbol {
-    font-size: 72px;
-    color: #4ecdc4;
-    text-shadow: 0 0 4px #000, 0 0 8px #000, 0 0 12px #000;
-    line-height: 1;
-    display: inline-block;
-    transition: transform 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, filter 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.arrow-marker .arrow-symbol svg {
+    width: 96px;
+    height: 96px;
 }
 
 .arrow-marker .arrow-label {
-    font-size: 14px;
+    font-size: 12px;
     color: #fff;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 2px 5px;
     border-radius: 3px;
-    margin-top: 4px;
     white-space: nowrap;
     font-weight: bold;
+    position: absolute;
+    z-index: 3;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* For side labels (Piéton/Cycle) */
+.arrow-marker.side-label .arrow-label {
+    position: absolute;
+    bottom: auto;
+    left: auto;
+    right: -50px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .arrow-marker.selected {
@@ -112,8 +132,7 @@
 }
 
 .arrow-marker.selected .arrow-symbol {
-    color: #ff6b6b;
-    filter: drop-shadow(0 0 6px #ff6b6b);
+    filter: drop-shadow(0 0 6px #ff6b6b) drop-shadow(0 0 3px #000);
 }
 
 .arrow-marker.selected .arrow-label {
@@ -326,7 +345,7 @@
 
 /* Animating arrows */
 .arrow-marker.animating .arrow-symbol {
-    transition: color 0.3s ease, text-shadow 0.3s ease;
+    transition: filter 0.3s ease;
 }
 
 /* Hovered arrow (when diagram row should be highlighted) */

@@ -16,7 +16,10 @@ const IntersectionImage = ({
     setCurrentTime,
     // Hover state for diagram highlighting
     hoveredArrowGroupId,
-    setHoveredArrowGroupId
+    setHoveredArrowGroupId,
+    // Action data for special actions simulation
+    actionData = [],
+    selectedActions = []
 }) => {
     const fileInputRef = useRef(null);
     const containerRef = useRef(null);
@@ -130,6 +133,91 @@ const IntersectionImage = ({
         return group ? { name: group.name, courant: group.courant || '' } : { name: '?', courant: '' };
     };
 
+    // Render arrow SVG based on courant type
+    const renderArrowSVG = (courant, color) => {
+        const strokeWidth = 3;
+        const size = 32;
+
+        switch (courant) {
+            case 'TD': // Tout droit
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <line x1="16" y1="28" x2="16" y2="6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="8,14 16,6 24,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'TàD': // Tourne à droite
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <path d="M8,24 L8,12 Q8,8 12,8 L26,8" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="20,2 26,8 20,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'TàG': // Tourne à gauche
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <path d="M24,24 L24,12 Q24,8 20,8 L6,8" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="12,2 6,8 12,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'TDTàD': // Tout droit + Tourne à droite
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        {/* Flèche tout droit */}
+                        <line x1="12" y1="28" x2="12" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="6,14 12,8 18,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        {/* Flèche tourne à droite */}
+                        <path d="M12,20 Q20,20 20,12 L20,8" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="16,12 20,8 24,12" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'TDTàG': // Tout droit + Tourne à gauche
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        {/* Flèche tout droit */}
+                        <line x1="20" y1="28" x2="20" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="14,14 20,8 26,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        {/* Flèche tourne à gauche */}
+                        <path d="M20,20 Q12,20 12,12 L12,8" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="8,12 12,8 16,12" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'Piéton': // Flèche 2 sens (piétons)
+            case 'Cycle': // Flèche 2 sens (cyclistes)
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        {/* Flèche vers le haut */}
+                        <line x1="16" y1="20" x2="16" y2="6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="10,12 16,6 22,12" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        {/* Flèche vers le bas */}
+                        <line x1="16" y1="12" x2="16" y2="26" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="10,20 16,26 22,20" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            default: // Flèche simple par défaut
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <line x1="16" y1="28" x2="16" y2="6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="8,14 16,6 24,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+        }
+    };
+
+    // Check if time is within an action's time range (handles wrap-around)
+    const isTimeInRange = useCallback((time, start, end, effectiveCycleLength) => {
+        const normalizedTime = time % effectiveCycleLength;
+        const normalizedStart = parseInt(start);
+        const normalizedEnd = parseInt(end);
+
+        if (normalizedEnd > normalizedStart) {
+            return normalizedTime >= normalizedStart && normalizedTime < normalizedEnd;
+        } else {
+            // Wrap-around case
+            return normalizedTime >= normalizedStart || normalizedTime < normalizedEnd;
+        }
+    }, []);
+
     // Get the color for a group at a specific time
     const getGroupColorAtTime = useCallback((groupId, time) => {
         // Use simulation result if available, otherwise use original groups
@@ -145,6 +233,52 @@ const IntersectionImage = ({
 
         // Normalize time within cycle
         const normalizedTime = time % effectiveCycleLength;
+
+        // Check for "Seconde lucarne" action for this group
+        const secondeLucarneAction = actionData.find(action =>
+            action.action === 'Seconde lucarne' &&
+            action.gf === String(groupId) &&
+            action.deb !== '' &&
+            action.fin !== '' &&
+            selectedActions.includes(action.id)
+        );
+
+        // Check for "Priorité piétons" action for this group
+        const prioritePietonsAction = actionData.find(action =>
+            action.action === 'Priorité piétons' &&
+            action.gf === String(groupId) &&
+            action.deb !== '' &&
+            action.fin !== '' &&
+            selectedActions.includes(action.id)
+        );
+
+        // Check if current time is in "Seconde lucarne" period
+        if (secondeLucarneAction) {
+            const inSecondeLucarne = isTimeInRange(
+                normalizedTime,
+                secondeLucarneAction.deb,
+                secondeLucarneAction.fin,
+                effectiveCycleLength
+            );
+            if (inSecondeLucarne) {
+                return 'rgb(0, 180, 0)'; // Dark green for Seconde lucarne
+            }
+        }
+
+        // Check if current time is in "Priorité piétons" period
+        if (prioritePietonsAction) {
+            const inPrioritePietons = isTimeInRange(
+                normalizedTime,
+                prioritePietonsAction.deb,
+                prioritePietonsAction.fin,
+                effectiveCycleLength
+            );
+            if (inPrioritePietons) {
+                // Blinking yellow - alternate based on time (every 0.5s = blink)
+                const blink = Math.floor(time * 2) % 2 === 0;
+                return blink ? 'rgb(255, 255, 0)' : 'rgb(180, 180, 0)'; // Blinking yellow
+            }
+        }
 
         // Calculate phase boundaries
         const greenStart = offset;
@@ -174,11 +308,11 @@ const IntersectionImage = ({
         if (isGreen) {
             return 'rgb(0, 255, 0)'; // Green
         } else if (isOrange) {
-            return 'rgb(255, 165, 0)'; // Orange
+            return 'rgb(255, 255, 0)'; // Yellow (Jaune)
         } else {
             return 'rgb(255, 0, 0)'; // Red
         }
-    }, [groups, simulationResult, cycleLength]);
+    }, [groups, simulationResult, cycleLength, actionData, selectedActions, isTimeInRange]);
 
     // Animation loop
     useEffect(() => {
@@ -298,14 +432,16 @@ const IntersectionImage = ({
                         {arrows.map(arrow => {
                             const groupInfo = getGroupInfo(arrow.groupId);
                             const rotation = arrow.rotation || 0;
+                            // Black by default, colored during simulation
                             const arrowColor = (isPlaying || currentTime > 0)
                                 ? getGroupColorAtTime(arrow.groupId, currentTime)
-                                : '#4ecdc4'; // Default cyan color
+                                : '#000000';
                             const isHovered = hoveredArrowGroupId === arrow.groupId;
+                            const isSideLabel = groupInfo.courant === 'Piéton' || groupInfo.courant === 'Cycle';
                             return (
                                 <div
                                     key={arrow.id}
-                                    className={`arrow-marker ${selectedArrow === arrow.id ? 'selected' : ''} ${isPlaying ? 'animating' : ''} ${isHovered ? 'hovered' : ''}`}
+                                    className={`arrow-marker ${selectedArrow === arrow.id ? 'selected' : ''} ${isPlaying ? 'animating' : ''} ${isHovered ? 'hovered' : ''} ${isSideLabel ? 'side-label' : ''}`}
                                     style={{
                                         left: `${arrow.x}%`,
                                         top: `${arrow.y}%`
@@ -319,16 +455,14 @@ const IntersectionImage = ({
                                     }}
                                     title={`GF${arrow.groupId} - ${groupInfo.courant || 'Sans courant'} - Double-clic pour tourner`}
                                 >
-                                    <span
+                                    <div
                                         className="arrow-symbol"
                                         style={{
-                                            transform: `rotate(${rotation}deg)`,
-                                            color: arrowColor,
-                                            textShadow: `0 0 8px ${arrowColor}, 0 0 12px ${arrowColor}, 0 0 4px #000`
+                                            transform: `rotate(${rotation}deg)`
                                         }}
                                     >
-                                        ↑
-                                    </span>
+                                        {renderArrowSVG(groupInfo.courant, arrowColor)}
+                                    </div>
                                     <span className="arrow-label">GF{arrow.groupId}</span>
                                 </div>
                             );
