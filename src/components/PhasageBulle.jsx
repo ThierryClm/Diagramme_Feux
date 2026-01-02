@@ -10,8 +10,11 @@ const PhasageBulle = ({
     actionData = [],
     selectedActions = [],
     intersectionName = '',
+    planName = '',
     initialTimes = [0, 15, 30, 45, 60, 75],
-    initialCount = 4
+    initialCount = 4,
+    hoveredGroupId = null,
+    setHoveredGroupId = () => {}
 }) => {
     // Number of phases to display (2-6)
     const [phaseCount, setPhaseCount] = useState(initialCount);
@@ -197,33 +200,47 @@ const PhasageBulle = ({
         }
     };
 
-    // Get ellipse radii based on number of phases
-    const getEllipseRadii = (count) => {
+    // Get ellipse radii and starting angle based on number of phases
+    // RadiusX reduced by 30% total for tighter horizontal distribution
+    // Phase 1 always starts from left (Math.PI)
+    const getEllipseConfig = (count) => {
         switch (count) {
             case 2:
-                return { radiusX: 30, radiusY: 25 }; // Smaller ellipse for 2 large bubbles
+                // Two bubbles: left and right
+                return { radiusX: 22, radiusY: 25, startAngle: Math.PI };
+            case 3:
+                // Triangle: Phase 1 at left
+                return { radiusX: 23, radiusY: 30, startAngle: Math.PI };
             case 5:
-                return { radiusX: 40, radiusY: 36 }; // Larger ellipse for 5 smaller bubbles
+                // Pentagon: Phase 1 at left
+                return { radiusX: 27, radiusY: 34, startAngle: Math.PI };
             case 6:
-                return { radiusX: 42, radiusY: 38 }; // Even larger for 6 bubbles
+                // Hexagon: Phase 1 at left
+                return { radiusX: 29, radiusY: 36, startAngle: Math.PI };
             default:
-                return { radiusX: 36, radiusY: 32 }; // Default for 3-4 phases
+                // 4 phases: diamond shape, Phase 1 at left
+                return { radiusX: 26, radiusY: 32, startAngle: Math.PI };
         }
     };
 
-    // Calculate position on ellipse for each phase (clockwise from left)
+    // Calculate position on ellipse for each phase
     const getPhasePosition = (index, total) => {
-        // Start from left (180° = PI) and go clockwise
-        const angleStep = (2 * Math.PI) / total;
-        const angle = Math.PI + angleStep * index;
+        const { radiusX, radiusY, startAngle } = getEllipseConfig(total);
 
-        // Get dynamic ellipse radii based on phase count
-        const { radiusX, radiusY } = getEllipseRadii(total);
+        // Calculate angle step and position (clockwise)
+        const angleStep = (2 * Math.PI) / total;
+        const angle = startAngle + angleStep * index;
 
         const x = 50 + radiusX * Math.cos(angle);
         const y = 50 + radiusY * Math.sin(angle);
 
         return { x, y, angle };
+    };
+
+    // Get ellipse radii for SVG outline (uses same config)
+    const getEllipseRadii = (count) => {
+        const config = getEllipseConfig(count);
+        return { radiusX: config.radiusX, radiusY: config.radiusY };
     };
 
     // Get scale factor based on number of phases
@@ -236,9 +253,9 @@ const PhasageBulle = ({
         }
     };
 
-    // Base sizes
-    const BASE_BUBBLE_WIDTH = 500;
-    const BASE_BUBBLE_HEIGHT = 400;
+    // Base sizes (proportional to image, reduced by 5%)
+    const BASE_BUBBLE_WIDTH = 570;
+    const BASE_BUBBLE_HEIGHT = 456;
 
     // Arrow size ratio from IntersectionImage (96px arrow / 500px container = 19.2%)
     const ARROW_SIZE_RATIO = 0.192;
@@ -250,11 +267,13 @@ const PhasageBulle = ({
     // Arrow size proportional to bubble height (same ratio as IntersectionImage)
     const arrowSize = Math.round(bubbleHeight * ARROW_SIZE_RATIO);
 
-    // Render a phase bubble with label at top-left
+    // Render a phase bubble with label positioned based on vertical position
     const renderPhaseBubble = (index) => {
         const time = phaseTimes[index];
         const position = getPhasePosition(index, phaseCount);
         const isSideLabel = (courant) => courant === 'Piéton' || courant === 'Cycle';
+        // Phase 1 always has label at top-left, others based on vertical position
+        const isLabelTopLeft = index === 0 || position.y < 50;
 
         return (
             <div
@@ -265,13 +284,13 @@ const PhasageBulle = ({
                     top: `${position.y}%`
                 }}
             >
-                {/* Image bubble with label at top-left */}
+                {/* Label positioned based on bubble vertical position (Phase 1 always top-left) */}
+                <div className={`phase-bubble-label ${isLabelTopLeft ? 'label-top-left' : 'label-bottom-right'}`}>
+                    <span className="phase-number">Phase {index + 1}</span>
+                    <span className="phase-time-display">Seconde {time}</span>
+                </div>
+                {/* Image bubble */}
                 <div className="phase-bubble-content">
-                    {/* Label overlay at top-left */}
-                    <div className="phase-bubble-label">
-                        <span className="phase-number">Phase {index + 1}</span>
-                        <span className="phase-time-display">Seconde {time}</span>
-                    </div>
                     <div
                         className="phase-bubble-image"
                         style={{
@@ -290,11 +309,13 @@ const PhasageBulle = ({
                                     return (
                                         <div
                                             key={arrow.id}
-                                            className={`phase-arrow-marker ${isSideLabel(groupInfo.courant) ? 'side-label' : ''}`}
+                                            className={`phase-arrow-marker ${isSideLabel(groupInfo.courant) ? 'side-label' : ''} ${hoveredGroupId === arrow.groupId ? 'hovered' : ''}`}
                                             style={{
                                                 left: `${arrow.x}%`,
                                                 top: `${arrow.y}%`
                                             }}
+                                            onMouseEnter={() => setHoveredGroupId(arrow.groupId)}
+                                            onMouseLeave={() => setHoveredGroupId(null)}
                                         >
                                             <div
                                                 className="phase-arrow-symbol"
@@ -326,8 +347,12 @@ const PhasageBulle = ({
             <div className="phasage-bulle-header">
                 <div className="phasage-title-section">
                     <h3>Phasage bulle</h3>
-                    {intersectionName && (
-                        <span className="phasage-plan-name">Plan de feu: {intersectionName}</span>
+                    {(planName || intersectionName) && (
+                        <span className="phasage-plan-name">
+                            {planName && intersectionName
+                                ? `${planName} - ${intersectionName}`
+                                : planName || intersectionName}
+                        </span>
                     )}
                 </div>
                 <div className="phasage-controls">

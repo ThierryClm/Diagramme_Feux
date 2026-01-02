@@ -87,6 +87,7 @@ function App() {
     const [phasageBulleCount, setPhasageBulleCount] = useState(4);
     const [phasageBulleVisibleGroups, setPhasageBulleVisibleGroups] = useState(new Set());
     const [phasageBulleVersion, setPhasageBulleVersion] = useState(0);
+    const [hoveredPhasageGroupId, setHoveredPhasageGroupId] = useState(null);
 
     // Calculate simulated diagram when in simulation mode
     const simulationResult = useMemo(() => {
@@ -643,7 +644,9 @@ function App() {
                                     return (
                                         <label
                                             key={g.id}
-                                            className={`phasage-group-item ${isVisible ? 'checked' : ''} ${!hasArrow ? 'no-arrow' : ''}`}
+                                            className={`phasage-group-item ${isVisible ? 'checked' : ''} ${!hasArrow ? 'no-arrow' : ''} ${hoveredPhasageGroupId === g.id ? 'hovered' : ''}`}
+                                            onMouseEnter={() => hasArrow && setHoveredPhasageGroupId(g.id)}
+                                            onMouseLeave={() => setHoveredPhasageGroupId(null)}
                                         >
                                             <input
                                                 type="checkbox"
@@ -856,8 +859,11 @@ function App() {
                                 actionData={actionData}
                                 selectedActions={simulationSelectedActions}
                                 intersectionName={intersectionName}
+                                planName={pfTabs.find(pf => pf.id === activePFId)?.name || ''}
                                 initialTimes={phasageBulleTimes}
                                 initialCount={phasageBulleCount}
+                                hoveredGroupId={hoveredPhasageGroupId}
+                                setHoveredGroupId={setHoveredPhasageGroupId}
                             />
                         ) : simulationEnabled ? (
                             <IntersectionImage

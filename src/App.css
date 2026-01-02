@@ -815,6 +815,12 @@
     cursor: not-allowed;
 }
 
+.phasage-group-item.hovered {
+    background: #3a2a3a;
+    border-color: #dc4edc;
+    box-shadow: 0 0 8px rgba(220, 78, 220, 0.5);
+}
+
 .phasage-group-item input[type="checkbox"] {
     accent-color: #dc4edc;
     width: 16px;
