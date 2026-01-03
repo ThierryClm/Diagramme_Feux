@@ -8,19 +8,45 @@ const TrafficTable = ({
     activeTrafficDataset,
     setActiveTrafficDataset,
     updateTrafficData,
-    getTrafficData
+    getTrafficData,
+    updateGroupParams
 }) => {
 
-    const handleChange = (id, field, value) => {
-        updateTrafficData(id, field, value);
+    // Update traffic volume (per dataset)
+    const handleTrafficChange = (id, value) => {
+        updateTrafficData(id, 'trafficVol', value);
+    };
+
+    // Update shared fields (same for all datasets)
+    const handleSharedChange = (id, field, value) => {
+        updateGroupParams(id, { [field]: value });
     };
 
     // Calculate V.Utile = trafic / (1800 * coef / cycle)
     const calculateVUtile = (trafficVol, laneCoef) => {
-        if (!trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return '';
+        if (!trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
         const result = trafficVol / (1800 * laneCoef / cycleLength);
         return Math.round(result); // Round to integer
     };
+
+    // Calculate Cap.U = (V.Utile / green time) * 100 (percentage)
+    const calculateCapacity = (greenTime, vUtile) => {
+        if (!greenTime || !vUtile || greenTime === 0) return { value: null, display: '' };
+        const result = Math.round((vUtile / greenTime) * 100);
+        return { value: result, display: result + '%' };
+    };
+
+    // Get capacity color class based on value
+    const getCapacityColorClass = (value) => {
+        if (value === null) return '';
+        if (value < 76) return 'capacity-green';
+        if (value <= 85) return 'capacity-orange';
+        if (value <= 100) return 'capacity-red';
+        return 'capacity-black';
+    };
+
+    // Filter only VL groups
+    const vlGroups = groups.filter(g => g.type === 'VL');
 
     return (
         <div className="traffic-table-container">
@@ -39,83 +65,73 @@ const TrafficTable = ({
             <table className="traffic-table">
                 <thead>
                     <tr>
-                        <th>Grp</th>
-                        <th>Nom</th>
-                        <th>Courant</th>
+                        <th className="col-grp">Grp</th>
+                        <th className="col-nom">Nom</th>
                         <th>Coef</th>
                         <th>Trafic</th>
-                        <th>V.Utile</th>
-                        <th>Cap.U</th>
+                        <th>V.<br/>Utile</th>
+                        <th>Cap.<br/>U</th>
                         <th>Retard</th>
                         <th>Attente</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {groups.map(g => {
+                    {vlGroups.map(g => {
                         const trafficData = getTrafficData(g.id);
                         return (
                             <tr key={g.id}>
                                 <td className="col-id">{g.id}</td>
                                 <td className="col-name-readonly">{g.name}</td>
 
-                                {/* Courant de circulation */}
-                                <td>
-                                    <input
-                                        type="text"
-                                        className="input-trafic-text"
-                                        value={trafficData.trafficStream || ''}
-                                        onChange={(e) => handleChange(g.id, 'trafficStream', e.target.value)}
-                                    />
-                                </td>
-                                {/* Coef Voie */}
+                                {/* Coef Voie (shared across all datasets) */}
                                 <td>
                                     <input
                                         type="number"
                                         step="0.1"
                                         className="input-trafic-num"
-                                        value={trafficData.laneCoef || ''}
-                                        onChange={(e) => handleChange(g.id, 'laneCoef', parseFloat(e.target.value) || 0)}
+                                        value={g.laneCoef || ''}
+                                        onChange={(e) => handleSharedChange(g.id, 'laneCoef', parseFloat(e.target.value) || 0)}
                                     />
                                 </td>
-                                {/* Trafic */}
+                                {/* Trafic (per dataset) */}
                                 <td>
                                     <input
                                         type="number"
                                         className="input-trafic-num"
                                         value={trafficData.trafficVol || ''}
-                                        onChange={(e) => handleChange(g.id, 'trafficVol', parseInt(e.target.value) || 0)}
+                                        onChange={(e) => handleTrafficChange(g.id, parseInt(e.target.value) || 0)}
                                     />
                                 </td>
                                 {/* Vert Utile (calculé) */}
                                 <td className="col-calculated">
-                                    {calculateVUtile(trafficData.trafficVol, trafficData.laneCoef)}
+                                    {calculateVUtile(trafficData.trafficVol, g.laneCoef) || ''}
                                 </td>
-                                {/* Capacité Utilisée */}
-                                <td>
-                                    <input
-                                        type="number"
-                                        className="input-trafic-num"
-                                        value={trafficData.usedCapacity || ''}
-                                        onChange={(e) => handleChange(g.id, 'usedCapacity', parseInt(e.target.value) || 0)}
-                                    />
-                                </td>
-                                {/* Retard */}
+                                {/* Capacité Utilisée (calculée: V.Utile / temps vert * 100) */}
+                                {(() => {
+                                    const capacity = calculateCapacity(g.durations?.green, calculateVUtile(trafficData.trafficVol, g.laneCoef));
+                                    return (
+                                        <td className={`col-calculated ${getCapacityColorClass(capacity.value)}`}>
+                                            {capacity.display}
+                                        </td>
+                                    );
+                                })()}
+                                {/* Retard (shared) */}
                                 <td>
                                     <input
                                         type="number"
                                         step="0.1"
                                         className="input-trafic-num"
-                                        value={trafficData.delay || ''}
-                                        onChange={(e) => handleChange(g.id, 'delay', parseFloat(e.target.value) || 0)}
+                                        value={g.delay || ''}
+                                        onChange={(e) => handleSharedChange(g.id, 'delay', parseFloat(e.target.value) || 0)}
                                     />
                                 </td>
-                                {/* Ile d'attente (Queue) */}
+                                {/* Ile d'attente (Queue) (shared) */}
                                 <td>
                                     <input
                                         type="number"
                                         className="input-trafic-num"
-                                        value={trafficData.queueLength || ''}
-                                        onChange={(e) => handleChange(g.id, 'queueLength', parseFloat(e.target.value) || 0)}
+                                        value={g.queueLength || ''}
+                                        onChange={(e) => handleSharedChange(g.id, 'queueLength', parseFloat(e.target.value) || 0)}
                                     />
                                 </td>
                             </tr>

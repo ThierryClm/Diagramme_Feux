@@ -6,14 +6,9 @@ const MAX_HISTORY_SIZE = 50;
 // Traffic dataset types
 export const TRAFFIC_DATASETS = ['HPM', 'HPS', 'HC', 'Estimation', 'Projection'];
 
-// Create empty traffic data for a group
+// Create empty traffic data for a group (only trafficVol varies by dataset)
 const createEmptyTrafficData = () => ({
-    trafficStream: '',
-    laneCoef: 1,
-    trafficVol: 0,
-    usedCapacity: 0,
-    delay: 0,
-    queueLength: 0
+    trafficVol: 0
 });
 
 export const useTrafficLight = () => {

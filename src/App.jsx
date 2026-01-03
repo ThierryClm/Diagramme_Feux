@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useTrafficLight } from './hooks/useTrafficLight';
+import { useTrafficLight, TRAFFIC_DATASETS } from './hooks/useTrafficLight';
 import TimelineDiagram from './components/TimelineDiagram';
 import GroupTable from './components/GroupTable';
 import TrafficTable from './components/TrafficTable';
@@ -750,6 +750,7 @@ function App() {
                                     setActiveTrafficDataset={setActiveTrafficDataset}
                                     updateTrafficData={updateTrafficData}
                                     getTrafficData={getTrafficData}
+                                    updateGroupParams={updateGroupParams}
                                 />
                             )}
 
@@ -784,6 +785,10 @@ function App() {
                                     setSimulationEnabled(false);
                                     setPhasageBulleEnabled(false);
                                     setActivePFId(pf.id);
+                                    // Sync traffic dataset if tab name matches a dataset
+                                    if (TRAFFIC_DATASETS.includes(pf.name)) {
+                                        setActiveTrafficDataset(pf.name);
+                                    }
                                 }}
                                 onDoubleClick={(e) => {
                                     e.stopPropagation();

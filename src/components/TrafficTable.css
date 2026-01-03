@@ -49,16 +49,30 @@
 }
 
 .traffic-table th {
-    text-align: left;
+    text-align: center;
     color: #aaa;
     font-weight: normal;
-    padding: 0 0.5rem;
+    padding: 0 2px;
     border-bottom: 1px solid #444;
-    height: 28px;
+    height: 36px;
     position: sticky;
     top: 0;
     background: #1e1e1e;
     z-index: 20;
+    white-space: normal;
+    line-height: 1.2;
+    vertical-align: middle;
+}
+
+.traffic-table th.col-grp {
+    width: 28px;
+    min-width: 28px;
+    max-width: 28px;
+}
+
+.traffic-table th.col-nom {
+    text-align: left;
+    width: 70px;
 }
 
 .traffic-table tr {
@@ -89,12 +103,15 @@
 }
 
 .traffic-table .col-name-readonly {
-    font-size: 0.85em;
-    color: #ccc;
-    max-width: 80px;
+    font-size: 1.1em;
+    font-weight: normal;
+    color: #fff;
+    max-width: 100px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding-left: 0 !important;
+    text-align: left;
 }
 
 .traffic-table .input-trafic-text {
@@ -111,4 +128,22 @@
     text-align: center;
     color: #8cf;
     font-weight: bold;
+}
+
+/* Capacity color classes */
+.traffic-table .capacity-green {
+    color: #4caf50;
+}
+
+.traffic-table .capacity-orange {
+    color: #ff9800;
+}
+
+.traffic-table .capacity-red {
+    color: #f44336;
+}
+
+.traffic-table .capacity-black {
+    color: #000;
+    background-color: #ff6b6b;
 }
