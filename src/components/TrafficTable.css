@@ -9,10 +9,36 @@
 
 .traffic-table-container h3 {
     margin: 0;
-    padding: 0.5rem;
     font-size: 1rem;
     color: #eee;
+}
+
+.traffic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
     border-bottom: 1px solid #333;
+}
+
+.traffic-dataset-selector {
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.traffic-dataset-selector:hover {
+    border-color: #4ecdc4;
+}
+
+.traffic-dataset-selector:focus {
+    outline: none;
+    border-color: #4ecdc4;
+    box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2);
 }
 
 .traffic-table {

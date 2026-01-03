@@ -66,7 +66,11 @@ function App() {
         intersectionImage,
         setIntersectionImage,
         intersectionArrows,
-        setIntersectionArrows
+        setIntersectionArrows,
+        activeTrafficDataset,
+        setActiveTrafficDataset,
+        updateTrafficData,
+        getTrafficData
     } = useTrafficLight();
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -741,8 +745,11 @@ function App() {
                             {activeTab === 'traffic' && (
                                 <TrafficTable
                                     groups={groups}
-                                    updateGroupParams={updateGroupParams}
                                     cycleLength={cycleLength}
+                                    activeTrafficDataset={activeTrafficDataset}
+                                    setActiveTrafficDataset={setActiveTrafficDataset}
+                                    updateTrafficData={updateTrafficData}
+                                    getTrafficData={getTrafficData}
                                 />
                             )}
 

@@ -3,6 +3,19 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 const DEFAULT_CYCLE = 100;
 const MAX_HISTORY_SIZE = 50;
 
+// Traffic dataset types
+export const TRAFFIC_DATASETS = ['HPM', 'HPS', 'HC', 'Estimation', 'Projection'];
+
+// Create empty traffic data for a group
+const createEmptyTrafficData = () => ({
+    trafficStream: '',
+    laneCoef: 1,
+    trafficVol: 0,
+    usedCapacity: 0,
+    delay: 0,
+    queueLength: 0
+});
+
 export const useTrafficLight = () => {
     const [intersectionName, setIntersectionName] = useState(() => localStorage.getItem('trafficName') || "Nouveau Carrefour");
     const [cycleLength, setCycleLength] = useState(() => parseInt(localStorage.getItem('trafficCycle')) || DEFAULT_CYCLE);
@@ -406,7 +419,9 @@ export const useTrafficLight = () => {
             pfTabs,
             activePFId,
             intersectionImage,
-            intersectionArrows
+            intersectionArrows,
+            trafficDatasets,
+            activeTrafficDataset
             // Note: simulation state is NOT saved with project (per user request)
         };
         try {
@@ -453,6 +468,14 @@ export const useTrafficLight = () => {
             }
             if (data.intersectionArrows) {
                 setIntersectionArrows(data.intersectionArrows);
+            }
+
+            // Load traffic datasets
+            if (data.trafficDatasets) {
+                setTrafficDatasets(data.trafficDatasets);
+            }
+            if (data.activeTrafficDataset) {
+                setActiveTrafficDataset(data.activeTrafficDataset);
             }
 
             // Reset simulation state when loading a project
@@ -640,6 +663,41 @@ export const useTrafficLight = () => {
             return saved ? JSON.parse(saved) : [];
         } catch (e) {
             return [];
+        }
+    });
+
+    // Traffic datasets state (HPM, HPS, HC, Estimation, Projection)
+    const [activeTrafficDataset, setActiveTrafficDataset] = useState(() => {
+        try {
+            const saved = localStorage.getItem('trafficActiveDataset');
+            return saved || 'HPM';
+        } catch (e) {
+            return 'HPM';
+        }
+    });
+
+    // Initialize traffic datasets with empty data for all groups
+    const createInitialTrafficDatasets = (groupCount) => {
+        const datasets = {};
+        TRAFFIC_DATASETS.forEach(ds => {
+            datasets[ds] = {};
+            for (let i = 1; i <= groupCount; i++) {
+                datasets[ds][i] = createEmptyTrafficData();
+            }
+        });
+        return datasets;
+    };
+
+    const [trafficDatasets, setTrafficDatasets] = useState(() => {
+        try {
+            const saved = localStorage.getItem('trafficDatasets');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            // Initialize with 5 groups by default
+            return createInitialTrafficDatasets(5);
+        } catch (e) {
+            return createInitialTrafficDatasets(5);
         }
     });
 
@@ -876,6 +934,59 @@ export const useTrafficLight = () => {
     useEffect(() => {
         localStorage.setItem('trafficIntersectionArrows', JSON.stringify(intersectionArrows));
     }, [intersectionArrows]);
+
+    // Save traffic datasets to localStorage
+    useEffect(() => {
+        localStorage.setItem('trafficDatasets', JSON.stringify(trafficDatasets));
+        localStorage.setItem('trafficActiveDataset', activeTrafficDataset);
+    }, [trafficDatasets, activeTrafficDataset]);
+
+    // Update traffic data for a specific group in the active dataset
+    const updateTrafficData = useCallback((groupId, field, value) => {
+        setTrafficDatasets(prev => {
+            const newDatasets = { ...prev };
+            if (!newDatasets[activeTrafficDataset]) {
+                newDatasets[activeTrafficDataset] = {};
+            }
+            if (!newDatasets[activeTrafficDataset][groupId]) {
+                newDatasets[activeTrafficDataset][groupId] = createEmptyTrafficData();
+            }
+            newDatasets[activeTrafficDataset][groupId] = {
+                ...newDatasets[activeTrafficDataset][groupId],
+                [field]: value
+            };
+            return newDatasets;
+        });
+    }, [activeTrafficDataset]);
+
+    // Get traffic data for a specific group in the active dataset
+    const getTrafficData = useCallback((groupId) => {
+        if (!trafficDatasets[activeTrafficDataset]) {
+            return createEmptyTrafficData();
+        }
+        return trafficDatasets[activeTrafficDataset][groupId] || createEmptyTrafficData();
+    }, [trafficDatasets, activeTrafficDataset]);
+
+    // Ensure traffic datasets have entries for all groups when group count changes
+    useEffect(() => {
+        setTrafficDatasets(prev => {
+            const newDatasets = { ...prev };
+            let changed = false;
+            TRAFFIC_DATASETS.forEach(ds => {
+                if (!newDatasets[ds]) {
+                    newDatasets[ds] = {};
+                    changed = true;
+                }
+                groups.forEach(g => {
+                    if (!newDatasets[ds][g.id]) {
+                        newDatasets[ds][g.id] = createEmptyTrafficData();
+                        changed = true;
+                    }
+                });
+            });
+            return changed ? newDatasets : prev;
+        });
+    }, [groups]);
 
     // Note: Simulation state is NOT saved to localStorage (per user request)
 
@@ -1256,6 +1367,13 @@ export const useTrafficLight = () => {
         intersectionImage,
         setIntersectionImage,
         intersectionArrows,
-        setIntersectionArrows
+        setIntersectionArrows,
+        // Traffic datasets
+        trafficDatasets,
+        activeTrafficDataset,
+        setActiveTrafficDataset,
+        updateTrafficData,
+        getTrafficData,
+        TRAFFIC_DATASETS
     };
 };
