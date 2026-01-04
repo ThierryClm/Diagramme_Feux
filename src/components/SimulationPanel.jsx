@@ -12,7 +12,9 @@ const SimulationPanel = ({
     cycleLength,
     conflictMatrix,
     hoveredActionId,
-    setHoveredActionId
+    setHoveredActionId,
+    activeTrafficDataset,
+    getTrafficData
 }) => {
     // Filter to only show actions that have a type selected
     // Exclude actions that don't affect simulation
@@ -20,7 +22,9 @@ const SimulationPanel = ({
         'Début de bande passante',
         'Fin de bande passante',
         'Priorité piétons',
-        'Signa d\'aide à la conduite'
+        'Signa d\'aide à la conduite',
+        'Synchro BTS',
+        'Point de repos'
     ];
     const activeActions = actionData.filter(a =>
         a.action && a.action !== '' && !excludedActions.includes(a.action)
@@ -40,6 +44,32 @@ const SimulationPanel = ({
     }, [groups, actionData, selectedActions, cycleLength, conflictMatrix]);
 
     const { simulatedGroups, simulatedCycleLength, conflicts } = simulationResult;
+
+    // Calculate V.Utile = trafic / (1800 * coef / cycle)
+    const calculateVUtile = (trafficVol, laneCoef) => {
+        if (!trafficVol || !laneCoef || !simulatedCycleLength || laneCoef === 0) return null;
+        const result = trafficVol / (1800 * laneCoef / simulatedCycleLength);
+        return Math.round(result);
+    };
+
+    // Calculate Cap.U = (V.Utile / green time) * 100 (percentage)
+    const calculateCapacity = (greenTime, vUtile) => {
+        if (!greenTime || !vUtile || greenTime === 0) return { value: null, display: '' };
+        const result = Math.round((vUtile / greenTime) * 100);
+        return { value: result, display: result + '%' };
+    };
+
+    // Get capacity color class based on value
+    const getCapacityColorClass = (value) => {
+        if (value === null) return '';
+        if (value < 76) return 'capacity-green';
+        if (value <= 85) return 'capacity-orange';
+        if (value <= 100) return 'capacity-red';
+        return 'capacity-black';
+    };
+
+    // Filter only VL groups from simulated groups
+    const vlSimulatedGroups = simulatedGroups.filter(g => g.type === 'VL');
 
     return (
         <div className="simulation-panel">
@@ -145,6 +175,53 @@ const SimulationPanel = ({
                 <div className="simulation-valid">
                     <span className="valid-icon">OK</span>
                     <span>Aucun conflit</span>
+                </div>
+            )}
+
+            {/* Traffic Data Table - using simulated green durations */}
+            {vlSimulatedGroups.length > 0 && getTrafficData && (
+                <div className="simulation-traffic">
+                    <div className="simulation-traffic-header">
+                        <span className="traffic-title">Données Trafic</span>
+                        <span className="traffic-dataset">{activeTrafficDataset}</span>
+                    </div>
+                    <table className="simulation-traffic-table">
+                        <thead>
+                            <tr>
+                                <th>Grp</th>
+                                <th>Nom</th>
+                                <th>Déb</th>
+                                <th>Fin</th>
+                                <th>V</th>
+                                <th>V.U</th>
+                                <th>Cap.U</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {vlSimulatedGroups.map(g => {
+                                const trafficData = getTrafficData(g.id);
+                                // Use simulated values for calculations
+                                const greenStart = g.simulatedOffset !== undefined ? g.simulatedOffset : g.offset;
+                                const greenDuration = g.simulatedGreen !== undefined ? g.simulatedGreen : g.durations?.green;
+                                const greenEnd = (greenStart + greenDuration) % simulatedCycleLength;
+                                const vUtile = calculateVUtile(trafficData?.trafficVol, g.laneCoef);
+                                const capacity = calculateCapacity(greenDuration, vUtile);
+                                return (
+                                    <tr key={g.id}>
+                                        <td className="col-id">{g.id}</td>
+                                        <td className="col-name">{g.name}</td>
+                                        <td className="col-start">{greenStart}</td>
+                                        <td className="col-end">{greenEnd}</td>
+                                        <td className="col-green">{greenDuration || '-'}</td>
+                                        <td className="col-vutile">{vUtile || '-'}</td>
+                                        <td className={`col-capacity ${getCapacityColorClass(capacity.value)}`}>
+                                            {capacity.display || '-'}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 </div>
             )}
         </div>

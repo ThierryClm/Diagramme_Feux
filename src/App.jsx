@@ -705,6 +705,8 @@ function App() {
                             conflictMatrix={conflictMatrix}
                             hoveredActionId={hoveredActionId}
                             setHoveredActionId={setHoveredActionId}
+                            activeTrafficDataset={activeTrafficDataset}
+                            getTrafficData={getTrafficData}
                         />
                     ) : (
                         <>

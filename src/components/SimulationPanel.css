@@ -285,3 +285,91 @@
     border-color: #66f !important;
     box-shadow: 0 0 5px rgba(100, 100, 255, 0.5);
 }
+
+/* Traffic Data Table in Simulation */
+.simulation-traffic {
+    margin-top: 10px;
+    border-top: 1px solid #444;
+    padding-top: 10px;
+}
+
+.simulation-traffic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.simulation-traffic-header .traffic-title {
+    color: #4ecdc4;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.simulation-traffic-header .traffic-dataset {
+    background: #3a3a5a;
+    color: #aaf;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.75em;
+}
+
+.simulation-traffic-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75em;
+}
+
+.simulation-traffic-table th {
+    text-align: center;
+    color: #888;
+    font-weight: normal;
+    padding: 4px 2px;
+    border-bottom: 1px solid #444;
+}
+
+.simulation-traffic-table td {
+    text-align: center;
+    padding: 4px 2px;
+    color: #ccc;
+    border-bottom: 1px solid #333;
+}
+
+.simulation-traffic-table .col-id {
+    color: #666;
+    width: 28px;
+}
+
+.simulation-traffic-table .col-name {
+    text-align: left;
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.simulation-traffic-table .col-green {
+    color: #4caf50;
+}
+
+.simulation-traffic-table .col-vutile {
+    color: #aaa;
+}
+
+/* Capacity color classes */
+.simulation-traffic-table .capacity-green {
+    color: #4caf50;
+}
+
+.simulation-traffic-table .capacity-orange {
+    color: #ff9800;
+}
+
+.simulation-traffic-table .capacity-red {
+    color: #f44336;
+}
+
+.simulation-traffic-table .capacity-black {
+    color: #000;
+    background-color: #ff6b6b;
+}

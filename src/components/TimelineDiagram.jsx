@@ -28,18 +28,28 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         const originalGroup = groups.find(g => g.id === parseInt(groupId));
         const simGroup = simulationResult.simulatedGroups.find(g => g.id === parseInt(groupId));
         if (!originalGroup || !simGroup) return 0;
+
         // Calculate shift (positive = moved left/earlier)
+        const cycle = simulationResult.simulatedCycleLength || cycleLength;
         let shift = originalGroup.offset - simGroup.simulatedOffset;
-        // Handle wrap-around
-        if (shift < 0) shift += cycleLength;
-        if (shift > cycleLength / 2) shift = shift - cycleLength; // Take the smaller shift direction
-        return Math.max(0, shift); // Only positive shifts (moved earlier)
+
+        // Handle wrap-around: normalize to [0, cycle)
+        shift = ((shift % cycle) + cycle) % cycle;
+
+        // If shift is more than half the cycle, it's actually a shift to the right
+        // For "Fermeture anticipée" glissement, we want left shifts only
+        if (shift > cycle / 2) {
+            return 0; // No left shift
+        }
+
+        return shift;
     };
 
     // Helper to calculate shifted position for action overlays
     // Returns adjusted deb/fin values after applying time shifts
     // Also returns hidden=true if the action is within a removed period
-    const getShiftedActionPosition = (deb, fin, groupId = null) => {
+    // actionType: optional action type - "Seconde lucarne" is NOT shifted by group glissement
+    const getShiftedActionPosition = (deb, fin, groupId = null, actionType = null) => {
         let hidden = false;
         let totalShift = 0;
 
@@ -63,7 +73,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         }
 
         // If we have a groupId, use the actual group shift (more accurate for Adaptatif vertical)
-        if (groupId && simulationResult) {
+        // NOTE: "Seconde lucarne" actions are NOT shifted by group glissement (from Fermeture anticipée)
+        if (groupId && simulationResult && actionType !== 'Seconde lucarne') {
             const groupShift = getGroupShift(groupId);
             if (groupShift > 0) {
                 totalShift = groupShift;
@@ -85,8 +96,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             });
         }
 
-        const shiftedDeb = Math.max(0, deb - totalShift);
-        const shiftedFin = Math.max(0, fin - totalShift);
+        // Apply shift with wrap-around handling
+        const cycle = effectiveCycleLength || cycleLength;
+        const shiftedDeb = ((deb - totalShift) % cycle + cycle) % cycle;
+        const shiftedFin = ((fin - totalShift) % cycle + cycle) % cycle;
 
         return { deb: shiftedDeb, fin: shiftedFin, hidden };
     };
@@ -300,15 +313,49 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         });
     };
 
+    // Get SELECTED "Escamotage de phase" actions (for hiding Adaptatif vertical within their range)
+    const selectedEscamotageDePhase = simulationFilter ? actionData.filter(action =>
+        action.action === 'Escamotage de phase' && action.deb !== '' && action.fin !== '' &&
+        simulationFilter.has(action.id)
+    ) : [];
+
+    // Helper to check if a time range overlaps with any selected Escamotage de phase
+    const isWithinSelectedEscamotage = (deb, fin) => {
+        if (selectedEscamotageDePhase.length === 0) return false;
+        for (const escamotage of selectedEscamotageDePhase) {
+            const escDeb = parseInt(escamotage.deb) || 0;
+            const escFin = parseInt(escamotage.fin) || 0;
+            // Check if ranges overlap (handling wrap-around)
+            if (escDeb <= escFin) {
+                // Normal case: escamotage doesn't wrap
+                if (deb >= escDeb && deb < escFin) return true;
+                if (fin > escDeb && fin <= escFin) return true;
+                if (deb <= escDeb && fin >= escFin) return true;
+            } else {
+                // Escamotage wraps around cycle
+                if (deb >= escDeb || deb < escFin) return true;
+                if (fin > escDeb || fin <= escFin) return true;
+            }
+        }
+        return false;
+    };
+
     // Get all "Adaptatif vertical" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
-    const adaptatifActions = actionData.filter(action =>
-        action.action === 'Adaptatif vertical' && action.deb !== '' && action.fin !== '' &&
-        (!simulationFilter || !simulationFilter.has(action.id))
-    );
+    // Also hide if within a SELECTED Escamotage de phase
+    const adaptatifActions = actionData.filter(action => {
+        if (action.action !== 'Adaptatif vertical' || action.deb === '' || action.fin === '') return false;
+        if (simulationFilter && simulationFilter.has(action.id)) return false;
+        // Hide if within a selected Escamotage de phase
+        const deb = parseInt(action.deb) || 0;
+        const fin = parseInt(action.fin) || 0;
+        if (isWithinSelectedEscamotage(deb, fin)) return false;
+        return true;
+    });
 
-    // Get all "Fermeture anticipée" actions with arrows
-    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
+    // Get all "Fermeture anticipée" actions with arrows and braces
+    // In simulation mode: show overlay and arrows when action is UNCHECKED (inverted logic)
+    // Arrows and braces are inseparable - they appear/disappear together
     const fermetureActions = actionData.filter(action =>
         action.action === 'Fermeture anticipée' && action.deb !== '' && action.fin !== '' &&
         (action.actGf1 || action.actGf1Gf2 || action.actGf1Gf3 || action.actGf1Gf4) &&
@@ -459,6 +506,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     className="input-time-sm"
                                     value={hasValue ? start : ''}
                                     onChange={(e) => handleStartChange(g.id, e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
                                     title="Début"
                                     placeholder=""
                                 />
@@ -467,6 +515,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     className="input-time-sm"
                                     value={hasValue ? end : ''}
                                     onChange={(e) => handleEndChange(g.id, e.target.value, start)}
+                                    onClick={(e) => e.stopPropagation()}
                                     title="Fin"
                                     style={{ color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }}
                                     placeholder=""
@@ -475,9 +524,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     type="number"
                                     className="input-time-sm"
                                     value={duration === 0 ? '' : duration}
-                                    onChange={(e) => handleDurationChange(g.id, e.target.value)}
-                                    title="Durée"
-                                    style={{ color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }}
+                                    readOnly
+                                    onClick={(e) => e.stopPropagation()}
+                                    title="Durée (calculée automatiquement)"
+                                    style={{
+                                        color: duration < g.minGreen ? '#ff4d4d' : 'inherit',
+                                        cursor: 'default',
+                                        opacity: 0.8
+                                    }}
                                     placeholder=""
                                 />
                                 <input
@@ -485,6 +539,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     className="input-da"
                                     value={g.da || ''}
                                     onChange={(e) => updateGroupParams(g.id, { da: e.target.value.slice(0, 2) })}
+                                    onClick={(e) => e.stopPropagation()}
                                     title="DA"
                                     maxLength={2}
                                     placeholder=""
@@ -778,7 +833,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const origDeb = parseInt(action.deb) || 0;
                                         const origFin = parseInt(action.fin) || 0;
                                         // Apply time shifts from escamotage/adaptatif
-                                        const shifted = getShiftedActionPosition(origDeb, origFin, group.id);
+                                        // Pass action type to exclude "Seconde lucarne" from group shift
+                                        const shifted = getShiftedActionPosition(origDeb, origFin, group.id, action.action);
 
                                         // Skip rendering if action is hidden (entirely within removed period)
                                         if (shifted.hidden) {
