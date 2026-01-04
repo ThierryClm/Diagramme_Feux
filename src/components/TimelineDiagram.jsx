@@ -54,7 +54,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         let totalShift = 0;
 
         // Check if action falls within any removed period
-        if (simulationResult?.removedPeriods?.length) {
+        // NOTE: 'Escamotage de phase' is NOT hidden by removed periods - it's reduced in width instead
+        if (simulationResult?.removedPeriods?.length && actionType !== 'Escamotage de phase') {
             for (const period of simulationResult.removedPeriods) {
                 // Action is hidden if it's entirely within or overlaps the removed period
                 if (deb >= period.deb && deb < period.fin) {
@@ -81,17 +82,51 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             }
         }
 
-        // Also apply global time shifts (from Escamotage de phase)
+        // Actions that should be shifted by Adaptatif vertical or Escamotage de phase
+        const adaptatifShiftableActions = [
+            'Seconde lucarne',
+            'Fermeture anticipée',
+            'Priorité piétons',
+            'Escamotage',
+            'Ouverture anticipée',
+            'Signa d\'aide à la conduite',
+            'Adaptatif vertical',
+            'Escamotage de phase'
+        ];
+
+        // Find stopping points (Point de repos, Synchro BTS)
+        const stoppingActions = actionData.filter(a =>
+            (a.action === 'Point de repos' || a.action === 'Synchro BTS') &&
+            a.deb !== ''
+        );
+        let maxStopTime = -1;
+        stoppingActions.forEach(stopAction => {
+            const stopTime = parseInt(stopAction.deb) || 0;
+            if (stopTime > maxStopTime) {
+                maxStopTime = stopTime;
+            }
+        });
+
+        // Also apply global time shifts (from Escamotage de phase and Adaptatif vertical)
         if (simulationResult?.timeShifts?.length) {
             simulationResult.timeShifts.forEach(shift => {
-                // Skip shifts with plage (these are Adaptatif vertical, handled by getGroupShift above)
                 if (shift.plage1 && shift.plage2) {
-                    return;
-                }
-
-                // Apply shift if position is after the shift point
-                if (deb >= shift.from) {
-                    totalShift += shift.amount;
+                    // This is PARTIAL Adaptatif vertical shift - apply to specific action types
+                    // BUT NOT to 'Adaptatif vertical' or 'Escamotage de phase' overlays themselves
+                    // Only if action is after the adaptatif zone and before stopping point
+                    const excludedFromPartialShift = ['Adaptatif vertical', 'Escamotage de phase'];
+                    if (adaptatifShiftableActions.includes(actionType) && !excludedFromPartialShift.includes(actionType)) {
+                        const isAfterZone = deb >= shift.from;
+                        const isBeforeStop = maxStopTime < 0 || deb <= maxStopTime;
+                        if (isAfterZone && isBeforeStop) {
+                            totalShift += shift.amount;
+                        }
+                    }
+                } else {
+                    // Global shift (Escamotage de phase or FULL Adaptatif vertical) - apply if position is after the shift point
+                    if (deb >= shift.from) {
+                        totalShift += shift.amount;
+                    }
                 }
             });
         }
@@ -313,13 +348,41 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         });
     };
 
-    // Get SELECTED "Escamotage de phase" actions (for hiding Adaptatif vertical within their range)
+    // Get SELECTED "Escamotage de phase" actions (for hiding overlays and arrows within their range)
     const selectedEscamotageDePhase = simulationFilter ? actionData.filter(action =>
         action.action === 'Escamotage de phase' && action.deb !== '' && action.fin !== '' &&
         simulationFilter.has(action.id)
     ) : [];
 
-    // Helper to check if a time range overlaps with any selected Escamotage de phase
+    // Get SELECTED "Adaptatif vertical" actions (for hiding arrows within their range)
+    const selectedAdaptatifVertical = simulationFilter ? actionData.filter(action =>
+        action.action === 'Adaptatif vertical' && action.deb !== '' && action.fin !== '' &&
+        simulationFilter.has(action.id)
+    ) : [];
+
+    // Helper to check if a time range overlaps with any selected Escamotage de phase or Adaptatif vertical
+    const isWithinSelectedEscamotageOrAdaptatif = (deb, fin) => {
+        const allSelectedZones = [...selectedEscamotageDePhase, ...selectedAdaptatifVertical];
+        if (allSelectedZones.length === 0) return false;
+        for (const zone of allSelectedZones) {
+            const zoneDeb = parseInt(zone.deb) || 0;
+            const zoneFin = parseInt(zone.fin) || 0;
+            // Check if ranges overlap (handling wrap-around)
+            if (zoneDeb <= zoneFin) {
+                // Normal case: zone doesn't wrap
+                if (deb >= zoneDeb && deb < zoneFin) return true;
+                if (fin > zoneDeb && fin <= zoneFin) return true;
+                if (deb <= zoneDeb && fin >= zoneFin) return true;
+            } else {
+                // Zone wraps around cycle
+                if (deb >= zoneDeb || deb < zoneFin) return true;
+                if (fin > zoneDeb || fin <= zoneFin) return true;
+            }
+        }
+        return false;
+    };
+
+    // Helper to check if a time range overlaps with any selected Escamotage de phase only
     const isWithinSelectedEscamotage = (deb, fin) => {
         if (selectedEscamotageDePhase.length === 0) return false;
         for (const escamotage of selectedEscamotageDePhase) {
@@ -356,11 +419,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     // Get all "Fermeture anticipée" actions with arrows and braces
     // In simulation mode: show overlay and arrows when action is UNCHECKED (inverted logic)
     // Arrows and braces are inseparable - they appear/disappear together
-    const fermetureActions = actionData.filter(action =>
-        action.action === 'Fermeture anticipée' && action.deb !== '' && action.fin !== '' &&
-        (action.actGf1 || action.actGf1Gf2 || action.actGf1Gf3 || action.actGf1Gf4) &&
-        (!simulationFilter || !simulationFilter.has(action.id))
-    );
+    // Also hide if within a SELECTED Escamotage de phase
+    const fermetureActions = actionData.filter(action => {
+        if (action.action !== 'Fermeture anticipée' || action.deb === '' || action.fin === '') return false;
+        if (!(action.actGf1 || action.actGf1Gf2 || action.actGf1Gf3 || action.actGf1Gf4)) return false;
+        if (simulationFilter && simulationFilter.has(action.id)) return false;
+        // Hide if within a selected Escamotage de phase
+        const deb = parseInt(action.deb) || 0;
+        const fin = parseInt(action.fin) || 0;
+        if (isWithinSelectedEscamotage(deb, fin)) return false;
+        return true;
+    });
 
     // Get all "Escamotage de phase" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
@@ -392,56 +461,66 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     });
 
     // Get all "Point de repos" actions
-    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
+    // In simulation mode: show overlay ONLY when action is CHECKED (normal logic - hidden by default)
     const pointReposActions = actionData.filter(action =>
         action.action === 'Point de repos' &&
         action.deb !== '' &&
         action.plage1 !== '' &&
         action.plage2 !== '' &&
-        (!simulationFilter || !simulationFilter.has(action.id))
+        (!simulationFilter || simulationFilter.has(action.id))
     );
 
     // Get all "Synchro BTS" actions
-    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
+    // In simulation mode: show overlay ONLY when action is CHECKED (normal logic - hidden by default)
     const synchroBtsActions = actionData.filter(action =>
         action.action === 'Synchro BTS' &&
         action.deb !== '' &&
         action.plage1 !== '' &&
         action.plage2 !== '' &&
-        (!simulationFilter || !simulationFilter.has(action.id))
+        (!simulationFilter || simulationFilter.has(action.id))
     );
 
     // Get all "Priorité piétons" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
-    const prioritePietonsActions = actionData.filter(action =>
-        action.action === 'Priorité piétons' &&
-        action.gf !== '' &&
-        action.deb !== '' &&
-        action.fin !== '' &&
-        (!simulationFilter || !simulationFilter.has(action.id))
-    );
+    // Also hide if within a SELECTED Escamotage de phase or Adaptatif vertical
+    const prioritePietonsActions = actionData.filter(action => {
+        if (action.action !== 'Priorité piétons') return false;
+        if (action.gf === '' || action.deb === '' || action.fin === '') return false;
+        if (simulationFilter && simulationFilter.has(action.id)) return false;
+        // Hide if within a selected Escamotage de phase or Adaptatif vertical
+        const deb = parseInt(action.deb) || 0;
+        const fin = parseInt(action.fin) || 0;
+        if (isWithinSelectedEscamotageOrAdaptatif(deb, fin)) return false;
+        return true;
+    });
 
     // Get all "Début de bande passante" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
-    const debutBandeActions = actionData.filter(action =>
-        action.action === 'Début de bande passante' &&
-        action.gf !== '' &&
-        action.deb !== '' &&
-        action.fin !== '' &&
-        action.actGf1 !== '' &&
-        (!simulationFilter || !simulationFilter.has(action.id))
-    );
+    // Also hide if within a SELECTED Escamotage de phase or Adaptatif vertical
+    const debutBandeActions = actionData.filter(action => {
+        if (action.action !== 'Début de bande passante') return false;
+        if (action.gf === '' || action.deb === '' || action.fin === '' || action.actGf1 === '') return false;
+        if (simulationFilter && simulationFilter.has(action.id)) return false;
+        // Hide if within a selected Escamotage de phase or Adaptatif vertical
+        const deb = parseInt(action.deb) || 0;
+        const fin = parseInt(action.fin) || 0;
+        if (isWithinSelectedEscamotageOrAdaptatif(deb, fin)) return false;
+        return true;
+    });
 
     // Get all "Fin de bande passante" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
-    const finBandeActions = actionData.filter(action =>
-        action.action === 'Fin de bande passante' &&
-        action.gf !== '' &&
-        action.deb !== '' &&
-        action.fin !== '' &&
-        action.actGf1 !== '' &&
-        (!simulationFilter || !simulationFilter.has(action.id))
-    );
+    // Also hide if within a SELECTED Escamotage de phase or Adaptatif vertical
+    const finBandeActions = actionData.filter(action => {
+        if (action.action !== 'Fin de bande passante') return false;
+        if (action.gf === '' || action.deb === '' || action.fin === '' || action.actGf1 === '') return false;
+        if (simulationFilter && simulationFilter.has(action.id)) return false;
+        // Hide if within a selected Escamotage de phase or Adaptatif vertical
+        const deb = parseInt(action.deb) || 0;
+        const fin = parseInt(action.fin) || 0;
+        if (isWithinSelectedEscamotageOrAdaptatif(deb, fin)) return false;
+        return true;
+    });
 
     const ROW_HEIGHT = 30; // Height of each row in pixels
     const RULER_HEIGHT = 50; // Height of the ruler
@@ -1058,8 +1137,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                         {/* Adaptatif vertical overlays */}
                         {adaptatifActions.map((action, idx) => {
-                            const deb = parseInt(action.deb) || 0;
-                            const fin = parseInt(action.fin) || 0;
+                            const origDeb = parseInt(action.deb) || 0;
+                            const origFin = parseInt(action.fin) || 0;
+                            // Apply shift from other Escamotage de phase or Adaptatif vertical actions
+                            const shifted = getShiftedActionPosition(origDeb, origFin, null, 'Adaptatif vertical');
+                            if (shifted.hidden) return null;
+                            const deb = shifted.deb;
+                            const fin = shifted.fin;
                             const leftPos = deb * pixelsPerSecond;
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
@@ -1103,7 +1187,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         >
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
-                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
                                                 title="Glisser pour modifier le début"
                                             />
                                         </div>
@@ -1121,7 +1205,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         >
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
-                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
                                                 title="Glisser pour modifier la fin"
                                             />
                                             {abrv && (
@@ -1151,13 +1235,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     {/* Drag handle for start (left edge) */}
                                     <div
                                         className="action-drag-handle action-drag-handle-start"
-                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
                                         title="Glisser pour modifier le début"
                                     />
                                     {/* Drag handle for end (right edge) */}
                                     <div
                                         className="action-drag-handle action-drag-handle-end"
-                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
                                         title="Glisser pour modifier la fin"
                                     />
                                     {abrv && (
@@ -1304,11 +1388,50 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                         {/* Escamotage de phase overlays */}
                         {escamotageActions.map((action, idx) => {
-                            const deb = parseInt(action.deb) || 0;
-                            const fin = parseInt(action.fin) || 0;
-                            const leftPos = deb * pixelsPerSecond;
+                            const origDeb = parseInt(action.deb) || 0;
+                            const origFin = parseInt(action.fin) || 0;
+                            // Apply shift from other Escamotage de phase or Adaptatif vertical actions
+                            const shifted = getShiftedActionPosition(origDeb, origFin, null, 'Escamotage de phase');
+                            if (shifted.hidden) return null;
+                            const deb = shifted.deb;
+                            const fin = shifted.fin;
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
+
+                            // Calculate overlap with selected Adaptatif vertical zones
+                            // Use ORIGINAL values (origDeb, origFin) for comparison with Adaptatif vertical
+                            let adaptatifReduction = 0;
+
+                            // Method 1: Check selectedAdaptatifVertical (works for partial Adaptatif vertical)
+                            selectedAdaptatifVertical.forEach(av => {
+                                const avDeb = parseInt(av.deb) || 0;
+                                const avFin = parseInt(av.fin) || 0;
+                                // Calculate overlap using simple min/max formula
+                                const overlapStart = Math.max(avDeb, origDeb);
+                                const overlapEnd = Math.min(avFin, origFin);
+                                if (overlapEnd > overlapStart) {
+                                    adaptatifReduction += (overlapEnd - overlapStart);
+                                }
+                            });
+
+                            // Method 2: Check timeShifts for FULL Adaptatif vertical (no plage1/plage2)
+                            // This handles the case when Adaptatif vertical covers all groups
+                            if (simulationResult?.timeShifts?.length && adaptatifReduction === 0) {
+                                simulationResult.timeShifts.forEach(shift => {
+                                    // FULL Adaptatif vertical has no plage1/plage2
+                                    if (!shift.plage1 && !shift.plage2 && shift.amount > 0) {
+                                        const avFin = shift.from;
+                                        const avDeb = shift.from - shift.amount;
+                                        const overlapStart = Math.max(avDeb, origDeb);
+                                        const overlapEnd = Math.min(avFin, origFin);
+                                        if (overlapEnd > overlapStart) {
+                                            adaptatifReduction += (overlapEnd - overlapStart);
+                                        }
+                                    }
+                                });
+                            }
+
+                            const leftPos = deb * pixelsPerSecond;
 
                             // Cover all rows, starting just below ruler (8px above rows) and 30px below
                             const topPos = RULER_HEIGHT - 8;
@@ -1319,7 +1442,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             if (wrapsAround) {
                                 const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
-                                const secondPartWidth = fin * pixelsPerSecond;
+                                const secondPartWidth = Math.max(0, fin - adaptatifReduction) * pixelsPerSecond;
                                 return (
                                     <React.Fragment key={`escamotage-${idx}`}>
                                         {/* First part: from deb to end of cycle */}
@@ -1336,7 +1459,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         >
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
-                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
                                                 title="Glisser pour modifier le début"
                                             />
                                         </div>
@@ -1354,7 +1477,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         >
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
-                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
                                                 title="Glisser pour modifier la fin"
                                             />
                                             {abrv && (
@@ -1365,7 +1488,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 );
                             }
 
-                            const duration = fin - deb;
+                            const duration = Math.max(0, (fin - deb) - adaptatifReduction);
                             const width = duration * pixelsPerSecond;
 
                             return (
@@ -1384,13 +1507,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     {/* Drag handle for start (left edge) */}
                                     <div
                                         className="action-drag-handle action-drag-handle-start"
-                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
                                         title="Glisser pour modifier le début"
                                     />
                                     {/* Drag handle for end (right edge) */}
                                     <div
                                         className="action-drag-handle action-drag-handle-end"
-                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
                                         title="Glisser pour modifier la fin"
                                     />
                                     {abrv && (

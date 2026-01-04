@@ -288,8 +288,8 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
                 }
             });
         } else {
-            // Only affects groups in range - just shift their offsets
-            // But stop at "Point de repos" or "Synchro BTS" actions
+            // Only affects groups in range - reduce green duration for overlapping bars
+            // and shift their offsets. But stop at "Point de repos" or "Synchro BTS" actions
             timeShifts.push({ from: fin, amount: shiftAmount, plage1, plage2 });
 
             // Find stopping points from ALL actions (not just selected)
@@ -311,10 +311,31 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
             simulatedGroups.forEach(g => {
                 if (g.id >= plage1 && g.id <= plage2 && !g.isEscamoted) {
                     const originalOffset = g.simulatedOffset;
+                    const greenEnd = originalOffset + g.simulatedGreen;
 
-                    // Only shift groups whose START (offset) is within the affected zone
-                    // Groups with offset before 'fin' are NOT affected (even if their green bar extends into the zone)
+                    // Check if green bar overlaps with the adaptatif zone [deb, fin]
+                    // If yes, reduce green duration by the overlap amount
+                    if (fin > deb) {
+                        // Normal case (no wrap-around)
+                        if (originalOffset < fin && greenEnd > deb) {
+                            // There's an overlap - calculate how much
+                            const overlapStart = Math.max(originalOffset, deb);
+                            const overlapEnd = Math.min(greenEnd, fin);
+                            if (overlapEnd > overlapStart) {
+                                const overlapAmount = overlapEnd - overlapStart;
+                                g.simulatedGreen = Math.max(0, g.simulatedGreen - overlapAmount);
+                            }
+                        }
+                    } else {
+                        // Wrap-around case for adaptatif zone
+                        // Zone is [deb, cycle) + [0, fin)
+                        if (originalOffset >= deb || greenEnd <= fin || (originalOffset < fin && greenEnd > deb)) {
+                            // Simplified: reduce by full shiftAmount if any overlap
+                            g.simulatedGreen = Math.max(0, g.simulatedGreen - shiftAmount);
+                        }
+                    }
 
+                    // Shift offset for groups that start at or after 'fin'
                     if (maxStopTime >= 0) {
                         // There's a stopping point
                         // Only shift groups with offset in [fin, maxStopTime]
