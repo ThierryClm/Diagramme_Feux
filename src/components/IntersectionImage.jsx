@@ -432,10 +432,8 @@ const IntersectionImage = ({
                         {arrows.map(arrow => {
                             const groupInfo = getGroupInfo(arrow.groupId);
                             const rotation = arrow.rotation || 0;
-                            // Black by default, colored during simulation
-                            const arrowColor = (isPlaying || currentTime > 0)
-                                ? getGroupColorAtTime(arrow.groupId, currentTime)
-                                : '#000000';
+                            // Always show color based on current time in simulated diagram
+                            const arrowColor = getGroupColorAtTime(arrow.groupId, currentTime || 0);
                             const isHovered = hoveredArrowGroupId === arrow.groupId;
                             const isSideLabel = groupInfo.courant === 'Piéton' || groupInfo.courant === 'Cycle';
                             return (
