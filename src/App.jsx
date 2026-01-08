@@ -174,6 +174,19 @@ function App() {
     const [groupToMove, setGroupToMove] = useState('');
     const [moveAfterGroup, setMoveAfterGroup] = useState('0'); // '0' means at the beginning
 
+    // Imported HTM files state
+    const [importedHTMFiles, setImportedHTMFiles] = useState(() => {
+        try {
+            const saved = localStorage.getItem('importedHTMFiles');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
+    });
+    const [importHTMModal, setImportHTMModal] = useState(false);
+    const [htmFile, setHtmFile] = useState(null);
+    const [htmImportError, setHtmImportError] = useState('');
+
     // Get all saved green waves (sorted by most recent first)
     const getSavedGreenWaves = () => {
         try {
@@ -323,6 +336,11 @@ function App() {
                 setImportError('');
                 setImportModal(true);
                 break;
+            case 'importHTM':
+                setHtmFile(null);
+                setHtmImportError('');
+                setImportHTMModal(true);
+                break;
             case 'credit':
                 alert('Diagramme de Feux\n\nDéveloppé avec React + Vite\n2024');
                 break;
@@ -339,7 +357,20 @@ function App() {
                 setGreenWaveData(null);
                 break;
             default:
-                console.log('Action non implémentée:', action);
+                // Handle opening imported HTM files
+                if (action.startsWith('openImportedFile:')) {
+                    const fileId = action.replace('openImportedFile:', '');
+                    const file = importedHTMFiles.find(f => f.id === fileId);
+                    if (file && file.data) {
+                        loadFullState({
+                            intersectionName: file.name,
+                            groups: file.data.groups || [],
+                            cycleLength: file.data.cycleLength || cycleLength
+                        });
+                    }
+                } else {
+                    console.log('Action non implémentée:', action);
+                }
         }
     };
 
@@ -505,6 +536,147 @@ function App() {
         reader.readAsText(importFile);
     };
 
+    // Handle HTM file selection
+    const handleHTMFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setHtmFile(file);
+            setHtmImportError('');
+        }
+    };
+
+    // Parse HTM file to extract traffic light data
+    const parseHTMFile = (content) => {
+        const groups = [];
+
+        // Parse HTML table rows - look for traffic light data patterns
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(content, 'text/html');
+
+        // Try to find tables with traffic light data
+        const tables = doc.querySelectorAll('table');
+
+        for (const table of tables) {
+            const rows = table.querySelectorAll('tr');
+
+            for (const row of rows) {
+                const cells = row.querySelectorAll('td, th');
+                if (cells.length >= 4) {
+                    // Try to extract group data from cells
+                    const cellTexts = Array.from(cells).map(c => c.textContent.trim());
+
+                    // Look for patterns like: group name, green duration, orange, red
+                    const nameCell = cellTexts[0];
+                    const greenVal = parseInt(cellTexts[1]) || parseInt(cellTexts[2]);
+                    const orangeVal = parseInt(cellTexts[2]) || parseInt(cellTexts[3]) || 3;
+
+                    if (nameCell && greenVal > 0) {
+                        groups.push({
+                            id: groups.length + 1,
+                            name: nameCell,
+                            type: nameCell.toLowerCase().includes('pieton') ? 'Piéton' :
+                                  nameCell.toLowerCase().includes('cycle') ? 'Cycliste' : 'VL',
+                            minGreen: 6,
+                            offset: 0,
+                            durations: {
+                                green: greenVal,
+                                orange: orangeVal,
+                                red: 0
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        // If no tables found, try to parse structured text
+        if (groups.length === 0) {
+            const lines = content.split('\n');
+            for (const line of lines) {
+                // Look for patterns like "GF1: 30s vert, 3s orange"
+                const match = line.match(/([A-Za-z0-9]+)\s*[:]\s*(\d+)/);
+                if (match) {
+                    const greenMatch = line.match(/(\d+)\s*s?\s*(vert|green)/i);
+                    const orangeMatch = line.match(/(\d+)\s*s?\s*(orange|jaune)/i);
+
+                    if (greenMatch) {
+                        groups.push({
+                            id: groups.length + 1,
+                            name: match[1],
+                            type: 'VL',
+                            minGreen: 6,
+                            offset: 0,
+                            durations: {
+                                green: parseInt(greenMatch[1]) || 0,
+                                orange: orangeMatch ? parseInt(orangeMatch[1]) : 3,
+                                red: 0
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        return groups;
+    };
+
+    // Handle HTM import
+    const handleHTMImport = () => {
+        if (!htmFile) {
+            setHtmImportError('Veuillez sélectionner un fichier HTM');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const content = e.target.result;
+                const parsedGroups = parseHTMFile(content);
+
+                if (parsedGroups.length === 0) {
+                    setHtmImportError('Aucune donnée de groupe de feu trouvée dans le fichier HTM');
+                    return;
+                }
+
+                const fileName = htmFile.name.replace(/\.htm[l]?$/i, '');
+                const fileId = Date.now().toString();
+
+                // Create new imported file entry
+                const newFile = {
+                    id: fileId,
+                    name: fileName,
+                    importedAt: new Date().toISOString(),
+                    data: {
+                        groups: parsedGroups,
+                        cycleLength: cycleLength
+                    }
+                };
+
+                // Save to imported files list
+                const updatedFiles = [...importedHTMFiles, newFile];
+                setImportedHTMFiles(updatedFiles);
+                localStorage.setItem('importedHTMFiles', JSON.stringify(updatedFiles));
+
+                // Load the data as a new project
+                loadFullState({
+                    intersectionName: fileName,
+                    groups: parsedGroups,
+                    cycleLength: cycleLength
+                });
+
+                setImportHTMModal(false);
+                setHtmFile(null);
+                setHtmImportError('');
+            } catch (err) {
+                setHtmImportError('Erreur lors de la lecture du fichier: ' + err.message);
+            }
+        };
+        reader.onerror = () => {
+            setHtmImportError('Erreur lors de la lecture du fichier');
+        };
+        reader.readAsText(htmFile);
+    };
+
     // Keyboard shortcuts for undo (Ctrl+Z) and redo (Ctrl+Y or Ctrl+Shift+Z)
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -527,6 +699,7 @@ function App() {
                     onAction={handleMenuAction}
                     arrowStyle={diagramArrowStyle}
                     onArrowStyleChange={setDiagramArrowStyle}
+                    importedFiles={importedHTMFiles}
                 />
             <header className="app-header">
                 <div className="header-inputs">
@@ -1255,6 +1428,53 @@ function App() {
                     </button>
                     <button className="modal-btn modal-btn-primary" onClick={handleImport} disabled={!importFile}>
                         OK
+                    </button>
+                </div>
+            </Modal>
+
+            {/* Modal Importer HTM */}
+            <Modal isOpen={importHTMModal} onClose={() => setImportHTMModal(false)} title="Importer un fichier HTM">
+                <div className="form-row">
+                    <label>
+                        Sélectionner un fichier HTM :
+                        <input
+                            type="file"
+                            accept=".htm,.html"
+                            onChange={handleHTMFileSelect}
+                            style={{
+                                display: 'block',
+                                marginTop: '10px',
+                                padding: '10px',
+                                border: '1px dashed #555',
+                                borderRadius: '4px',
+                                backgroundColor: '#2a2a2a',
+                                color: '#ddd',
+                                cursor: 'pointer',
+                                width: '100%'
+                            }}
+                        />
+                    </label>
+                </div>
+                {htmFile && (
+                    <p style={{ color: '#8f8', fontSize: '0.9em', marginTop: '10px' }}>
+                        Fichier sélectionné : {htmFile.name}
+                    </p>
+                )}
+                {htmImportError && (
+                    <p style={{ color: '#f66', fontSize: '0.9em', marginTop: '10px' }}>
+                        {htmImportError}
+                    </p>
+                )}
+                <div style={{ color: '#888', fontSize: '0.8em', marginTop: '15px', padding: '10px', backgroundColor: '#1a1a1a', borderRadius: '4px' }}>
+                    <strong>Format HTM attendu :</strong><br />
+                    <span style={{ fontSize: '0.9em' }}>Le fichier doit contenir un tableau avec les données des groupes de feu (nom, durée vert, orange, etc.)</span>
+                </div>
+                <div className="modal-actions">
+                    <button className="modal-btn modal-btn-secondary" onClick={() => setImportHTMModal(false)}>
+                        Annuler
+                    </button>
+                    <button className="modal-btn modal-btn-primary" onClick={handleHTMImport} disabled={!htmFile}>
+                        Importer et ouvrir
                     </button>
                 </div>
             </Modal>
