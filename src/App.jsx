@@ -13,6 +13,7 @@ import GreenWaveViewer from './components/GreenWaveViewer';
 import SimulationPanel from './components/SimulationPanel';
 import PhasageBulle from './components/PhasageBulle';
 import { calculateSimulatedDiagram } from './utils/simulationCalculator';
+import { importExcelFile } from './utils/excelImporter';
 
 import './components/GroupTable.css';
 import './components/IntergreenMatrix.css';
@@ -156,6 +157,7 @@ function App() {
     const [selectedProject, setSelectedProject] = useState(null);
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
+    const [recentFiles, setRecentFiles] = useState([]);
 
     // Green wave states
     const [createGreenWaveModal, setCreateGreenWaveModal] = useState(false);
@@ -234,6 +236,75 @@ function App() {
             }
         } catch (e) {
             console.error('Failed to delete green wave', e);
+        }
+    };
+
+    // Load recent files from localStorage
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem('recentFiles');
+            if (saved) {
+                const files = JSON.parse(saved);
+                setRecentFiles(files);
+            }
+        } catch (e) {
+            console.error('Failed to load recent files', e);
+        }
+    }, []);
+
+    // Add file to recent files list
+    const addToRecentFiles = (filePath, fileName) => {
+        try {
+            // Extract directory from path (handle both / and \ separators)
+            const lastSlash = Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/'));
+            const directory = lastSlash > 0 ? filePath.substring(0, lastSlash) : '';
+
+            const newFile = {
+                path: filePath,
+                name: fileName,
+                directory: directory,
+                timestamp: new Date().toISOString()
+            };
+
+            // Get existing recent files
+            const saved = localStorage.getItem('recentFiles');
+            let files = saved ? JSON.parse(saved) : [];
+
+            // Remove if already exists (to avoid duplicates)
+            files = files.filter(f => f.path !== filePath);
+
+            // Add to beginning
+            files.unshift(newFile);
+
+            // Keep only last 10 files
+            files = files.slice(0, 10);
+
+            // Save to state and localStorage
+            setRecentFiles(files);
+            localStorage.setItem('recentFiles', JSON.stringify(files));
+        } catch (e) {
+            console.error('Failed to add to recent files', e);
+        }
+    };
+
+    // Get unique recent directories
+    const getRecentDirectories = () => {
+        try {
+            const directories = new Map();
+            recentFiles.forEach(file => {
+                if (file.directory && !directories.has(file.directory)) {
+                    directories.set(file.directory, file.timestamp);
+                }
+            });
+
+            // Sort by most recent
+            return Array.from(directories.entries())
+                .sort((a, b) => new Date(b[1]) - new Date(a[1]))
+                .map(([dir]) => dir)
+                .slice(0, 5); // Keep only last 5 directories
+        } catch (e) {
+            console.error('Failed to get recent directories', e);
+            return [];
         }
     };
 
@@ -428,81 +499,126 @@ function App() {
         if (file) {
             setImportFile(file);
             setImportError('');
+
+            // Add to recent files (webkitRelativePath or name only due to browser security)
+            const filePath = file.webkitRelativePath || file.name;
+            addToRecentFiles(filePath, file.name);
         }
     };
 
-    // Handle CSV import
-    const handleImport = () => {
+    // Handle CSV/Excel import
+    const handleImport = async () => {
         if (!importFile) {
             setImportError('Veuillez sélectionner un fichier');
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const content = e.target.result;
-                const lines = content.split('\n').filter(line => line.trim());
+        try {
+            const fileExt = importFile.name.toLowerCase().split('.').pop();
 
-                if (lines.length < 2) {
-                    setImportError('Le fichier CSV est vide ou invalide');
-                    return;
-                }
-
-                // Parse header
-                const header = lines[0].split(';').map(h => h.trim().toLowerCase());
-
-                // Parse data rows
-                const importedGroups = [];
-                for (let i = 1; i < lines.length; i++) {
-                    const values = lines[i].split(';');
-                    if (values.length < 2) continue;
-
-                    const row = {};
-                    header.forEach((col, idx) => {
-                        row[col] = values[idx]?.trim() || '';
-                    });
-
-                    // Map CSV columns to group structure
-                    const group = {
-                        id: importedGroups.length + 1,
-                        name: row['nom'] || row['name'] || `G${importedGroups.length + 1}`,
-                        type: row['type'] || 'VL',
-                        minGreen: parseInt(row['minvert'] || row['mingreen'] || row['min']) || 6,
-                        offset: parseInt(row['debut'] || row['offset'] || row['deb']) || 0,
-                        durations: {
-                            green: parseInt(row['vert'] || row['green'] || row['duree'] || row['dur']) || 0,
-                            orange: parseInt(row['orange'] || row['jaune']) || 3,
-                            red: parseInt(row['rouge'] || row['red']) || 0
-                        }
-                    };
-                    importedGroups.push(group);
-                }
-
-                if (importedGroups.length === 0) {
-                    setImportError('Aucune donnée valide trouvée dans le fichier');
-                    return;
-                }
+            // Handle Excel files
+            if (fileExt === 'xlsx' || fileExt === 'xls') {
+                const importedData = await importExcelFile(importFile);
 
                 // Load the imported data
-                const projectName = importFile.name.replace(/\.csv$/i, '');
                 loadFullState({
-                    intersectionName: projectName,
-                    groups: importedGroups,
-                    cycleLength: cycleLength
+                    intersectionName: importedData.intersectionName,
+                    groups: importedData.groups,
+                    cycleLength: importedData.cycleLength,
+                    conflictMatrix: importedData.conflictMatrix,
+                    actionData: importedData.actionData,
+                    pfTabs: importedData.pfTabs.length > 0 ? importedData.pfTabs : undefined
                 });
+
+                // Apply traffic data if available
+                if (importedData.trafficData && Object.keys(importedData.trafficData).length > 0) {
+                    // Update groups with traffic courant
+                    importedData.groups.forEach((group, idx) => {
+                        const trafficInfo = importedData.trafficData[group.id];
+                        if (trafficInfo && trafficInfo.courant) {
+                            updateGroupParams(group.id, { courant: trafficInfo.courant });
+                        }
+                    });
+                }
 
                 setImportModal(false);
                 setImportFile(null);
                 setImportError('');
-            } catch (err) {
-                setImportError('Erreur lors de la lecture du fichier: ' + err.message);
+                alert(`Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`);
             }
-        };
-        reader.onerror = () => {
-            setImportError('Erreur lors de la lecture du fichier');
-        };
-        reader.readAsText(importFile);
+            // Handle CSV files
+            else if (fileExt === 'csv') {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const content = e.target.result;
+                        const lines = content.split('\n').filter(line => line.trim());
+
+                        if (lines.length < 2) {
+                            setImportError('Le fichier CSV est vide ou invalide');
+                            return;
+                        }
+
+                        // Parse header
+                        const header = lines[0].split(';').map(h => h.trim().toLowerCase());
+
+                        // Parse data rows
+                        const importedGroups = [];
+                        for (let i = 1; i < lines.length; i++) {
+                            const values = lines[i].split(';');
+                            if (values.length < 2) continue;
+
+                            const row = {};
+                            header.forEach((col, idx) => {
+                                row[col] = values[idx]?.trim() || '';
+                            });
+
+                            // Map CSV columns to group structure
+                            const group = {
+                                id: importedGroups.length + 1,
+                                name: row['nom'] || row['name'] || `G${importedGroups.length + 1}`,
+                                type: row['type'] || 'VL',
+                                minGreen: parseInt(row['minvert'] || row['mingreen'] || row['min']) || 6,
+                                offset: parseInt(row['debut'] || row['offset'] || row['deb']) || 0,
+                                durations: {
+                                    green: parseInt(row['vert'] || row['green'] || row['duree'] || row['dur']) || 0,
+                                    orange: parseInt(row['orange'] || row['jaune']) || 3,
+                                    red: parseInt(row['rouge'] || row['red']) || 0
+                                }
+                            };
+                            importedGroups.push(group);
+                        }
+
+                        if (importedGroups.length === 0) {
+                            setImportError('Aucune donnée valide trouvée dans le fichier');
+                            return;
+                        }
+
+                        // Load the imported data
+                        const projectName = importFile.name.replace(/\.csv$/i, '');
+                        loadFullState({
+                            intersectionName: projectName,
+                            groups: importedGroups,
+                            cycleLength: cycleLength
+                        });
+
+                        setImportModal(false);
+                        setImportFile(null);
+                        setImportError('');
+                    } catch (err) {
+                        setImportError('Erreur lors de la lecture du fichier: ' + err.message);
+                    }
+                };
+                reader.onerror = () => {
+                    setImportError('Erreur lors de la lecture du fichier');
+                };
+                reader.readAsText(importFile);
+            } else {
+                setImportError('Format de fichier non supporté. Utilisez .xlsx, .xls ou .csv');
+            }
+        } catch (err) {
+            setImportError(err.message);
+        }
     };
 
     // Keyboard shortcuts for undo (Ctrl+Z) and redo (Ctrl+Y or Ctrl+Shift+Z)
@@ -1211,14 +1327,14 @@ function App() {
                 </div>
             </Modal>
 
-            {/* Modal Importer CSV */}
-            <Modal isOpen={importModal} onClose={() => setImportModal(false)} title="Importer un fichier CSV">
+            {/* Modal Importer CSV/Excel */}
+            <Modal isOpen={importModal} onClose={() => setImportModal(false)} title="Importer un fichier">
                 <div className="form-row">
                     <label>
-                        Sélectionner un fichier CSV :
+                        Sélectionner un fichier CSV ou Excel :
                         <input
                             type="file"
-                            accept=".csv"
+                            accept=".csv,.xlsx,.xls"
                             onChange={handleFileSelect}
                             style={{
                                 display: 'block',
@@ -1234,6 +1350,72 @@ function App() {
                         />
                     </label>
                 </div>
+
+                {/* Recent files list */}
+                {recentFiles.length > 0 && (
+                    <div style={{ marginTop: '20px', marginBottom: '10px' }}>
+                        <h4 style={{ fontSize: '0.9em', color: '#aaa', marginBottom: '10px' }}>Fichiers récents :</h4>
+                        <div style={{
+                            maxHeight: '150px',
+                            overflowY: 'auto',
+                            backgroundColor: '#1a1a1a',
+                            borderRadius: '4px',
+                            padding: '5px'
+                        }}>
+                            {recentFiles.map((file, idx) => (
+                                <div
+                                    key={idx}
+                                    style={{
+                                        padding: '8px 10px',
+                                        margin: '2px 0',
+                                        backgroundColor: '#2a2a2a',
+                                        borderRadius: '3px',
+                                        fontSize: '0.85em',
+                                        cursor: 'default',
+                                        borderLeft: '3px solid #4a9eff'
+                                    }}
+                                >
+                                    <div style={{ color: '#ddd', fontWeight: '500' }}>{file.name}</div>
+                                    <div style={{ color: '#888', fontSize: '0.9em', marginTop: '2px' }}>
+                                        {formatDate(file.timestamp)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Recent directories list */}
+                {getRecentDirectories().length > 0 && (
+                    <div style={{ marginTop: '15px', marginBottom: '10px' }}>
+                        <h4 style={{ fontSize: '0.9em', color: '#aaa', marginBottom: '10px' }}>Répertoires récents :</h4>
+                        <div style={{
+                            maxHeight: '120px',
+                            overflowY: 'auto',
+                            backgroundColor: '#1a1a1a',
+                            borderRadius: '4px',
+                            padding: '5px'
+                        }}>
+                            {getRecentDirectories().map((dir, idx) => (
+                                <div
+                                    key={idx}
+                                    style={{
+                                        padding: '6px 10px',
+                                        margin: '2px 0',
+                                        backgroundColor: '#2a2a2a',
+                                        borderRadius: '3px',
+                                        fontSize: '0.8em',
+                                        color: '#999',
+                                        borderLeft: '3px solid #6a6a6a'
+                                    }}
+                                >
+                                    {dir}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {importFile && (
                     <p style={{ color: '#8f8', fontSize: '0.9em', marginTop: '10px' }}>
                         Fichier sélectionné : {importFile.name}
@@ -1245,9 +1427,18 @@ function App() {
                     </p>
                 )}
                 <div style={{ color: '#888', fontSize: '0.8em', marginTop: '15px', padding: '10px', backgroundColor: '#1a1a1a', borderRadius: '4px' }}>
-                    <strong>Format CSV attendu (séparateur : point-virgule) :</strong><br />
-                    <code style={{ color: '#aaa' }}>Nom;Type;Debut;Vert;Orange;MinVert</code><br />
-                    <span style={{ fontSize: '0.9em' }}>Exemple : G1;VL;0;20;3;6</span>
+                    <strong>Formats supportés :</strong>
+                    <ul style={{ marginTop: '8px', marginBottom: '0', paddingLeft: '20px' }}>
+                        <li><strong>CSV</strong> (séparateur : point-virgule) : Nom;Type;Debut;Vert;Orange;MinVert</li>
+                        <li><strong>Excel (.xlsx/.xls)</strong> avec structure :
+                            <ul style={{ marginTop: '5px', fontSize: '0.95em' }}>
+                                <li>Feuille "Formulaire" : Configuration des groupes (GF, Nom, Type, Décalage, Vert, Orange, Vert Min)</li>
+                                <li>6ème feuille : Matrice de dégagement</li>
+                                <li>Feuilles 6, 7, 8... : Onglets PF1, PF2, PF3... (avec diagrammes et tableaux d'actions)</li>
+                                <li>Feuille "Trafic" (optionnel) : Données de trafic</li>
+                            </ul>
+                        </li>
+                    </ul>
                 </div>
                 <div className="modal-actions">
                     <button className="modal-btn modal-btn-secondary" onClick={() => setImportModal(false)}>
