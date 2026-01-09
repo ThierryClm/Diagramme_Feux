@@ -226,20 +226,24 @@ function parseMatrixSheet(sheetData, result) {
     const size = result.groups.length;
     const matrix = Array(size).fill(null).map(() => Array(size).fill(0));
 
-    // Start at D6 (row index 5, column index 3)
-    // Column D = Group 1, Column E = Group 2, etc.
+    // Matrix starts at D6:
+    // Excel: D = col 4, row 6
+    // JS 0-based: col index = 4 - 1 = 3, row index = 6 - 1 = 5
+    const MATRIX_COL_START = 3;  // D = col 4 in Excel → index 3
+    const MATRIX_ROW_START = 5;  // Row 6 in Excel → index 5
+
     let rowIndex = 0;
-    let excelRow = 5; // Row 6 in Excel (0-indexed = 5)
+    let excelRow = MATRIX_ROW_START;
 
     while (rowIndex < size && excelRow < sheetData.length) {
         const row = sheetData[excelRow];
-        console.log(`Matrix row ${rowIndex} (Excel row ${excelRow + 1}):`, row ? row.slice(3, 3 + size) : 'undefined');
+        console.log(`Matrix row ${rowIndex} (Excel row ${excelRow + 1}):`, row ? row.slice(MATRIX_COL_START, MATRIX_COL_START + size) : 'undefined');
 
         if (row) {
             // Columns are consecutive starting at D (index 3): D, E, F, G...
             // D=Group1, E=Group2, F=Group3, etc.
             for (let colIndex = 0; colIndex < size; colIndex++) {
-                const excelCol = 3 + colIndex; // D=3, E=4, F=5, G=6...
+                const excelCol = MATRIX_COL_START + colIndex; // D=3, E=4, F=5, G=6...
                 if (excelCol < row.length) {
                     const value = parseNumber(row[excelCol], 0);
                     // Store the value (diagonal will be 0, UI handles display)
