@@ -465,7 +465,7 @@ function parseActionsSheet(sheetData, result) {
  * Parse traffic sheet - "Trafic" sheet with specific cell positions
  * - Starting at E6: "Courant" field (with blank lines between each group)
  * - E6, E8, E10, E12... (every 2 rows, same pattern as Formulaire sheet)
- * - Column E (index 4): Courant name
+ * - Column E (Excel col 5) → index 3 (using Excel col - 2 formula)
  */
 function parseTrafficSheet(sheetData, result) {
     if (sheetData.length < 6) return;
@@ -473,7 +473,10 @@ function parseTrafficSheet(sheetData, result) {
     console.log('parseTrafficSheet called, sheetData length:', sheetData.length);
     console.log('Number of groups to match:', result.groups.length);
 
-    // Parse traffic data starting at row 5 (E6 = row index 5, column 4)
+    // Column indices using Excel col - 2 formula
+    const COL_COURANT = 3;  // E (Excel col 5) → index 3
+
+    // Parse traffic data starting at row 6 (index 5)
     // Groups are at E6, E8, E10... (every 2 rows, with blank line between)
     const trafficByGroup = {};
     let currentRow = 5; // Start at row 6 (index 5)
@@ -484,10 +487,10 @@ function parseTrafficSheet(sheetData, result) {
 
         console.log(`Checking traffic row ${currentRow + 1} (Excel row ${currentRow + 1}):`, row ? row.slice(0, 10) : 'undefined');
 
-        // Check if this row has data in column E (index 4) - the "Courant" field
-        if (row && row[4] !== '' && row[4] !== null && row[4] !== undefined) {
-            const courantValue = String(row[4]).trim();
-            console.log(`  Col E (idx 4) Courant: "${courantValue}"`);
+        // Check if this row has data in column E (index 3) - the "Courant" field
+        if (row && row[COL_COURANT] !== '' && row[COL_COURANT] !== null && row[COL_COURANT] !== undefined) {
+            const courantValue = String(row[COL_COURANT]).trim();
+            console.log(`  Col E (idx ${COL_COURANT}) Courant: "${courantValue}"`);
 
             if (courantValue) {
                 // Match this with the corresponding group by index
@@ -498,9 +501,9 @@ function parseTrafficSheet(sheetData, result) {
 
                     trafficByGroup[group.id] = {
                         courant: courantValue,
-                        coef: parseNumber(row[5], 1), // Column F if exists
-                        trafic: parseNumber(row[6], 0), // Column G if exists
-                        vUtile: parseNumber(row[7], 0) // Column H if exists
+                        coef: parseNumber(row[COL_COURANT + 1], 1), // Column F
+                        trafic: parseNumber(row[COL_COURANT + 2], 0), // Column G
+                        vUtile: parseNumber(row[COL_COURANT + 3], 0) // Column H
                     };
                 }
 
