@@ -206,14 +206,14 @@ function parseMatrixSheet(sheetData, result) {
     console.log('parseMatrixSheet called, sheetData length:', sheetData.length);
     console.log('Number of groups:', result.groups.length);
 
-    // Column indices (0-based) - using same logic as diagram:
-    // Excel col number - 1 = JS index
-    // AJ = col 36 → index 35, AK = col 37 → index 36, AL = col 38 → index 37
-    const COL_DA = 35;   // AJ (col 36 in Excel) - Délai d'approche
-    const COL_DEB = 36;  // AK (col 37 in Excel) - Début
-    const COL_FIN = 37;  // AL (col 38 in Excel) - Fin
+    // Column indices (0-based):
+    // Excel columns: A=1, B=2, ... Z=26, AA=27, ... AJ=36, AK=37, AL=38
+    // JS array index = Excel col - 2 (verified by testing)
+    const COL_DA = 34;   // AJ (Excel col 36) → index 34 - Délai d'approche
+    const COL_DEB = 35;  // AK (Excel col 37) → index 35 - Début
+    const COL_FIN = 36;  // AL (Excel col 38) → index 36 - Fin
 
-    // Extract cycle duration from AL3 (row 3 = index 2, col AL = index 37)
+    // Extract cycle duration from AL3 (row 3 = index 2, col AL = index 36)
     if (sheetData[2] && sheetData[2][COL_FIN]) {
         const cycle = parseNumber(sheetData[2][COL_FIN], null);
         console.log('Cycle length from AL3:', cycle);
@@ -253,6 +253,10 @@ function parseMatrixSheet(sheetData, result) {
 
             // Extract diagram data (DA, Déb, Fin) for this group
             if (result.groups[rowIndex]) {
+                // Debug: show row length and raw values at expected columns
+                console.log(`  Row ${excelRow + 1} length: ${row.length}, checking cols AJ(${COL_DA}), AK(${COL_DEB}), AL(${COL_FIN})`);
+                console.log(`  Raw values: AJ="${row[COL_DA]}", AK="${row[COL_DEB]}", AL="${row[COL_FIN]}"`);
+
                 const da = parseNumber(row[COL_DA], 0);
                 const deb = parseNumber(row[COL_DEB], 0);
                 const fin = parseNumber(row[COL_FIN], 0);
