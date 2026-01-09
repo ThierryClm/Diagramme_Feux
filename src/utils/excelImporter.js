@@ -206,9 +206,9 @@ function parseMatrixSheet(sheetData, result) {
     console.log('parseMatrixSheet called, sheetData length:', sheetData.length);
     console.log('Number of groups:', result.groups.length);
 
-    // Column indices (0-based):
-    // Excel: A=col 1, B=col 2, ... Z=col 26, AA=col 27, ... AJ=col 36, AK=col 37, AL=col 38
-    // JS 0-based: A=0, B=1, ... Z=25, AA=26, ... AJ=35, AK=36, AL=37
+    // Column indices (0-based) - using same logic as diagram:
+    // Excel col number - 1 = JS index
+    // AJ = col 36 → index 35, AK = col 37 → index 36, AL = col 38 → index 37
     const COL_DA = 35;   // AJ (col 36 in Excel) - Délai d'approche
     const COL_DEB = 36;  // AK (col 37 in Excel) - Début
     const COL_FIN = 37;  // AL (col 38 in Excel) - Fin
@@ -226,9 +226,8 @@ function parseMatrixSheet(sheetData, result) {
     const size = result.groups.length;
     const matrix = Array(size).fill(null).map(() => Array(size).fill(0));
 
-    // Matrix starts at D6:
-    // Excel: D = col 4, row 6
-    // JS 0-based: col index = 4 - 1 = 3, row index = 6 - 1 = 5
+    // Matrix starts at D6 - using same logic: Excel col/row - 1 = JS index
+    // D = col 4 → index 3, Row 6 → index 5
     const MATRIX_COL_START = 3;  // D = col 4 in Excel → index 3
     const MATRIX_ROW_START = 5;  // Row 6 in Excel → index 5
 
