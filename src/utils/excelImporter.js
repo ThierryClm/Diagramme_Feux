@@ -1,6 +1,40 @@
 import * as XLSX from 'xlsx';
 
 /**
+ * Helper function to get cell value, handling merged cells
+ * @param {Object} sheet - The worksheet object
+ * @param {number} row - 0-based row index
+ * @param {number} col - 0-based column index
+ * @returns {any} - The cell value or empty string
+ */
+function getCellValue(sheet, row, col) {
+    // Convert to Excel cell address (e.g., A1, B2, etc.)
+    const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+    const cell = sheet[cellAddress];
+
+    if (cell) {
+        return cell.v !== undefined ? cell.v : '';
+    }
+
+    // If cell is empty, check if it's part of a merged range
+    if (sheet['!merges']) {
+        for (const merge of sheet['!merges']) {
+            // Check if this cell is within the merged range
+            if (row >= merge.s.r && row <= merge.e.r && col >= merge.s.c && col <= merge.e.c) {
+                // Get value from the top-left cell of the merge
+                const mergeAddress = XLSX.utils.encode_cell({ r: merge.s.r, c: merge.s.c });
+                const mergeCell = sheet[mergeAddress];
+                if (mergeCell) {
+                    return mergeCell.v !== undefined ? mergeCell.v : '';
+                }
+            }
+        }
+    }
+
+    return '';
+}
+
+/**
  * Import Excel file and parse it into project structure
  * Expected Excel structure:
  * - Sheet "Groupes" or "Configuration": Groups data (GF, Nom, Type, Décalage, Vert, Orange, Vert Min)
@@ -49,14 +83,9 @@ export async function importExcelFile(file) {
                         console.log('Found Formulaire sheet, parsing groups...');
                         parseGroupsSheet(sheetData, result, sheetName);
                     }
-                    // Parse 6th sheet (index 5) for conflict matrix
+                    // Parse 6th sheet (index 5) for conflict matrix, diagram data, and action table
                     else if (sheetIndex === 5) {
-                        parseMatrixSheet(sheetData, result);
-                    }
-                    // Parse sheets from index 5 onward as PF tabs (PF1, PF2, PF3...)
-                    else if (sheetIndex >= 5) {
-                        const pfNumber = sheetIndex - 4; // PF1 = sheet 6 (index 5), PF2 = sheet 7 (index 6), etc.
-                        parsePFSheet(sheetData, result, pfNumber, sheetName);
+                        parseMatrixSheet(sheetData, result, sheet);
                     }
                     // Parse Traffic sheet if found
                     else if (normalizedSheetName.includes('trafic') || normalizedSheetName.includes('traffic')) {
@@ -200,15 +229,13 @@ function parseGroupsSheet(sheetData, result) {
  *   - AK6, AK8, AK10... = Déb (début de phase verte)
  *   - AL6, AL8, AL10... = Fin (fin de phase verte)
  */
-function parseMatrixSheet(sheetData, result) {
+function parseMatrixSheet(sheetData, result, sheet) {
     if (sheetData.length < 6) return;
 
     console.log('parseMatrixSheet called, sheetData length:', sheetData.length);
     console.log('Number of groups:', result.groups.length);
 
-    // Column indices (0-based):
-    // Excel columns: A=1, B=2, ... Z=26, AA=27, ... AJ=36, AK=37, AL=38
-    // JS array index = Excel col - 2 (verified by testing)
+    // Column indices for sheetData array (Excel col - 2)
     const COL_DA = 34;   // AJ (Excel col 36) → index 34 - Délai d'approche
     const COL_DEB = 35;  // AK (Excel col 37) → index 35 - Début
     const COL_FIN = 36;  // AL (Excel col 38) → index 36 - Fin
@@ -290,6 +317,99 @@ function parseMatrixSheet(sheetData, result) {
 
     console.log('Conflict matrix parsed:', matrix);
     result.conflictMatrix = matrix;
+
+    // Parse action table starting at row 110 (Excel row 110 = 0-based index 109)
+    // Using getCellValue for merged cells - indices are 0-based (Excel col - 1)
+    const ACTION_ROW_START = 109;  // Row 110 → index 109
+
+    // Column indices for getCellValue (0-based, Excel col - 1)
+    const COL_GF = 1;              // B (Excel col 2) → index 1
+    const COL_ACTION = 2;          // C (Excel col 3) → index 2
+    const COL_DESCRIPTION = 3;     // D (Excel col 4) → index 3 (merged D-AJ)
+    const COL_ACTION_DEB = 36;     // AK (Excel col 37) → index 36
+    const COL_ACTION_FIN = 37;     // AL (Excel col 38) → index 37
+    const COL_ABRV = 38;           // AM (Excel col 39) → index 38
+    const COL_ACTION_MICRO = 39;   // AN (Excel col 40) → index 39 (merged AN-CK)
+    const COL_ACTION_GF1 = 89;     // CL (Excel col 90) → index 89 (merged CL-CN)
+    const COL_ACTION_GF2 = 92;     // CO (Excel col 93) → index 92 (merged CO-CQ)
+    const COL_ACTION_GF3 = 95;     // CR (Excel col 96) → index 95 (merged CR-CT)
+    const COL_ACTION_GF4 = 98;     // CU (Excel col 99) → index 98 (merged CU-CW)
+    const COL_PLAGE1 = 101;        // CX (Excel col 102) → index 101 (merged CX-CZ)
+    const COL_PLAGE2 = 104;        // DA (Excel col 105) → index 104 (merged DA-DC)
+
+    console.log('Parsing action table from row 110 using getCellValue for merged cells...');
+    console.log('Sheet merges:', sheet['!merges'] ? sheet['!merges'].length : 'none');
+
+    // Debug: test reading a few cells directly
+    console.log('Debug - Testing cell B110:', getCellValue(sheet, 109, 1));
+    console.log('Debug - Testing cell C110:', getCellValue(sheet, 109, 2));
+    console.log('Debug - Testing cell D110:', getCellValue(sheet, 109, 3));
+    console.log('Debug - Testing sheetData row 109:', sheetData[109] ? sheetData[109].slice(0, 10) : 'undefined');
+
+    const actions = [];
+    let actionRow = ACTION_ROW_START;
+
+    while (actionRow < sheetData.length) {
+        // Use getCellValue to handle merged cells properly
+        const gfValue = getCellValue(sheet, actionRow, COL_GF);
+        const actionValue = getCellValue(sheet, actionRow, COL_ACTION);
+        const descValue = getCellValue(sheet, actionRow, COL_DESCRIPTION);
+
+        console.log(`Row ${actionRow + 1}: GF="${gfValue}", Action="${actionValue}", Desc="${descValue}"`);
+
+        // Stop if row is empty
+        if (gfValue === '' && actionValue === '' && descValue === '') {
+            actionRow++;
+            // Check if we've gone too far (10 consecutive empty rows = end of table)
+            let emptyCount = 0;
+            for (let i = 0; i < 10 && (actionRow + i) < sheetData.length; i++) {
+                const checkGf = getCellValue(sheet, actionRow + i, COL_GF);
+                const checkAction = getCellValue(sheet, actionRow + i, COL_ACTION);
+                if (checkGf === '' && checkAction === '') emptyCount++;
+                else break;
+            }
+            if (emptyCount >= 10) break;
+            continue;
+        }
+
+        // If we have at least some data, create an action entry
+        if (gfValue !== '' || actionValue !== '' || descValue !== '') {
+            const action = {
+                id: actions.length + 1,
+                gf: parseNumber(gfValue, ''),
+                action: String(actionValue || '').trim(),
+                description: String(descValue || '').trim(),
+                deb: parseNumber(getCellValue(sheet, actionRow, COL_ACTION_DEB), ''),
+                fin: parseNumber(getCellValue(sheet, actionRow, COL_ACTION_FIN), ''),
+                abrv: String(getCellValue(sheet, actionRow, COL_ABRV) || '').trim(),
+                action_Micro: String(getCellValue(sheet, actionRow, COL_ACTION_MICRO) || '').trim(),
+                plage1: parseNumber(getCellValue(sheet, actionRow, COL_PLAGE1), ''),
+                plage2: parseNumber(getCellValue(sheet, actionRow, COL_PLAGE2), ''),
+                actionGf1: parseNumber(getCellValue(sheet, actionRow, COL_ACTION_GF1), ''),
+                actionGf2: parseNumber(getCellValue(sheet, actionRow, COL_ACTION_GF2), ''),
+                actionGf3: parseNumber(getCellValue(sheet, actionRow, COL_ACTION_GF3), ''),
+                actionGf4: parseNumber(getCellValue(sheet, actionRow, COL_ACTION_GF4), '')
+            };
+
+            console.log(`  Action ${actions.length + 1}: GF=${action.gf}, Action="${action.action}", Desc="${action.description}", Deb=${action.deb}, Fin=${action.fin}`);
+            actions.push(action);
+        }
+
+        actionRow++;
+
+        // Safety limit to prevent infinite loop
+        if (actions.length >= 200) {
+            console.log('Reached max actions limit (200)');
+            break;
+        }
+    }
+
+    console.log(`Total actions parsed: ${actions.length}`);
+
+    // Store actions in pfTabs (as PF1)
+    if (actions.length > 0) {
+        result.pfTabs = [{ id: 1, name: 'PF1', data: actions }];
+    }
 }
 
 /**
