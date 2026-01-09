@@ -676,29 +676,6 @@ function App() {
                             className="input-count"
                         />
                     </label>
-                    <label>
-                        Cycle:
-                        <input
-                            type="number"
-                            min="10"
-                            value={cycleLengthInput}
-                            onChange={(e) => setCycleLengthInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.target.blur();
-                                }
-                            }}
-                            onBlur={() => {
-                                const newCycle = parseInt(cycleLengthInput);
-                                if (!isNaN(newCycle) && newCycle >= 10 && newCycle !== cycleLength) {
-                                    setCycleLength(newCycle);
-                                } else {
-                                    setCycleLengthInput(cycleLength.toString());
-                                }
-                            }}
-                            className="input-count"
-                        />
-                    </label>
                     <label style={{ marginLeft: '1rem', color: '#aaa', fontSize: '0.9em' }}>
                         Zoom:
                         <input
@@ -958,6 +935,34 @@ function App() {
 
                     {!phasageBulleEnabled && (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', padding: '0 0.5rem' }}>
+                                <span style={{ fontWeight: 'bold', color: '#ccc' }}>Diagramme</span>
+                                <label style={{ color: '#aaa', fontSize: '0.9em' }}>
+                                    Cycle:
+                                    <input
+                                        type="number"
+                                        min="10"
+                                        value={cycleLengthInput}
+                                        onChange={(e) => setCycleLengthInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.target.blur();
+                                            }
+                                        }}
+                                        onBlur={() => {
+                                            const newCycle = parseInt(cycleLengthInput);
+                                            if (!isNaN(newCycle) && newCycle >= 10 && newCycle !== cycleLength) {
+                                                setCycleLength(newCycle);
+                                            } else {
+                                                setCycleLengthInput(cycleLength.toString());
+                                            }
+                                        }}
+                                        className="input-count"
+                                        style={{ marginLeft: '5px', width: '60px' }}
+                                    />
+                                    <span style={{ marginLeft: '3px' }}>s</span>
+                                </label>
+                            </div>
                             <TimelineDiagram
                                 groups={groups}
                                 globalTime={globalTime}
@@ -1354,7 +1359,7 @@ function App() {
                 {/* Recent files list */}
                 {recentFiles.length > 0 && (
                     <div style={{ marginTop: '20px', marginBottom: '10px' }}>
-                        <h4 style={{ fontSize: '0.9em', color: '#aaa', marginBottom: '10px' }}>Fichiers récents :</h4>
+                        <h4 style={{ fontSize: '0.9em', color: '#aaa', marginBottom: '10px' }}>Fichiers récents (cliquez pour réimporter) :</h4>
                         <div style={{
                             maxHeight: '150px',
                             overflowY: 'auto',
@@ -1365,15 +1370,23 @@ function App() {
                             {recentFiles.map((file, idx) => (
                                 <div
                                     key={idx}
+                                    onClick={() => {
+                                        // Note: Due to browser security, we can't access the file directly
+                                        // We can only show the filename as a hint to the user
+                                        alert(`Pour réimporter "${file.name}", veuillez le sélectionner à nouveau via le bouton ci-dessus.\n\nPour des raisons de sécurité, le navigateur ne permet pas d'accéder directement aux fichiers précédemment sélectionnés.`);
+                                    }}
                                     style={{
                                         padding: '8px 10px',
                                         margin: '2px 0',
                                         backgroundColor: '#2a2a2a',
                                         borderRadius: '3px',
                                         fontSize: '0.85em',
-                                        cursor: 'default',
-                                        borderLeft: '3px solid #4a9eff'
+                                        cursor: 'pointer',
+                                        borderLeft: '3px solid #4a9eff',
+                                        transition: 'background-color 0.2s'
                                     }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
                                 >
                                     <div style={{ color: '#ddd', fontWeight: '500' }}>{file.name}</div>
                                     <div style={{ color: '#888', fontSize: '0.9em', marginTop: '2px' }}>
@@ -1427,15 +1440,14 @@ function App() {
                     </p>
                 )}
                 <div style={{ color: '#888', fontSize: '0.8em', marginTop: '15px', padding: '10px', backgroundColor: '#1a1a1a', borderRadius: '4px' }}>
-                    <strong>Formats supportés :</strong>
+                    <strong>Format supporté :</strong>
                     <ul style={{ marginTop: '8px', marginBottom: '0', paddingLeft: '20px' }}>
-                        <li><strong>CSV</strong> (séparateur : point-virgule) : Nom;Type;Debut;Vert;Orange;MinVert</li>
                         <li><strong>Excel (.xlsx/.xls)</strong> avec structure :
                             <ul style={{ marginTop: '5px', fontSize: '0.95em' }}>
-                                <li>Feuille "Formulaire" : Configuration des groupes (GF, Nom, Type, Décalage, Vert, Orange, Vert Min)</li>
+                                <li>Feuille "Formulaire" : Configuration des groupes (A6, B6, C6, D6, E6... puis A8, B8, C8...)</li>
                                 <li>6ème feuille : Matrice de dégagement</li>
-                                <li>Feuilles 6, 7, 8... : Onglets PF1, PF2, PF3... (avec diagrammes et tableaux d'actions)</li>
-                                <li>Feuille "Trafic" (optionnel) : Données de trafic</li>
+                                <li>Feuilles 6, 7, 8... : Onglets PF1, PF2, PF3... (diagrammes et tableaux d'actions)</li>
+                                <li>Feuille "Trafic" : Données de trafic (E6, E8, E10...)</li>
                             </ul>
                         </li>
                     </ul>

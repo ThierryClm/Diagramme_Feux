@@ -552,10 +552,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     <div className="sidebar-header-row">
                         <span className="col-label col-grp">Grp</span>
                         <span className="col-label col-name">Nom</span>
+                        <span className="col-label col-da">DA</span>
                         <span className="col-label col-time">Déb</span>
                         <span className="col-label col-time">Fin</span>
                         <span className="col-label col-time">Dur</span>
-                        <span className="col-label col-da">DA</span>
                     </div>
 
                     {groups.map(g => {
@@ -580,6 +580,16 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             'transparent'
                                     }}
                                 >{g.name || '-'}</span>
+                                <input
+                                    type="text"
+                                    className="input-da"
+                                    value={g.da || ''}
+                                    onChange={(e) => updateGroupParams(g.id, { da: e.target.value.slice(0, 2) })}
+                                    onClick={(e) => e.stopPropagation()}
+                                    title="DA (Délai d'approche)"
+                                    maxLength={2}
+                                    placeholder=""
+                                />
                                 <input
                                     type="number"
                                     className="input-time-sm"
@@ -611,16 +621,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         cursor: 'default',
                                         opacity: 0.8
                                     }}
-                                    placeholder=""
-                                />
-                                <input
-                                    type="text"
-                                    className="input-da"
-                                    value={g.da || ''}
-                                    onChange={(e) => updateGroupParams(g.id, { da: e.target.value.slice(0, 2) })}
-                                    onClick={(e) => e.stopPropagation()}
-                                    title="DA"
-                                    maxLength={2}
                                     placeholder=""
                                 />
                             </div>

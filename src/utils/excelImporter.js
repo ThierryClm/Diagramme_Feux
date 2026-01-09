@@ -188,44 +188,100 @@ function parseGroupsSheet(sheetData, result) {
 }
 
 /**
- * Parse conflict matrix sheet
+ * Parse conflict matrix sheet - 6th sheet (index 5)
+ * - AL3 (column 37, row 2): Cycle duration
+ * - Matrix data starts at D6 (row 5, column 3), includes diagonal (0 values)
+ * - Every 2 rows: row 6, 8, 10... (with blank lines between each group)
+ * - Columns are consecutive: D, E, F, G... (no spacing between columns)
+ * - Column D = Group 1, Column E = Group 2, etc.
+ * - Diagonal values (0 or empty) are stored but not displayed in UI
+ * - Diagram data (every 2 rows starting at row 6):
+ *   - AJ6, AJ8, AJ10... = DA (Délai d'approche)
+ *   - AK6, AK8, AK10... = Déb (début de phase verte)
+ *   - AL6, AL8, AL10... = Fin (fin de phase verte)
  */
 function parseMatrixSheet(sheetData, result) {
-    if (sheetData.length < 2) return;
+    if (sheetData.length < 6) return;
 
-    // The matrix typically has group IDs in first row and first column
-    // Find where the matrix starts
-    let startRow = 0;
-    let startCol = 0;
+    console.log('parseMatrixSheet called, sheetData length:', sheetData.length);
+    console.log('Number of groups:', result.groups.length);
 
-    for (let i = 0; i < Math.min(5, sheetData.length); i++) {
-        const row = sheetData[i];
-        // Look for a row that starts with numbers (group IDs)
-        if (row && row.length > 1 && !isNaN(parseFloat(row[1]))) {
-            startRow = i;
-            startCol = 1; // First column is usually labels
-            break;
+    // Column indices (0-based):
+    // Excel: A=col 1, B=col 2, ... Z=col 26, AA=col 27, ... AJ=col 36, AK=col 37, AL=col 38
+    // JS 0-based: A=0, B=1, ... Z=25, AA=26, ... AJ=35, AK=36, AL=37
+    const COL_DA = 35;   // AJ (col 36 in Excel) - Délai d'approche
+    const COL_DEB = 36;  // AK (col 37 in Excel) - Début
+    const COL_FIN = 37;  // AL (col 38 in Excel) - Fin
+
+    // Extract cycle duration from AL3 (row 3 = index 2, col AL = index 37)
+    if (sheetData[2] && sheetData[2][COL_FIN]) {
+        const cycle = parseNumber(sheetData[2][COL_FIN], null);
+        console.log('Cycle length from AL3:', cycle);
+        if (cycle && cycle >= 10 && cycle <= 300) {
+            result.cycleLength = cycle;
+            console.log('Cycle length set to:', cycle);
         }
     }
 
-    // Parse matrix
-    const matrixSize = Math.min(32, sheetData.length - startRow - 1);
-    const matrix = Array(matrixSize).fill(null).map(() => Array(matrixSize).fill(0));
+    const size = result.groups.length;
+    const matrix = Array(size).fill(null).map(() => Array(size).fill(0));
 
-    for (let i = 0; i < matrixSize; i++) {
-        const rowIdx = startRow + i + 1;
-        if (rowIdx >= sheetData.length) break;
+    // Start at D6 (row index 5, column index 3)
+    // Column D = Group 1, Column E = Group 2, etc.
+    let rowIndex = 0;
+    let excelRow = 5; // Row 6 in Excel (0-indexed = 5)
 
-        const row = sheetData[rowIdx];
-        for (let j = 0; j < matrixSize; j++) {
-            const colIdx = startCol + j;
-            if (colIdx < row.length) {
-                const value = parseNumber(row[colIdx], 0);
-                matrix[i][j] = Math.max(0, Math.min(20, value));
+    while (rowIndex < size && excelRow < sheetData.length) {
+        const row = sheetData[excelRow];
+        console.log(`Matrix row ${rowIndex} (Excel row ${excelRow + 1}):`, row ? row.slice(3, 3 + size) : 'undefined');
+
+        if (row) {
+            // Columns are consecutive starting at D (index 3): D, E, F, G...
+            // D=Group1, E=Group2, F=Group3, etc.
+            for (let colIndex = 0; colIndex < size; colIndex++) {
+                const excelCol = 3 + colIndex; // D=3, E=4, F=5, G=6...
+                if (excelCol < row.length) {
+                    const value = parseNumber(row[excelCol], 0);
+                    // Store the value (diagonal will be 0, UI handles display)
+                    matrix[rowIndex][colIndex] = Math.max(0, Math.min(20, value));
+                    console.log(`  Matrix[${rowIndex}][${colIndex}] from col ${String.fromCharCode(65 + excelCol)}${excelRow + 1} = ${matrix[rowIndex][colIndex]}`);
+                }
+            }
+
+            // Extract diagram data (DA, Déb, Fin) for this group
+            if (result.groups[rowIndex]) {
+                const da = parseNumber(row[COL_DA], 0);
+                const deb = parseNumber(row[COL_DEB], 0);
+                const fin = parseNumber(row[COL_FIN], 0);
+
+                console.log(`  Group ${rowIndex + 1} diagram: DA (Délai d'approche)=${da}, Déb=${deb}, Fin=${fin}`);
+
+                // Update group with diagram data
+                // offset = Déb (start of green phase), keep 0 if Déb = 0
+                result.groups[rowIndex].offset = deb;
+                result.groups[rowIndex].da = da; // Délai d'approche
+
+                // Calculate green duration from Déb and Fin
+                if (deb === 0 && fin === 0) {
+                    // Both are 0: no green phase defined
+                    result.groups[rowIndex].durations.green = 0;
+                } else if (fin >= deb) {
+                    // Normal case: Fin > Déb
+                    result.groups[rowIndex].durations.green = fin - deb;
+                } else {
+                    // Wrapping case: green phase crosses cycle boundary
+                    result.groups[rowIndex].durations.green = (result.cycleLength - deb) + fin;
+                }
+
+                console.log(`  Group ${rowIndex + 1}: offset=${deb}, green=${result.groups[rowIndex].durations.green}`);
             }
         }
+
+        rowIndex++;
+        excelRow += 2; // Every 2 rows: row 6, 8, 10, 12...
     }
 
+    console.log('Conflict matrix parsed:', matrix);
     result.conflictMatrix = matrix;
 }
 
@@ -401,30 +457,39 @@ function parseActionsSheet(sheetData, result) {
 /**
  * Parse traffic sheet - "Trafic" sheet with specific cell positions
  * - Starting at E6: "Courant" field (with blank lines between each group)
+ * - E6, E8, E10, E12... (every 2 rows, same pattern as Formulaire sheet)
  * - Column E (index 4): Courant name
  */
 function parseTrafficSheet(sheetData, result) {
     if (sheetData.length < 6) return;
 
+    console.log('parseTrafficSheet called, sheetData length:', sheetData.length);
+    console.log('Number of groups to match:', result.groups.length);
+
     // Parse traffic data starting at row 5 (E6 = row index 5, column 4)
-    // Groups are separated by blank lines (same pattern as Formulaire sheet)
+    // Groups are at E6, E8, E10... (every 2 rows, with blank line between)
     const trafficByGroup = {};
     let currentRow = 5; // Start at row 6 (index 5)
-    let groupIndex = 1; // Corresponds to group ID
+    let groupIndex = 0; // Index into result.groups array
 
-    while (currentRow < sheetData.length && groupIndex <= result.groups.length) {
+    while (currentRow < sheetData.length && groupIndex < result.groups.length) {
         const row = sheetData[currentRow];
+
+        console.log(`Checking traffic row ${currentRow + 1} (Excel row ${currentRow + 1}):`, row ? row.slice(0, 10) : 'undefined');
 
         // Check if this row has data in column E (index 4) - the "Courant" field
         if (row && row[4] !== '' && row[4] !== null && row[4] !== undefined) {
             const courantValue = String(row[4]).trim();
+            console.log(`  Col E (idx 4) Courant: "${courantValue}"`);
 
             if (courantValue) {
-                // Match this with the corresponding group
-                if (result.groups[groupIndex - 1]) {
-                    result.groups[groupIndex - 1].courant = courantValue;
+                // Match this with the corresponding group by index
+                const group = result.groups[groupIndex];
+                if (group) {
+                    console.log(`  Assigning to group ${group.id} (${group.name})`);
+                    group.courant = courantValue;
 
-                    trafficByGroup[groupIndex] = {
+                    trafficByGroup[group.id] = {
                         courant: courantValue,
                         coef: parseNumber(row[5], 1), // Column F if exists
                         trafic: parseNumber(row[6], 0), // Column G if exists
@@ -436,9 +501,11 @@ function parseTrafficSheet(sheetData, result) {
             }
         }
 
-        currentRow++;
+        // Skip to next group (every 2 rows: E6, E8, E10, E12...)
+        currentRow += 2;
     }
 
+    console.log('Traffic data parsed:', trafficByGroup);
     result.trafficData = trafficByGroup;
 }
 

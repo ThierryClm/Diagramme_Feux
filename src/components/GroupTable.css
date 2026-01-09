@@ -87,6 +87,17 @@ select.input-courant {
     color: #bbb !important;
 }
 
+.input-timing {
+    width: 40px !important;
+    text-align: center !important;
+}
+
+.input-readonly {
+    background: #2a2a2a !important;
+    color: #8cf !important;
+    cursor: default;
+}
+
 .col-id {
     font-weight: bold;
     color: #eee;
