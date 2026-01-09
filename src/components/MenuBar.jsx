@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './MenuBar.css';
 
-const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange }) => {
+const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [] }) => {
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const menuRef = useRef(null);
@@ -51,6 +51,17 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange }) => {
         setOpenSubmenu(null);
     };
 
+    // Build imported files submenu dynamically
+    const importedFilesSubmenu = importedFiles.length > 0
+        ? [
+            { label: 'Fichiers HTM disponibles', type: 'header' },
+            ...importedFiles.map(file => ({
+                label: file.name,
+                action: `openImportedFile:${file.id}`
+            }))
+        ]
+        : [{ label: '(Aucun fichier)', type: 'header' }];
+
     const menus = {
         fichier: {
             label: 'Fichier',
@@ -59,7 +70,13 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange }) => {
                 { label: 'Ouvrir...', action: 'open' },
                 { label: 'Enregistrer', action: 'save' },
                 { type: 'separator' },
-                { label: 'Importer...', action: 'import' },
+                {
+                    label: 'Fichiers importés',
+                    type: 'submenu',
+                    submenuId: 'importedFiles',
+                    submenu: importedFilesSubmenu
+                },
+                { label: 'Importer...', action: 'importHTM' },
                 { label: 'Exporter...', action: 'export' },
                 { type: 'separator' },
                 { label: 'Imprimer la matrice...', action: 'printMatrix' },
