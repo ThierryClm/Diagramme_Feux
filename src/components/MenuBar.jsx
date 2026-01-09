@@ -70,13 +70,7 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [] 
                 { label: 'Ouvrir...', action: 'open' },
                 { label: 'Enregistrer', action: 'save' },
                 { type: 'separator' },
-                {
-                    label: 'Fichiers importés',
-                    type: 'submenu',
-                    submenuId: 'importedFiles',
-                    submenu: importedFilesSubmenu
-                },
-                { label: 'Importer...', action: 'importHTM' },
+                { label: 'Importer Excel...', action: 'import' },
                 { label: 'Exporter...', action: 'export' },
                 { type: 'separator' },
                 { label: 'Imprimer la matrice...', action: 'printMatrix' },
