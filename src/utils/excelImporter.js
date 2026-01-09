@@ -226,9 +226,9 @@ function parseMatrixSheet(sheetData, result) {
     const size = result.groups.length;
     const matrix = Array(size).fill(null).map(() => Array(size).fill(0));
 
-    // Matrix starts at D6 - using same logic: Excel col/row - 1 = JS index
-    // D = col 4 → index 3, Row 6 → index 5
-    const MATRIX_COL_START = 3;  // D = col 4 in Excel → index 3
+    // Matrix starts at D6 - using same logic as DA/Déb/Fin: Excel col - 2 = JS index
+    // D = col 4 → index 2, Row 6 → index 5
+    const MATRIX_COL_START = 2;  // D (Excel col 4) → index 2
     const MATRIX_ROW_START = 5;  // Row 6 in Excel → index 5
 
     let rowIndex = 0;
