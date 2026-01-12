@@ -562,7 +562,7 @@ export const useTrafficLight = () => {
             // Handle new pfTabs format or old actionData format
             if (state.pfTabs) {
                 setPfTabs(state.pfTabs);
-                if (state.activePFId) setActivePFId(state.activePFId);
+                setActivePFId(state.activePFId || 1);  // Always set activePFId
             } else if (state.actionData) {
                 setPfTabs([{ id: 1, name: 'PF1', data: state.actionData }]);
                 setActivePFId(1);

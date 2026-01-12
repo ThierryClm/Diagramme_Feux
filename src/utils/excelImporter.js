@@ -318,10 +318,10 @@ function parseMatrixSheet(sheetData, result, sheet) {
     console.log('Conflict matrix parsed:', matrix);
     result.conflictMatrix = matrix;
 
-    // Parse action table starting at row 111 (Excel row 111 = 0-based index 110)
+    // Parse action table starting at row 110 (Excel row 110 = 0-based index 109)
     // Column A is protected, so data starts at column B
     // Using sheetData with Excel col - 2 formula (same as other imports)
-    const ACTION_ROW_START = 110;  // Row 111 → index 110
+    const ACTION_ROW_START = 109;  // Row 110 → index 109
 
     // Column indices for sheetData (Excel col - 2)
     // B = Excel col 2 → index 0

@@ -558,7 +558,8 @@ function App() {
                     cycleLength: importedData.cycleLength,
                     conflictMatrix: importedData.conflictMatrix,
                     actionData: importedData.actionData,
-                    pfTabs: importedData.pfTabs.length > 0 ? importedData.pfTabs : undefined
+                    pfTabs: importedData.pfTabs.length > 0 ? importedData.pfTabs : undefined,
+                    activePFId: 1
                 });
 
                 // Apply traffic data if available
