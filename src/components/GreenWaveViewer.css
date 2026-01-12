@@ -390,6 +390,47 @@
     background: #3a3a3a;
 }
 
+.green-wave-data-table select {
+    background: #333;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.green-wave-data-table select:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background: #3a3a3a;
+}
+
+.green-wave-data-table .col-pf {
+    width: 60px;
+}
+
+.green-wave-data-table .col-pf select {
+    width: 55px;
+}
+
+.green-wave-data-table .col-group-select {
+    width: 140px;
+}
+
+.green-wave-data-table .col-group-select select {
+    width: 130px;
+    text-overflow: ellipsis;
+}
+
+.green-wave-data-table .col-distance {
+    width: 50px;
+}
+
+.green-wave-data-table .col-distance input {
+    width: 45px;
+}
+
 /* Order controls */
 .col-order {
     width: 55px;
