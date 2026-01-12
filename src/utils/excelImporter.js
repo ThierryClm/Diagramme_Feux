@@ -25,7 +25,9 @@ function normalizeActionName(actionName) {
         // Other variations
         'adaptatif': 'Adaptatif vertical',
         'point repos': 'Point de repos',
+        'point de repos': 'Point de repos',
         'synchro': 'Synchro BTS',
+        'synchro bts': 'Synchro BTS',
         'priorité piéton': 'Priorité piétons',
         'priorite pieton': 'Priorité piétons',
         'priorite pietons': 'Priorité piétons',
@@ -576,13 +578,14 @@ function parseMatrixSheet(sheetData, result, sheet, sheetName) {
 
     // Store actions in both pfTabs and actionData for compatibility
     // Use Excel sheet name and tab color
-    // Include diagram data and cycleLength for consistency with additional PF tabs
+    // Include diagram data, cycleLength, and conflict matrix for consistency with additional PF tabs
     result.pfTabs = [{
         id: 1,
         name: sheetName || 'PF1',
         color: tabColor,
         cycleLength: result.cycleLength,
         diagram: pf1Diagram,
+        conflictMatrix: matrix, // Store matrix specific to this PF tab
         data: actions
     }];
     result.actionData = actions; // Also store in actionData for App.jsx compatibility
@@ -634,16 +637,30 @@ function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet) {
         }
     }
 
-    // Extract diagram data for each group (DA, Déb, Fin)
+    // Extract diagram data for each group (DA, Déb, Fin) and conflict matrix
     // Store as pfDiagram array with group timing info
     const pfDiagram = [];
     const size = result.groups.length;
+
+    // Initialize conflict matrix for this PF tab
+    const pfMatrix = Array(size).fill(null).map(() => Array(size).fill(0));
+    const MATRIX_COL_START = 2;  // D (Excel col 4) → index 2
+
     let excelRow = 5; // Start at row 6 (index 5)
 
     for (let groupIndex = 0; groupIndex < size && excelRow < sheetData.length; groupIndex++) {
         const row = sheetData[excelRow];
 
         if (row) {
+            // Parse conflict matrix row (columns D, E, F, G... = indices 2, 3, 4, 5...)
+            for (let colIndex = 0; colIndex < size; colIndex++) {
+                const excelCol = MATRIX_COL_START + colIndex;
+                if (excelCol < row.length) {
+                    const value = parseNumber(row[excelCol], 0);
+                    pfMatrix[groupIndex][colIndex] = Math.max(0, Math.min(20, value));
+                }
+            }
+
             // DA is a string (2 characters), Déb and Fin are numbers
             const daRaw = row[COL_DA];
             const da = (daRaw !== null && daRaw !== undefined && daRaw !== '') ? String(daRaw).trim() : '';
@@ -672,6 +689,8 @@ function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet) {
 
         excelRow += 2; // Every 2 rows: row 6, 8, 10...
     }
+
+    console.log(`PF${pfNumber} conflict matrix parsed:`, pfMatrix);
 
     // Parse action table starting at row 110 (Excel row 110 = 0-based index 109)
     const ACTION_ROW_START = 109;
@@ -782,17 +801,18 @@ function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet) {
         actions.push(createEmptyActionRow(i + 1));
     }
 
-    // Add this PF tab to result with Excel sheet name and color
+    // Add this PF tab to result with Excel sheet name, color, and conflict matrix
     result.pfTabs.push({
         id: pfNumber,
         name: sheetName || `PF${pfNumber}`,
         color: tabColor,
         cycleLength: pfCycleLength,
         diagram: pfDiagram,
+        conflictMatrix: pfMatrix, // Store matrix specific to this PF tab
         data: actions
     });
 
-    console.log(`Added "${sheetName}" tab (PF${pfNumber}) with color=${tabColor}, cycle=${pfCycleLength}, ${pfDiagram.length} diagram entries, ${actions.length} actions`);
+    console.log(`Added "${sheetName}" tab (PF${pfNumber}) with color=${tabColor}, cycle=${pfCycleLength}, ${pfDiagram.length} diagram entries, ${actions.length} actions, matrix size=${pfMatrix.length}x${pfMatrix[0]?.length || 0}`);
 }
 
 /**

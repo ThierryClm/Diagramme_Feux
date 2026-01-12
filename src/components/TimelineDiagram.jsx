@@ -462,29 +462,39 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
     // Get all "Point de repos" actions
     // In simulation mode: show overlay ONLY when action is CHECKED (normal logic - hidden by default)
+    // If plage2 is not set, default to groups.length (total number of groups)
     const pointReposActions = actionData.filter(action => {
         if (action.action !== 'Point de repos') return false;
         if (action.deb === '' || action.deb === undefined) return false;
-        // plage1 and plage2 must be valid group numbers (>= 1)
+        // plage1 must be valid (>= 1), plage2 defaults to groups.length if not set
         const p1 = parseInt(action.plage1);
-        const p2 = parseInt(action.plage2);
-        if (isNaN(p1) || p1 < 1 || isNaN(p2) || p2 < 1) return false;
+        if (isNaN(p1) || p1 < 1) return false;
         if (simulationFilter && !simulationFilter.has(action.id)) return false;
         return true;
-    });
+    }).map(action => ({
+        ...action,
+        plage2: (action.plage2 === '' || action.plage2 === undefined || isNaN(parseInt(action.plage2)) || parseInt(action.plage2) < 1)
+            ? groups.length
+            : action.plage2
+    }));
 
     // Get all "Synchro BTS" actions
     // In simulation mode: show overlay ONLY when action is CHECKED (normal logic - hidden by default)
+    // If plage2 is not set, default to groups.length (total number of groups)
     const synchroBtsActions = actionData.filter(action => {
         if (action.action !== 'Synchro BTS') return false;
         if (action.deb === '' || action.deb === undefined) return false;
-        // plage1 and plage2 must be valid group numbers (>= 1)
+        // plage1 must be valid (>= 1), plage2 defaults to groups.length if not set
         const p1 = parseInt(action.plage1);
-        const p2 = parseInt(action.plage2);
-        if (isNaN(p1) || p1 < 1 || isNaN(p2) || p2 < 1) return false;
+        if (isNaN(p1) || p1 < 1) return false;
         if (simulationFilter && !simulationFilter.has(action.id)) return false;
         return true;
-    });
+    }).map(action => ({
+        ...action,
+        plage2: (action.plage2 === '' || action.plage2 === undefined || isNaN(parseInt(action.plage2)) || parseInt(action.plage2) < 1)
+            ? groups.length
+            : action.plage2
+    }));
 
     // Get all "Priorité piétons" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)

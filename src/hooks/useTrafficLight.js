@@ -956,6 +956,15 @@ export const useTrafficLight = () => {
             if (activePF.cycleLength) {
                 setCycleLength(activePF.cycleLength);
             }
+            // Also update conflict matrix if the PF has a specific one
+            if (activePF.conflictMatrix && activePF.conflictMatrix.length > 0) {
+                const cleanedMatrix = activePF.conflictMatrix.map(row => row.map(val => {
+                    if (val === 0 || val === '0') return '';
+                    if (typeof val === 'number' && (val < 3 || val > 20)) return '';
+                    return val;
+                }));
+                setConflictMatrix(cleanedMatrix);
+            }
         }
     }, [activePFId, pfTabs]);
 
