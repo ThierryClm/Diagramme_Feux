@@ -186,6 +186,54 @@ export async function importExcelFile(file) {
 }
 
 /**
+ * Normalize group type from Excel to match the application's type options
+ * Valid types: V (VL), B (TC/Bus), P (Piéton), CY (Cycliste), FL (Flèche), PP (Priorité Piéton)
+ * Returns empty string if not recognized or empty
+ */
+function normalizeGroupType(typeValue) {
+    if (!typeValue) return '';
+
+    const normalized = String(typeValue).trim();
+    if (normalized === '') return '';
+
+    const upper = normalized.toUpperCase();
+
+    // Map Excel codes to standard types
+    const mappings = {
+        'V': 'V',
+        'VL': 'V',
+        'B': 'B',
+        'TC': 'B',
+        'BUS': 'B',
+        'TRAM': 'B',
+        'P': 'P',
+        'PIETON': 'P',
+        'PIÉTON': 'P',
+        'PIETONS': 'P',
+        'PIÉTONS': 'P',
+        'CY': 'CY',
+        'CYCLE': 'CY',
+        'CYCLISTE': 'CY',
+        'VELO': 'CY',
+        'VÉLO': 'CY',
+        'FL': 'FL',
+        'FLECHE': 'FL',
+        'FLÈCHE': 'FL',
+        'PP': 'PP',
+        'PRIORITE PIETON': 'PP',
+        'PRIORITÉ PIÉTON': 'PP'
+    };
+
+    if (mappings[upper]) {
+        return mappings[upper];
+    }
+
+    // Return empty string if unrecognized
+    console.log(`Unknown group type "${typeValue}", leaving empty`);
+    return '';
+}
+
+/**
  * Parse groups sheet - "Formulaire" sheet with specific cell positions
  * - H2: Number of groups
  * - Starting at C6: Groups (with blank lines between each group)
@@ -231,13 +279,14 @@ function parseGroupsSheet(sheetData, result) {
 
         // Check if this row has data in column A (index 0) or B (index 1) - the group number or name
         if (row && (row[0] !== '' || row[1] !== '') && row[0] !== null && row[0] !== undefined) {
-            const gfNumber = parseNumber(row[0], groups.length + 1); // Column A (index 0) - GF number
-            const groupName = String(row[1] || '').trim(); // Column B (index 1) - Group name
-            const type = String(row[2] || 'VL').trim(); // Column C (index 2) - Type
-            const minGreen = parseNumber(row[3], 6); // Column D (index 3) - Vert min
-            const orange = parseNumber(row[4], 3); // Column E (index 4) - Jaune
+            const gfNumber = parseNumber(row[0], groups.length + 1); // Column B (index 0) - GF number
+            const groupName = String(row[1] || '').trim(); // Column C (index 1) - Group name
+            const typeRaw = row[2]; // Column D (index 2) - Type
+            const type = normalizeGroupType(typeRaw);
+            const minGreen = parseNumber(row[3], 6); // Column E (index 3) - Vert min
+            const orange = parseNumber(row[4], 3); // Column F (index 4) - Jaune
 
-            console.log(`Row ${currentRow + 1}, Parsed: GF=${gfNumber}, Name="${groupName}", Type="${type}", MinGreen=${minGreen}, Orange=${orange}`);
+            console.log(`Row ${currentRow + 1}, Parsed: GF=${gfNumber}, Name="${groupName}", TypeRaw="${typeRaw}", Type="${type}", MinGreen=${minGreen}, Orange=${orange}`);
 
             if (gfNumber && groupName) {
                 const group = {
@@ -595,7 +644,9 @@ function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet) {
         const row = sheetData[excelRow];
 
         if (row) {
-            const da = parseNumber(row[COL_DA], 0);
+            // DA is a string (2 characters), Déb and Fin are numbers
+            const daRaw = row[COL_DA];
+            const da = (daRaw !== null && daRaw !== undefined && daRaw !== '') ? String(daRaw).trim() : '';
             const deb = parseNumber(row[COL_DEB], 0);
             const fin = parseNumber(row[COL_FIN], 0);
 

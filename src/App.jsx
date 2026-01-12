@@ -157,6 +157,7 @@ function App() {
     const [selectedProject, setSelectedProject] = useState(null);
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
+    const [importHintDir, setImportHintDir] = useState('');
     const [recentFiles, setRecentFiles] = useState([]);
 
     // Green wave states
@@ -321,6 +322,17 @@ function App() {
         }
     };
 
+    // Get recent directories for menu (with shortened names)
+    const getRecentDirectoriesForMenu = () => {
+        const dirs = getRecentDirectories();
+        return dirs.map(dir => {
+            // Extract just the last folder name for display
+            const parts = dir.replace(/\\/g, '/').split('/');
+            const name = parts[parts.length - 1] || parts[parts.length - 2] || dir;
+            return { path: dir, name: name };
+        });
+    };
+
     // Check for duplicated state on load
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -378,6 +390,17 @@ function App() {
             case 'duplicate':
                 duplicatePF();
                 break;
+            case 'deleteActiveDiagram':
+                if (pfTabs.length > 1) {
+                    const activePF = pfTabs.find(pf => pf.id === activePFId);
+                    const tabName = activePF?.name || `PF${activePFId}`;
+                    if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'onglet "${tabName}" ?\nCette action est irréversible.`)) {
+                        deletePF(activePFId);
+                    }
+                } else {
+                    alert('Impossible de supprimer le dernier onglet.');
+                }
+                break;
             case 'moveGroup':
                 if (groups.length > 1) {
                     setGroupToMove(groups[0]?.id?.toString() || '');
@@ -405,6 +428,7 @@ function App() {
             case 'import':
                 setImportFile(null);
                 setImportError('');
+                setImportHintDir('');
                 setImportModal(true);
                 break;
             case 'importHTM':
@@ -438,6 +462,16 @@ function App() {
                             groups: file.data.groups || [],
                             cycleLength: file.data.cycleLength || cycleLength
                         });
+                    }
+                } else if (action.startsWith('importFromDir:')) {
+                    // Import from recent directory
+                    const dirIndex = parseInt(action.replace('importFromDir:', ''));
+                    const dirs = getRecentDirectoriesForMenu();
+                    if (dirs[dirIndex]) {
+                        setImportFile(null);
+                        setImportError('');
+                        setImportHintDir(dirs[dirIndex].path);
+                        setImportModal(true);
                     }
                 } else {
                     console.log('Action non implémentée:', action);
@@ -817,6 +851,7 @@ function App() {
                     arrowStyle={diagramArrowStyle}
                     onArrowStyleChange={setDiagramArrowStyle}
                     importedFiles={importedHTMFiles}
+                    recentDirectories={getRecentDirectoriesForMenu()}
                 />
             <header className="app-header">
                 <div className="header-inputs">
@@ -1050,6 +1085,11 @@ function App() {
                             <div
                                 key={pf.id}
                                 className={`pf-tab ${activePFId === pf.id && !simulationEnabled && !phasageBulleEnabled ? 'active' : ''}`}
+                                style={pf.color ? {
+                                    borderTopColor: pf.color,
+                                    borderTopWidth: '3px',
+                                    borderTopStyle: 'solid'
+                                } : {}}
                                 onClick={() => {
                                     setSimulationEnabled(false);
                                     setPhasageBulleEnabled(false);
@@ -1069,20 +1109,6 @@ function App() {
                                 title="Double-cliquez pour renommer"
                             >
                                 <span className="pf-tab-name">{pf.name}</span>
-                                {pfTabs.length > 1 && (
-                                    <button
-                                        className="pf-tab-close"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'onglet "${pf.name}" ?\nCette action est irréversible.`)) {
-                                                deletePF(pf.id);
-                                            }
-                                        }}
-                                        title="Fermer cet onglet"
-                                    >
-                                        ×
-                                    </button>
-                                )}
                             </div>
                         ))}
                         <div
@@ -1508,6 +1534,21 @@ function App() {
 
             {/* Modal Importer CSV/Excel */}
             <Modal isOpen={importModal} onClose={() => setImportModal(false)} title="Importer un fichier">
+                {importHintDir && (
+                    <div style={{
+                        backgroundColor: '#2a3a2a',
+                        border: '1px solid #4a6a4a',
+                        borderRadius: '4px',
+                        padding: '10px',
+                        marginBottom: '15px',
+                        fontSize: '0.9em'
+                    }}>
+                        <span style={{ color: '#8f8' }}>Répertoire suggéré :</span>
+                        <div style={{ color: '#aaa', marginTop: '5px', wordBreak: 'break-all' }}>
+                            {importHintDir}
+                        </div>
+                    </div>
+                )}
                 <div className="form-row">
                     <label>
                         Sélectionner un fichier CSV ou Excel :

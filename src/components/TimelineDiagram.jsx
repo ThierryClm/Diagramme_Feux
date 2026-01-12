@@ -462,23 +462,29 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
     // Get all "Point de repos" actions
     // In simulation mode: show overlay ONLY when action is CHECKED (normal logic - hidden by default)
-    const pointReposActions = actionData.filter(action =>
-        action.action === 'Point de repos' &&
-        action.deb !== '' && action.deb !== undefined &&
-        action.plage1 !== '' && action.plage1 !== undefined && action.plage1 !== 0 &&
-        action.plage2 !== '' && action.plage2 !== undefined && action.plage2 !== 0 &&
-        (!simulationFilter || simulationFilter.has(action.id))
-    );
+    const pointReposActions = actionData.filter(action => {
+        if (action.action !== 'Point de repos') return false;
+        if (action.deb === '' || action.deb === undefined) return false;
+        // plage1 and plage2 must be valid group numbers (>= 1)
+        const p1 = parseInt(action.plage1);
+        const p2 = parseInt(action.plage2);
+        if (isNaN(p1) || p1 < 1 || isNaN(p2) || p2 < 1) return false;
+        if (simulationFilter && !simulationFilter.has(action.id)) return false;
+        return true;
+    });
 
     // Get all "Synchro BTS" actions
     // In simulation mode: show overlay ONLY when action is CHECKED (normal logic - hidden by default)
-    const synchroBtsActions = actionData.filter(action =>
-        action.action === 'Synchro BTS' &&
-        action.deb !== '' && action.deb !== undefined &&
-        action.plage1 !== '' && action.plage1 !== undefined && action.plage1 !== 0 &&
-        action.plage2 !== '' && action.plage2 !== undefined && action.plage2 !== 0 &&
-        (!simulationFilter || simulationFilter.has(action.id))
-    );
+    const synchroBtsActions = actionData.filter(action => {
+        if (action.action !== 'Synchro BTS') return false;
+        if (action.deb === '' || action.deb === undefined) return false;
+        // plage1 and plage2 must be valid group numbers (>= 1)
+        const p1 = parseInt(action.plage1);
+        const p2 = parseInt(action.plage2);
+        if (isNaN(p1) || p1 < 1 || isNaN(p2) || p2 < 1) return false;
+        if (simulationFilter && !simulationFilter.has(action.id)) return false;
+        return true;
+    });
 
     // Get all "Priorité piétons" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
@@ -703,8 +709,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 >
                                     {/* Base bars from group Début/Fin (sidebar values) - only if phase exists */}
                                     {hasPhase && (() => {
-                                        const isPedestrian = group.type === 'Piéton';
-                                        const isCyclist = group.type === 'Cycliste';
+                                        const isPedestrian = group.type === 'P' || group.type === 'Piéton';
+                                        const isCyclist = group.type === 'CY' || group.type === 'Cycliste';
+                                        // P (piéton) gets red bar (pedestrian-orange), CY (cycle) gets dashed red bar (cyclist-orange), others get yellow (orange)
                                         const orangeClass = isPedestrian ? 'pedestrian-orange' : isCyclist ? 'cyclist-orange' : 'orange';
                                         const orangeDur = group.durations.orange;
                                         const orangeWidth = orangeDur * pixelsPerSecond;
@@ -712,7 +719,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         // Check if green bar wraps around cycle
                                         const currentCycleLen = simGroup ? effectiveCycleLength : cycleLength;
                                         const greenWrapsAround = offset + greenDuration > currentCycleLen;
-                                        // Check if orange bar wraps around cycle (only for pedestrians and cyclists)
+                                        // Check if orange bar wraps around cycle (for pedestrians and cyclists with their special display)
                                         const greenEnd = (offset + greenDuration) % currentCycleLen;
                                         const orangeEnd = (greenEnd + orangeDur) % currentCycleLen;
                                         const orangeWrapsAround = (isPedestrian || isCyclist) && (greenEnd + orangeDur > currentCycleLen);

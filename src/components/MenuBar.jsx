@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './MenuBar.css';
 
-const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [] }) => {
+const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [], recentDirectories = [] }) => {
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const menuRef = useRef(null);
@@ -62,6 +62,17 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [] 
         ]
         : [{ label: '(Aucun fichier)', type: 'header' }];
 
+    // Build recent directories submenu dynamically
+    const recentDirsSubmenu = recentDirectories.length > 0
+        ? [
+            { label: 'Répertoires récents', type: 'header' },
+            ...recentDirectories.map((dir, idx) => ({
+                label: dir.name || dir.path,
+                action: `importFromDir:${idx}`
+            }))
+        ]
+        : [{ label: '(Aucun répertoire)', type: 'header', disabled: true }];
+
     const menus = {
         fichier: {
             label: 'Fichier',
@@ -71,6 +82,12 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [] 
                 { label: 'Enregistrer', action: 'save' },
                 { type: 'separator' },
                 { label: 'Importer Excel...', action: 'import' },
+                {
+                    label: 'Importer fichier depuis...',
+                    type: 'submenu',
+                    submenuId: 'importFrom',
+                    submenu: recentDirsSubmenu
+                },
                 { label: 'Exporter...', action: 'export' },
                 { type: 'separator' },
                 { label: 'Imprimer la matrice...', action: 'printMatrix' },
@@ -84,6 +101,7 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [] 
             label: 'Diagramme',
             items: [
                 { label: 'Dupliquer le diagramme', action: 'duplicate' },
+                { label: 'Supprimer le diagramme actif', action: 'deleteActiveDiagram' },
                 { label: 'Déplacer un groupe de feu...', action: 'moveGroup' },
                 { type: 'separator' },
                 { label: 'Glisser...', action: 'slide' },

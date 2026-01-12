@@ -68,10 +68,13 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength }) => {
                                         onChange={(e) => handleTypeChange(g.id, e.target.value)}
                                         className="input-type"
                                     >
-                                        <option value="VL">VL</option>
-                                        <option value="TC">TC</option>
-                                        <option value="Cycliste">Cycliste</option>
-                                        <option value="Piéton">Piéton</option>
+                                        <option value=""></option>
+                                        <option value="V">V</option>
+                                        <option value="B">B</option>
+                                        <option value="P">P</option>
+                                        <option value="CY">CY</option>
+                                        <option value="FL">FL</option>
+                                        <option value="PP">PP</option>
                                     </select>
                                 </td>
                                 {/* Courant */}
