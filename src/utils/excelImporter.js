@@ -1,6 +1,60 @@
 import * as XLSX from 'xlsx';
 
 /**
+ * Normalize action names from Excel to match the application's action options
+ * Maps various Excel naming conventions to the standard names
+ */
+function normalizeActionName(actionName) {
+    if (!actionName) return '';
+
+    const normalized = String(actionName).trim();
+    const lower = normalized.toLowerCase();
+
+    // Map Excel variations to standard names
+    const mappings = {
+        // Bande passante variations
+        'bande passante début de vert': 'Début de bande passante',
+        'bande passante debut de vert': 'Début de bande passante',
+        'début bande passante': 'Début de bande passante',
+        'debut bande passante': 'Début de bande passante',
+        'bp début': 'Début de bande passante',
+        'bp debut': 'Début de bande passante',
+        'bande passante fin de vert': 'Fin de bande passante',
+        'fin bande passante': 'Fin de bande passante',
+        'bp fin': 'Fin de bande passante',
+        // Other variations
+        'adaptatif': 'Adaptatif vertical',
+        'point repos': 'Point de repos',
+        'synchro': 'Synchro BTS',
+        'priorité piéton': 'Priorité piétons',
+        'priorite pieton': 'Priorité piétons',
+        'priorite pietons': 'Priorité piétons',
+        'escamotage phase': 'Escamotage de phase',
+        'fermeture': 'Fermeture anticipée',
+        'ouverture': 'Ouverture anticipée',
+        'instant coordination': 'Instant de coordination',
+        'seconde lucarne': 'Seconde lucarne',
+        'signal aide conduite': 'Signa d\'aide à la conduite',
+        'signa aide conduite': 'Signa d\'aide à la conduite',
+    };
+
+    // Check for exact match (case-insensitive)
+    if (mappings[lower]) {
+        return mappings[lower];
+    }
+
+    // Check for partial matches
+    for (const [key, value] of Object.entries(mappings)) {
+        if (lower.includes(key)) {
+            return value;
+        }
+    }
+
+    // Return original if no mapping found (capitalize first letter)
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+/**
  * Helper function to get cell value, handling merged cells
  * @param {Object} sheet - The worksheet object
  * @param {number} row - 0-based row index
@@ -83,9 +137,15 @@ export async function importExcelFile(file) {
                         console.log('Found Formulaire sheet, parsing groups...');
                         parseGroupsSheet(sheetData, result, sheetName);
                     }
-                    // Parse 6th sheet (index 5) for conflict matrix, diagram data, and action table
+                    // Parse 6th sheet (index 5) for conflict matrix, diagram data, and action table (PF1)
                     else if (sheetIndex === 5) {
-                        parseMatrixSheet(sheetData, result, sheet);
+                        parseMatrixSheet(sheetData, result, sheet, sheetName);
+                    }
+                    // Parse sheets after index 5 as additional PF tabs (PF2, PF3, ...)
+                    else if (sheetIndex > 5) {
+                        const pfNumber = sheetIndex - 4; // index 6 = PF2, index 7 = PF3, etc.
+                        console.log(`Parsing additional PF sheet: PF${pfNumber} from sheet ${sheetIndex}`);
+                        parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet);
                     }
                     // Parse Traffic sheet if found
                     else if (normalizedSheetName.includes('trafic') || normalizedSheetName.includes('traffic')) {
@@ -229,8 +289,21 @@ function parseGroupsSheet(sheetData, result) {
  *   - AK6, AK8, AK10... = Déb (début de phase verte)
  *   - AL6, AL8, AL10... = Fin (fin de phase verte)
  */
-function parseMatrixSheet(sheetData, result, sheet) {
+function parseMatrixSheet(sheetData, result, sheet, sheetName) {
     if (sheetData.length < 6) return;
+
+    // Get tab color from Excel sheet properties
+    let tabColor = null;
+    if (sheet['!tabColor']) {
+        // tabColor can be { rgb: 'RRGGBB' } or { theme: X, tint: Y }
+        if (sheet['!tabColor'].rgb) {
+            tabColor = '#' + sheet['!tabColor'].rgb;
+        } else if (sheet['!tabColor'].argb) {
+            // ARGB format: first 2 chars are alpha, rest is RGB
+            tabColor = '#' + sheet['!tabColor'].argb.substring(2);
+        }
+    }
+    console.log(`Sheet "${sheetName}" tab color:`, tabColor);
 
     console.log('parseMatrixSheet called, sheetData length:', sheetData.length);
     console.log('Number of groups:', result.groups.length);
@@ -258,6 +331,9 @@ function parseMatrixSheet(sheetData, result, sheet) {
     const MATRIX_COL_START = 2;  // D (Excel col 4) → index 2
     const MATRIX_ROW_START = 5;  // Row 6 in Excel → index 5
 
+    // Store diagram data for PF1 (same format as additional PF tabs)
+    const pf1Diagram = [];
+
     let rowIndex = 0;
     let excelRow = MATRIX_ROW_START;
 
@@ -284,30 +360,41 @@ function parseMatrixSheet(sheetData, result, sheet) {
                 console.log(`  Row ${excelRow + 1} length: ${row.length}, checking cols AJ(${COL_DA}), AK(${COL_DEB}), AL(${COL_FIN})`);
                 console.log(`  Raw values: AJ="${row[COL_DA]}", AK="${row[COL_DEB]}", AL="${row[COL_FIN]}"`);
 
-                const da = parseNumber(row[COL_DA], 0);
+                // DA is a string (2 characters), Déb and Fin are numbers
+                const daRaw = row[COL_DA];
+                const da = (daRaw !== null && daRaw !== undefined && daRaw !== '') ? String(daRaw).trim() : '';
                 const deb = parseNumber(row[COL_DEB], 0);
                 const fin = parseNumber(row[COL_FIN], 0);
 
-                console.log(`  Group ${rowIndex + 1} diagram: DA (Délai d'approche)=${da}, Déb=${deb}, Fin=${fin}`);
-
-                // Update group with diagram data
-                // offset = Déb (start of green phase), keep 0 if Déb = 0
-                result.groups[rowIndex].offset = deb;
-                result.groups[rowIndex].da = da; // Délai d'approche
+                console.log(`  Group ${rowIndex + 1} diagram: DA (Délai d'approche)="${da}", Déb=${deb}, Fin=${fin}`);
 
                 // Calculate green duration from Déb and Fin
+                let greenDuration = 0;
                 if (deb === 0 && fin === 0) {
                     // Both are 0: no green phase defined
-                    result.groups[rowIndex].durations.green = 0;
+                    greenDuration = 0;
                 } else if (fin >= deb) {
                     // Normal case: Fin > Déb
-                    result.groups[rowIndex].durations.green = fin - deb;
+                    greenDuration = fin - deb;
                 } else {
                     // Wrapping case: green phase crosses cycle boundary
-                    result.groups[rowIndex].durations.green = (result.cycleLength - deb) + fin;
+                    greenDuration = (result.cycleLength - deb) + fin;
                 }
 
-                console.log(`  Group ${rowIndex + 1}: offset=${deb}, green=${result.groups[rowIndex].durations.green}`);
+                // Update group with diagram data (for initial display)
+                result.groups[rowIndex].offset = deb;
+                result.groups[rowIndex].da = da;
+                result.groups[rowIndex].durations.green = greenDuration;
+
+                // Also store in pf1Diagram for PF tab (same format as additional PFs)
+                pf1Diagram.push({
+                    groupId: result.groups[rowIndex].id,
+                    da: da,
+                    offset: deb,
+                    greenDuration: greenDuration
+                });
+
+                console.log(`  Group ${rowIndex + 1}: offset=${deb}, green=${greenDuration}`);
             }
         }
 
@@ -385,7 +472,7 @@ function parseMatrixSheet(sheetData, result, sheet) {
             const action = {
                 id: actions.length + 1,
                 gf: parseNumber(gfValue, ''),
-                action: String(actionValue || '').trim(),
+                action: normalizeActionName(actionValue),
                 description: String(descValue || '').trim(),
                 deb: parseNumber(row[COL_ACTION_DEB], ''),
                 fin: parseNumber(row[COL_ACTION_FIN], ''),
@@ -439,8 +526,222 @@ function parseMatrixSheet(sheetData, result, sheet) {
     }
 
     // Store actions in both pfTabs and actionData for compatibility
-    result.pfTabs = [{ id: 1, name: 'PF1', data: actions }];
+    // Use Excel sheet name and tab color
+    // Include diagram data and cycleLength for consistency with additional PF tabs
+    result.pfTabs = [{
+        id: 1,
+        name: sheetName || 'PF1',
+        color: tabColor,
+        cycleLength: result.cycleLength,
+        diagram: pf1Diagram,
+        data: actions
+    }];
     result.actionData = actions; // Also store in actionData for App.jsx compatibility
+}
+
+/**
+ * Parse additional PF sheets (index > 5) for cycle, diagram data, and action table
+ * - AL3: Cycle duration
+ * - AJ, AK, AL columns (rows 6, 8, 10...): DA, Déb, Fin for diagram
+ * - Row 110+: Action table (conditions micro)
+ *
+ * @param {Array} sheetData - Sheet data as 2D array
+ * @param {Object} result - Result object to populate
+ * @param {number} pfNumber - PF number (2, 3, 4...)
+ * @param {string} sheetName - Original sheet name from Excel
+ * @param {Object} sheet - Excel sheet object (for tab color)
+ */
+function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet) {
+    console.log(`parseAdditionalPFSheet called for PF${pfNumber}, sheetData length:`, sheetData.length);
+
+    if (sheetData.length < 6) {
+        console.log(`Sheet ${sheetName} too short, skipping`);
+        return;
+    }
+
+    // Get tab color from Excel sheet properties
+    let tabColor = null;
+    if (sheet && sheet['!tabColor']) {
+        if (sheet['!tabColor'].rgb) {
+            tabColor = '#' + sheet['!tabColor'].rgb;
+        } else if (sheet['!tabColor'].argb) {
+            tabColor = '#' + sheet['!tabColor'].argb.substring(2);
+        }
+    }
+    console.log(`Sheet "${sheetName}" tab color:`, tabColor);
+
+    // Column indices for sheetData array (Excel col - 2)
+    const COL_DA = 34;   // AJ (Excel col 36) → index 34 - Délai d'approche
+    const COL_DEB = 35;  // AK (Excel col 37) → index 35 - Début
+    const COL_FIN = 36;  // AL (Excel col 38) → index 36 - Fin
+
+    // Extract cycle duration from AL3 (row 3 = index 2, col AL = index 36)
+    let pfCycleLength = result.cycleLength; // Default to main cycle
+    if (sheetData[2] && sheetData[2][COL_FIN]) {
+        const cycle = parseNumber(sheetData[2][COL_FIN], null);
+        console.log(`Cycle length from AL3 in PF${pfNumber}:`, cycle);
+        if (cycle && cycle >= 10 && cycle <= 300) {
+            pfCycleLength = cycle;
+        }
+    }
+
+    // Extract diagram data for each group (DA, Déb, Fin)
+    // Store as pfDiagram array with group timing info
+    const pfDiagram = [];
+    const size = result.groups.length;
+    let excelRow = 5; // Start at row 6 (index 5)
+
+    for (let groupIndex = 0; groupIndex < size && excelRow < sheetData.length; groupIndex++) {
+        const row = sheetData[excelRow];
+
+        if (row) {
+            const da = parseNumber(row[COL_DA], 0);
+            const deb = parseNumber(row[COL_DEB], 0);
+            const fin = parseNumber(row[COL_FIN], 0);
+
+            // Calculate green duration
+            let greenDuration = 0;
+            if (deb === 0 && fin === 0) {
+                greenDuration = 0;
+            } else if (fin >= deb) {
+                greenDuration = fin - deb;
+            } else {
+                greenDuration = (pfCycleLength - deb) + fin;
+            }
+
+            pfDiagram.push({
+                groupId: result.groups[groupIndex]?.id || groupIndex + 1,
+                da: da,
+                offset: deb,
+                greenDuration: greenDuration
+            });
+
+            console.log(`  PF${pfNumber} Group ${groupIndex + 1}: DA=${da}, Déb=${deb}, Fin=${fin}, green=${greenDuration}`);
+        }
+
+        excelRow += 2; // Every 2 rows: row 6, 8, 10...
+    }
+
+    // Parse action table starting at row 110 (Excel row 110 = 0-based index 109)
+    const ACTION_ROW_START = 109;
+
+    // Column indices for action table
+    const COL_GF = 0;
+    const COL_ACTION = 1;
+    const COL_DESCRIPTION = 2;
+    const COL_ACTION_DEB = 35;
+    const COL_ACTION_FIN = 36;
+    const COL_ABRV = 37;
+    const COL_ACTION_MICRO = 38;
+    const COL_ACTION_GF1 = 88;
+    const COL_ACTION_GF2 = 91;
+    const COL_ACTION_GF3 = 94;
+    const COL_ACTION_GF4 = 97;
+    const COL_PLAGE1 = 100;
+    const COL_PLAGE2 = 103;
+
+    const actions = [];
+    let actionRow = ACTION_ROW_START;
+
+    while (actionRow < sheetData.length) {
+        const row = sheetData[actionRow];
+
+        if (!row) {
+            actionRow++;
+            continue;
+        }
+
+        const gfValue = row[COL_GF];
+        const actionValue = row[COL_ACTION];
+        const descValue = row[COL_DESCRIPTION];
+
+        // Stop if row is empty (10 consecutive empty rows = end of table)
+        if ((gfValue === '' || gfValue === undefined) &&
+            (actionValue === '' || actionValue === undefined) &&
+            (descValue === '' || descValue === undefined)) {
+            actionRow++;
+            let emptyCount = 0;
+            for (let i = 0; i < 10 && (actionRow + i) < sheetData.length; i++) {
+                const checkRow = sheetData[actionRow + i];
+                if (!checkRow || ((checkRow[COL_GF] === '' || checkRow[COL_GF] === undefined) &&
+                    (checkRow[COL_ACTION] === '' || checkRow[COL_ACTION] === undefined))) {
+                    emptyCount++;
+                } else {
+                    break;
+                }
+            }
+            if (emptyCount >= 10) break;
+            continue;
+        }
+
+        // If we have at least some data, create an action entry
+        if (gfValue !== '' || actionValue !== '' || descValue !== '') {
+            const action = {
+                id: actions.length + 1,
+                gf: parseNumber(gfValue, ''),
+                action: normalizeActionName(actionValue),
+                description: String(descValue || '').trim(),
+                deb: parseNumber(row[COL_ACTION_DEB], ''),
+                fin: parseNumber(row[COL_ACTION_FIN], ''),
+                abrv: String(row[COL_ABRV] || '').trim(),
+                micro: String(row[COL_ACTION_MICRO] || '').trim(),
+                plage1: parseNumber(row[COL_PLAGE1], ''),
+                plage2: parseNumber(row[COL_PLAGE2], ''),
+                actGf1: parseNumber(row[COL_ACTION_GF1], ''),
+                actGf1Gf2: parseNumber(row[COL_ACTION_GF2], ''),
+                actGf1Gf3: parseNumber(row[COL_ACTION_GF3], ''),
+                actGf1Gf4: parseNumber(row[COL_ACTION_GF4], '')
+            };
+
+            actions.push(action);
+        }
+
+        actionRow++;
+
+        // Safety limit
+        if (actions.length >= 200) {
+            console.log('Reached max actions limit (200)');
+            break;
+        }
+    }
+
+    console.log(`PF${pfNumber}: ${actions.length} actions parsed`);
+
+    // Helper function to create empty action row
+    const createEmptyActionRow = (id) => ({
+        id,
+        gf: '',
+        action: '',
+        description: '',
+        deb: '',
+        fin: '',
+        abrv: '',
+        micro: '',
+        plage1: '',
+        plage2: '',
+        actGf1: '',
+        actGf1Gf2: '',
+        actGf1Gf3: '',
+        actGf1Gf4: ''
+    });
+
+    // Add empty rows after imported data
+    const minTotalRows = Math.max(30, actions.length + 10);
+    for (let i = actions.length; i < minTotalRows; i++) {
+        actions.push(createEmptyActionRow(i + 1));
+    }
+
+    // Add this PF tab to result with Excel sheet name and color
+    result.pfTabs.push({
+        id: pfNumber,
+        name: sheetName || `PF${pfNumber}`,
+        color: tabColor,
+        cycleLength: pfCycleLength,
+        diagram: pfDiagram,
+        data: actions
+    });
+
+    console.log(`Added "${sheetName}" tab (PF${pfNumber}) with color=${tabColor}, cycle=${pfCycleLength}, ${pfDiagram.length} diagram entries, ${actions.length} actions`);
 }
 
 /**

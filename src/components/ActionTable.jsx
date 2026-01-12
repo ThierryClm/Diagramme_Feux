@@ -192,7 +192,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                             </th>
                             <th rowSpan="2">Fin</th>
                             <th rowSpan="2">Abrv</th>
-                            <th rowSpan="2" title="Action Micro (40 car.)">Action_Micro</th>
+                            <th rowSpan="2" title="Action Micro (60 car.)">Action_Micro</th>
                             <th colSpan="2" className="header-grouped">Plage</th>
                             <th colSpan="4" className="header-grouped">Action GF</th>
                         </tr>

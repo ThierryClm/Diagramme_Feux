@@ -917,6 +917,48 @@ export const useTrafficLight = () => {
         localStorage.setItem('trafficActivePF', activePFId.toString());
     }, [pfTabs, activePFId]);
 
+    // Apply diagram data from active PF tab to groups when changing tabs
+    // Use a ref to track the last applied PF to avoid unnecessary re-renders
+    const lastAppliedPFRef = useRef(null);
+
+    useEffect(() => {
+        const activePF = pfTabs.find(pf => pf.id === activePFId);
+
+        // Only apply if PF changed and has diagram data
+        if (activePF && activePF.diagram && activePF.diagram.length > 0) {
+            // Check if we already applied this PF's diagram
+            const pfKey = `${activePF.id}-${JSON.stringify(activePF.diagram)}`;
+            if (lastAppliedPFRef.current === pfKey) {
+                return; // Already applied, skip
+            }
+            lastAppliedPFRef.current = pfKey;
+
+            // Update groups with diagram data from active PF
+            setGroups(prevGroups => {
+                const newGroups = prevGroups.map(group => {
+                    const diagramEntry = activePF.diagram.find(d => d.groupId === group.id);
+                    if (diagramEntry) {
+                        return {
+                            ...group,
+                            offset: diagramEntry.offset,
+                            da: diagramEntry.da,
+                            durations: {
+                                ...group.durations,
+                                green: diagramEntry.greenDuration
+                            }
+                        };
+                    }
+                    return group;
+                });
+                return newGroups;
+            });
+            // Also update cycle length if the PF has a specific one
+            if (activePF.cycleLength) {
+                setCycleLength(activePF.cycleLength);
+            }
+        }
+    }, [activePFId, pfTabs]);
+
     // Save intersection image to localStorage
     useEffect(() => {
         if (intersectionImage) {

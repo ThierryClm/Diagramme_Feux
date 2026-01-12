@@ -464,9 +464,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     // In simulation mode: show overlay ONLY when action is CHECKED (normal logic - hidden by default)
     const pointReposActions = actionData.filter(action =>
         action.action === 'Point de repos' &&
-        action.deb !== '' &&
-        action.plage1 !== '' &&
-        action.plage2 !== '' &&
+        action.deb !== '' && action.deb !== undefined &&
+        action.plage1 !== '' && action.plage1 !== undefined && action.plage1 !== 0 &&
+        action.plage2 !== '' && action.plage2 !== undefined && action.plage2 !== 0 &&
         (!simulationFilter || simulationFilter.has(action.id))
     );
 
@@ -474,9 +474,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     // In simulation mode: show overlay ONLY when action is CHECKED (normal logic - hidden by default)
     const synchroBtsActions = actionData.filter(action =>
         action.action === 'Synchro BTS' &&
-        action.deb !== '' &&
-        action.plage1 !== '' &&
-        action.plage2 !== '' &&
+        action.deb !== '' && action.deb !== undefined &&
+        action.plage1 !== '' && action.plage1 !== undefined && action.plage1 !== 0 &&
+        action.plage2 !== '' && action.plage2 !== undefined && action.plage2 !== 0 &&
         (!simulationFilter || simulationFilter.has(action.id))
     );
 
