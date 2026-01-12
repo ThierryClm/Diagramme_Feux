@@ -351,8 +351,8 @@
     text-align: left;
     font-weight: bold;
     color: #fff;
-    width: 180px;
-    max-width: 180px;
+    width: 220px;
+    max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -415,11 +415,11 @@
 }
 
 .green-wave-data-table .col-group-select {
-    width: 140px;
+    width: 180px;
 }
 
 .green-wave-data-table .col-group-select select {
-    width: 130px;
+    width: 170px;
     text-overflow: ellipsis;
 }
 
