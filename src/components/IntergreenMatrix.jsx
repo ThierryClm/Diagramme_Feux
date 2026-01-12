@@ -1,7 +1,31 @@
 import React from 'react';
 import './IntergreenMatrix.css';
 
-const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData }) => {
+const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs }) => {
+
+    // Get the reference matrix from PF1 for comparison
+    const pf1Matrix = pfTabs?.find(pf => pf.id === 1)?.conflictMatrix || null;
+    const isComparingWithPF1 = activePFId && activePFId !== 1 && pf1Matrix && pf1Matrix.length > 0;
+
+    // Compare current value with PF1 value
+    // Returns: 'higher' (red), 'lower' (green), or null (equal or no comparison)
+    const compareWithPF1 = (fromIdx, toIdx, currentVal) => {
+        if (!isComparingWithPF1) return null;
+        if (fromIdx === toIdx) return null; // Skip diagonal
+
+        const pf1Val = pf1Matrix[fromIdx]?.[toIdx];
+
+        // Convert to numbers for comparison
+        const current = (currentVal === '' || currentVal === undefined || currentVal === null) ? 0 : parseInt(currentVal);
+        const pf1 = (pf1Val === '' || pf1Val === undefined || pf1Val === null) ? 0 : parseInt(pf1Val);
+
+        // Only compare if at least one has a value
+        if (current === 0 && pf1 === 0) return null;
+
+        if (current > pf1) return 'higher'; // Red - value is higher than PF1
+        if (current < pf1) return 'lower';  // Green - value is lower than PF1
+        return null; // Equal
+    };
 
     // Get all "Seconde lucarne" actions
     const getSecondesLucarnes = () => {
@@ -267,6 +291,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                                 {row.map((val, toIdx) => {
                                     const hasInsufficientDelay = isDelayInsufficient(fromIdx, toIdx);
                                     const hasAsymmetry = isAsymmetric(fromIdx, toIdx);
+                                    const comparisonResult = compareWithPF1(fromIdx, toIdx, val);
                                     let cellClass = '';
                                     let inputClass = '';
                                     if (hasInsufficientDelay) {
@@ -275,6 +300,13 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                                     } else if (hasAsymmetry) {
                                         cellClass = 'matrix-asymmetric-cell';
                                         inputClass = 'matrix-error-input';
+                                    }
+
+                                    // Apply comparison class for PF2, PF3, etc.
+                                    if (comparisonResult === 'higher') {
+                                        inputClass += ' matrix-compare-higher';
+                                    } else if (comparisonResult === 'lower') {
+                                        inputClass += ' matrix-compare-lower';
                                     }
 
                                     return (

@@ -159,3 +159,14 @@
 .conflict-details li {
     margin: 4px 0;
 }
+
+/* Comparison with PF1 matrix - for PF2, PF3, etc. */
+.matrix-compare-higher {
+    color: #ff4444 !important; /* Red - value is higher than PF1 */
+    font-weight: bold !important;
+}
+
+.matrix-compare-lower {
+    color: #44ff44 !important; /* Green - value is lower than PF1 */
+    font-weight: bold !important;
+}

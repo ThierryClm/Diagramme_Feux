@@ -1041,6 +1041,8 @@ function App() {
                                             groups={groups}
                                             cycleLength={cycleLength}
                                             actionData={actionData}
+                                            activePFId={activePFId}
+                                            pfTabs={pfTabs}
                                         />
                                     </div>
                                 </>
