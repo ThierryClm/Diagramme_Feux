@@ -270,6 +270,98 @@ const GreenWavePage = () => {
         });
     };
 
+    // Change PF for all intersections based on a reference PF
+    // Tries to match by name first, then by cycle length
+    const handleGlobalPfChange = (referencePfId) => {
+        if (!intersections || intersections.length === 0) return;
+
+        const firstIntersection = intersections[0];
+        const referencePf = firstIntersection.pfTabs?.find(pf => pf.id === referencePfId);
+        if (!referencePf) return;
+
+        const referencePfName = referencePf.name;
+        const referenceCycleLength = referencePf.cycleLength || firstIntersection.cycleLength;
+
+        setIntersections(prev => {
+            return prev.map((intersection, idx) => {
+                // Load fresh data from localStorage for this intersection
+                const projectKey = `traffic_project_${intersection.projectName}`;
+                const projectRaw = localStorage.getItem(projectKey);
+
+                let newGroups = intersection.groups;
+                let newCycleLength = intersection.cycleLength;
+                let newPfTabs = intersection.pfTabs;
+
+                if (projectRaw) {
+                    try {
+                        const projectData = JSON.parse(projectRaw);
+                        if (projectData.groups) {
+                            newGroups = projectData.groups;
+                        }
+                        if (projectData.cycleLength) {
+                            newCycleLength = projectData.cycleLength;
+                        }
+                        if (projectData.pfTabs) {
+                            newPfTabs = projectData.pfTabs;
+                        }
+                    } catch (e) {
+                        console.error(`Failed to load project data for ${intersection.projectName}`, e);
+                    }
+                }
+
+                // Find matching PF: first by name, then by cycle length
+                let matchingPf = newPfTabs?.find(pf => pf.name === referencePfName);
+
+                if (!matchingPf) {
+                    // Try to find first PF with matching cycle length
+                    matchingPf = newPfTabs?.find(pf => {
+                        const pfCycle = pf.cycleLength || newCycleLength;
+                        return pfCycle === referenceCycleLength;
+                    });
+                }
+
+                // Fallback to first PF if no match found
+                if (!matchingPf && newPfTabs?.length > 0) {
+                    matchingPf = newPfTabs[0];
+                }
+
+                const selectedPfId = matchingPf?.id || 1;
+                const selectedPf = newPfTabs?.find(pf => pf.id === selectedPfId);
+
+                // Use PF-specific cycleLength if available
+                const pfCycleLength = selectedPf?.cycleLength || newCycleLength;
+
+                // Update groups with PF-specific diagram data
+                let updatedGroups = newGroups;
+                if (selectedPf?.diagram && Array.isArray(selectedPf.diagram)) {
+                    updatedGroups = newGroups.map(group => {
+                        const diagramEntry = selectedPf.diagram.find(d => d.groupId === group.id);
+                        if (diagramEntry) {
+                            return {
+                                ...group,
+                                offset: diagramEntry.offset ?? group.offset,
+                                durations: {
+                                    ...group.durations,
+                                    green: diagramEntry.greenDuration ?? group.durations?.green
+                                }
+                            };
+                        }
+                        return group;
+                    });
+                }
+
+                return {
+                    ...intersection,
+                    selectedPfId: selectedPfId,
+                    groups: updatedGroups,
+                    cycleLength: pfCycleLength,
+                    pfTabs: newPfTabs,
+                    actionData: selectedPf?.data || []
+                };
+            });
+        });
+    };
+
     // Move intersection up or down in the list
     const moveIntersection = (index, direction) => {
         setIntersections(prev => {
@@ -493,12 +585,21 @@ const GreenWavePage = () => {
                 <h1>
                     Onde Verte
                     {greenWaveName && <span className="folder-name">- {greenWaveName}</span>}
-                    {intersections?.[0]?.pfTabs && intersections[0].selectedPfId && (
-                        <span className="folder-name">
-                            ({intersections[0].pfTabs.find(pf => pf.id === intersections[0].selectedPfId)?.name || 'PF1'})
-                        </span>
-                    )}
                 </h1>
+                {intersections?.[0]?.pfTabs && intersections[0].pfTabs.length > 0 && (
+                    <select
+                        className="green-wave-pf-select"
+                        value={intersections[0].selectedPfId || 1}
+                        onChange={(e) => handleGlobalPfChange(parseInt(e.target.value))}
+                        title="Changer le plan de feu pour tous les carrefours (par nom ou durée de cycle)"
+                    >
+                        {intersections[0].pfTabs.map(pf => (
+                            <option key={pf.id} value={pf.id}>
+                                {pf.name}{pf.cycleLength ? ` (${pf.cycleLength}s)` : ''}
+                            </option>
+                        ))}
+                    </select>
+                )}
                 <div className="green-wave-controls">
                     <label>
                         V. montante :
