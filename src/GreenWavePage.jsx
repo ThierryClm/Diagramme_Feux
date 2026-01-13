@@ -555,6 +555,210 @@ const GreenWavePage = () => {
                     <button className="green-wave-save-btn" onClick={handleSaveGreenWave}>
                         Enregistrer
                     </button>
+                    <button className="green-wave-print-btn" onClick={() => {
+                        const svgElement = document.querySelector('.green-wave-svg');
+                        if (!svgElement) return;
+
+                        const printWindow = window.open('', '_blank');
+                        const svgClone = svgElement.cloneNode(true);
+
+                        // Build title
+                        let title = 'Onde Verte';
+                        if (greenWaveName) title += ` - ${greenWaveName}`;
+                        if (intersections?.[0]?.pfTabs && intersections[0].selectedPfId) {
+                            const pfName = intersections[0].pfTabs.find(pf => pf.id === intersections[0].selectedPfId)?.name || 'PF1';
+                            title += ` (${pfName})`;
+                        }
+
+                        // Get SVG dimensions for scaling
+                        const svgWidth = svgElement.getAttribute('width') || svgElement.getBoundingClientRect().width;
+                        const svgHeight = svgElement.getAttribute('height') || svgElement.getBoundingClientRect().height;
+
+                        // Get current date and time for footer
+                        const now = new Date();
+                        const dateTimeStr = now.toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+
+                        printWindow.document.write(`
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <title>${title}</title>
+                                <style>
+                                    @page {
+                                        size: landscape;
+                                        margin: 10mm 5mm 10mm 5mm; /* top right bottom left */
+                                    }
+                                    body {
+                                        margin: 0;
+                                        padding: 5px;
+                                        background: white;
+                                        -webkit-print-color-adjust: exact;
+                                        print-color-adjust: exact;
+                                        color-adjust: exact;
+                                        font-family: Arial, sans-serif;
+                                    }
+                                    h1 {
+                                        color: #2E7D32;
+                                        font-family: Arial, sans-serif;
+                                        margin-bottom: 10px;
+                                        font-size: 16px;
+                                    }
+                                    h1 .folder-name {
+                                        color: #558B2F;
+                                        font-weight: normal;
+                                    }
+                                    .svg-container {
+                                        width: 100%;
+                                        overflow: visible;
+                                    }
+                                    svg {
+                                        display: block;
+                                        max-width: 100%;
+                                        height: auto;
+                                        background: white;
+                                    }
+                                    .print-footer {
+                                        margin-top: 10px;
+                                        padding-top: 5px;
+                                        border-top: 1px solid #ccc;
+                                        font-size: 10px;
+                                        color: #666;
+                                        text-align: right;
+                                    }
+                                    .print-info {
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                        margin-bottom: 8px;
+                                        font-size: 11px;
+                                        color: #333;
+                                    }
+                                    .print-speeds {
+                                        display: flex;
+                                        gap: 20px;
+                                    }
+                                    .print-speeds span {
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 5px;
+                                    }
+                                    .print-legend {
+                                        display: flex;
+                                        gap: 15px;
+                                        flex-wrap: wrap;
+                                    }
+                                    .legend-item {
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 5px;
+                                        font-size: 10px;
+                                        color: #555;
+                                    }
+                                    .legend-color {
+                                        width: 16px;
+                                        height: 10px;
+                                        border-radius: 2px;
+                                    }
+                                    .legend-line {
+                                        width: 24px;
+                                        height: 0;
+                                        border-top: 2px dashed;
+                                    }
+                                    .legend-bandwidth {
+                                        width: 16px;
+                                        height: 10px;
+                                        border-radius: 2px;
+                                        border: 1px solid;
+                                    }
+                                    /* Force white background on SVG elements */
+                                    svg rect[fill="#1a1a1a"],
+                                    svg rect[fill="#1e1e1e"] {
+                                        fill: #f5f5f5 !important;
+                                    }
+                                    /* Adjust text colors for print */
+                                    svg text[fill="#fff"],
+                                    svg text[fill="white"] {
+                                        fill: #333 !important;
+                                    }
+                                    svg text[fill="#ccc"],
+                                    svg text[fill="#aaa"],
+                                    svg text[fill="#888"] {
+                                        fill: #555 !important;
+                                    }
+                                    /* Keep colored elements visible */
+                                    svg text[fill="#4CAF50"] { fill: #2E7D32 !important; }
+                                    svg text[fill="#8BC34A"] { fill: #558B2F !important; }
+                                    svg text[fill="#FF9800"] { fill: #E65100 !important; }
+                                    svg line[stroke="#333"],
+                                    svg line[stroke="#555"] {
+                                        stroke: #ccc !important;
+                                    }
+                                    @media print {
+                                        body {
+                                            -webkit-print-color-adjust: exact;
+                                            print-color-adjust: exact;
+                                            color-adjust: exact;
+                                        }
+                                    }
+                                </style>
+                            </head>
+                            <body>
+                                <h1>Onde Verte${greenWaveName ? ` <span class="folder-name">- ${greenWaveName}</span>` : ''}${intersections?.[0]?.pfTabs && intersections[0].selectedPfId ? ` <span class="folder-name">(${intersections[0].pfTabs.find(pf => pf.id === intersections[0].selectedPfId)?.name || 'PF1'})</span>` : ''}</h1>
+                                <div class="print-info">
+                                    <div class="print-speeds">
+                                        <span><strong>V. montante:</strong> ${speedUp} km/h</span>
+                                        <span><strong>V. descendante:</strong> ${speedDown} km/h</span>
+                                    </div>
+                                    <div class="print-legend">
+                                        <div class="legend-item">
+                                            <div class="legend-color" style="background: #4CAF50;"></div>
+                                            <span>Vert</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-color" style="background: #FF9800;"></div>
+                                            <span>Orange</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-color" style="background: #f44336;"></div>
+                                            <span>Rouge</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-line" style="border-color: #4CAF50;"></div>
+                                            <span>Vitesse montante</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-line" style="border-color: #FF9800;"></div>
+                                            <span>Vitesse descendante</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-bandwidth" style="background: rgba(76, 175, 80, 0.3); border-color: #4CAF50;"></div>
+                                            <span>Bande passante</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="svg-container">
+                                    ${svgClone.outerHTML}
+                                </div>
+                                <div class="print-footer">
+                                    Imprimé le ${dateTimeStr}
+                                </div>
+                            </body>
+                            </html>
+                        `);
+                        printWindow.document.close();
+                        printWindow.focus();
+                        setTimeout(() => {
+                            printWindow.print();
+                        }, 250);
+                    }}>
+                        Imprimer
+                    </button>
                 </div>
             </div>
 
@@ -829,7 +1033,7 @@ const GreenWavePage = () => {
                                     y={yG2 - 12}
                                     textAnchor="end"
                                     fill="#fff"
-                                    fontSize="10"
+                                    fontSize="13"
                                     fontWeight="bold"
                                 >
                                     {truncateName(intersection.projectName)}

@@ -148,6 +148,21 @@
     background: #45a049;
 }
 
+.green-wave-print-btn {
+    padding: 6px 16px;
+    background: #9C27B0;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.9em;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.green-wave-print-btn:hover {
+    background: #7B1FA2;
+}
+
 .green-wave-close {
     background: none;
     border: none;
