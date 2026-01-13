@@ -676,24 +676,24 @@ const GreenWavePage = () => {
                     </select>
                 )}
                 <div className="green-wave-controls">
-                    <label style={{ color: '#FF9800' }}>
-                        V. desc :
-                        <input
-                            type="number"
-                            value={speedDown}
-                            onChange={(e) => setSpeedDown(parseInt(e.target.value) || 50)}
-                            min="10"
-                            max="130"
-                            style={{ width: '40px' }}
-                        />
-                        km/h
-                    </label>
                     <label style={{ color: '#8BC34A' }}>
                         V. mont :
                         <input
                             type="number"
                             value={speedUp}
                             onChange={(e) => setSpeedUp(parseInt(e.target.value) || 50)}
+                            min="10"
+                            max="130"
+                            style={{ width: '40px' }}
+                        />
+                        km/h
+                    </label>
+                    <label style={{ color: '#FF9800' }}>
+                        V. desc :
+                        <input
+                            type="number"
+                            value={speedDown}
+                            onChange={(e) => setSpeedDown(parseInt(e.target.value) || 50)}
                             min="10"
                             max="130"
                             style={{ width: '40px' }}
@@ -1240,10 +1240,10 @@ const GreenWavePage = () => {
                                     </text>
                                 )}
 
-                                {/* Project name - 16px above group 2 (Montant) */}
+                                {/* Project name - 16px above group 1 (Descendant) */}
                                 <text
                                     x={PADDING_LEFT - 5}
-                                    y={yG2 - 12}
+                                    y={yG1 - 12}
                                     textAnchor="end"
                                     fill="#fff"
                                     fontSize="13"
@@ -1548,14 +1548,14 @@ const GreenWavePage = () => {
                             <th rowSpan="2">Carrefour</th>
                             <th rowSpan="2">PF</th>
                             <th rowSpan="2">Cycle</th>
-                            <th colSpan="2" style={{ background: '#2d4a2d' }}>GF Descendant</th>
                             <th colSpan="2" style={{ background: '#3d4a2d' }}>GF Montant</th>
+                            <th colSpan="2" style={{ background: '#2d4a2d' }}>GF Descendant</th>
                         </tr>
                         <tr className="sub-header">
-                            <th style={{ color: '#FF9800' }}>Groupe</th>
-                            <th style={{ color: '#FF9800' }}>Dist</th>
                             <th style={{ color: '#4CAF50' }}>Groupe</th>
                             <th style={{ color: '#4CAF50' }}>Dist</th>
+                            <th style={{ color: '#FF9800' }}>Groupe</th>
+                            <th style={{ color: '#FF9800' }}>Dist</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1612,26 +1612,6 @@ const GreenWavePage = () => {
                                         </td>
                                     <td className="col-group-select">
                                         <select
-                                            value={intersection.selectedGroup1 || ''}
-                                            onChange={(e) => updateSelectedGroup1(idx, parseInt(e.target.value))}
-                                            style={{ color: '#FF9800' }}
-                                        >
-                                            {intersection.groups.map(g => (
-                                                <option key={g.id} value={g.id}>
-                                                    G{g.id} - {g.name || 'Sans nom'}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td className="col-distance">
-                                        <input
-                                            type="number"
-                                            value={intersection.distance}
-                                            onChange={(e) => updateDistance(idx, e.target.value)}
-                                        />
-                                    </td>
-                                    <td className="col-group-select">
-                                        <select
                                             value={intersection.selectedGroup2 || ''}
                                             onChange={(e) => updateSelectedGroup2(idx, parseInt(e.target.value))}
                                             style={{ color: '#4CAF50' }}
@@ -1648,6 +1628,26 @@ const GreenWavePage = () => {
                                             type="number"
                                             value={intersection.distanceG2 ?? intersection.distance}
                                             onChange={(e) => updateDistanceG2(idx, e.target.value)}
+                                        />
+                                    </td>
+                                    <td className="col-group-select">
+                                        <select
+                                            value={intersection.selectedGroup1 || ''}
+                                            onChange={(e) => updateSelectedGroup1(idx, parseInt(e.target.value))}
+                                            style={{ color: '#FF9800' }}
+                                        >
+                                            {intersection.groups.map(g => (
+                                                <option key={g.id} value={g.id}>
+                                                    G{g.id} - {g.name || 'Sans nom'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td className="col-distance">
+                                        <input
+                                            type="number"
+                                            value={intersection.distance}
+                                            onChange={(e) => updateDistance(idx, e.target.value)}
                                         />
                                     </td>
                                     </tr>
