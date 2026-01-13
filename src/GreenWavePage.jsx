@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './components/GreenWaveViewer.css';
 
 const GreenWavePage = () => {
@@ -11,6 +11,31 @@ const GreenWavePage = () => {
     const [speedLineOffsetUp, setSpeedLineOffsetUp] = useState(0); // Offset horizontal ligne montante (en secondes)
     const [speedLineOffsetDown, setSpeedLineOffsetDown] = useState(0); // Offset horizontal ligne descendante (en secondes)
     const [dragging, setDragging] = useState(null); // 'up' ou 'down' ou null
+    // Parameters per PF (indexed by PF name): { pfName: { speedUp, speedDown, offsetUp, offsetDown } }
+    const [pfParams, setPfParams] = useState({});
+
+    // Get current PF name from first intersection
+    const getCurrentPfName = useCallback(() => {
+        if (!intersections || intersections.length === 0) return 'PF1';
+        const firstIntersection = intersections[0];
+        const selectedPfId = firstIntersection.selectedPfId || 1;
+        const selectedPf = firstIntersection.pfTabs?.find(pf => pf.id === selectedPfId);
+        return selectedPf?.name || 'PF1';
+    }, [intersections]);
+
+    // Save current parameters to pfParams for current PF
+    const saveCurrentPfParams = useCallback(() => {
+        const pfName = getCurrentPfName();
+        setPfParams(prev => ({
+            ...prev,
+            [pfName]: {
+                speedUp,
+                speedDown,
+                offsetUp: speedLineOffsetUp,
+                offsetDown: speedLineOffsetDown
+            }
+        }));
+    }, [getCurrentPfName, speedUp, speedDown, speedLineOffsetUp, speedLineOffsetDown]);
 
     // Save green wave data to localStorage
     const handleSaveGreenWave = () => {
@@ -19,6 +44,19 @@ const GreenWavePage = () => {
         const name = prompt('Nom de l\'onde verte:', greenWaveName || 'Onde verte');
         if (!name) return;
 
+        // Save current PF params before saving
+        const currentPfName = getCurrentPfName();
+        const updatedPfParams = {
+            ...pfParams,
+            [currentPfName]: {
+                speedUp,
+                speedDown,
+                offsetUp: speedLineOffsetUp,
+                offsetDown: speedLineOffsetDown
+            }
+        };
+        setPfParams(updatedPfParams);
+
         const greenWaveData = {
             name,
             intersections,
@@ -26,6 +64,7 @@ const GreenWavePage = () => {
             speedDown,
             speedLineOffsetUp,
             speedLineOffsetDown,
+            pfParams: updatedPfParams, // Save all PF params
             pixelsPerSecond,
             pixelsPerMeter,
             savedAt: new Date().toISOString()
@@ -138,6 +177,10 @@ const GreenWavePage = () => {
                     if (settings.pixelsPerMeter) setPixelsPerMeter(settings.pixelsPerMeter);
                     if (settings.speedLineOffsetUp !== undefined) setSpeedLineOffsetUp(settings.speedLineOffsetUp);
                     if (settings.speedLineOffsetDown !== undefined) setSpeedLineOffsetDown(settings.speedLineOffsetDown);
+                    // Load pfParams if available
+                    if (settings.pfParams) {
+                        setPfParams(settings.pfParams);
+                    }
                     // Update title with name
                     if (settings.name) {
                         document.title = `Onde Verte - ${settings.name}`;
@@ -279,8 +322,34 @@ const GreenWavePage = () => {
         const referencePf = firstIntersection.pfTabs?.find(pf => pf.id === referencePfId);
         if (!referencePf) return;
 
+        // Save current PF params before switching
+        const currentPfName = getCurrentPfName();
+        const updatedPfParams = {
+            ...pfParams,
+            [currentPfName]: {
+                speedUp,
+                speedDown,
+                offsetUp: speedLineOffsetUp,
+                offsetDown: speedLineOffsetDown
+            }
+        };
+        setPfParams(updatedPfParams);
+
         const referencePfName = referencePf.name;
         const referenceCycleLength = referencePf.cycleLength || firstIntersection.cycleLength;
+
+        // Load params for the new PF (if they exist)
+        const newPfParamsData = updatedPfParams[referencePfName];
+        if (newPfParamsData) {
+            setSpeedUp(newPfParamsData.speedUp ?? 50);
+            setSpeedDown(newPfParamsData.speedDown ?? 50);
+            setSpeedLineOffsetUp(newPfParamsData.offsetUp ?? 0);
+            setSpeedLineOffsetDown(newPfParamsData.offsetDown ?? 0);
+        } else {
+            // Reset to defaults if no saved params for this PF
+            setSpeedLineOffsetUp(0);
+            setSpeedLineOffsetDown(0);
+        }
 
         setIntersections(prev => {
             return prev.map((intersection, idx) => {
