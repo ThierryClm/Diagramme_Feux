@@ -517,6 +517,8 @@ function App() {
                         speed: greenWaveData.speed, // Backward compatibility
                         speedUp: greenWaveData.speedUp,
                         speedDown: greenWaveData.speedDown,
+                        speedLineOffsetUp: greenWaveData.speedLineOffsetUp,
+                        speedLineOffsetDown: greenWaveData.speedLineOffsetDown,
                         pixelsPerSecond: greenWaveData.pixelsPerSecond,
                         pixelsPerMeter: greenWaveData.pixelsPerMeter
                     }));

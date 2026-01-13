@@ -60,10 +60,32 @@ const GreenWavePage = () => {
                         const selectedPfId = intersection.selectedPfId || pfTabs[0]?.id || 1;
                         const selectedPf = pfTabs.find(pf => pf.id === selectedPfId);
 
+                        // Use PF-specific cycleLength if available
+                        const pfCycleLength = selectedPf?.cycleLength || projectData.cycleLength || intersection.cycleLength;
+
+                        // Update groups with PF-specific diagram data (offset and green durations)
+                        let updatedGroups = projectData.groups;
+                        if (selectedPf?.diagram && Array.isArray(selectedPf.diagram)) {
+                            updatedGroups = projectData.groups.map(group => {
+                                const diagramEntry = selectedPf.diagram.find(d => d.groupId === group.id);
+                                if (diagramEntry) {
+                                    return {
+                                        ...group,
+                                        offset: diagramEntry.offset ?? group.offset,
+                                        durations: {
+                                            ...group.durations,
+                                            green: diagramEntry.greenDuration ?? group.durations?.green
+                                        }
+                                    };
+                                }
+                                return group;
+                            });
+                        }
+
                         return {
                             ...intersection,
-                            groups: projectData.groups,
-                            cycleLength: projectData.cycleLength || intersection.cycleLength,
+                            groups: updatedGroups,
+                            cycleLength: pfCycleLength,
                             pfTabs: pfTabs,
                             actionData: selectedPf?.data || []
                         };
@@ -275,7 +297,7 @@ const GreenWavePage = () => {
     const speedUpMps = (speedUp * 1000) / 3600; // Convert km/h to m/s - ascending
     const speedDownMps = (speedDown * 1000) / 3600; // Convert km/h to m/s - descending
 
-    const PADDING_LEFT = 150;
+    const PADDING_LEFT = 260;
     const PADDING_BOTTOM = 50;
     const PADDING_TOP = 20;
     const PADDING_RIGHT = 20;
@@ -468,7 +490,15 @@ const GreenWavePage = () => {
     return (
         <div className="green-wave-page">
             <div className="green-wave-page-header">
-                <h1>Onde Verte {greenWaveName && <span className="folder-name">- {greenWaveName}</span>}</h1>
+                <h1>
+                    Onde Verte
+                    {greenWaveName && <span className="folder-name">- {greenWaveName}</span>}
+                    {intersections?.[0]?.pfTabs && intersections[0].selectedPfId && (
+                        <span className="folder-name">
+                            ({intersections[0].pfTabs.find(pf => pf.id === intersections[0].selectedPfId)?.name || 'PF1'})
+                        </span>
+                    )}
+                </h1>
                 <div className="green-wave-controls">
                     <label>
                         V. montante :
@@ -515,7 +545,11 @@ const GreenWavePage = () => {
                         />
                         {pixelsPerMeter.toFixed(1)}px/m
                     </label>
-                    <button className="green-wave-sync-btn" onClick={handleSyncGreenWave}>
+                    <button
+                        className="green-wave-sync-btn"
+                        onClick={handleSyncGreenWave}
+                        title="Actualise les données (offset, durée de vert, cycle) depuis les projets sauvegardés pour le plan de feu sélectionné de chaque carrefour"
+                    >
                         Synchroniser
                     </button>
                     <button className="green-wave-save-btn" onClick={handleSaveGreenWave}>
@@ -767,18 +801,32 @@ const GreenWavePage = () => {
                             });
                         }
 
-                        // Helper to truncate names to 25 characters
-                        const truncateName = (name, maxLen = 25) => {
+                        // Helper to truncate names to 40 characters
+                        const truncateName = (name, maxLen = 40) => {
                             if (!name) return '';
                             return name.length > maxLen ? name.substring(0, maxLen) + '…' : name;
                         };
 
                         return (
                             <g key={`intersection-${idx}`}>
-                                {/* Project name at average Y */}
+                                {/* Group 1 name (Descendant) */}
+                                {group1 && (
+                                    <text
+                                        x={PADDING_LEFT - 5}
+                                        y={yG1 + 4}
+                                        textAnchor="end"
+                                        fill="#FF9800"
+                                        fontSize="13"
+                                        fontWeight="bold"
+                                    >
+                                        {truncateName(group1.name) || `G${group1.id}`}
+                                    </text>
+                                )}
+
+                                {/* Project name - 16px above group 2 (Montant) */}
                                 <text
                                     x={PADDING_LEFT - 5}
-                                    y={(yG1 + yG2) / 2 - 15}
+                                    y={yG2 - 12}
                                     textAnchor="end"
                                     fill="#fff"
                                     fontSize="10"
@@ -787,19 +835,6 @@ const GreenWavePage = () => {
                                     {truncateName(intersection.projectName)}
                                 </text>
 
-                                {/* Group 1 name (Descendant) */}
-                                {group1 && (
-                                    <text
-                                        x={PADDING_LEFT - 5}
-                                        y={yG1 + 4}
-                                        textAnchor="end"
-                                        fill="#FF9800"
-                                        fontSize="11"
-                                    >
-                                        {truncateName(group1.name) || `G${group1.id}`}
-                                    </text>
-                                )}
-
                                 {/* Group 2 name (Montant) */}
                                 {group2 && (
                                     <text
@@ -807,7 +842,8 @@ const GreenWavePage = () => {
                                         y={yG2 + 4}
                                         textAnchor="end"
                                         fill="#8BC34A"
-                                        fontSize="11"
+                                        fontSize="13"
+                                        fontWeight="bold"
                                     >
                                         {truncateName(group2.name) || `G${group2.id}`}
                                     </text>
@@ -1106,43 +1142,57 @@ const GreenWavePage = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {intersections?.map((intersection, idx) => {
-                            const group1 = intersection.groups.find(g => g.id === intersection.selectedGroup1);
-                            const group2 = intersection.groups.find(g => g.id === intersection.selectedGroup2);
+                        {(() => {
+                            // Calculate most common cycle length to detect conflicts
+                            const cycleCounts = {};
+                            intersections?.forEach(i => {
+                                const c = i.cycleLength || 0;
+                                cycleCounts[c] = (cycleCounts[c] || 0) + 1;
+                            });
+                            const mostCommonCycle = Object.entries(cycleCounts)
+                                .sort((a, b) => b[1] - a[1])[0]?.[0];
+                            const referenceCycle = parseInt(mostCommonCycle) || 0;
 
-                            return (
-                                <tr key={idx}>
-                                    <td className="col-order">
-                                        <div className="order-controls">
-                                            <button
-                                                className="btn-move"
-                                                onClick={() => moveIntersection(idx, 'up')}
-                                                disabled={idx === 0}
-                                                title="Monter"
-                                            >↑</button>
-                                            <span>{idx + 1}</span>
-                                            <button
-                                                className="btn-move"
-                                                onClick={() => moveIntersection(idx, 'down')}
-                                                disabled={idx === intersections.length - 1}
-                                                title="Descendre"
-                                            >↓</button>
-                                        </div>
-                                    </td>
-                                    <td className="col-name">{intersection.projectName}</td>
-                                    <td className="col-pf">
-                                        <select
-                                            value={intersection.selectedPfId || ''}
-                                            onChange={(e) => updateSelectedPf(idx, parseInt(e.target.value))}
-                                        >
-                                            {intersection.pfTabs?.map(pf => (
-                                                <option key={pf.id} value={pf.id}>
-                                                    {pf.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td className="col-cycle">{intersection.cycleLength}</td>
+                            return intersections?.map((intersection, idx) => {
+                                const group1 = intersection.groups.find(g => g.id === intersection.selectedGroup1);
+                                const group2 = intersection.groups.find(g => g.id === intersection.selectedGroup2);
+                                const hasCycleConflict = intersection.cycleLength !== referenceCycle;
+
+                                return (
+                                    <tr key={idx} className={hasCycleConflict ? 'row-cycle-conflict' : ''}>
+                                        <td className="col-order">
+                                            <div className="order-controls">
+                                                <button
+                                                    className="btn-move"
+                                                    onClick={() => moveIntersection(idx, 'up')}
+                                                    disabled={idx === 0}
+                                                    title="Monter"
+                                                >↑</button>
+                                                <span>{idx + 1}</span>
+                                                <button
+                                                    className="btn-move"
+                                                    onClick={() => moveIntersection(idx, 'down')}
+                                                    disabled={idx === intersections.length - 1}
+                                                    title="Descendre"
+                                                >↓</button>
+                                            </div>
+                                        </td>
+                                        <td className="col-name">{intersection.projectName}</td>
+                                        <td className="col-pf">
+                                            <select
+                                                value={intersection.selectedPfId || ''}
+                                                onChange={(e) => updateSelectedPf(idx, parseInt(e.target.value))}
+                                            >
+                                                {intersection.pfTabs?.map(pf => (
+                                                    <option key={pf.id} value={pf.id}>
+                                                        {pf.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td className={`col-cycle ${hasCycleConflict ? 'cycle-conflict' : ''}`} title={hasCycleConflict ? `Cycle différent du cycle de référence (${referenceCycle}s)` : ''}>
+                                            {intersection.cycleLength}
+                                        </td>
                                     <td className="col-group-select">
                                         <select
                                             value={intersection.selectedGroup1 || ''}
@@ -1183,9 +1233,10 @@ const GreenWavePage = () => {
                                             onChange={(e) => updateDistanceG2(idx, e.target.value)}
                                         />
                                     </td>
-                                </tr>
-                            );
-                        })}
+                                    </tr>
+                                );
+                            });
+                        })()}
                     </tbody>
                 </table>
             </div>

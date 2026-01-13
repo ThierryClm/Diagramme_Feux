@@ -369,6 +369,15 @@
     width: 40px;
 }
 
+.green-wave-data-table .col-cycle.cycle-conflict {
+    color: #ff4444;
+    font-weight: bold;
+}
+
+.green-wave-data-table .row-cycle-conflict {
+    background: rgba(255, 68, 68, 0.15) !important;
+}
+
 .green-wave-data-table .col-group-name {
     text-align: left;
     font-size: 0.9em;
