@@ -12,6 +12,7 @@ const GreenWavePage = () => {
     const [speedLineOffsetDown, setSpeedLineOffsetDown] = useState(0); // Offset horizontal ligne descendante (en secondes)
     const [dragging, setDragging] = useState(null); // 'up' ou 'down' ou null
     const [displayCycles, setDisplayCycles] = useState(2); // Number of cycles to display (2 or 3)
+    const [showSpeedLines, setShowSpeedLines] = useState(true); // Affichage des lignes directrices
     // Parameters per PF (indexed by PF name): { pfName: { speedUp, speedDown, offsetUp, offsetDown } }
     const [pfParams, setPfParams] = useState({});
 
@@ -33,10 +34,11 @@ const GreenWavePage = () => {
                 speedUp,
                 speedDown,
                 offsetUp: speedLineOffsetUp,
-                offsetDown: speedLineOffsetDown
+                offsetDown: speedLineOffsetDown,
+                showSpeedLines
             }
         }));
-    }, [getCurrentPfName, speedUp, speedDown, speedLineOffsetUp, speedLineOffsetDown]);
+    }, [getCurrentPfName, speedUp, speedDown, speedLineOffsetUp, speedLineOffsetDown, showSpeedLines]);
 
     // Save green wave data to localStorage
     const handleSaveGreenWave = () => {
@@ -53,7 +55,8 @@ const GreenWavePage = () => {
                 speedUp,
                 speedDown,
                 offsetUp: speedLineOffsetUp,
-                offsetDown: speedLineOffsetDown
+                offsetDown: speedLineOffsetDown,
+                showSpeedLines
             }
         };
         setPfParams(updatedPfParams);
@@ -65,6 +68,7 @@ const GreenWavePage = () => {
             speedDown,
             speedLineOffsetUp,
             speedLineOffsetDown,
+            showSpeedLines,
             pfParams: updatedPfParams, // Save all PF params
             pixelsPerSecond,
             pixelsPerMeter,
@@ -179,6 +183,7 @@ const GreenWavePage = () => {
                     if (settings.pixelsPerMeter) setPixelsPerMeter(settings.pixelsPerMeter);
                     if (settings.speedLineOffsetUp !== undefined) setSpeedLineOffsetUp(settings.speedLineOffsetUp);
                     if (settings.speedLineOffsetDown !== undefined) setSpeedLineOffsetDown(settings.speedLineOffsetDown);
+                    if (settings.showSpeedLines !== undefined) setShowSpeedLines(settings.showSpeedLines);
                     // Load pfParams if available
                     if (settings.pfParams) {
                         setPfParams(settings.pfParams);
@@ -336,7 +341,8 @@ const GreenWavePage = () => {
                 speedUp,
                 speedDown,
                 offsetUp: speedLineOffsetUp,
-                offsetDown: speedLineOffsetDown
+                offsetDown: speedLineOffsetDown,
+                showSpeedLines
             }
         };
         setPfParams(updatedPfParams);
@@ -351,10 +357,12 @@ const GreenWavePage = () => {
             setSpeedDown(newPfParamsData.speedDown ?? 50);
             setSpeedLineOffsetUp(newPfParamsData.offsetUp ?? 0);
             setSpeedLineOffsetDown(newPfParamsData.offsetDown ?? 0);
+            setShowSpeedLines(newPfParamsData.showSpeedLines ?? true);
         } else {
             // Reset to defaults if no saved params for this PF
             setSpeedLineOffsetUp(0);
             setSpeedLineOffsetDown(0);
+            setShowSpeedLines(true);
         }
 
         setIntersections(prev => {
@@ -505,18 +513,62 @@ const GreenWavePage = () => {
         const bottomIntersectionG2 = sortedByDistG2[0];
         const topIntersectionG1 = sortedByDistG1[sortedByDistG1.length - 1];
 
+        // Helper function to normalize a time value to [0, cycleLength) range
+        const normalizeTime = (t) => {
+            const mod = t % cycleLength;
+            return mod < 0 ? mod + cycleLength : mod;
+        };
+
+        // Helper function to compute intersection of two green windows with cycle wrap-around
+        // Returns the intersection window [start, end] relative to the reference
+        // Windows are represented as [start, start + width] where width is the green duration
+        const intersectWindows = (refStart, refWidth, windowStart, windowWidth) => {
+            // Both windows are expressed in the same time reference
+            // We need to find the overlap considering cycle wrap-around
+
+            // Normalize windowStart relative to refStart to handle cycle boundaries
+            // We want to find where windowStart is relative to refStart in the cycle
+            let relativeStart = normalizeTime(windowStart - refStart);
+
+            // If the relative start is more than half a cycle away, it's actually before us
+            // This handles the wrap-around case
+            if (relativeStart > cycleLength / 2) {
+                relativeStart -= cycleLength;
+            }
+
+            // Now compute intersection
+            // Reference window is [0, refWidth] in relative coordinates
+            // Other window is [relativeStart, relativeStart + windowWidth]
+            const overlapStart = Math.max(0, relativeStart);
+            const overlapEnd = Math.min(refWidth, relativeStart + windowWidth);
+
+            if (overlapEnd <= overlapStart) {
+                return null; // No intersection
+            }
+
+            return {
+                start: overlapStart,
+                width: overlapEnd - overlapStart
+            };
+        };
+
         // ASCENDING bandwidth (bottom to top, positive slope) - uses Group 2 with distanceG2
         const bottomGroupAsc = bottomIntersectionG2.groups.find(g => g.id === bottomIntersectionG2.selectedGroup2);
 
-        let ascStart = 0;
-        let ascEnd = cycleLength;
+        let ascResult = null;
         const bottomDistG2 = bottomIntersectionG2.distanceG2 ?? bottomIntersectionG2.distance;
 
         if (bottomGroupAsc) {
-            ascStart = bottomGroupAsc.offset;
-            ascEnd = bottomGroupAsc.offset + (bottomGroupAsc.durations?.green || 0);
+            const refStart = bottomGroupAsc.offset;
+            const refWidth = bottomGroupAsc.durations?.green || 0;
+
+            // Start with the full reference window
+            let currentStart = 0; // Relative to refStart
+            let currentWidth = refWidth;
 
             sortedByDistG2.forEach((intersection) => {
+                if (currentWidth <= 0) return; // Already no bandwidth
+
                 const group = intersection.groups.find(g => g.id === intersection.selectedGroup2);
                 if (!group) return;
 
@@ -526,65 +578,91 @@ const GreenWavePage = () => {
                 // Time to travel from bottom to this intersection
                 const travelTime = (distG2 - bottomDistG2) / speedUpMps;
 
-                // Green window at this intersection
+                // Green window at this intersection, shifted back to bottom reference time
                 const greenStart = group.offset;
-                const greenEnd = greenStart + (group.durations?.green || 0);
-
-                // Shift back to bottom reference time
+                const greenWidth = group.durations?.green || 0;
                 const greenStartAtBottom = greenStart - travelTime;
-                const greenEndAtBottom = greenEnd - travelTime;
 
-                // Intersect windows
-                ascStart = Math.max(ascStart, greenStartAtBottom);
-                ascEnd = Math.min(ascEnd, greenEndAtBottom);
+                // Intersect with current bandwidth window
+                const intersection2 = intersectWindows(
+                    refStart + currentStart,
+                    currentWidth,
+                    greenStartAtBottom,
+                    greenWidth
+                );
+
+                if (intersection2) {
+                    currentStart += intersection2.start;
+                    currentWidth = intersection2.width;
+                } else {
+                    currentWidth = 0; // No intersection
+                }
             });
-        }
 
-        const ascWidth = ascEnd - ascStart;
+            if (currentWidth > 0) {
+                ascResult = {
+                    start: normalizeTime(refStart + currentStart),
+                    width: currentWidth,
+                    refDistance: bottomDistG2
+                };
+            }
+        }
 
         // DESCENDING bandwidth (top to bottom, negative slope) - uses Group 1 with distance
         const topGroupDesc = topIntersectionG1.groups.find(g => g.id === topIntersectionG1.selectedGroup1);
 
-        let descStart = 0;
-        let descEnd = cycleLength;
+        let descResult = null;
 
         if (topGroupDesc) {
-            descStart = topGroupDesc.offset;
-            descEnd = topGroupDesc.offset + (topGroupDesc.durations?.green || 0);
+            const refStart = topGroupDesc.offset;
+            const refWidth = topGroupDesc.durations?.green || 0;
+
+            // Start with the full reference window
+            let currentStart = 0; // Relative to refStart
+            let currentWidth = refWidth;
 
             sortedByDistG1.forEach((intersection) => {
+                if (currentWidth <= 0) return; // Already no bandwidth
+
                 const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
                 if (!group) return;
 
                 // Time to travel from top to this intersection (going down)
                 const travelTime = (topIntersectionG1.distance - intersection.distance) / speedDownMps;
 
-                // Green window at this intersection
+                // Green window at this intersection, shifted back to top reference time
                 const greenStart = group.offset;
-                const greenEnd = greenStart + (group.durations?.green || 0);
-
-                // Shift back to top reference time
+                const greenWidth = group.durations?.green || 0;
                 const greenStartAtTop = greenStart - travelTime;
-                const greenEndAtTop = greenEnd - travelTime;
 
-                descStart = Math.max(descStart, greenStartAtTop);
-                descEnd = Math.min(descEnd, greenEndAtTop);
+                // Intersect with current bandwidth window
+                const intersection2 = intersectWindows(
+                    refStart + currentStart,
+                    currentWidth,
+                    greenStartAtTop,
+                    greenWidth
+                );
+
+                if (intersection2) {
+                    currentStart += intersection2.start;
+                    currentWidth = intersection2.width;
+                } else {
+                    currentWidth = 0; // No intersection
+                }
             });
+
+            if (currentWidth > 0) {
+                descResult = {
+                    start: normalizeTime(refStart + currentStart),
+                    width: currentWidth,
+                    refDistance: topIntersectionG1.distance
+                };
+            }
         }
 
-        const descWidth = descEnd - descStart;
-
         return {
-            ascending: (bottomGroupAsc && ascWidth > 0) ? {
-                start: ascStart,
-                width: ascWidth,
-                refDistance: bottomDistG2
-            } : null,
-            descending: (topGroupDesc && descWidth > 0) ? {
-                start: descStart,
-                width: descWidth,
-                refDistance: topIntersectionG1.distance
-            } : null
+            ascending: ascResult,
+            descending: descResult
         };
     }, [intersections, speedUpMps, speedDownMps, cycleLength]);
 
@@ -733,6 +811,15 @@ const GreenWavePage = () => {
                             <option value={2}>2</option>
                             <option value={3}>3</option>
                         </select>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                        <input
+                            type="checkbox"
+                            checked={showSpeedLines}
+                            onChange={(e) => setShowSpeedLines(e.target.checked)}
+                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                        />
+                        Lignes directrices
                     </label>
                     <button
                         className="green-wave-sync-btn"
@@ -997,7 +1084,7 @@ const GreenWavePage = () => {
                     ))}
 
                     {/* Speed lines ascending (green wave corridor) - draggable */}
-                    {speedLinesUp.map((line, idx) => (
+                    {showSpeedLines && speedLinesUp.map((line, idx) => (
                         <g key={`speed-up-${idx}`}>
                             {/* Invisible wider hit area for easier dragging */}
                             <line
@@ -1025,7 +1112,7 @@ const GreenWavePage = () => {
                         </g>
                     ))}
                     {/* Speed lines descending (green wave corridor) - draggable */}
-                    {speedLinesDown.map((line, idx) => (
+                    {showSpeedLines && speedLinesDown.map((line, idx) => (
                         <g key={`speed-down-${idx}`}>
                             {/* Invisible wider hit area for easier dragging */}
                             <line
@@ -1305,7 +1392,8 @@ const GreenWavePage = () => {
                         const elements = [];
                         for (let cycle = 0; cycle < 2; cycle++) {
                             const cycleOffset = cycle * cycleLength;
-                            const bandStartAtBottom = start + cycleOffset;
+                            // Apply speedLineOffsetUp to align bandwidth with the draggable speed lines
+                            const bandStartAtBottom = start + cycleOffset + speedLineOffsetUp;
                             const bandEndAtBottom = bandStartAtBottom + width;
 
                             // Build polygon points for the bandwidth surface
@@ -1360,7 +1448,8 @@ const GreenWavePage = () => {
                         const elements = [];
                         for (let cycle = 0; cycle < 2; cycle++) {
                             const cycleOffset = cycle * cycleLength;
-                            const bandStartAtTop = start + cycleOffset;
+                            // Apply speedLineOffsetDown to align bandwidth with the draggable speed lines
+                            const bandStartAtTop = start + cycleOffset + speedLineOffsetDown;
                             const bandEndAtTop = bandStartAtTop + width;
 
                             // Build polygon points for the bandwidth surface
