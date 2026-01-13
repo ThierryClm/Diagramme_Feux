@@ -963,6 +963,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                                                 {/* Seconde lucarne: additional bar with darker green */}
                                                 {action.action === 'Seconde lucarne' && (() => {
+                                                    // Determine orange class based on group type
+                                                    const isPedestrian = group.type === 'P' || group.type === 'Piéton';
+                                                    const isCyclist = group.type === 'CY' || group.type === 'Cycliste';
+                                                    const lucarneOrangeClass = isPedestrian ? 'pedestrian-orange' : isCyclist ? 'cyclist-orange' : 'orange';
                                                     const wrapsAround = deb > fin;
                                                     if (wrapsAround) {
                                                         const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
@@ -991,7 +995,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     onMouseLeave={() => setHoveredActionId(null)}
                                                                 >
                                                                     <div className="phase-bar green-dark" style={{ width: `${secondPartWidth}px` }}></div>
-                                                                    <div className="phase-bar orange" style={{ width: `${orangeWidth}px` }}></div>
+                                                                    <div className={`phase-bar ${lucarneOrangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
                                                                     <div
                                                                         className="drag-handle drag-handle-end"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
@@ -1015,7 +1019,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                 title="Glisser pour modifier le début"
                                                             />
                                                             <div className="phase-bar green-dark" style={{ width: `${greenWidth}px` }}></div>
-                                                            <div className="phase-bar orange" style={{ width: `${orangeWidth}px` }}></div>
+                                                            <div className={`phase-bar ${lucarneOrangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
                                                             <div
                                                                 className="drag-handle drag-handle-end"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
@@ -1968,20 +1972,126 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             if (groupIndex === -1) return null;
                             if (deb === fin) return null;
 
-                            // Calculate bar duration (handle wrap-around)
-                            let duration = fin - deb;
-                            if (duration < 0) duration += cycleLength;
+                            // Check for wrap-around (fin < deb means the bar crosses cycle boundary)
+                            const wrapsAround = deb > fin;
 
-                            // Calculate positions
-                            const leftPos = deb * pixelsPerSecond;
-                            const barWidth = duration * pixelsPerSecond;
-
-                            // Vertical position based on group index (centered in row)
+                            // Vertical position aligned with the group's phase bar
+                            // The ruler has height RULER_HEIGHT (50px) + 1px border-bottom = 51px
+                            // Each row has height ROW_HEIGHT (30px) + 1px border-bottom = 31px
                             const height = ROW_HEIGHT - 14;
-                            const topPos = RULER_HEIGHT + (groupIndex * ROW_HEIGHT) + Math.floor((ROW_HEIGHT - height) / 2);
+                            const rowTotalHeight = ROW_HEIGHT + 1; // 30px height + 1px border
+                            const topPos = RULER_HEIGHT + 1 + (groupIndex * rowTotalHeight) + Math.floor((ROW_HEIGHT - height) / 2);
 
                             // Stripe width based on 1 second interval
                             const stripeWidth = pixelsPerSecond;
+
+                            // Common style for the yellow intermittent bar
+                            const barStyle = (left, width) => ({
+                                position: 'absolute',
+                                left: `${left}px`,
+                                width: `${width}px`,
+                                top: `${topPos}px`,
+                                height: `${height}px`,
+                                borderRadius: '2px',
+                                pointerEvents: 'none',
+                                zIndex: 15,
+                                background: `repeating-linear-gradient(
+                                    90deg,
+                                    #FFFF00,
+                                    #FFFF00 ${stripeWidth}px,
+                                    transparent ${stripeWidth}px,
+                                    transparent ${stripeWidth * 2}px
+                                )`,
+                                boxShadow: '0 0 3px rgba(255, 255, 0, 0.5)'
+                            });
+
+                            if (wrapsAround) {
+                                // Wrap-around case: draw 2 bars
+                                const firstPartLeft = deb * pixelsPerSecond;
+                                const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
+                                const secondPartLeft = 0;
+                                const secondPartWidth = fin * pixelsPerSecond;
+
+                                return (
+                                    <React.Fragment key={`priorite-pietons-${idx}`}>
+                                        {/* First part: from deb to end of cycle */}
+                                        <div
+                                            className={`priorite-pietons-wrapper ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={{
+                                                position: 'absolute',
+                                                left: `${firstPartLeft}px`,
+                                                width: `${firstPartWidth}px`,
+                                                top: `${topPos}px`,
+                                                height: `${height}px`,
+                                                pointerEvents: 'auto'
+                                            }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                        >
+                                            {/* Drag handle for start (left edge) */}
+                                            <div
+                                                className="action-drag-handle action-drag-handle-start"
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                title="Glisser pour modifier le début"
+                                                style={{ pointerEvents: 'auto' }}
+                                            />
+                                        </div>
+                                        <div
+                                            className={`priorite-pietons-bar ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={barStyle(firstPartLeft, firstPartWidth)}
+                                        />
+
+                                        {/* Second part: from start of cycle to fin */}
+                                        <div
+                                            className={`priorite-pietons-wrapper ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={{
+                                                position: 'absolute',
+                                                left: `${secondPartLeft}px`,
+                                                width: `${secondPartWidth}px`,
+                                                top: `${topPos}px`,
+                                                height: `${height}px`,
+                                                pointerEvents: 'auto'
+                                            }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                        >
+                                            {/* Drag handle for end (right edge) */}
+                                            <div
+                                                className="action-drag-handle action-drag-handle-end"
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                title="Glisser pour modifier la fin"
+                                                style={{ pointerEvents: 'auto', left: 'auto', right: '0' }}
+                                            />
+                                        </div>
+                                        <div
+                                            className={`priorite-pietons-bar ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={barStyle(secondPartLeft, secondPartWidth)}
+                                        >
+                                            {abrv && (
+                                                <span className="priorite-pietons-label" style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '50%',
+                                                    transform: 'translate(-50%, -50%)',
+                                                    fontSize: '0.65em',
+                                                    color: '#000',
+                                                    fontWeight: 'bold',
+                                                    textShadow: '0 0 2px rgba(255, 255, 255, 0.8)',
+                                                    whiteSpace: 'nowrap',
+                                                    zIndex: 50,
+                                                    pointerEvents: 'none'
+                                                }}>
+                                                    {abrv}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </React.Fragment>
+                                );
+                            }
+
+                            // Normal case: single bar
+                            const leftPos = deb * pixelsPerSecond;
+                            const barWidth = (fin - deb) * pixelsPerSecond;
 
                             return (
                                 <React.Fragment key={`priorite-pietons-${idx}`}>
@@ -2017,24 +2127,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     {/* Intermittent yellow bar */}
                                     <div
                                         className={`priorite-pietons-bar ${isHighlighted ? 'highlighted' : ''}`}
-                                        style={{
-                                            position: 'absolute',
-                                            left: `${leftPos}px`,
-                                            width: `${barWidth}px`,
-                                            top: `${topPos}px`,
-                                            height: `${height}px`,
-                                            borderRadius: '2px',
-                                            pointerEvents: 'none',
-                                            zIndex: 15,
-                                            background: `repeating-linear-gradient(
-                                                90deg,
-                                                #FFFF00,
-                                                #FFFF00 ${stripeWidth}px,
-                                                transparent ${stripeWidth}px,
-                                                transparent ${stripeWidth * 2}px
-                                            )`,
-                                            boxShadow: '0 0 3px rgba(255, 255, 0, 0.5)'
-                                        }}
+                                        style={barStyle(leftPos, barWidth)}
                                     >
                                         {abrv && (
                                             <span className="priorite-pietons-label" style={{
