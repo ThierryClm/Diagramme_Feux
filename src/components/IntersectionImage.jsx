@@ -160,7 +160,8 @@ const IntersectionImage = ({
                         <polyline points="12,2 6,8 12,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
-            case 'TDTàD': // Tout droit + Tourne à droite
+            case 'TDTàD': // Legacy support
+            case 'TD-TàD': // Tout droit + Tourne à droite
                 return (
                     <svg width={size} height={size} viewBox="0 0 32 32">
                         {/* Flèche tout droit */}
@@ -171,7 +172,8 @@ const IntersectionImage = ({
                         <polyline points="16,12 20,8 24,12" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
-            case 'TDTàG': // Tout droit + Tourne à gauche
+            case 'TDTàG': // Legacy support
+            case 'TD-TàG': // Tout droit + Tourne à gauche
                 return (
                     <svg width={size} height={size} viewBox="0 0 32 32">
                         {/* Flèche tout droit */}
@@ -180,6 +182,20 @@ const IntersectionImage = ({
                         {/* Flèche tourne à gauche */}
                         <path d="M20,20 Q12,20 12,12 L12,8" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
                         <polyline points="8,12 12,8 16,12" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'TD_G_D': // Tout droit + Tourne à gauche et à droite
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        {/* Flèche tout droit au centre */}
+                        <line x1="16" y1="28" x2="16" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="10,14 16,8 22,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        {/* Flèche tourne à gauche */}
+                        <path d="M16,20 Q8,20 8,12 L8,10" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="4,14 8,10 12,14" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                        {/* Flèche tourne à droite */}
+                        <path d="M16,20 Q24,20 24,12 L24,10" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="20,14 24,10 28,14" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
             case 'Piéton': // Flèche 2 sens (piétons)
