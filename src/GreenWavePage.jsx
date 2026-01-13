@@ -11,6 +11,7 @@ const GreenWavePage = () => {
     const [speedLineOffsetUp, setSpeedLineOffsetUp] = useState(0); // Offset horizontal ligne montante (en secondes)
     const [speedLineOffsetDown, setSpeedLineOffsetDown] = useState(0); // Offset horizontal ligne descendante (en secondes)
     const [dragging, setDragging] = useState(null); // 'up' ou 'down' ou null
+    const [displayCycles, setDisplayCycles] = useState(2); // Number of cycles to display (2 or 3)
     // Parameters per PF (indexed by PF name): { pfName: { speedUp, speedDown, offsetUp, offsetDown } }
     const [pfParams, setPfParams] = useState({});
 
@@ -67,6 +68,7 @@ const GreenWavePage = () => {
             pfParams: updatedPfParams, // Save all PF params
             pixelsPerSecond,
             pixelsPerMeter,
+            displayCycles,
             savedAt: new Date().toISOString()
         };
 
@@ -181,6 +183,10 @@ const GreenWavePage = () => {
                     if (settings.pfParams) {
                         setPfParams(settings.pfParams);
                     }
+                    // Load displayCycles if available
+                    if (settings.displayCycles) {
+                        setDisplayCycles(settings.displayCycles);
+                    }
                     // Update title with name
                     if (settings.name) {
                         document.title = `Onde Verte - ${settings.name}`;
@@ -202,11 +208,11 @@ const GreenWavePage = () => {
         const cycle = intersections[0]?.cycleLength || 100;
 
         return {
-            maxTime: cycle * 2, // Show 2 cycles
+            maxTime: cycle * displayCycles, // Show 2 or 3 cycles
             maxDistance: maxDist + 50,
             cycleLength: cycle
         };
-    }, [intersections]);
+    }, [intersections, displayCycles]);
 
 
     // Update intersection distance for group 1
@@ -670,25 +676,27 @@ const GreenWavePage = () => {
                     </select>
                 )}
                 <div className="green-wave-controls">
-                    <label>
-                        V. montante :
-                        <input
-                            type="number"
-                            value={speedUp}
-                            onChange={(e) => setSpeedUp(parseInt(e.target.value) || 50)}
-                            min="10"
-                            max="130"
-                        />
-                        km/h
-                    </label>
-                    <label>
-                        V. descendante :
+                    <label style={{ color: '#FF9800' }}>
+                        V. desc :
                         <input
                             type="number"
                             value={speedDown}
                             onChange={(e) => setSpeedDown(parseInt(e.target.value) || 50)}
                             min="10"
                             max="130"
+                            style={{ width: '40px' }}
+                        />
+                        km/h
+                    </label>
+                    <label style={{ color: '#8BC34A' }}>
+                        V. mont :
+                        <input
+                            type="number"
+                            value={speedUp}
+                            onChange={(e) => setSpeedUp(parseInt(e.target.value) || 50)}
+                            min="10"
+                            max="130"
+                            style={{ width: '40px' }}
                         />
                         km/h
                     </label>
@@ -714,6 +722,17 @@ const GreenWavePage = () => {
                             onChange={(e) => setPixelsPerMeter(parseFloat(e.target.value))}
                         />
                         {pixelsPerMeter.toFixed(1)}px/m
+                    </label>
+                    <label>
+                        Cycles :
+                        <select
+                            value={displayCycles}
+                            onChange={(e) => setDisplayCycles(parseInt(e.target.value))}
+                            style={{ marginLeft: '8px', padding: '4px 8px', background: '#444', border: '1px solid #555', borderRadius: '3px', color: '#fff' }}
+                        >
+                            <option value={2}>2</option>
+                            <option value={3}>3</option>
+                        </select>
                     </label>
                     <button
                         className="green-wave-sync-btn"
@@ -979,35 +998,59 @@ const GreenWavePage = () => {
 
                     {/* Speed lines ascending (green wave corridor) - draggable */}
                     {speedLinesUp.map((line, idx) => (
-                        <line
-                            key={`speed-up-${idx}`}
-                            x1={line.x1}
-                            y1={line.y1}
-                            x2={line.x2}
-                            y2={line.y2}
-                            stroke="#4CAF50"
-                            strokeWidth={dragging === 'up' ? 4 : 2}
-                            strokeDasharray="8,4"
-                            opacity={dragging === 'up' ? 0.9 : 0.6}
-                            style={{ cursor: 'ew-resize' }}
-                            onMouseDown={handleMouseDownUp}
-                        />
+                        <g key={`speed-up-${idx}`}>
+                            {/* Invisible wider hit area for easier dragging */}
+                            <line
+                                x1={line.x1}
+                                y1={line.y1}
+                                x2={line.x2}
+                                y2={line.y2}
+                                stroke="transparent"
+                                strokeWidth={16}
+                                style={{ cursor: 'ew-resize' }}
+                                onMouseDown={handleMouseDownUp}
+                            />
+                            {/* Visible line */}
+                            <line
+                                x1={line.x1}
+                                y1={line.y1}
+                                x2={line.x2}
+                                y2={line.y2}
+                                stroke="#4CAF50"
+                                strokeWidth={dragging === 'up' ? 4 : 2}
+                                strokeDasharray="8,4"
+                                opacity={dragging === 'up' ? 0.9 : 0.6}
+                                style={{ cursor: 'ew-resize', pointerEvents: 'none' }}
+                            />
+                        </g>
                     ))}
                     {/* Speed lines descending (green wave corridor) - draggable */}
                     {speedLinesDown.map((line, idx) => (
-                        <line
-                            key={`speed-down-${idx}`}
-                            x1={line.x1}
-                            y1={line.y1}
-                            x2={line.x2}
-                            y2={line.y2}
-                            stroke="#FF9800"
-                            strokeWidth={dragging === 'down' ? 4 : 2}
-                            strokeDasharray="8,4"
-                            opacity={dragging === 'down' ? 0.9 : 0.6}
-                            style={{ cursor: 'ew-resize' }}
-                            onMouseDown={handleMouseDownDown}
-                        />
+                        <g key={`speed-down-${idx}`}>
+                            {/* Invisible wider hit area for easier dragging */}
+                            <line
+                                x1={line.x1}
+                                y1={line.y1}
+                                x2={line.x2}
+                                y2={line.y2}
+                                stroke="transparent"
+                                strokeWidth={16}
+                                style={{ cursor: 'ew-resize' }}
+                                onMouseDown={handleMouseDownDown}
+                            />
+                            {/* Visible line */}
+                            <line
+                                x1={line.x1}
+                                y1={line.y1}
+                                x2={line.x2}
+                                y2={line.y2}
+                                stroke="#FF9800"
+                                strokeWidth={dragging === 'down' ? 4 : 2}
+                                strokeDasharray="8,4"
+                                opacity={dragging === 'down' ? 0.9 : 0.6}
+                                style={{ cursor: 'ew-resize', pointerEvents: 'none' }}
+                            />
+                        </g>
                     ))}
 
                     {/* Intersection bars */}
