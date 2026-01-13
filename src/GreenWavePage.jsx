@@ -8,6 +8,9 @@ const GreenWavePage = () => {
     const [speedUp, setSpeedUp] = useState(50); // km/h - vitesse montante
     const [speedDown, setSpeedDown] = useState(50); // km/h - vitesse descendante
     const [greenWaveName, setGreenWaveName] = useState('');
+    const [speedLineOffsetUp, setSpeedLineOffsetUp] = useState(0); // Offset horizontal ligne montante (en secondes)
+    const [speedLineOffsetDown, setSpeedLineOffsetDown] = useState(0); // Offset horizontal ligne descendante (en secondes)
+    const [dragging, setDragging] = useState(null); // 'up' ou 'down' ou null
 
     // Save green wave data to localStorage
     const handleSaveGreenWave = () => {
@@ -21,6 +24,8 @@ const GreenWavePage = () => {
             intersections,
             speedUp,
             speedDown,
+            speedLineOffsetUp,
+            speedLineOffsetDown,
             pixelsPerSecond,
             pixelsPerMeter,
             savedAt: new Date().toISOString()
@@ -109,6 +114,8 @@ const GreenWavePage = () => {
                     else if (settings.speed) setSpeedDown(settings.speed); // Backward compatibility
                     if (settings.pixelsPerSecond) setPixelsPerSecond(settings.pixelsPerSecond);
                     if (settings.pixelsPerMeter) setPixelsPerMeter(settings.pixelsPerMeter);
+                    if (settings.speedLineOffsetUp !== undefined) setSpeedLineOffsetUp(settings.speedLineOffsetUp);
+                    if (settings.speedLineOffsetDown !== undefined) setSpeedLineOffsetDown(settings.speedLineOffsetDown);
                     // Update title with name
                     if (settings.name) {
                         document.title = `Onde Verte - ${settings.name}`;
@@ -393,24 +400,60 @@ const GreenWavePage = () => {
     }, [intersections, speedUpMps, speedDownMps, cycleLength]);
 
     // Generate speed lines (green wave corridors) - ascending and descending
+    // Apply offsets (in seconds) to shift lines horizontally
     const speedLinesUp = [];
     const speedLinesDown = [];
     for (let startTime = 0; startTime < maxTime; startTime += cycleLength) {
-        // Ascending lines (bottom to top)
+        // Ascending lines (bottom to top) - apply speedLineOffsetUp
+        const startTimeUp = startTime + speedLineOffsetUp;
         speedLinesUp.push({
-            x1: timeToX(startTime),
+            x1: timeToX(startTimeUp),
             y1: distanceToY(0),
-            x2: timeToX(startTime + maxDistance / speedUpMps),
+            x2: timeToX(startTimeUp + maxDistance / speedUpMps),
             y2: distanceToY(maxDistance)
         });
-        // Descending lines (top to bottom)
+        // Descending lines (top to bottom) - apply speedLineOffsetDown
+        const startTimeDown = startTime + speedLineOffsetDown;
         speedLinesDown.push({
-            x1: timeToX(startTime),
+            x1: timeToX(startTimeDown),
             y1: distanceToY(maxDistance),
-            x2: timeToX(startTime + maxDistance / speedDownMps),
+            x2: timeToX(startTimeDown + maxDistance / speedDownMps),
             y2: distanceToY(0)
         });
     }
+
+    // Drag handlers for speed lines
+    const [dragStartX, setDragStartX] = useState(0);
+    const [initialOffset, setInitialOffset] = useState(0);
+
+    const handleMouseDownUp = (e) => {
+        e.preventDefault();
+        setDragging('up');
+        setDragStartX(e.clientX);
+        setInitialOffset(speedLineOffsetUp);
+    };
+
+    const handleMouseDownDown = (e) => {
+        e.preventDefault();
+        setDragging('down');
+        setDragStartX(e.clientX);
+        setInitialOffset(speedLineOffsetDown);
+    };
+
+    const handleMouseMove = (e) => {
+        if (!dragging) return;
+        const deltaX = e.clientX - dragStartX;
+        const deltaSeconds = deltaX / pixelsPerSecond;
+        if (dragging === 'up') {
+            setSpeedLineOffsetUp(initialOffset + deltaSeconds);
+        } else if (dragging === 'down') {
+            setSpeedLineOffsetDown(initialOffset + deltaSeconds);
+        }
+    };
+
+    const handleMouseUp = () => {
+        setDragging(null);
+    };
 
     if (!intersections) {
         return (
@@ -425,7 +468,7 @@ const GreenWavePage = () => {
     return (
         <div className="green-wave-page">
             <div className="green-wave-page-header">
-                <h1>Onde Verte</h1>
+                <h1>Onde Verte {greenWaveName && <span className="folder-name">- {greenWaveName}</span>}</h1>
                 <div className="green-wave-controls">
                     <label>
                         V. montante :
@@ -486,6 +529,10 @@ const GreenWavePage = () => {
                     className="green-wave-svg"
                     width={diagramWidth}
                     height={diagramHeight}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    style={{ cursor: dragging ? 'ew-resize' : 'default' }}
                 >
                     {/* Background */}
                     <rect
@@ -522,7 +569,7 @@ const GreenWavePage = () => {
                         />
                     ))}
 
-                    {/* Speed lines ascending (green wave corridor) */}
+                    {/* Speed lines ascending (green wave corridor) - draggable */}
                     {speedLinesUp.map((line, idx) => (
                         <line
                             key={`speed-up-${idx}`}
@@ -531,12 +578,14 @@ const GreenWavePage = () => {
                             x2={line.x2}
                             y2={line.y2}
                             stroke="#4CAF50"
-                            strokeWidth={2}
+                            strokeWidth={dragging === 'up' ? 4 : 2}
                             strokeDasharray="8,4"
-                            opacity={0.6}
+                            opacity={dragging === 'up' ? 0.9 : 0.6}
+                            style={{ cursor: 'ew-resize' }}
+                            onMouseDown={handleMouseDownUp}
                         />
                     ))}
-                    {/* Speed lines descending (green wave corridor) */}
+                    {/* Speed lines descending (green wave corridor) - draggable */}
                     {speedLinesDown.map((line, idx) => (
                         <line
                             key={`speed-down-${idx}`}
@@ -545,9 +594,11 @@ const GreenWavePage = () => {
                             x2={line.x2}
                             y2={line.y2}
                             stroke="#FF9800"
-                            strokeWidth={2}
+                            strokeWidth={dragging === 'down' ? 4 : 2}
                             strokeDasharray="8,4"
-                            opacity={0.6}
+                            opacity={dragging === 'down' ? 0.9 : 0.6}
+                            style={{ cursor: 'ew-resize' }}
+                            onMouseDown={handleMouseDownDown}
                         />
                     ))}
 
@@ -571,16 +622,37 @@ const GreenWavePage = () => {
                             if (group1) {
                                 const start1 = group1.offset + cycleOffset;
                                 const duration1 = group1.durations?.green || 0;
+                                const end1 = start1 + duration1;
                                 bars.push(
-                                    <rect
-                                        key={`bar-${idx}-g1-c${cycle}`}
-                                        x={timeToX(start1)}
-                                        y={yG1 - barHeight / 2}
-                                        width={duration1 * pixelsPerSecond}
-                                        height={barHeight}
-                                        fill="#FF9800"
-                                        opacity={0.9}
-                                    />
+                                    <g key={`bar-${idx}-g1-c${cycle}`}>
+                                        <rect
+                                            x={timeToX(start1)}
+                                            y={yG1 - barHeight / 2}
+                                            width={duration1 * pixelsPerSecond}
+                                            height={barHeight}
+                                            fill="#FF9800"
+                                            opacity={0.9}
+                                        />
+                                        {/* Deb value at start - above bar */}
+                                        <text
+                                            x={timeToX(start1) + 2}
+                                            y={yG1 - barHeight / 2 - 3}
+                                            fill="#FF9800"
+                                            fontSize="14"
+                                        >
+                                            {Math.round(start1 % intersection.cycleLength)}
+                                        </text>
+                                        {/* Fin value at end - above bar */}
+                                        <text
+                                            x={timeToX(end1) - 2}
+                                            y={yG1 - barHeight / 2 - 3}
+                                            fill="#FF9800"
+                                            fontSize="14"
+                                            textAnchor="end"
+                                        >
+                                            {Math.round(end1 % intersection.cycleLength)}
+                                        </text>
+                                    </g>
                                 );
                             }
 
@@ -588,16 +660,37 @@ const GreenWavePage = () => {
                             if (group2) {
                                 const start2 = group2.offset + cycleOffset;
                                 const duration2 = group2.durations?.green || 0;
+                                const end2 = start2 + duration2;
                                 bars.push(
-                                    <rect
-                                        key={`bar-${idx}-g2-c${cycle}`}
-                                        x={timeToX(start2)}
-                                        y={yG2 - barHeight / 2}
-                                        width={duration2 * pixelsPerSecond}
-                                        height={barHeight}
-                                        fill="#4CAF50"
-                                        opacity={0.9}
-                                    />
+                                    <g key={`bar-${idx}-g2-c${cycle}`}>
+                                        <rect
+                                            x={timeToX(start2)}
+                                            y={yG2 - barHeight / 2}
+                                            width={duration2 * pixelsPerSecond}
+                                            height={barHeight}
+                                            fill="#4CAF50"
+                                            opacity={0.9}
+                                        />
+                                        {/* Deb value at start - above bar */}
+                                        <text
+                                            x={timeToX(start2) + 2}
+                                            y={yG2 - barHeight / 2 - 3}
+                                            fill="#4CAF50"
+                                            fontSize="14"
+                                        >
+                                            {Math.round(start2 % intersection.cycleLength)}
+                                        </text>
+                                        {/* Fin value at end - above bar */}
+                                        <text
+                                            x={timeToX(end2) - 2}
+                                            y={yG2 - barHeight / 2 - 3}
+                                            fill="#4CAF50"
+                                            fontSize="14"
+                                            textAnchor="end"
+                                        >
+                                            {Math.round(end2 % intersection.cycleLength)}
+                                        </text>
+                                    </g>
                                 );
                             }
 
@@ -747,7 +840,7 @@ const GreenWavePage = () => {
                         );
                     })}
 
-                    {/* Ascending bandwidth corridor (bottom to top) - inscribed in green bars - rendered AFTER bars */}
+                    {/* Ascending bandwidth corridor (bottom to top) - as polygon surface */}
                     {bandwidthData?.ascending && intersections && (() => {
                         // Sort by distanceG2 for ascending (Group 2)
                         const sortedByDistG2 = [...intersections].sort((a, b) =>
@@ -755,7 +848,6 @@ const GreenWavePage = () => {
                         );
                         const bottomDist = sortedByDistG2[0].distanceG2 ?? sortedByDistG2[0].distance;
                         const { start, width } = bandwidthData.ascending;
-                        const barHeight = 12;
 
                         const elements = [];
                         for (let cycle = 0; cycle < 2; cycle++) {
@@ -763,8 +855,11 @@ const GreenWavePage = () => {
                             const bandStartAtBottom = start + cycleOffset;
                             const bandEndAtBottom = bandStartAtBottom + width;
 
-                            // Draw bandwidth segment at each intersection (inscribed in green bar)
-                            sortedByDistG2.forEach((intersection, idx) => {
+                            // Build polygon points for the bandwidth surface
+                            const leftPoints = []; // Points going up (left edge of bandwidth)
+                            const rightPoints = []; // Points going up (right edge of bandwidth)
+
+                            sortedByDistG2.forEach((intersection) => {
                                 const group = intersection.groups.find(g => g.id === intersection.selectedGroup2);
                                 if (!group) return;
 
@@ -776,74 +871,38 @@ const GreenWavePage = () => {
                                 const bandStart = bandStartAtBottom + travelTime;
                                 const bandEnd = bandEndAtBottom + travelTime;
 
-                                // Green window at this intersection
-                                const greenStart = group.offset + cycleOffset;
-                                const greenEnd = greenStart + (group.durations?.green || 0);
-
-                                // Intersection of bandwidth and green
-                                const clipStart = Math.max(bandStart, greenStart);
-                                const clipEnd = Math.min(bandEnd, greenEnd);
-
-                                if (clipEnd > clipStart) {
-                                    elements.push(
-                                        <rect
-                                            key={`asc-bar-${idx}-c${cycle}`}
-                                            x={timeToX(clipStart)}
-                                            y={y - barHeight / 2}
-                                            width={(clipEnd - clipStart) * pixelsPerSecond}
-                                            height={barHeight}
-                                            fill="#1B5E20"
-                                            opacity={0.9}
-                                        />
-                                    );
-                                }
-
-                                // Draw connecting lines between intersections
-                                if (idx < sortedByDistG2.length - 1) {
-                                    const nextIntersection = sortedByDistG2[idx + 1];
-                                    const nextDistG2 = nextIntersection.distanceG2 ?? nextIntersection.distance;
-                                    const nextY = distanceToY(nextDistG2);
-                                    const nextTravelTime = (nextDistG2 - bottomDist) / speedUpMps;
-                                    const nextBandStart = bandStartAtBottom + nextTravelTime;
-                                    const nextBandEnd = bandEndAtBottom + nextTravelTime;
-
-                                    // Left edge of bandwidth
-                                    elements.push(
-                                        <line
-                                            key={`asc-left-${idx}-c${cycle}`}
-                                            x1={timeToX(bandStart)}
-                                            y1={y}
-                                            x2={timeToX(nextBandStart)}
-                                            y2={nextY}
-                                            stroke="#81C784"
-                                            strokeWidth={2}
-                                        />
-                                    );
-                                    // Right edge of bandwidth
-                                    elements.push(
-                                        <line
-                                            key={`asc-right-${idx}-c${cycle}`}
-                                            x1={timeToX(bandEnd)}
-                                            y1={y}
-                                            x2={timeToX(nextBandEnd)}
-                                            y2={nextY}
-                                            stroke="#81C784"
-                                            strokeWidth={2}
-                                        />
-                                    );
-                                }
+                                leftPoints.push({ x: timeToX(bandStart), y });
+                                rightPoints.push({ x: timeToX(bandEnd), y });
                             });
+
+                            // Create polygon: left points going up, then right points going down
+                            if (leftPoints.length >= 2) {
+                                const polygonPoints = [
+                                    ...leftPoints.map(p => `${p.x},${p.y}`),
+                                    ...[...rightPoints].reverse().map(p => `${p.x},${p.y}`)
+                                ].join(' ');
+
+                                elements.push(
+                                    <polygon
+                                        key={`asc-polygon-c${cycle}`}
+                                        points={polygonPoints}
+                                        fill="#4CAF50"
+                                        opacity={0.2}
+                                        stroke="#81C784"
+                                        strokeWidth={2}
+                                    />
+                                );
+                            }
                         }
                         return elements;
                     })()}
 
-                    {/* Descending bandwidth corridor (top to bottom) - inscribed in orange bars - rendered AFTER bars */}
+                    {/* Descending bandwidth corridor (top to bottom) - as polygon surface */}
                     {bandwidthData?.descending && intersections && (() => {
                         // Sort by distance for descending (Group 1)
                         const sortedByDistG1 = [...intersections].sort((a, b) => a.distance - b.distance);
                         const topDist = sortedByDistG1[sortedByDistG1.length - 1].distance;
                         const { start, width } = bandwidthData.descending;
-                        const barHeight = 12;
 
                         const elements = [];
                         for (let cycle = 0; cycle < 2; cycle++) {
@@ -851,10 +910,13 @@ const GreenWavePage = () => {
                             const bandStartAtTop = start + cycleOffset;
                             const bandEndAtTop = bandStartAtTop + width;
 
-                            // Draw bandwidth segment at each intersection (inscribed in orange bar)
+                            // Build polygon points for the bandwidth surface
                             // Process from top to bottom
                             const sortedTopToBottom = [...sortedByDistG1].reverse();
-                            sortedTopToBottom.forEach((intersection, idx) => {
+                            const leftPoints = []; // Points going down (left edge of bandwidth)
+                            const rightPoints = []; // Points going down (right edge of bandwidth)
+
+                            sortedTopToBottom.forEach((intersection) => {
                                 const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
                                 if (!group) return;
 
@@ -866,63 +928,28 @@ const GreenWavePage = () => {
                                 const bandStart = bandStartAtTop + travelTime;
                                 const bandEnd = bandEndAtTop + travelTime;
 
-                                // Green window at this intersection
-                                const greenStart = group.offset + cycleOffset;
-                                const greenEnd = greenStart + (group.durations?.green || 0);
-
-                                // Intersection of bandwidth and green
-                                const clipStart = Math.max(bandStart, greenStart);
-                                const clipEnd = Math.min(bandEnd, greenEnd);
-
-                                if (clipEnd > clipStart) {
-                                    elements.push(
-                                        <rect
-                                            key={`desc-bar-${idx}-c${cycle}`}
-                                            x={timeToX(clipStart)}
-                                            y={y - barHeight / 2}
-                                            width={(clipEnd - clipStart) * pixelsPerSecond}
-                                            height={barHeight}
-                                            fill="#BF360C"
-                                            opacity={0.9}
-                                        />
-                                    );
-                                }
-
-                                // Draw connecting lines between intersections
-                                if (idx < sortedTopToBottom.length - 1) {
-                                    const nextIntersection = sortedTopToBottom[idx + 1];
-                                    const nextDist = nextIntersection.distance;
-                                    const nextY = distanceToY(nextDist);
-                                    const nextTravelTime = (topDist - nextDist) / speedDownMps;
-                                    const nextBandStart = bandStartAtTop + nextTravelTime;
-                                    const nextBandEnd = bandEndAtTop + nextTravelTime;
-
-                                    // Left edge of bandwidth
-                                    elements.push(
-                                        <line
-                                            key={`desc-left-${idx}-c${cycle}`}
-                                            x1={timeToX(bandStart)}
-                                            y1={y}
-                                            x2={timeToX(nextBandStart)}
-                                            y2={nextY}
-                                            stroke="#FFAB91"
-                                            strokeWidth={2}
-                                        />
-                                    );
-                                    // Right edge of bandwidth
-                                    elements.push(
-                                        <line
-                                            key={`desc-right-${idx}-c${cycle}`}
-                                            x1={timeToX(bandEnd)}
-                                            y1={y}
-                                            x2={timeToX(nextBandEnd)}
-                                            y2={nextY}
-                                            stroke="#FFAB91"
-                                            strokeWidth={2}
-                                        />
-                                    );
-                                }
+                                leftPoints.push({ x: timeToX(bandStart), y });
+                                rightPoints.push({ x: timeToX(bandEnd), y });
                             });
+
+                            // Create polygon: left points going down, then right points going up
+                            if (leftPoints.length >= 2) {
+                                const polygonPoints = [
+                                    ...leftPoints.map(p => `${p.x},${p.y}`),
+                                    ...[...rightPoints].reverse().map(p => `${p.x},${p.y}`)
+                                ].join(' ');
+
+                                elements.push(
+                                    <polygon
+                                        key={`desc-polygon-c${cycle}`}
+                                        points={polygonPoints}
+                                        fill="#FF9800"
+                                        opacity={0.2}
+                                        stroke="#FFAB91"
+                                        strokeWidth={2}
+                                    />
+                                );
+                            }
                         }
                         return elements;
                     })()}

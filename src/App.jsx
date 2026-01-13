@@ -426,6 +426,7 @@ function App() {
                 setHelpModal(true);
                 break;
             case 'import':
+            case 'browseImport':
                 setImportFile(null);
                 setImportError('');
                 setImportHintDir('');

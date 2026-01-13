@@ -129,8 +129,8 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                                 <span className="col-name">Carrefour</span>
                                 <span className="col-pf">Plan de feu</span>
                                 <span className="col-distance">Distance (m)</span>
-                                <span className="col-group">Groupe 1</span>
-                                <span className="col-group">Groupe 2</span>
+                                <span className="col-group">GF descendant</span>
+                                <span className="col-group">GF montant</span>
                                 <span className="col-actions">Actions</span>
                             </div>
                             {intersections.map((intersection, index) => (

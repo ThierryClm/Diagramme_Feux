@@ -63,15 +63,20 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [],
         : [{ label: '(Aucun fichier)', type: 'header' }];
 
     // Build recent directories submenu dynamically
-    const recentDirsSubmenu = recentDirectories.length > 0
-        ? [
-            { label: 'Répertoires récents', type: 'header' },
-            ...recentDirectories.map((dir, idx) => ({
-                label: dir.name || dir.path,
-                action: `importFromDir:${idx}`
-            }))
-        ]
-        : [{ label: '(Aucun répertoire)', type: 'header', disabled: true }];
+    const recentDirsSubmenu = [
+        { label: 'Parcourir...', action: 'browseImport' },
+        { type: 'separator' },
+        ...(recentDirectories.length > 0
+            ? [
+                { label: 'Répertoires récents', type: 'header' },
+                ...recentDirectories.map((dir, idx) => ({
+                    label: dir.name || dir.path,
+                    action: `importFromDir:${idx}`
+                }))
+            ]
+            : [{ label: '(Aucun répertoire récent)', type: 'header', disabled: true }]
+        )
+    ];
 
     const menus = {
         fichier: {

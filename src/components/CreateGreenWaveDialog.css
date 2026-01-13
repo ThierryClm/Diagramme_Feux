@@ -22,7 +22,7 @@
 }
 
 .green-wave-dialog {
-    width: 1000px;
+    width: 1150px;
 }
 
 .dialog-header {
@@ -170,11 +170,11 @@
 }
 
 .col-group {
-    width: 140px;
+    width: 200px;
 }
 
 .col-group select {
-    width: 130px;
+    width: 190px;
     padding: 5px;
     background: #333;
     border: 1px solid #555;

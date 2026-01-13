@@ -83,6 +83,12 @@
     flex-shrink: 0;
 }
 
+.green-wave-header h2 .folder-name {
+    color: #8BC34A;
+    font-weight: normal;
+    margin-left: 8px;
+}
+
 .green-wave-controls {
     display: flex;
     gap: 20px;
