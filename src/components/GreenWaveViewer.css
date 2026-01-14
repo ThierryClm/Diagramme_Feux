@@ -273,6 +273,29 @@
     gap: 8px;
 }
 
+.btn-add-intersection {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid #4CAF50;
+    background: #333;
+    color: #4CAF50;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+}
+
+.btn-add-intersection:hover {
+    background: #4CAF50;
+    color: #fff;
+}
+
 .green-wave-params-panel h3::before {
     content: '';
     display: inline-block;

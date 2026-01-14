@@ -445,6 +445,123 @@ const GreenWavePage = () => {
         });
     };
 
+    // Add a new intersection from saved projects
+    const addIntersection = () => {
+        // Get list of saved projects from localStorage (same logic as getAllSaves in useTrafficLight)
+        const availableProjects = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('traffic_project_')) {
+                availableProjects.push(key.replace('traffic_project_', ''));
+            }
+        }
+
+        // Sort by saved order if available
+        const orderRaw = localStorage.getItem('traffic_project_order');
+        if (orderRaw) {
+            try {
+                const order = JSON.parse(orderRaw);
+                availableProjects.sort((a, b) => {
+                    const idxA = order.indexOf(a);
+                    const idxB = order.indexOf(b);
+                    if (idxA === -1 && idxB === -1) return 0;
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                });
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        if (availableProjects.length === 0) {
+            alert('Aucun projet sauvegardé disponible.');
+            return;
+        }
+
+        // Show selection dialog
+        const projectName = prompt(
+            `Sélectionnez un projet à ajouter:\n\n${availableProjects.map((p, i) => `${i + 1}. ${p}`).join('\n')}\n\nEntrez le numéro ou le nom du projet:`,
+            '1'
+        );
+
+        if (!projectName) return;
+
+        // Find the project by number or name
+        let selectedProject;
+        const projectNumber = parseInt(projectName);
+        if (!isNaN(projectNumber) && projectNumber >= 1 && projectNumber <= availableProjects.length) {
+            selectedProject = availableProjects[projectNumber - 1];
+        } else {
+            selectedProject = availableProjects.find(p => p.toLowerCase() === projectName.toLowerCase());
+        }
+
+        if (!selectedProject) {
+            alert('Projet non trouvé.');
+            return;
+        }
+
+        // Load project data from localStorage
+        const projectKey = `traffic_project_${selectedProject}`;
+        const projectRaw = localStorage.getItem(projectKey);
+        if (!projectRaw) {
+            alert(`Impossible de charger le projet "${selectedProject}".`);
+            return;
+        }
+
+        try {
+            const projectData = JSON.parse(projectRaw);
+            const pfTabs = projectData.pfTabs || [{ id: 1, name: 'PF1', data: [] }];
+            const selectedPfId = pfTabs[0]?.id || 1;
+            const selectedPf = pfTabs.find(pf => pf.id === selectedPfId);
+            const pfCycleLength = selectedPf?.cycleLength || projectData.cycleLength || 90;
+
+            // Get groups with PF-specific data if available
+            let groups = projectData.groups || [];
+            if (selectedPf?.diagram && Array.isArray(selectedPf.diagram)) {
+                groups = groups.map(group => {
+                    const diagramEntry = selectedPf.diagram.find(d => d.groupId === group.id);
+                    if (diagramEntry) {
+                        return {
+                            ...group,
+                            offset: diagramEntry.offset ?? group.offset,
+                            durations: {
+                                ...group.durations,
+                                green: diagramEntry.greenDuration ?? group.durations?.green
+                            }
+                        };
+                    }
+                    return group;
+                });
+            }
+
+            // Calculate default distance (last intersection distance + 100m or 0)
+            const lastDistance = intersections?.length > 0
+                ? Math.max(...intersections.map(i => i.distance))
+                : 0;
+            const newDistance = lastDistance + 100;
+
+            // Create new intersection object
+            const newIntersection = {
+                projectName: selectedProject,
+                groups: groups,
+                cycleLength: pfCycleLength,
+                pfTabs: pfTabs,
+                selectedPfId: selectedPfId,
+                selectedGroup1: groups[0]?.id || 1,
+                selectedGroup2: groups[0]?.id || 1,
+                distance: newDistance,
+                distanceG2: newDistance,
+                actionData: selectedPf?.data || []
+            };
+
+            setIntersections(prev => [...(prev || []), newIntersection]);
+        } catch (e) {
+            console.error('Failed to load project data', e);
+            alert(`Erreur lors du chargement du projet "${selectedProject}".`);
+        }
+    };
+
     // Move intersection up or down in the list
     const moveIntersection = (index, direction) => {
         setIntersections(prev => {
@@ -454,15 +571,7 @@ const GreenWavePage = () => {
 
             if (targetIndex < 0 || targetIndex >= newList.length) return prev;
 
-            // Swap distances as well so the diagram updates
-            const tempDistance = newList[index].distance;
-            const tempDistanceG2 = newList[index].distanceG2;
-            newList[index].distance = newList[targetIndex].distance;
-            newList[index].distanceG2 = newList[targetIndex].distanceG2;
-            newList[targetIndex].distance = tempDistance;
-            newList[targetIndex].distanceG2 = tempDistanceG2;
-
-            // Swap intersections
+            // Swap intersections (each keeps its own distance)
             [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
             return newList;
         });
@@ -1323,7 +1432,7 @@ const GreenWavePage = () => {
                                         fontSize="13"
                                         fontWeight="bold"
                                     >
-                                        {truncateName(group1.name) || `G${group1.id}`}
+                                        {`G${group1.id} - ${truncateName(group1.name) || 'Sans nom'}`}
                                     </text>
                                 )}
 
@@ -1349,7 +1458,7 @@ const GreenWavePage = () => {
                                         fontSize="13"
                                         fontWeight="bold"
                                     >
-                                        {truncateName(group2.name) || `G${group2.id}`}
+                                        {`G${group2.id} - ${truncateName(group2.name) || 'Sans nom'}`}
                                     </text>
                                 )}
 
@@ -1629,7 +1738,14 @@ const GreenWavePage = () => {
 
             {/* Parameters panel */}
             <div className="green-wave-params-panel">
-                <h3>Tableau des données saisies</h3>
+                <h3>
+                    Tableau des données saisies
+                    <button
+                        className="btn-add-intersection"
+                        onClick={addIntersection}
+                        title="Ajouter un carrefour"
+                    >+</button>
+                </h3>
                 <table className="green-wave-data-table">
                     <thead>
                         <tr>
