@@ -35,18 +35,31 @@
     background: #5a5a7a;
 }
 
+/* Container for image + sidebar side by side */
+.intersection-content {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+}
+
 .intersection-image-area {
     position: relative;
-    /* A4 landscape ratio: 297/210 = 1.414 */
-    width: 100%;
-    aspect-ratio: 297 / 210;
-    min-height: 300px;
-    max-height: 500px;
+    /* Fixed width for landscape image (50% larger) */
+    width: 750px;
+    height: 530px; /* 750 / 1.414 (A4 landscape ratio) */
+    flex-shrink: 0;
     background: #252525;
     border: 1px solid #444;
     border-radius: 4px;
     overflow: hidden;
     cursor: crosshair;
+}
+
+/* Sidebar for arrow editor */
+.intersection-sidebar {
+    width: 220px;
+    min-width: 220px;
+    flex-shrink: 0;
 }
 
 .intersection-img {
@@ -141,11 +154,72 @@
 
 /* Arrow editor panel */
 .arrow-editor {
-    margin-top: 10px;
     padding: 10px;
     background: #2a2a2a;
     border: 1px solid #444;
     border-radius: 4px;
+}
+
+.arrow-editor h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.9em;
+    color: #4ecdc4;
+    border-bottom: 1px solid #444;
+    padding-bottom: 6px;
+}
+
+/* Apply to all same type option */
+.apply-all-option {
+    margin-bottom: 10px;
+    padding: 6px 8px;
+    background: #3a3a4a;
+    border: 1px solid #555;
+    border-radius: 4px;
+}
+
+.apply-all-option input:checked + span {
+    color: #f90;
+    font-weight: bold;
+}
+
+/* No selection hint in sidebar */
+.no-selection-hint {
+    padding: 15px;
+    background: #2a2a2a;
+    border: 1px dashed #444;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* Display options */
+.display-options {
+    margin-top: 15px;
+    padding: 10px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+.checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #ccc;
+    font-size: 0.85em;
+}
+
+.checkbox-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #4ecdc4;
+}
+
+.no-selection-hint p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 0.85em;
 }
 
 .editor-row {
@@ -225,6 +299,180 @@
 }
 
 .rotation-unit {
+    color: #888;
+    font-size: 0.9em;
+}
+
+/* Scale (zoom) controls */
+.scale-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.scale-slider {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #333;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.scale-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #f90;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.scale-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #f90;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.scale-input {
+    width: 50px;
+    padding: 4px 6px;
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 3px;
+    font-size: 0.85em;
+    text-align: center;
+}
+
+.scale-input::-webkit-inner-spin-button,
+.scale-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+.scale-unit {
+    color: #888;
+    font-size: 0.9em;
+}
+
+/* Length controls (for Piéton/Cycle arrows) */
+.length-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.length-slider {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #333;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.length-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #9c6;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.length-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #9c6;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.length-input {
+    width: 50px;
+    padding: 4px 6px;
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 3px;
+    font-size: 0.85em;
+    text-align: center;
+}
+
+.length-input::-webkit-inner-spin-button,
+.length-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+.length-unit {
+    color: #888;
+    font-size: 0.9em;
+}
+
+/* Turn length controls (for TàD/TàG arrows) */
+.turn-length-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.turn-length-slider {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #333;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.turn-length-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #c9a;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.turn-length-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #c9a;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.turn-length-input {
+    width: 50px;
+    padding: 4px 6px;
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 3px;
+    font-size: 0.85em;
+    text-align: center;
+}
+
+.turn-length-input::-webkit-inner-spin-button,
+.turn-length-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+.turn-length-unit {
     color: #888;
     font-size: 0.9em;
 }

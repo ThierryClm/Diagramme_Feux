@@ -25,6 +25,9 @@ const IntersectionImage = ({
     const containerRef = useRef(null);
     const [selectedArrow, setSelectedArrow] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [showGroupNumbers, setShowGroupNumbers] = useState(true);
+    const [showGroupNames, setShowGroupNames] = useState(true);
+    const [applyToAllSameType, setApplyToAllSameType] = useState(false);
 
     // Animation refs
     const animationRef = useRef(null);
@@ -105,11 +108,44 @@ const IntersectionImage = ({
         }));
     };
 
+    // Helper to get arrows of the same type as the given arrow
+    const getArrowsOfSameType = (arrowId) => {
+        const arrow = arrows.find(a => a.id === arrowId);
+        if (!arrow) return [];
+        const arrowCourant = getGroupInfo(arrow.groupId).courant;
+        return arrows.filter(a => getGroupInfo(a.groupId).courant === arrowCourant);
+    };
+
     // Set arrow rotation directly
     const setArrowRotation = (arrowId, rotation) => {
-        onArrowsChange(arrows.map(a =>
-            a.id === arrowId ? { ...a, rotation: parseInt(rotation) || 0 } : a
-        ));
+        const rotationValue = parseInt(rotation) || 0;
+        if (applyToAllSameType) {
+            const sameTypeArrows = getArrowsOfSameType(arrowId);
+            const sameTypeIds = new Set(sameTypeArrows.map(a => a.id));
+            onArrowsChange(arrows.map(a =>
+                sameTypeIds.has(a.id) ? { ...a, rotation: rotationValue } : a
+            ));
+        } else {
+            onArrowsChange(arrows.map(a =>
+                a.id === arrowId ? { ...a, rotation: rotationValue } : a
+            ));
+        }
+    };
+
+    // Set arrow scale (zoom)
+    const setArrowScale = (arrowId, scale) => {
+        const scaleValue = parseFloat(scale) || 1;
+        if (applyToAllSameType) {
+            const sameTypeArrows = getArrowsOfSameType(arrowId);
+            const sameTypeIds = new Set(sameTypeArrows.map(a => a.id));
+            onArrowsChange(arrows.map(a =>
+                sameTypeIds.has(a.id) ? { ...a, scale: scaleValue } : a
+            ));
+        } else {
+            onArrowsChange(arrows.map(a =>
+                a.id === arrowId ? { ...a, scale: scaleValue } : a
+            ));
+        }
     };
 
     // Change arrow's associated group
@@ -133,10 +169,45 @@ const IntersectionImage = ({
         return group ? { name: group.name, courant: group.courant || '' } : { name: '?', courant: '' };
     };
 
+    // Set arrow length (for Piéton/Cycle arrows)
+    const setArrowLength = (arrowId, length) => {
+        const lengthValue = parseFloat(length) || 1;
+        if (applyToAllSameType) {
+            const sameTypeArrows = getArrowsOfSameType(arrowId);
+            const sameTypeIds = new Set(sameTypeArrows.map(a => a.id));
+            onArrowsChange(arrows.map(a =>
+                sameTypeIds.has(a.id) ? { ...a, length: lengthValue } : a
+            ));
+        } else {
+            onArrowsChange(arrows.map(a =>
+                a.id === arrowId ? { ...a, length: lengthValue } : a
+            ));
+        }
+    };
+
+    // Set arrow turn length (for TàD/TàG arrows - controls the length of the horizontal part)
+    const setArrowTurnLength = (arrowId, turnLength) => {
+        const turnLengthValue = parseFloat(turnLength) || 1;
+        if (applyToAllSameType) {
+            const sameTypeArrows = getArrowsOfSameType(arrowId);
+            const sameTypeIds = new Set(sameTypeArrows.map(a => a.id));
+            onArrowsChange(arrows.map(a =>
+                sameTypeIds.has(a.id) ? { ...a, turnLength: turnLengthValue } : a
+            ));
+        } else {
+            onArrowsChange(arrows.map(a =>
+                a.id === arrowId ? { ...a, turnLength: turnLengthValue } : a
+            ));
+        }
+    };
+
     // Render arrow SVG based on courant type
-    const renderArrowSVG = (courant, color) => {
+    const renderArrowSVG = (courant, color, arrowLength = 1, turnLength = 1) => {
         const strokeWidth = 3;
+        const thinStrokeWidth = 2; // Thinner stroke for Piéton/Cycle
         const size = 32;
+        // Calculate vertical part length reduction for turn arrows (1 = full, 0.5 = half)
+        const verticalReduction = 12 * (1 - turnLength); // Reduce from bottom
 
         switch (courant) {
             case 'TD': // Tout droit
@@ -147,17 +218,23 @@ const IntersectionImage = ({
                     </svg>
                 );
             case 'TàD': // Tourne à droite
+                // Reduce horizontal part: full = 26, min = 14 (just after the curve)
+                const tadEndX = 14 + (12 * turnLength); // 14 to 26
+                const tadArrowX = tadEndX;
                 return (
                     <svg width={size} height={size} viewBox="0 0 32 32">
-                        <path d="M8,24 L8,12 Q8,8 12,8 L26,8" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points="20,2 26,8 20,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <path d={`M8,24 L8,12 Q8,8 12,8 L${tadEndX},8`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points={`${tadArrowX - 6},2 ${tadArrowX},8 ${tadArrowX - 6},14`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
             case 'TàG': // Tourne à gauche
+                // Reduce horizontal part: full = 6, max = 18 (just after the curve)
+                const tagEndX = 18 - (12 * turnLength); // 18 to 6
+                const tagArrowX = tagEndX;
                 return (
                     <svg width={size} height={size} viewBox="0 0 32 32">
-                        <path d="M24,24 L24,12 Q24,8 20,8 L6,8" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points="12,2 6,8 12,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <path d={`M24,24 L24,12 Q24,8 20,8 L${tagEndX},8`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points={`${tagArrowX + 6},2 ${tagArrowX},8 ${tagArrowX + 6},14`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
             case 'TDTàD': // Legacy support
@@ -200,14 +277,20 @@ const IntersectionImage = ({
                 );
             case 'Piéton': // Flèche 2 sens (piétons)
             case 'Cycle': // Flèche 2 sens (cyclistes)
+                // Calculate extended height based on arrowLength (1 = normal, 2 = double, etc.)
+                const extendedHeight = size + (arrowLength - 1) * 24; // Add 24px per unit above 1
+                const viewBoxHeight = 32 + (arrowLength - 1) * 24;
+                const topY = 6;
+                const bottomY = 26 + (arrowLength - 1) * 24;
+                const centerY = (topY + bottomY) / 2;
                 return (
-                    <svg width={size} height={size} viewBox="0 0 32 32">
+                    <svg width={size} height={extendedHeight} viewBox={`0 0 32 ${viewBoxHeight}`}>
                         {/* Flèche vers le haut */}
-                        <line x1="16" y1="20" x2="16" y2="6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-                        <polyline points="10,12 16,6 22,12" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="16" y1={centerY} x2="16" y2={topY} stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" />
+                        <polyline points={`11,${topY + 5} 16,${topY} 21,${topY + 5}`} fill="none" stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" strokeLinejoin="round" />
                         {/* Flèche vers le bas */}
-                        <line x1="16" y1="12" x2="16" y2="26" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-                        <polyline points="10,20 16,26 22,20" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="16" y1={centerY} x2="16" y2={bottomY} stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" />
+                        <polyline points={`11,${bottomY - 5} 16,${bottomY} 21,${bottomY - 5}`} fill="none" stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
             default: // Flèche simple par défaut
@@ -437,30 +520,38 @@ const IntersectionImage = ({
                 />
             </div>
 
-            <div
-                ref={containerRef}
-                className="intersection-image-area"
-                onClick={handleImageClick}
-            >
+            <div className="intersection-content">
+                <div
+                    ref={containerRef}
+                    className="intersection-image-area"
+                    onClick={handleImageClick}
+                >
                 {imageData ? (
                     <>
                         <img src={imageData} alt="Carrefour" className="intersection-img" />
                         {arrows.map(arrow => {
                             const groupInfo = getGroupInfo(arrow.groupId);
                             const rotation = arrow.rotation || 0;
+                            const scale = arrow.scale || 1;
+                            const arrowLength = arrow.length || 1;
+                            const turnLength = arrow.turnLength || 1;
                             // Always show color based on current time in simulated diagram
                             const arrowColor = getGroupColorAtTime(arrow.groupId, currentTime || 0);
                             const isHovered = hoveredArrowGroupId === arrow.groupId;
-                            const isSideLabel = groupInfo.courant === 'Piéton' || groupInfo.courant === 'Cycle';
+                            const isPedestrianOrCycle = groupInfo.courant === 'Piéton' || groupInfo.courant === 'Cycle';
                             return (
                                 <div
                                     key={arrow.id}
-                                    className={`arrow-marker ${selectedArrow === arrow.id ? 'selected' : ''} ${isPlaying ? 'animating' : ''} ${isHovered ? 'hovered' : ''} ${isSideLabel ? 'side-label' : ''}`}
+                                    className={`arrow-marker ${selectedArrow === arrow.id ? 'selected' : ''} ${isPlaying ? 'animating' : ''} ${isHovered ? 'hovered' : ''} ${isPedestrianOrCycle ? 'side-label' : ''}`}
                                     style={{
                                         left: `${arrow.x}%`,
                                         top: `${arrow.y}%`
                                     }}
                                     onMouseDown={(e) => handleArrowMouseDown(e, arrow.id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedArrow(arrow.id);
+                                    }}
                                     onMouseEnter={() => setHoveredArrowGroupId && setHoveredArrowGroupId(arrow.groupId)}
                                     onMouseLeave={() => setHoveredArrowGroupId && setHoveredArrowGroupId(null)}
                                     onDoubleClick={(e) => {
@@ -472,12 +563,18 @@ const IntersectionImage = ({
                                     <div
                                         className="arrow-symbol"
                                         style={{
-                                            transform: `rotate(${rotation}deg)`
+                                            transform: `rotate(${rotation}deg) scale(${scale})`
                                         }}
                                     >
-                                        {renderArrowSVG(groupInfo.courant, arrowColor)}
+                                        {renderArrowSVG(groupInfo.courant, arrowColor, arrowLength, turnLength)}
                                     </div>
-                                    <span className="arrow-label">GF{arrow.groupId}</span>
+                                    {(showGroupNumbers || showGroupNames) && (
+                                        <span className="arrow-label">
+                                            {showGroupNumbers ? `GF${arrow.groupId}` : ''}
+                                            {showGroupNumbers && showGroupNames && groupInfo.name ? ' - ' : ''}
+                                            {showGroupNames && groupInfo.name ? groupInfo.name : ''}
+                                        </span>
+                                    )}
                                 </div>
                             );
                         })}
@@ -488,53 +585,184 @@ const IntersectionImage = ({
                         <p className="hint">Format: JPEG, PNG</p>
                     </div>
                 )}
+                </div>
+
+                {/* Right side: Arrow editor */}
+                <div className="intersection-sidebar">
+                    {selectedArrow ? (
+                        <div className="arrow-editor">
+                            <h4>Modifier la flèche</h4>
+                            {/* Apply to all same type option */}
+                            <label className="checkbox-option apply-all-option">
+                                <input
+                                    type="checkbox"
+                                    checked={applyToAllSameType}
+                                    onChange={(e) => setApplyToAllSameType(e.target.checked)}
+                                />
+                                <span>Appliquer à toutes ({(() => {
+                                    const selectedArrowData = arrows.find(a => a.id === selectedArrow);
+                                    const courant = selectedArrowData ? getGroupInfo(selectedArrowData.groupId).courant : '';
+                                    return courant || '?';
+                                })()})</span>
+                            </label>
+                            <div className="editor-row">
+                                <label>Groupe:</label>
+                                <select
+                                    value={arrows.find(a => a.id === selectedArrow)?.groupId || ''}
+                                    onChange={(e) => changeArrowGroup(selectedArrow, parseInt(e.target.value))}
+                                >
+                                    {groups.map(g => (
+                                        <option key={g.id} value={g.id}>
+                                            GF{g.id} - {g.name} {g.courant ? `(${g.courant})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="editor-row">
+                                <label>Rotation:</label>
+                                <div className="rotation-controls">
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="359"
+                                        value={arrows.find(a => a.id === selectedArrow)?.rotation || 0}
+                                        onChange={(e) => setArrowRotation(selectedArrow, e.target.value)}
+                                        className="rotation-slider"
+                                    />
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="359"
+                                        value={arrows.find(a => a.id === selectedArrow)?.rotation || 0}
+                                        onChange={(e) => setArrowRotation(selectedArrow, e.target.value)}
+                                        className="rotation-input"
+                                    />
+                                    <span className="rotation-unit">°</span>
+                                </div>
+                            </div>
+                            <div className="editor-row">
+                                <label>Zoom:</label>
+                                <div className="scale-controls">
+                                    <input
+                                        type="range"
+                                        min="0.5"
+                                        max="3"
+                                        step="0.1"
+                                        value={arrows.find(a => a.id === selectedArrow)?.scale || 1}
+                                        onChange={(e) => setArrowScale(selectedArrow, e.target.value)}
+                                        className="scale-slider"
+                                    />
+                                    <input
+                                        type="number"
+                                        min="0.5"
+                                        max="3"
+                                        step="0.1"
+                                        value={arrows.find(a => a.id === selectedArrow)?.scale || 1}
+                                        onChange={(e) => setArrowScale(selectedArrow, e.target.value)}
+                                        className="scale-input"
+                                    />
+                                    <span className="scale-unit">x</span>
+                                </div>
+                            </div>
+                            {/* Length option - only for Piéton/Cycle arrows */}
+                            {(() => {
+                                const selectedArrowData = arrows.find(a => a.id === selectedArrow);
+                                const selectedGroupInfo = selectedArrowData ? getGroupInfo(selectedArrowData.groupId) : null;
+                                const isPedOrCycle = selectedGroupInfo && (selectedGroupInfo.courant === 'Piéton' || selectedGroupInfo.courant === 'Cycle');
+                                return isPedOrCycle ? (
+                                    <div className="editor-row">
+                                        <label>Longueur:</label>
+                                        <div className="length-controls">
+                                            <input
+                                                type="range"
+                                                min="1"
+                                                max="4"
+                                                step="0.5"
+                                                value={selectedArrowData?.length || 1}
+                                                onChange={(e) => setArrowLength(selectedArrow, e.target.value)}
+                                                className="length-slider"
+                                            />
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="4"
+                                                step="0.5"
+                                                value={selectedArrowData?.length || 1}
+                                                onChange={(e) => setArrowLength(selectedArrow, e.target.value)}
+                                                className="length-input"
+                                            />
+                                            <span className="length-unit">x</span>
+                                        </div>
+                                    </div>
+                                ) : null;
+                            })()}
+                            {/* Turn length option - only for TàD/TàG arrows */}
+                            {(() => {
+                                const selectedArrowData = arrows.find(a => a.id === selectedArrow);
+                                const selectedGroupInfo = selectedArrowData ? getGroupInfo(selectedArrowData.groupId) : null;
+                                const isTurnArrow = selectedGroupInfo && (selectedGroupInfo.courant === 'TàD' || selectedGroupInfo.courant === 'TàG');
+                                return isTurnArrow ? (
+                                    <div className="editor-row">
+                                        <label>Retour:</label>
+                                        <div className="turn-length-controls">
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="1"
+                                                step="0.1"
+                                                value={selectedArrowData?.turnLength || 1}
+                                                onChange={(e) => setArrowTurnLength(selectedArrow, e.target.value)}
+                                                className="turn-length-slider"
+                                            />
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="1"
+                                                step="0.1"
+                                                value={selectedArrowData?.turnLength || 1}
+                                                onChange={(e) => setArrowTurnLength(selectedArrow, e.target.value)}
+                                                className="turn-length-input"
+                                            />
+                                            <span className="turn-length-unit">x</span>
+                                        </div>
+                                    </div>
+                                ) : null;
+                            })()}
+                            <button className="delete-arrow-btn" onClick={() => deleteArrow(selectedArrow)}>
+                                Supprimer
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="no-selection-hint">
+                            <p>Cliquez sur l'image pour ajouter une flèche</p>
+                            <p>Sélectionnez une flèche pour la modifier</p>
+                        </div>
+                    )}
+
+                    {/* Display options */}
+                    <div className="display-options">
+                        <label className="checkbox-option">
+                            <input
+                                type="checkbox"
+                                checked={showGroupNumbers}
+                                onChange={(e) => setShowGroupNumbers(e.target.checked)}
+                            />
+                            <span>Afficher n° des groupes</span>
+                        </label>
+                        <label className="checkbox-option">
+                            <input
+                                type="checkbox"
+                                checked={showGroupNames}
+                                onChange={(e) => setShowGroupNames(e.target.checked)}
+                            />
+                            <span>Afficher noms des groupes</span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
-            {selectedArrow && (
-                <div className="arrow-editor">
-                    <div className="editor-row">
-                        <label>Groupe:</label>
-                        <select
-                            value={arrows.find(a => a.id === selectedArrow)?.groupId || ''}
-                            onChange={(e) => changeArrowGroup(selectedArrow, parseInt(e.target.value))}
-                        >
-                            {groups.map(g => (
-                                <option key={g.id} value={g.id}>
-                                    GF{g.id} - {g.name} {g.courant ? `(${g.courant})` : ''}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="editor-row">
-                        <label>Rotation:</label>
-                        <div className="rotation-controls">
-                            <input
-                                type="range"
-                                min="0"
-                                max="359"
-                                value={arrows.find(a => a.id === selectedArrow)?.rotation || 0}
-                                onChange={(e) => setArrowRotation(selectedArrow, e.target.value)}
-                                className="rotation-slider"
-                            />
-                            <input
-                                type="number"
-                                min="0"
-                                max="359"
-                                value={arrows.find(a => a.id === selectedArrow)?.rotation || 0}
-                                onChange={(e) => setArrowRotation(selectedArrow, e.target.value)}
-                                className="rotation-input"
-                            />
-                            <span className="rotation-unit">°</span>
-                        </div>
-                    </div>
-                    <button className="delete-arrow-btn" onClick={() => deleteArrow(selectedArrow)}>
-                        Supprimer
-                    </button>
-                </div>
-            )}
-
             {imageData && (
-                <p className="hint">Cliquez sur l'image pour ajouter une flèche. Glissez pour déplacer. Double-clic pour tourner de 45°.</p>
+                <p className="hint">Glissez pour déplacer. Double-clic pour tourner de 45°.</p>
             )}
         </div>
     );
