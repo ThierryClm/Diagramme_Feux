@@ -25,9 +25,26 @@ const IntersectionImage = ({
     const containerRef = useRef(null);
     const [selectedArrow, setSelectedArrow] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
-    const [showGroupNumbers, setShowGroupNumbers] = useState(true);
-    const [showGroupNames, setShowGroupNames] = useState(true);
+
+    // Load display options from localStorage
+    const [showGroupNumbers, setShowGroupNumbers] = useState(() => {
+        const saved = localStorage.getItem('intersection_showGroupNumbers');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+    const [showGroupNames, setShowGroupNames] = useState(() => {
+        const saved = localStorage.getItem('intersection_showGroupNames');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
     const [applyToAllSameType, setApplyToAllSameType] = useState(false);
+
+    // Save display options to localStorage when they change
+    useEffect(() => {
+        localStorage.setItem('intersection_showGroupNumbers', JSON.stringify(showGroupNumbers));
+    }, [showGroupNumbers]);
+
+    useEffect(() => {
+        localStorage.setItem('intersection_showGroupNames', JSON.stringify(showGroupNames));
+    }, [showGroupNames]);
 
     // Animation refs
     const animationRef = useRef(null);

@@ -136,9 +136,10 @@ const PhasageBulle = ({
         }
     }, [groups, simulationResult, cycleLength, actionData, selectedActions]);
 
-    // Render arrow SVG based on courant type
-    const renderArrowSVG = (courant, color, size = 24) => {
+    // Render arrow SVG based on courant type (with arrowLength and turnLength support)
+    const renderArrowSVG = (courant, color, size = 24, arrowLength = 1, turnLength = 1) => {
         const strokeWidth = 2;
+        const thinStrokeWidth = 1.5; // Thinner stroke for Piéton/Cycle
 
         switch (courant) {
             case 'TD':
@@ -148,20 +149,28 @@ const PhasageBulle = ({
                         <polyline points="8,14 16,6 24,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
-            case 'TàD':
+            case 'TàD': {
+                // Reduce horizontal part: full = 26, min = 14 (just after the curve)
+                const tadEndX = 14 + (12 * turnLength); // 14 to 26
+                const tadArrowX = tadEndX;
                 return (
                     <svg width={size} height={size} viewBox="0 0 32 32">
-                        <path d="M8,24 L8,12 Q8,8 12,8 L26,8" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points="20,2 26,8 20,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <path d={`M8,24 L8,12 Q8,8 12,8 L${tadEndX},8`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points={`${tadArrowX - 6},2 ${tadArrowX},8 ${tadArrowX - 6},14`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
-            case 'TàG':
+            }
+            case 'TàG': {
+                // Reduce horizontal part: full = 6, max = 18 (just after the curve)
+                const tagEndX = 18 - (12 * turnLength); // 18 to 6
+                const tagArrowX = tagEndX;
                 return (
                     <svg width={size} height={size} viewBox="0 0 32 32">
-                        <path d="M24,24 L24,12 Q24,8 20,8 L6,8" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points="12,2 6,8 12,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <path d={`M24,24 L24,12 Q24,8 20,8 L${tagEndX},8`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points={`${tagArrowX + 6},2 ${tagArrowX},8 ${tagArrowX + 6},14`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
+            }
             case 'TDTàD': // Legacy support
             case 'TD-TàD':
                 return (
@@ -194,15 +203,27 @@ const PhasageBulle = ({
                     </svg>
                 );
             case 'Piéton':
-            case 'Cycle':
+            case 'Cycle': {
+                // Calculate extended height based on arrowLength (1 = normal, 2 = double, etc.)
+                const baseSize = 32;
+                const extendedHeight = baseSize + (arrowLength - 1) * 24; // Add 24px per unit above 1
+                const viewBoxHeight = 32 + (arrowLength - 1) * 24;
+                const topY = 6;
+                const bottomY = 26 + (arrowLength - 1) * 24;
+                const centerY = (topY + bottomY) / 2;
+                // Scale the SVG size proportionally
+                const scaledHeight = size * (extendedHeight / baseSize);
                 return (
-                    <svg width={size} height={size} viewBox="0 0 32 32">
-                        <line x1="16" y1="20" x2="16" y2="6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-                        <polyline points="10,12 16,6 22,12" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <line x1="16" y1="12" x2="16" y2="26" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-                        <polyline points="10,20 16,26 22,20" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    <svg width={size} height={scaledHeight} viewBox={`0 0 32 ${viewBoxHeight}`}>
+                        {/* Flèche vers le haut */}
+                        <line x1="16" y1={centerY} x2="16" y2={topY} stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" />
+                        <polyline points={`11,${topY + 5} 16,${topY} 21,${topY + 5}`} fill="none" stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        {/* Flèche vers le bas */}
+                        <line x1="16" y1={centerY} x2="16" y2={bottomY} stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" />
+                        <polyline points={`11,${bottomY - 5} 16,${bottomY} 21,${bottomY - 5}`} fill="none" stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
+            }
             default:
                 return (
                     <svg width={size} height={size} viewBox="0 0 32 32">
@@ -317,6 +338,9 @@ const PhasageBulle = ({
                                 {intersectionArrows.map(arrow => {
                                     const groupInfo = getGroupInfo(arrow.groupId);
                                     const rotation = arrow.rotation || 0;
+                                    const scale = arrow.scale || 1;
+                                    const arrowLength = arrow.length || 1;
+                                    const turnLength = arrow.turnLength || 1;
                                     const arrowColor = getGroupColorAtTime(arrow.groupId, time);
 
                                     return (
@@ -332,9 +356,9 @@ const PhasageBulle = ({
                                         >
                                             <div
                                                 className="phase-arrow-symbol"
-                                                style={{ transform: `rotate(${rotation}deg)` }}
+                                                style={{ transform: `rotate(${rotation}deg) scale(${scale})` }}
                                             >
-                                                {renderArrowSVG(groupInfo.courant, arrowColor, arrowSize)}
+                                                {renderArrowSVG(groupInfo.courant, arrowColor, arrowSize, arrowLength, turnLength)}
                                             </div>
                                         </div>
                                     );
