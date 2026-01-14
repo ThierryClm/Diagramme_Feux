@@ -17,7 +17,7 @@ const ACTION_OPTIONS = [
     'Escamotage de phase',
     'Fermeture anticipée',
     'Fin de bande passante',
-    'Instant de coordination',
+    'Instant Co',
     'Ouverture anticipée',
     'Point de repos',
     'Priorité piétons',

@@ -496,6 +496,24 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             : action.plage2
     }));
 
+    // Get all "Instant Co" actions
+    // In simulation mode: show overlay ONLY when action is CHECKED (normal logic - hidden by default)
+    // If plage2 is not set, default to groups.length (total number of groups)
+    const instantCoActions = actionData.filter(action => {
+        if (action.action !== 'Instant Co') return false;
+        if (action.deb === '' || action.deb === undefined) return false;
+        // plage1 must be valid (>= 1), plage2 defaults to groups.length if not set
+        const p1 = parseInt(action.plage1);
+        if (isNaN(p1) || p1 < 1) return false;
+        if (simulationFilter && !simulationFilter.has(action.id)) return false;
+        return true;
+    }).map(action => ({
+        ...action,
+        plage2: (action.plage2 === '' || action.plage2 === undefined || isNaN(parseInt(action.plage2)) || parseInt(action.plage2) < 1)
+            ? groups.length
+            : action.plage2
+    }));
+
     // Get all "Priorité piétons" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     // Also hide if within a SELECTED Escamotage de phase or Adaptatif vertical
@@ -1946,6 +1964,103 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 top: `${labelY}px`,
                                                 transform: 'translateX(-50%)',
                                                 color: '#ffffff',
+                                                fontSize: '0.7em',
+                                                fontWeight: 'bold',
+                                                whiteSpace: 'nowrap',
+                                                zIndex: 100
+                                            }}
+                                        >
+                                            {abrv}
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
+
+                        {/* Instant Co arrows - vertical orange arrows */}
+                        {instantCoActions.map((action, idx) => {
+                            const deb = parseInt(action.deb) || 0;
+                            const plage1 = parseInt(action.plage1) || 0;
+                            const plage2 = parseInt(action.plage2) || 0;
+                            const abrv = action.abrv || '';
+                            const isHighlighted = hoveredActionId === action.id;
+
+                            if (plage1 < 1 || plage2 < 1 || plage1 > groups.length || plage2 > groups.length) return null;
+
+                            // X position at deb
+                            const xPos = deb * pixelsPerSecond;
+
+                            // Arrow length fixed at 13 pixels
+                            const arrowLength = 13;
+
+                            // Downward arrow: ends just above plage1 row
+                            const downArrowEndY = RULER_HEIGHT + (plage1 - 1) * ROW_HEIGHT - 2;
+                            const downArrowStartY = downArrowEndY - arrowLength;
+
+                            // Upward arrow: ends just below plage2 row
+                            const upArrowEndY = RULER_HEIGHT + plage2 * ROW_HEIGHT + 2;
+                            const upArrowStartY = upArrowEndY + arrowLength;
+
+                            // Arrow head size
+                            const arrowSize = 5;
+
+                            // Label position below the diagram
+                            const labelY = RULER_HEIGHT + groups.length * ROW_HEIGHT + 20;
+
+                            return (
+                                <React.Fragment key={`instant-co-${idx}`}>
+                                    <svg
+                                        className={`instant-co-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            pointerEvents: 'none',
+                                            zIndex: 100,
+                                            overflow: 'visible'
+                                        }}
+                                    >
+                                        {/* Downward arrow line */}
+                                        <line
+                                            x1={xPos}
+                                            y1={downArrowStartY}
+                                            x2={xPos}
+                                            y2={downArrowEndY}
+                                            stroke="#FF8C00"
+                                            strokeWidth="2"
+                                        />
+                                        {/* Downward arrow head (pointing down) */}
+                                        <polygon
+                                            points={`${xPos - arrowSize},${downArrowEndY} ${xPos + arrowSize},${downArrowEndY} ${xPos},${downArrowEndY + arrowSize * 1.5}`}
+                                            fill="#FF8C00"
+                                        />
+                                        {/* Upward arrow line */}
+                                        <line
+                                            x1={xPos}
+                                            y1={upArrowStartY}
+                                            x2={xPos}
+                                            y2={upArrowEndY}
+                                            stroke="#FF8C00"
+                                            strokeWidth="2"
+                                        />
+                                        {/* Upward arrow head (pointing up) */}
+                                        <polygon
+                                            points={`${xPos - arrowSize},${upArrowEndY} ${xPos + arrowSize},${upArrowEndY} ${xPos},${upArrowEndY - arrowSize * 1.5}`}
+                                            fill="#FF8C00"
+                                        />
+                                    </svg>
+                                    {/* Label below diagram */}
+                                    {abrv && (
+                                        <div
+                                            className="instant-co-label"
+                                            style={{
+                                                position: 'absolute',
+                                                left: `${xPos}px`,
+                                                top: `${labelY}px`,
+                                                transform: 'translateX(-50%)',
+                                                color: '#FF8C00',
                                                 fontSize: '0.7em',
                                                 fontWeight: 'bold',
                                                 whiteSpace: 'nowrap',

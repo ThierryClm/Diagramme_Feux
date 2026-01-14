@@ -1449,7 +1449,7 @@ function App() {
                             <li><strong>Signa d'aide à la conduite :</strong> Signal d'information conducteur (orange clignotant + bleu fixe).</li>
                             <li><strong>Début/Fin de bande passante :</strong> Lignes verticales verte/rouge marquant la coordination.</li>
                             <li><strong>Priorité piétons :</strong> Action pour la priorité aux piétons.</li>
-                            <li><strong>Instant de coordination :</strong> Point de synchronisation dans le cycle.</li>
+                            <li><strong>Instant Co :</strong> Point de synchronisation dans le cycle.</li>
                             <li><strong>Synchro BTS :</strong> Synchronisation avec le système BTS.</li>
                         </ul>
                     </section>
