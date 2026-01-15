@@ -1373,10 +1373,43 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 const targetStartPos = getGroupStartPos(targetGf);
                                 if (targetStartPos === null) return null;
 
-                                // If target group wraps around cycle, point to end of green instead of start
-                                const targetWraps = doesGroupWrap(targetGf);
-                                const targetEndPos = getGroupEndPos(targetGf);
-                                const targetPos = targetWraps ? targetEndPos : targetStartPos;
+                                // Check if target group (Action GF) overlaps with source group (GF)
+                                // Get source group green period
+                                const sourceGroup = groups.find(g => g.id === sourceGf);
+                                const targetGroup = groups.find(g => g.id === parseInt(targetGf));
+                                if (!sourceGroup || !targetGroup) return null;
+
+                                const sourceStart = getGroupStartPos(sourceGf);
+                                const sourceEnd = getGroupEndPos(sourceGf);
+                                const targetEnd = getGroupEndPos(targetGf);
+
+                                // Check if target group's green overlaps with source group's green
+                                // Overlap occurs if target's green period intersects with source's green period
+                                const cycle = simulationResult ? effectiveCycleLength : cycleLength;
+                                let groupsOverlap = false;
+
+                                if (sourceStart !== null && sourceEnd !== null && targetEnd !== null) {
+                                    // Handle wrap-around cases
+                                    const sourceWraps = doesGroupWrap(sourceGf);
+                                    const targetWraps = doesGroupWrap(targetGf);
+
+                                    if (!sourceWraps && !targetWraps) {
+                                        // Neither wraps: simple overlap check
+                                        groupsOverlap = (targetStartPos < sourceEnd && targetEnd > sourceStart);
+                                    } else if (sourceWraps && !targetWraps) {
+                                        // Source wraps: target overlaps if it's in [sourceStart, cycle] or [0, sourceEnd]
+                                        groupsOverlap = (targetStartPos >= sourceStart || targetEnd <= sourceEnd);
+                                    } else if (!sourceWraps && targetWraps) {
+                                        // Target wraps: overlaps if source intersects [targetStart, cycle] or [0, targetEnd]
+                                        groupsOverlap = (sourceStart <= targetEnd || sourceEnd >= targetStartPos);
+                                    } else {
+                                        // Both wrap: they definitely overlap
+                                        groupsOverlap = true;
+                                    }
+                                }
+
+                                // If groups overlap, point to end of target's green, otherwise to start
+                                const targetPos = groupsOverlap ? targetEnd : targetStartPos;
 
                                 // Calculate positions using actual group indices
                                 const sourceY = getGroupRowY(sourceGf);
