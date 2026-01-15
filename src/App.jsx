@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTrafficLight, TRAFFIC_DATASETS } from './hooks/useTrafficLight';
 import TimelineDiagram from './components/TimelineDiagram';
 import GroupTable from './components/GroupTable';
@@ -96,6 +96,56 @@ function App() {
 
     // Diagram arrow style
     const [diagramArrowStyle, setDiagramArrowStyle] = useState('solid');
+
+    // Resizable sidebar
+    const [sidebarWidth, setSidebarWidth] = useState(() => {
+        const saved = localStorage.getItem('sidebar_width');
+        return saved ? parseInt(saved) : 450;
+    });
+    const [isResizing, setIsResizing] = useState(false);
+    const splitViewRef = useRef(null);
+
+    // Save sidebar width to localStorage
+    useEffect(() => {
+        localStorage.setItem('sidebar_width', sidebarWidth.toString());
+    }, [sidebarWidth]);
+
+    // Handle resize drag
+    const handleResizeStart = useCallback((e) => {
+        e.preventDefault();
+        setIsResizing(true);
+    }, []);
+
+    const handleResizeMove = useCallback((e) => {
+        if (!isResizing || !splitViewRef.current) return;
+        const containerRect = splitViewRef.current.getBoundingClientRect();
+        const newWidth = e.clientX - containerRect.left;
+        // Limit between 300px and 800px
+        setSidebarWidth(Math.min(800, Math.max(300, newWidth)));
+    }, [isResizing]);
+
+    const handleResizeEnd = useCallback(() => {
+        setIsResizing(false);
+    }, []);
+
+    // Add/remove mouse event listeners for resizing
+    useEffect(() => {
+        if (isResizing) {
+            document.addEventListener('mousemove', handleResizeMove);
+            document.addEventListener('mouseup', handleResizeEnd);
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        } else {
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        }
+        return () => {
+            document.removeEventListener('mousemove', handleResizeMove);
+            document.removeEventListener('mouseup', handleResizeEnd);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+    }, [isResizing, handleResizeMove, handleResizeEnd]);
 
     // Calculate simulated diagram when in simulation mode
     const simulationResult = useMemo(() => {
@@ -945,8 +995,8 @@ function App() {
                 </div>
             </header>
 
-            <main className="split-view">
-                <aside className="sidebar">
+            <main className="split-view" ref={splitViewRef}>
+                <aside className="sidebar" style={{ width: `${sidebarWidth}px` }}>
                     {phasageBulleEnabled ? (
                         <div className="phasage-bulle-sidebar">
                             <div className="sidebar-header">
@@ -1083,6 +1133,12 @@ function App() {
                     )}
                 </aside>
 
+                {/* Resizable divider */}
+                <div
+                    className={`resize-divider ${isResizing ? 'resizing' : ''}`}
+                    onMouseDown={handleResizeStart}
+                />
+
                 <section className="diagram-area" style={{ display: 'flex', flexDirection: 'column' }}>
                     {/* PF Tabs */}
                     <div className="pf-tabs-bar">
@@ -1136,38 +1192,37 @@ function App() {
                         >
                             <span className="pf-tab-name">Phasage bulle</span>
                         </div>
+
+                        {/* Cycle length input - positioned at the right of tabs */}
+                        <div className="pf-tabs-spacer"></div>
+                        <label className="cycle-input-label">
+                            Cycle:
+                            <input
+                                type="number"
+                                min="10"
+                                value={cycleLengthInput}
+                                onChange={(e) => setCycleLengthInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.target.blur();
+                                    }
+                                }}
+                                onBlur={() => {
+                                    const newCycle = parseInt(cycleLengthInput);
+                                    if (!isNaN(newCycle) && newCycle >= 10 && newCycle !== cycleLength) {
+                                        setCycleLength(newCycle);
+                                    } else {
+                                        setCycleLengthInput(cycleLength.toString());
+                                    }
+                                }}
+                                className="input-count"
+                            />
+                            <span>s</span>
+                        </label>
                     </div>
 
                     {!phasageBulleEnabled && (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', padding: '0 0.5rem' }}>
-                                <span style={{ fontWeight: 'bold', color: '#ccc' }}>Diagramme</span>
-                                <label style={{ color: '#aaa', fontSize: '0.9em' }}>
-                                    Cycle:
-                                    <input
-                                        type="number"
-                                        min="10"
-                                        value={cycleLengthInput}
-                                        onChange={(e) => setCycleLengthInput(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.target.blur();
-                                            }
-                                        }}
-                                        onBlur={() => {
-                                            const newCycle = parseInt(cycleLengthInput);
-                                            if (!isNaN(newCycle) && newCycle >= 10 && newCycle !== cycleLength) {
-                                                setCycleLength(newCycle);
-                                            } else {
-                                                setCycleLengthInput(cycleLength.toString());
-                                            }
-                                        }}
-                                        className="input-count"
-                                        style={{ marginLeft: '5px', width: '60px' }}
-                                    />
-                                    <span style={{ marginLeft: '3px' }}>s</span>
-                                </label>
-                            </div>
                             <TimelineDiagram
                                 groups={groups}
                                 globalTime={globalTime}

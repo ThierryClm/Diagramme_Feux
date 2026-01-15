@@ -125,15 +125,48 @@
 }
 
 .sidebar {
-    width: 450px;
+    min-width: 300px;
+    max-width: 800px;
     background: #181818;
-    border-right: 1px solid #333;
+    border-right: none;
     display: flex;
     flex-direction: column;
     padding: 1rem;
     overflow: visible;
     /* Let split-view handle scroll */
     flex-shrink: 0;
+}
+
+/* Resizable divider between sidebar and diagram area */
+.resize-divider {
+    width: 6px;
+    background: #333;
+    cursor: col-resize;
+    flex-shrink: 0;
+    transition: background 0.2s;
+    position: relative;
+}
+
+.resize-divider:hover,
+.resize-divider.resizing {
+    background: #0af;
+}
+
+.resize-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 40px;
+    background: #555;
+    border-radius: 1px;
+}
+
+.resize-divider:hover::after,
+.resize-divider.resizing::after {
+    background: #fff;
 }
 
 .diagram-area {
@@ -395,6 +428,26 @@
 
 .pf-tab-name {
     white-space: nowrap;
+}
+
+/* Spacer to push cycle input to the right */
+.pf-tabs-spacer {
+    flex-grow: 1;
+}
+
+/* Cycle input in pf-tabs-bar */
+.cycle-input-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #aaa;
+    font-size: 0.9em;
+    margin-right: 8px;
+}
+
+.cycle-input-label .input-count {
+    width: 55px;
+    margin-left: 0;
 }
 
 .pf-tab-close {
