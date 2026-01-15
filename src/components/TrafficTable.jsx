@@ -115,24 +115,13 @@ const TrafficTable = ({
                                         </td>
                                     );
                                 })()}
-                                {/* Retard (shared) */}
-                                <td>
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        className="input-trafic-num"
-                                        value={g.delay || ''}
-                                        onChange={(e) => handleSharedChange(g.id, 'delay', parseFloat(e.target.value) || 0)}
-                                    />
+                                {/* Retard (calculé - lecture seule) */}
+                                <td className="col-calculated">
+                                    {g.delay || ''}
                                 </td>
-                                {/* Ile d'attente (Queue) (shared) */}
-                                <td>
-                                    <input
-                                        type="number"
-                                        className="input-trafic-num"
-                                        value={g.queueLength || ''}
-                                        onChange={(e) => handleSharedChange(g.id, 'queueLength', parseFloat(e.target.value) || 0)}
-                                    />
+                                {/* Ile d'attente (calculé - lecture seule) */}
+                                <td className="col-calculated">
+                                    {g.queueLength || ''}
                                 </td>
                             </tr>
                         );

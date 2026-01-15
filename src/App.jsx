@@ -646,7 +646,8 @@ function App() {
                     conflictMatrix: importedData.conflictMatrix,
                     actionData: importedData.actionData,
                     pfTabs: importedData.pfTabs.length > 0 ? importedData.pfTabs : undefined,
-                    activePFId: 1
+                    activePFId: 1,
+                    trafficDatasets: importedData.trafficDatasets
                 });
 
                 // Apply traffic data if available

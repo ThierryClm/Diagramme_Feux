@@ -567,6 +567,10 @@ export const useTrafficLight = () => {
                 setPfTabs([{ id: 1, name: 'PF1', data: state.actionData }]);
                 setActivePFId(1);
             }
+            // Load traffic datasets if provided
+            if (state.trafficDatasets) {
+                setTrafficDatasets(state.trafficDatasets);
+            }
             // Reset simulation state when loading full state
             setSimulationEnabled(false);
             setSimulationSelectedActions([]);

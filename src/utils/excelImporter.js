@@ -140,6 +140,11 @@ export async function importExcelFile(file) {
                         console.log('Found Formulaire sheet, parsing groups...');
                         parseGroupsSheet(sheetData, result, sheetName);
                     }
+                    // Parse Traffic sheet if found (check before PF sheets to ensure it's detected)
+                    else if (normalizedSheetName.includes('trafic') || normalizedSheetName.includes('traffic')) {
+                        console.log('Found Trafic sheet, parsing traffic data...');
+                        parseTrafficSheet(sheetData, result);
+                    }
                     // Parse 6th sheet (index 5) for conflict matrix, diagram data, and action table (PF1)
                     else if (sheetIndex === 5) {
                         parseMatrixSheet(sheetData, result, sheet, sheetName);
@@ -149,10 +154,6 @@ export async function importExcelFile(file) {
                         const pfNumber = sheetIndex - 4; // index 6 = PF2, index 7 = PF3, etc.
                         console.log(`Parsing additional PF sheet: PF${pfNumber} from sheet ${sheetIndex}`);
                         parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet);
-                    }
-                    // Parse Traffic sheet if found
-                    else if (normalizedSheetName.includes('trafic') || normalizedSheetName.includes('traffic')) {
-                        parseTrafficSheet(sheetData, result);
                     }
                 });
 
@@ -201,24 +202,24 @@ function normalizeGroupType(typeValue) {
 
     const upper = normalized.toUpperCase();
 
-    // Map Excel codes to standard types
+    // Map Excel codes to standard types (must match useTrafficLight types)
     const mappings = {
-        'V': 'V',
-        'VL': 'V',
-        'B': 'B',
-        'TC': 'B',
-        'BUS': 'B',
-        'TRAM': 'B',
-        'P': 'P',
-        'PIETON': 'P',
-        'PIÉTON': 'P',
-        'PIETONS': 'P',
-        'PIÉTONS': 'P',
-        'CY': 'CY',
-        'CYCLE': 'CY',
-        'CYCLISTE': 'CY',
-        'VELO': 'CY',
-        'VÉLO': 'CY',
+        'V': 'VL',
+        'VL': 'VL',
+        'B': 'TC',
+        'TC': 'TC',
+        'BUS': 'TC',
+        'TRAM': 'TC',
+        'P': 'Piéton',
+        'PIETON': 'Piéton',
+        'PIÉTON': 'Piéton',
+        'PIETONS': 'Piéton',
+        'PIÉTONS': 'Piéton',
+        'CY': 'Cycliste',
+        'CYCLE': 'Cycliste',
+        'CYCLISTE': 'Cycliste',
+        'VELO': 'Cycliste',
+        'VÉLO': 'Cycliste',
         'FL': 'FL',
         'FLECHE': 'FL',
         'FLÈCHE': 'FL',
@@ -987,60 +988,73 @@ function parseActionsSheet(sheetData, result) {
 
 /**
  * Parse traffic sheet - "Trafic" sheet with specific cell positions
- * - Starting at E6: "Courant" field (with blank lines between each group)
- * - E6, E8, E10, E12... (every 2 rows, same pattern as Formulaire sheet)
- * - Column E (Excel col 5) → index 3 (using Excel col - 2 formula)
+ * Groups (Grp) and names (Nom) are copied from the Formulaire sheet (already in result.groups)
+ * Import from Excel:
+ * - I6, I8, I10... (every 2 rows): Coef (lane coefficient) - index 8
+ * - J6, J8, J10... (every 2 rows): Trafic (traffic volume) - index 9
  */
 function parseTrafficSheet(sheetData, result) {
     if (sheetData.length < 6) return;
 
-    console.log('parseTrafficSheet called, sheetData length:', sheetData.length);
-    console.log('Number of groups to match:', result.groups.length);
+    console.log('=== parseTrafficSheet called ===');
+    console.log('sheetData length:', sheetData.length);
+    console.log('Number of groups:', result.groups.length);
 
-    // Column indices using Excel col - 2 formula
-    const COL_COURANT = 3;  // E (Excel col 5) → index 3
+    // Column indices (0-based, Excel A=0, B=1, etc.)
+    const COL_COEF = 7;    // I (Excel col 9) → index 7 (car colonne A masquée, donc I = index 7)
+    const COL_TRAFIC = 8;  // J (Excel col 10) → index 8
+
+    // Initialize trafficDatasets structure for all datasets
+    const TRAFFIC_DATASETS = ['HPM', 'HPS', 'HC', 'Estimation', 'Projection'];
+    const trafficDatasets = {};
+    TRAFFIC_DATASETS.forEach(ds => {
+        trafficDatasets[ds] = {};
+    });
 
     // Parse traffic data starting at row 6 (index 5)
-    // Groups are at E6, E8, E10... (every 2 rows, with blank line between)
-    const trafficByGroup = {};
+    // Data is at rows 6, 8, 10... (every 2 rows, with blank line between)
     let currentRow = 5; // Start at row 6 (index 5)
-    let groupIndex = 0; // Index into result.groups array
+    let groupIndex = 0;
 
     while (currentRow < sheetData.length && groupIndex < result.groups.length) {
         const row = sheetData[currentRow];
+        const group = result.groups[groupIndex];
 
-        console.log(`Checking traffic row ${currentRow + 1} (Excel row ${currentRow + 1}):`, row ? row.slice(0, 10) : 'undefined');
+        if (row && group) {
+            const coefValue = parseNumber(row[COL_COEF], null);
+            const traficValue = parseNumber(row[COL_TRAFIC], null);
 
-        // Check if this row has data in column E (index 3) - the "Courant" field
-        if (row && row[COL_COURANT] !== '' && row[COL_COURANT] !== null && row[COL_COURANT] !== undefined) {
-            const courantValue = String(row[COL_COURANT]).trim();
-            console.log(`  Col E (idx ${COL_COURANT}) Courant: "${courantValue}"`);
+            console.log(`Row ${currentRow + 1} -> Group ${group.id} (${group.name}): Coef=${coefValue}, Trafic=${traficValue}`);
 
-            if (courantValue) {
-                // Match this with the corresponding group by index
-                const group = result.groups[groupIndex];
-                if (group) {
-                    console.log(`  Assigning to group ${group.id} (${group.name})`);
-                    group.courant = courantValue;
+            // Update group with laneCoef if provided
+            if (coefValue !== null) {
+                group.laneCoef = coefValue;
+            }
 
-                    trafficByGroup[group.id] = {
-                        courant: courantValue,
-                        coef: parseNumber(row[COL_COURANT + 1], 1), // Column F
-                        trafic: parseNumber(row[COL_COURANT + 2], 0), // Column G
-                        vUtile: parseNumber(row[COL_COURANT + 3], 0) // Column H
-                    };
-                }
-
-                groupIndex++;
+            // Store trafficVol in trafficDatasets for the first dataset (HPM)
+            // and initialize other datasets with the same value
+            if (traficValue !== null) {
+                TRAFFIC_DATASETS.forEach(ds => {
+                    trafficDatasets[ds][group.id] = { trafficVol: traficValue };
+                });
             }
         }
 
-        // Skip to next group (every 2 rows: E6, E8, E10, E12...)
+        // Next group and next data row (every 2 rows)
+        groupIndex++;
         currentRow += 2;
     }
 
-    console.log('Traffic data parsed:', trafficByGroup);
-    result.trafficData = trafficByGroup;
+    // Store trafficDatasets in result
+    result.trafficDatasets = trafficDatasets;
+
+    console.log('=== Traffic parsing complete ===');
+    console.log('Groups after traffic import:', result.groups.map(g => ({
+        id: g.id,
+        name: g.name,
+        laneCoef: g.laneCoef
+    })));
+    console.log('Traffic datasets:', trafficDatasets);
 }
 
 /**
