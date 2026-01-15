@@ -120,8 +120,8 @@ function App() {
         if (!isResizing || !splitViewRef.current) return;
         const containerRect = splitViewRef.current.getBoundingClientRect();
         const newWidth = e.clientX - containerRect.left;
-        // Limit between 300px and 800px
-        setSidebarWidth(Math.min(800, Math.max(300, newWidth)));
+        // Limit between 300px and 1200px
+        setSidebarWidth(Math.min(1200, Math.max(300, newWidth)));
     }, [isResizing]);
 
     const handleResizeEnd = useCallback(() => {
@@ -1068,9 +1068,27 @@ function App() {
                             <div className="sidebar-tabs">
                                 <button
                                     className={`tab-btn ${activeTab === 'config' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('config')}
+                                    onClick={() => {
+                                        setActiveTab('config');
+                                        setSidebarWidth(450);
+                                    }}
                                 >
                                     Configuration
+                                </button>
+                                <button
+                                    className={`tab-btn ${activeTab === 'matrix' ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setActiveTab('matrix');
+                                        // Calculate optimal width for matrix:
+                                        // Find longest group name to calculate Nom column width
+                                        const maxNameLength = Math.max(3, ...groups.map(g => (g.name || '').length));
+                                        const nomColWidth = Math.max(70, maxNameLength * 8); // ~8px per character at 0.75em font-size
+                                        // GF col (24px) + Nom col (variable) + groups (19px each with border) + sidebar padding (32px) + matrix padding (32px) + extra margin (20px)
+                                        const matrixWidth = 24 + nomColWidth + (groups.length * 19) + 32 + 32 + 20;
+                                        setSidebarWidth(Math.min(1200, Math.max(300, matrixWidth)));
+                                    }}
+                                >
+                                    Matrice
                                 </button>
                                 <button
                                     className={`tab-btn ${activeTab === 'traffic' ? 'active' : ''}`}
@@ -1099,6 +1117,18 @@ function App() {
                                         />
                                     </div>
                                 </>
+                            )}
+
+                            {activeTab === 'matrix' && (
+                                <IntergreenMatrix
+                                    conflictMatrix={conflictMatrix}
+                                    setMatrixValue={setMatrixValue}
+                                    groups={groups}
+                                    cycleLength={cycleLength}
+                                    actionData={actionData}
+                                    activePFId={activePFId}
+                                    pfTabs={pfTabs}
+                                />
                             )}
 
                             {activeTab === 'traffic' && (
