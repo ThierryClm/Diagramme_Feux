@@ -558,6 +558,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
     const ROW_HEIGHT = 30; // Height of each row in pixels
     const RULER_HEIGHT = 50; // Height of the ruler
+    const ROW_TOTAL_HEIGHT = ROW_HEIGHT + 1; // Row height + 1px border
+
+    // Helper to get the Y position for a group row (center of the row)
+    const getGroupRowY = (groupId) => {
+        const groupIndex = groups.findIndex(g => g.id === parseInt(groupId));
+        if (groupIndex === -1) return null;
+        // RULER_HEIGHT + 1px ruler border + (index * row total height) + half row height
+        return RULER_HEIGHT + 1 + (groupIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
+    };
 
     // Helper to get group start position (beginning of green bar on screen)
     // Uses simulated offset when in simulation mode
@@ -741,7 +750,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 className={`simulation-playhead ${isPlayingSimulation ? 'playing' : ''}`}
                                 style={{
                                     left: `${simulationCurrentTime * pixelsPerSecond}px`,
-                                    height: `${RULER_HEIGHT + (groups.length * ROW_HEIGHT) + 30}px`
+                                    height: `${RULER_HEIGHT + 1 + (groups.length * ROW_TOTAL_HEIGHT) + 30}px`
                                 }}
                             >
                                 <div className="playhead-time">{simulationCurrentTime}s</div>
@@ -1242,12 +1251,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 // Plage values are group numbers (1-indexed)
                                 const startGroup = Math.min(plage1, plage2) - 1;
                                 const endGroup = Math.max(plage1, plage2) - 1;
-                                topPos = RULER_HEIGHT + (startGroup * ROW_HEIGHT);
-                                height = (endGroup - startGroup + 1) * ROW_HEIGHT;
+                                topPos = RULER_HEIGHT + 1 + (startGroup * ROW_TOTAL_HEIGHT);
+                                height = (endGroup - startGroup + 1) * ROW_TOTAL_HEIGHT;
                             } else {
                                 // No plage values - full height
-                                topPos = RULER_HEIGHT;
-                                height = groups.length * ROW_HEIGHT;
+                                topPos = RULER_HEIGHT + 1;
+                                height = groups.length * ROW_TOTAL_HEIGHT;
                             }
 
                             // Check if overlay wraps around cycle
@@ -1369,9 +1378,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 const targetEndPos = getGroupEndPos(targetGf);
                                 const targetPos = targetWraps ? targetEndPos : targetStartPos;
 
-                                // Calculate positions
-                                const sourceY = RULER_HEIGHT + ((sourceGf - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
-                                const targetY = RULER_HEIGHT + ((targetGf - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                                // Calculate positions using actual group indices
+                                const sourceY = getGroupRowY(sourceGf);
+                                const targetY = getGroupRowY(targetGf);
+                                if (sourceY === null || targetY === null) return null;
                                 // Apply group shift to source position in simulation mode
                                 const sourceShift = getGroupShift(sourceGf);
                                 const shiftedFin = Math.max(0, fin - sourceShift);
@@ -1525,7 +1535,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             // Cover all rows, starting just below ruler (8px above rows) and 30px below
                             const topPos = RULER_HEIGHT - 8;
-                            const height = 8 + (groups.length * ROW_HEIGHT) + 30;
+                            const height = 8 + (groups.length * ROW_TOTAL_HEIGHT) + 30;
 
                             // Check if overlay wraps around cycle
                             const wrapsAround = deb > fin;
@@ -1634,8 +1644,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const sourceStart = sourceGroup.offset % cycleLength;
                             const sourceEnd = (sourceStart + sourceGroup.durations.green) % cycleLength;
 
+                            // Find actual group indices in the array
+                            const sourceGroupIndex = groups.findIndex(g => g.id === sourceGfId);
+                            const targetGroupIndex = groups.findIndex(g => g.id === targetGfId);
+                            if (sourceGroupIndex === -1 || targetGroupIndex === -1) return null;
+
                             // Y positions (center of each row)
-                            const sourceY = RULER_HEIGHT + ((sourceGfId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                            const sourceY = RULER_HEIGHT + 1 + (sourceGroupIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
 
                             // Arrow 1: From start of source GF to (source start - intergreen target→source)
                             const arrow1SourceX = sourceStart * pixelsPerSecond;
@@ -1651,7 +1666,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const barHeight = ROW_HEIGHT - 14; // Bar has top:7px and bottom:7px (16px)
                             const rectHeight = barHeight / 2; // Half the bar height (8px)
                             // Calculate exact bar bottom position and align rectangle there
-                            const rowTopY = RULER_HEIGHT + ((targetGfId - 1) * ROW_HEIGHT);
+                            const rowTopY = RULER_HEIGHT + 1 + (targetGroupIndex * ROW_TOTAL_HEIGHT);
                             const barBottomY = rowTopY + ROW_HEIGHT - 7; // Exact bottom of bar
                             const rectY = barBottomY - rectHeight + 5; // Rectangle bottom aligned to bar bottom +5px offset
 
@@ -1772,7 +1787,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             // Vertical position based on group index (height reduced by 2/3 total)
                             const height = Math.round((ROW_HEIGHT - 14) * 4 / 9);
-                            const topPos = RULER_HEIGHT + (groupIndex * ROW_HEIGHT) + Math.floor((ROW_HEIGHT - height) / 2);
+                            const topPos = RULER_HEIGHT + 1 + (groupIndex * ROW_TOTAL_HEIGHT) + Math.floor((ROW_HEIGHT - height) / 2);
 
                             return (
                                 <React.Fragment key={`signa-${idx}`}>
@@ -1851,18 +1866,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const arrowLength = 13;
 
                             // Downward arrow: ends just above plage1 row
-                            const downArrowEndY = RULER_HEIGHT + (plage1 - 1) * ROW_HEIGHT - 2;
+                            const downArrowEndY = RULER_HEIGHT + 1 + (plage1 - 1) * ROW_TOTAL_HEIGHT - 2;
                             const downArrowStartY = downArrowEndY - arrowLength;
 
                             // Upward arrow: ends just below plage2 row
-                            const upArrowEndY = RULER_HEIGHT + plage2 * ROW_HEIGHT + 2;
+                            const upArrowEndY = RULER_HEIGHT + 1 + plage2 * ROW_TOTAL_HEIGHT + 2;
                             const upArrowStartY = upArrowEndY + arrowLength;
 
                             // Arrow head size
                             const arrowSize = 5;
 
                             // Label position below the diagram
-                            const labelY = RULER_HEIGHT + groups.length * ROW_HEIGHT + 20;
+                            const labelY = RULER_HEIGHT + 1 + groups.length * ROW_TOTAL_HEIGHT + 20;
 
                             return (
                                 <React.Fragment key={`point-repos-${idx}`}>
@@ -1948,18 +1963,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const arrowLength = 16;
 
                             // Downward arrow: ends just above plage1 row
-                            const downArrowEndY = RULER_HEIGHT + (plage1 - 1) * ROW_HEIGHT - 2;
+                            const downArrowEndY = RULER_HEIGHT + 1 + (plage1 - 1) * ROW_TOTAL_HEIGHT - 2;
                             const downArrowStartY = downArrowEndY - arrowLength;
 
                             // Upward arrow: ends just below plage2 row
-                            const upArrowEndY = RULER_HEIGHT + plage2 * ROW_HEIGHT + 2;
+                            const upArrowEndY = RULER_HEIGHT + 1 + plage2 * ROW_TOTAL_HEIGHT + 2;
                             const upArrowStartY = upArrowEndY + arrowLength;
 
                             // Arrow head size
                             const arrowSize = 5;
 
                             // Label position below the diagram
-                            const labelY = RULER_HEIGHT + groups.length * ROW_HEIGHT + 20;
+                            const labelY = RULER_HEIGHT + 1 + groups.length * ROW_TOTAL_HEIGHT + 20;
 
                             return (
                                 <React.Fragment key={`synchro-bts-${idx}`}>
@@ -2045,18 +2060,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const arrowLength = 13;
 
                             // Downward arrow: ends just above plage1 row
-                            const downArrowEndY = RULER_HEIGHT + (plage1 - 1) * ROW_HEIGHT - 2;
+                            const downArrowEndY = RULER_HEIGHT + 1 + (plage1 - 1) * ROW_TOTAL_HEIGHT - 2;
                             const downArrowStartY = downArrowEndY - arrowLength;
 
                             // Upward arrow: ends just below plage2 row
-                            const upArrowEndY = RULER_HEIGHT + plage2 * ROW_HEIGHT + 2;
+                            const upArrowEndY = RULER_HEIGHT + 1 + plage2 * ROW_TOTAL_HEIGHT + 2;
                             const upArrowStartY = upArrowEndY + arrowLength;
 
                             // Arrow head size
                             const arrowSize = 5;
 
                             // Label position below the diagram
-                            const labelY = RULER_HEIGHT + groups.length * ROW_HEIGHT + 20;
+                            const labelY = RULER_HEIGHT + 1 + groups.length * ROW_TOTAL_HEIGHT + 20;
 
                             return (
                                 <React.Fragment key={`instant-co-${idx}`}>
@@ -2334,9 +2349,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             // Calculate positions
                             const startX = deb * pixelsPerSecond;
                             const endX = fin * pixelsPerSecond;
-                            const startY = RULER_HEIGHT + (startGroupIndex * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                            const startY = RULER_HEIGHT + 1 + (startGroupIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
                             // End Y points to bottom of the bar (ROW_HEIGHT - 7 is bottom of bar)
-                            const endY = RULER_HEIGHT + (endGroupIndex * ROW_HEIGHT) + ROW_HEIGHT - 7;
+                            const endY = RULER_HEIGHT + 1 + (endGroupIndex * ROW_TOTAL_HEIGHT) + ROW_HEIGHT - 7;
                             const cycleEndX = cycleLength * pixelsPerSecond;
 
                             // Arrow head size
@@ -2461,9 +2476,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             // Calculate positions (same as début: from gf at deb to actGf1 at fin)
                             const startX = deb * pixelsPerSecond;
                             const endX = fin * pixelsPerSecond;
-                            const startY = RULER_HEIGHT + (startGroupIndex * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                            const startY = RULER_HEIGHT + 1 + (startGroupIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
                             // End Y points to bottom of the bar (ROW_HEIGHT - 7 is bottom of bar)
-                            const endY = RULER_HEIGHT + (endGroupIndex * ROW_HEIGHT) + ROW_HEIGHT - 7;
+                            const endY = RULER_HEIGHT + 1 + (endGroupIndex * ROW_TOTAL_HEIGHT) + ROW_HEIGHT - 7;
                             const cycleEndX = cycleLength * pixelsPerSecond;
 
                             // Arrow head size
@@ -2598,14 +2613,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     </marker>
                                 </defs>
                                 {/* Arrows from main green phases */}
-                                {groups.map((fromGroup) => {
+                                {groups.map((fromGroup, fromIndex) => {
                                     const fromId = fromGroup.id;
                                     const fromOffset = fromGroup.offset % cycleLength;
                                     const fromGreenEnd = (fromOffset + fromGroup.durations.green) % cycleLength;
-                                    const fromRowY = RULER_HEIGHT + ((fromId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                                    const fromRowY = RULER_HEIGHT + 1 + (fromIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
                                     const fromX = fromGreenEnd * pixelsPerSecond;
 
-                                    return groups.map((toGroup) => {
+                                    return groups.map((toGroup, toIndex) => {
                                         const toId = toGroup.id;
                                         if (fromId === toId) return null;
 
@@ -2625,7 +2640,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         // Arrow ends at: end of green + intergreen time
                                         const arrowEndTime = (fromGreenEnd + intergreenTime) % cycleLength;
                                         const toX = arrowEndTime * pixelsPerSecond;
-                                        const toRowY = RULER_HEIGHT + ((toId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                                        const toRowY = RULER_HEIGHT + 1 + (toIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
                                         const cycleEndX = cycleLength * pixelsPerSecond;
 
                                         // If arrow would go backwards, split into two segments
@@ -2676,13 +2691,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 {/* Arrows from Seconde lucarne phases */}
                                 {actionData.filter(a => a.action === 'Seconde lucarne' && a.gf && a.fin !== '' && (!simulationFilter || simulationFilter.has(a.id))).map((lucarne, lIdx) => {
                                     const fromId = parseInt(lucarne.gf);
-                                    if (isNaN(fromId) || fromId < 1 || fromId > groups.length) return null;
+                                    const fromIndex = groups.findIndex(g => g.id === fromId);
+                                    if (fromIndex === -1) return null;
 
                                     const lucarneEnd = parseInt(lucarne.fin) || 0;
-                                    const fromRowY = RULER_HEIGHT + ((fromId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                                    const fromRowY = RULER_HEIGHT + 1 + (fromIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
                                     const fromX = lucarneEnd * pixelsPerSecond;
 
-                                    return groups.map((toGroup) => {
+                                    return groups.map((toGroup, toIndex) => {
                                         const toId = toGroup.id;
                                         if (fromId === toId) return null;
 
@@ -2701,7 +2717,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         // Arrow ends at: end of lucarne + intergreen time
                                         const arrowEndTime = (lucarneEnd + intergreenTime) % cycleLength;
                                         const toX = arrowEndTime * pixelsPerSecond;
-                                        const toRowY = RULER_HEIGHT + ((toId - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
+                                        const toRowY = RULER_HEIGHT + 1 + (toIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
                                         const cycleEndX = cycleLength * pixelsPerSecond;
 
                                         // If arrow would go backwards, split into two segments
