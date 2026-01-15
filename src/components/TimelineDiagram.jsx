@@ -577,6 +577,52 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         return group.offset % cycleLength;
     };
 
+    // Helper to get group end position (end of green bar on screen)
+    // Uses simulated offset when in simulation mode
+    const getGroupEndPos = (groupId) => {
+        const group = groups.find(g => g.id === parseInt(groupId));
+        if (!group) return null;
+
+        let startPos;
+        // In simulation mode, use simulated offset if available
+        if (simulationResult) {
+            const simGroup = simulationResult.simulatedGroups.find(g => g.id === parseInt(groupId));
+            if (simGroup) {
+                startPos = simGroup.simulatedOffset % effectiveCycleLength;
+            } else {
+                startPos = group.offset % cycleLength;
+            }
+        } else {
+            startPos = group.offset % cycleLength;
+        }
+
+        const greenDuration = group.durations?.green || 0;
+        const cycle = simulationResult ? effectiveCycleLength : cycleLength;
+        return (startPos + greenDuration) % cycle;
+    };
+
+    // Helper to check if a group wraps around the cycle (green crosses cycle boundary)
+    const doesGroupWrap = (groupId) => {
+        const group = groups.find(g => g.id === parseInt(groupId));
+        if (!group) return false;
+
+        let startPos;
+        if (simulationResult) {
+            const simGroup = simulationResult.simulatedGroups.find(g => g.id === parseInt(groupId));
+            if (simGroup) {
+                startPos = simGroup.simulatedOffset % effectiveCycleLength;
+            } else {
+                startPos = group.offset % cycleLength;
+            }
+        } else {
+            startPos = group.offset % cycleLength;
+        }
+
+        const greenDuration = group.durations?.green || 0;
+        const cycle = simulationResult ? effectiveCycleLength : cycleLength;
+        return (startPos + greenDuration) > cycle;
+    };
+
     return (
         <div className={`timeline-container ${dragState ? 'dragging' : ''}`} ref={containerRef}>
             <h3 className="diagram-title">Diagramme</h3>
@@ -1318,6 +1364,11 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 const targetStartPos = getGroupStartPos(targetGf);
                                 if (targetStartPos === null) return null;
 
+                                // If target group wraps around cycle, point to end of green instead of start
+                                const targetWraps = doesGroupWrap(targetGf);
+                                const targetEndPos = getGroupEndPos(targetGf);
+                                const targetPos = targetWraps ? targetEndPos : targetStartPos;
+
                                 // Calculate positions
                                 const sourceY = RULER_HEIGHT + ((sourceGf - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
                                 const targetY = RULER_HEIGHT + ((targetGf - 1) * ROW_HEIGHT) + (ROW_HEIGHT / 2);
@@ -1325,7 +1376,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 const sourceShift = getGroupShift(sourceGf);
                                 const shiftedFin = Math.max(0, fin - sourceShift);
                                 const sourceX = shiftedFin * pixelsPerSecond;
-                                const targetX = targetStartPos * pixelsPerSecond;
+                                const targetX = targetPos * pixelsPerSecond;
                                 const cycleEndX = effectiveCycleLength * pixelsPerSecond;
 
                                 // If arrow would go backwards, split into two segments
