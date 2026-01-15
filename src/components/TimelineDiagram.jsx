@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, hoveredVUtile = null }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -786,9 +786,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             return (
                                 <div
                                     key={group.id}
-                                    className={`timeline-row-track ${isConflict ? 'row-conflict' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
+                                    className={`timeline-row-track ${isConflict ? 'row-conflict' : ''}`}
                                     onClick={() => onGroupClick(group)}
-                                    style={{ backgroundColor: isConflict ? 'rgba(231, 76, 60, 0.1)' : isHighlightedByArrow ? 'rgba(100, 100, 255, 0.15)' : 'transparent' }}
+                                    style={{ backgroundColor: isConflict ? 'rgba(231, 76, 60, 0.1)' : 'transparent' }}
                                 >
                                     {/* Base bars from group Début/Fin (sidebar values) - only if phase exists */}
                                     {hasPhase && (() => {
@@ -821,7 +821,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     <React.Fragment>
                                                         {/* First part: from offset to end of cycle */}
                                                         <div
-                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
                                                             style={{ left: `${offset * pixelsPerSecond}px` }}
                                                         >
                                                             <div
@@ -833,7 +833,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         </div>
                                                         {/* Second part: green from 0 + orange first part to end of cycle */}
                                                         <div
-                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
                                                             style={{ left: '0px' }}
                                                         >
                                                             <div className="phase-bar green" style={{ width: `${secondPartWidth}px` }}></div>
@@ -847,7 +847,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         </div>
                                                         {/* Third part: orange continuation at start of cycle */}
                                                         <div
-                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
                                                             style={{ left: '0px' }}
                                                         >
                                                             <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeSecondPartWidth}px` }}></div>
@@ -860,7 +860,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 <React.Fragment>
                                                     {/* First part: from offset to end of cycle */}
                                                     <div
-                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
                                                         style={{ left: `${offset * pixelsPerSecond}px` }}
                                                     >
                                                         <div
@@ -872,7 +872,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     </div>
                                                     {/* Second part: from start of cycle to end */}
                                                     <div
-                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
                                                         style={{ left: '0px' }}
                                                     >
                                                         <div className="phase-bar green" style={{ width: `${secondPartWidth}px` }}></div>
@@ -899,7 +899,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 <React.Fragment>
                                                     {/* Main part: green + first part of orange */}
                                                     <div
-                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
                                                         style={{ left: `${offset * pixelsPerSecond}px` }}
                                                     >
                                                         <div
@@ -918,7 +918,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     </div>
                                                     {/* Orange continuation at start of cycle */}
                                                     <div
-                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
                                                         style={{ left: '0px' }}
                                                     >
                                                         <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeSecondPartWidth}px` }}></div>
@@ -928,9 +928,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         }
 
                                         // Normal case: neither wraps
+                                        const showVUtileOverlay = hoveredVUtile && hoveredVUtile.groupId === group.id;
+                                        const vUtileWidth = showVUtileOverlay ? Math.min(hoveredVUtile.vUtile, greenDuration) * pixelsPerSecond : 0;
+                                        // Get capacity color class for V.Utile overlay
+                                        const getCapacityColorClass = (value) => {
+                                            if (value === null || value === undefined) return '';
+                                            if (value < 76) return 'vutile-green';
+                                            if (value <= 85) return 'vutile-orange';
+                                            if (value <= 100) return 'vutile-red';
+                                            return 'vutile-black';
+                                        };
+                                        const vUtileColorClass = showVUtileOverlay ? getCapacityColorClass(hoveredVUtile.capacityValue) : '';
                                         return (
                                             <div
-                                                className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''}`}
+                                                className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
                                                 style={{ left: `${offset * pixelsPerSecond}px` }}
                                             >
                                                 <div
@@ -940,6 +951,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 />
                                                 <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
                                                 <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
+                                                {showVUtileOverlay && (
+                                                    <div
+                                                        className={`vutile-overlay ${vUtileColorClass}`}
+                                                        style={{ width: `${vUtileWidth}px` }}
+                                                        title={`V.Utile: ${hoveredVUtile.vUtile}s (${hoveredVUtile.capacityValue}%)`}
+                                                    />
+                                                )}
                                                 <div
                                                     className="drag-handle drag-handle-end"
                                                     onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}

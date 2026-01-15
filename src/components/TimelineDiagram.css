@@ -806,18 +806,46 @@
     white-space: nowrap;
 }
 
-/* Row highlighted by arrow hover */
-.timeline-row-track.arrow-highlighted {
-    box-shadow: inset 0 0 0 2px rgba(100, 100, 255, 0.6);
-    position: relative;
+/* Phase bar highlighted by hover in traffic table */
+.cycle-block.arrow-highlighted {
+    z-index: 10;
 }
 
-.timeline-row-track.arrow-highlighted::before {
-    content: '';
+.cycle-block.arrow-highlighted .phase-bar {
+    box-shadow: 0 0 8px 2px rgba(100, 150, 255, 0.8), 0 0 12px 4px rgba(100, 150, 255, 0.4);
+    filter: brightness(1.2);
+}
+
+/* V.Utile overlay - shows used green time when hovering V.Utile cell */
+.vutile-overlay {
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 4px;
-    background: #66f;
+    pointer-events: none;
+    z-index: 5;
+    background: transparent;
+    border: 2px solid currentColor;
+    border-left: none;
+}
+
+/* V.Utile overlay colors based on capacity - border only */
+.vutile-overlay.vutile-green {
+    border-color: #4CAF50;
+    box-shadow: 0 0 4px #4CAF50;
+}
+
+.vutile-overlay.vutile-orange {
+    border-color: #FF9800;
+    box-shadow: 0 0 4px #FF9800;
+}
+
+.vutile-overlay.vutile-red {
+    border-color: #F44336;
+    box-shadow: 0 0 4px #F44336;
+}
+
+.vutile-overlay.vutile-black {
+    border-color: #212121;
+    box-shadow: 0 0 4px #000;
 }

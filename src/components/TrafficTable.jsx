@@ -1,6 +1,5 @@
 import React from 'react';
 import './TrafficTable.css';
-import { TRAFFIC_DATASETS } from '../hooks/useTrafficLight';
 
 const TrafficTable = ({
     groups,
@@ -10,7 +9,9 @@ const TrafficTable = ({
     updateTrafficData,
     getTrafficData,
     updateGroupParams,
-    setHoveredGroupId
+    setHoveredGroupId,
+    trafficDatasetNames,
+    setHoveredVUtile
 }) => {
 
     // Update traffic volume (per dataset)
@@ -58,7 +59,7 @@ const TrafficTable = ({
                     value={activeTrafficDataset}
                     onChange={(e) => setActiveTrafficDataset(e.target.value)}
                 >
-                    {TRAFFIC_DATASETS.map(ds => (
+                    {trafficDatasetNames.map(ds => (
                         <option key={ds} value={ds}>{ds}</option>
                     ))}
                 </select>
@@ -108,9 +109,19 @@ const TrafficTable = ({
                                     />
                                 </td>
                                 {/* Vert Utile (calculé) */}
-                                <td className="col-calculated">
-                                    {calculateVUtile(trafficData.trafficVol, g.laneCoef) || ''}
-                                </td>
+                                {(() => {
+                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    return (
+                                        <td
+                                            className="col-calculated col-vutile"
+                                            onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
+                                            onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
+                                        >
+                                            {vUtile || ''}
+                                        </td>
+                                    );
+                                })()}
                                 {/* Capacité Utilisée (calculée: V.Utile / temps vert * 100) */}
                                 {(() => {
                                     const capacity = calculateCapacity(g.durations?.green, calculateVUtile(trafficData.trafficVol, g.laneCoef));

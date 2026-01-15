@@ -706,6 +706,16 @@ export const useTrafficLight = () => {
         return activePF ? activePF.data : createEmptyActionData();
     }, [pfTabs, activePFId]);
 
+    // Dynamic traffic dataset names based on PF tabs (+ Projection at the end)
+    const trafficDatasetNames = useMemo(() => {
+        if (pfTabs && pfTabs.length > 0) {
+            // Use PF tab names + "Projection" at the end
+            return [...pfTabs.map(pf => pf.name), 'Projection'];
+        }
+        // Fallback to default if no PF tabs
+        return TRAFFIC_DATASETS;
+    }, [pfTabs]);
+
     // Computed Conflicts
     const conflicts = useMemo(() => {
         const list = [];
@@ -1424,6 +1434,6 @@ export const useTrafficLight = () => {
         setActiveTrafficDataset,
         updateTrafficData,
         getTrafficData,
-        TRAFFIC_DATASETS
+        trafficDatasetNames
     };
 };

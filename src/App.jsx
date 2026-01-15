@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useTrafficLight, TRAFFIC_DATASETS } from './hooks/useTrafficLight';
+import { useTrafficLight } from './hooks/useTrafficLight';
 import TimelineDiagram from './components/TimelineDiagram';
 import GroupTable from './components/GroupTable';
 import TrafficTable from './components/TrafficTable';
@@ -71,7 +71,8 @@ function App() {
         activeTrafficDataset,
         setActiveTrafficDataset,
         updateTrafficData,
-        getTrafficData
+        getTrafficData,
+        trafficDatasetNames
     } = useTrafficLight();
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -84,6 +85,9 @@ function App() {
     const [isPlayingSimulation, setIsPlayingSimulation] = useState(false);
     const [simulationCurrentTime, setSimulationCurrentTime] = useState(0);
     const [hoveredArrowGroupId, setHoveredArrowGroupId] = useState(null);
+
+    // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
+    const [hoveredVUtile, setHoveredVUtile] = useState(null);
 
     // Phasage bulle state
     const [phasageBulleEnabled, setPhasageBulleEnabled] = useState(false);
@@ -1141,6 +1145,9 @@ function App() {
                                     updateTrafficData={updateTrafficData}
                                     getTrafficData={getTrafficData}
                                     updateGroupParams={updateGroupParams}
+                                    setHoveredGroupId={setHoveredArrowGroupId}
+                                    trafficDatasetNames={trafficDatasetNames}
+                                    setHoveredVUtile={setHoveredVUtile}
                                 />
                             )}
 
@@ -1276,6 +1283,7 @@ function App() {
                                 simulationCurrentTime={simulationEnabled ? simulationCurrentTime : null}
                                 isPlayingSimulation={simulationEnabled && isPlayingSimulation}
                                 hoveredArrowGroupId={hoveredArrowGroupId}
+                                hoveredVUtile={hoveredVUtile}
                             />
                         </div>
                     )}
