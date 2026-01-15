@@ -1027,6 +1027,24 @@ export const useTrafficLight = () => {
         return trafficDatasets[activeTrafficDataset][groupId] || createEmptyTrafficData();
     }, [trafficDatasets, activeTrafficDataset]);
 
+    // Copy traffic data from one dataset to another
+    const copyTrafficDataset = useCallback((sourceDataset, targetDataset) => {
+        setTrafficDatasets(prev => {
+            const newDatasets = { ...prev };
+            // Ensure target dataset exists
+            if (!newDatasets[targetDataset]) {
+                newDatasets[targetDataset] = {};
+            }
+            // Copy all data from source to target
+            if (newDatasets[sourceDataset]) {
+                Object.keys(newDatasets[sourceDataset]).forEach(groupId => {
+                    newDatasets[targetDataset][groupId] = { ...newDatasets[sourceDataset][groupId] };
+                });
+            }
+            return newDatasets;
+        });
+    }, []);
+
     // Ensure traffic datasets have entries for all groups when group count changes
     useEffect(() => {
         setTrafficDatasets(prev => {
@@ -1434,6 +1452,7 @@ export const useTrafficLight = () => {
         setActiveTrafficDataset,
         updateTrafficData,
         getTrafficData,
-        trafficDatasetNames
+        trafficDatasetNames,
+        copyTrafficDataset
     };
 };

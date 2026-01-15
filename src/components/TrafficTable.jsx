@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import './TrafficTable.css';
 
 const TrafficTable = ({
@@ -11,12 +11,36 @@ const TrafficTable = ({
     updateGroupParams,
     setHoveredGroupId,
     trafficDatasetNames,
-    setHoveredVUtile
+    setHoveredVUtile,
+    copyTrafficDataset
 }) => {
+    const [showPasteDropdown, setShowPasteDropdown] = useState(false);
 
     // Update traffic volume (per dataset)
     const handleTrafficChange = (id, value) => {
         updateTrafficData(id, 'trafficVol', value);
+    };
+
+    // Check if current dataset is empty
+    const vlGroups = groups.filter(g => g.type === 'VL');
+    const isDatasetEmpty = useMemo(() => {
+        return vlGroups.every(g => {
+            const data = getTrafficData(g.id);
+            return !data.trafficVol;
+        });
+    }, [vlGroups, getTrafficData, activeTrafficDataset]);
+
+    // Get other datasets that have data
+    const otherDatasetsWithData = useMemo(() => {
+        return trafficDatasetNames.filter(ds => ds !== activeTrafficDataset);
+    }, [trafficDatasetNames, activeTrafficDataset]);
+
+    // Handle paste from another dataset
+    const handlePasteFrom = (sourceDataset) => {
+        if (copyTrafficDataset) {
+            copyTrafficDataset(sourceDataset, activeTrafficDataset);
+        }
+        setShowPasteDropdown(false);
     };
 
     // Update shared fields (same for all datasets)
@@ -47,9 +71,6 @@ const TrafficTable = ({
         return 'capacity-black';
     };
 
-    // Filter only VL groups
-    const vlGroups = groups.filter(g => g.type === 'VL');
-
     return (
         <div className="traffic-table-container">
             <div className="traffic-header">
@@ -73,7 +94,33 @@ const TrafficTable = ({
                         <th className="col-grp">Grp</th>
                         <th className="col-nom">Nom</th>
                         <th>Coef</th>
-                        <th>Trafic</th>
+                        <th className="col-trafic-header">
+                            {isDatasetEmpty && otherDatasetsWithData.length > 0 ? (
+                                <div className="paste-button-container">
+                                    <button
+                                        className="paste-button"
+                                        onClick={() => setShowPasteDropdown(!showPasteDropdown)}
+                                    >
+                                        Coller...
+                                    </button>
+                                    {showPasteDropdown && (
+                                        <div className="paste-dropdown">
+                                            {otherDatasetsWithData.map(ds => (
+                                                <div
+                                                    key={ds}
+                                                    className="paste-dropdown-item"
+                                                    onClick={() => handlePasteFrom(ds)}
+                                                >
+                                                    {ds}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                'Trafic'
+                            )}
+                        </th>
                         <th>V.<br/>Utile</th>
                         <th>Cap.<br/>U</th>
                         <th>Retard</th>

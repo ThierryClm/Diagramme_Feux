@@ -5,6 +5,9 @@
     border: 1px solid #333;
     overflow: visible;
     max-height: none;
+    width: 650px;
+    min-width: 650px;
+    max-width: 650px;
 }
 
 .traffic-table-container h3 {
@@ -88,7 +91,8 @@
 
 .traffic-table th.col-nom {
     text-align: left;
-    width: 70px;
+    width: 200px;
+    min-width: 200px;
 }
 
 .traffic-table tr {
@@ -122,7 +126,9 @@
     font-size: 1.1em;
     font-weight: normal;
     color: #fff;
-    max-width: 100px;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -162,4 +168,53 @@
 .traffic-table .capacity-black {
     color: #000;
     background-color: #ff6b6b;
+}
+
+/* Paste button and dropdown */
+.col-trafic-header {
+    position: relative;
+}
+
+.paste-button-container {
+    position: relative;
+    display: inline-block;
+}
+
+.paste-button {
+    background: #4ecdc4;
+    color: #1e1e1e;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.paste-button:hover {
+    background: #45b7aa;
+}
+
+.paste-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    min-width: 100px;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.paste-dropdown-item {
+    padding: 6px 10px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 0.8rem;
+}
+
+.paste-dropdown-item:hover {
+    background: #4ecdc4;
+    color: #1e1e1e;
 }

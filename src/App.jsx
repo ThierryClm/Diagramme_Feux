@@ -72,7 +72,8 @@ function App() {
         setActiveTrafficDataset,
         updateTrafficData,
         getTrafficData,
-        trafficDatasetNames
+        trafficDatasetNames,
+        copyTrafficDataset
     } = useTrafficLight();
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -1158,6 +1159,7 @@ function App() {
                                     setHoveredGroupId={setHoveredArrowGroupId}
                                     trafficDatasetNames={trafficDatasetNames}
                                     setHoveredVUtile={setHoveredVUtile}
+                                    copyTrafficDataset={copyTrafficDataset}
                                 />
                             )}
 
@@ -1617,10 +1619,21 @@ function App() {
                         <h4>Données Trafic</h4>
                         <p>L'onglet Trafic permet de saisir les données de trafic par groupe :</p>
                         <ul>
-                            <li><strong>Courant :</strong> Nom du courant de circulation</li>
-                            <li><strong>Coef :</strong> Coefficient de voie</li>
-                            <li><strong>Trafic :</strong> Volume de trafic (véh/h)</li>
+                            <li><strong>Coef :</strong> Coefficient de voie (partagé entre tous les jeux de données)</li>
+                            <li><strong>Trafic :</strong> Volume de trafic (véh/h) - spécifique à chaque jeu de données</li>
                             <li><strong>V.Utile :</strong> Calculé automatiquement = Trafic / (1800 × Coef / Cycle)</li>
+                            <li><strong>Cap.U :</strong> Capacité utilisée = (V.Utile / Vert) × 100%</li>
+                            <li><strong>Retard :</strong> Retard moyen (calculé)</li>
+                            <li><strong>Attente :</strong> Longueur de file d'attente (calculé)</li>
+                        </ul>
+                        <p><strong>Jeux de données :</strong> La listbox "Associé à" permet de basculer entre plusieurs jeux de données trafic (HPM, HPS, etc.). Chaque jeu de données conserve ses propres valeurs de trafic.</p>
+                        <p><strong>Bouton Coller :</strong> Si le jeu de données sélectionné est vide, un bouton "Coller..." apparaît pour copier les données depuis un autre jeu de données.</p>
+                        <p><strong>Code couleur Cap.U :</strong></p>
+                        <ul>
+                            <li><span style={{color: '#4caf50'}}>Vert</span> : &lt; 76% (fluide)</li>
+                            <li><span style={{color: '#ff9800'}}>Orange</span> : 76-85% (chargé)</li>
+                            <li><span style={{color: '#f44336'}}>Rouge</span> : 86-100% (saturé)</li>
+                            <li><span style={{color: '#000', background: '#ff6b6b', padding: '0 4px'}}>Noir/Rouge</span> : &gt; 100% (sursaturé)</li>
                         </ul>
                     </section>
 
@@ -1630,8 +1643,25 @@ function App() {
                             <li><strong>Sauvegarde automatique :</strong> Les données sont sauvegardées automatiquement dans le navigateur</li>
                             <li><strong>Projets nommés :</strong> Utilisez l'onglet Projets pour sauvegarder et charger des configurations</li>
                             <li><strong>Export :</strong> Menu Fichier → Exporter pour télécharger un fichier JSON</li>
-                            <li><strong>Import :</strong> Menu Fichier → Importer pour charger un fichier JSON</li>
+                            <li><strong>Import JSON :</strong> Menu Fichier → Importer pour charger un fichier JSON</li>
                         </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Import Excel</h4>
+                        <p>L'application peut importer des fichiers Excel (.xlsx) contenant la configuration complète du carrefour :</p>
+                        <ul>
+                            <li><strong>Feuille Formulaire :</strong> Configuration des groupes (nom, type, durées)</li>
+                            <li><strong>Feuille PF :</strong> Diagramme et matrice de dégagement pour chaque plan de feux</li>
+                            <li><strong>Feuille Trafic :</strong> Données de trafic par groupe</li>
+                        </ul>
+                        <p><strong>Import des données trafic :</strong></p>
+                        <ul>
+                            <li>Colonne I : Coefficient de voie (Coef)</li>
+                            <li>Colonne J : Premier jeu de données trafic, nommé par la cellule J3</li>
+                            <li>Colonne O : Second jeu de données trafic, nommé par la cellule O3</li>
+                        </ul>
+                        <p><strong>Synchronisation automatique :</strong> Quand vous changez d'onglet PF (PF1, PF2...), le jeu de données trafic "Associé à" se synchronise automatiquement avec l'onglet actif si un dataset du même nom existe.</p>
                     </section>
                 </div>
                 <div className="modal-actions" style={{ marginTop: '20px' }}>
