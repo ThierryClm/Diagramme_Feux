@@ -202,24 +202,24 @@ function normalizeGroupType(typeValue) {
 
     const upper = normalized.toUpperCase();
 
-    // Map Excel codes to standard types (must match useTrafficLight types)
+    // Map Excel codes to GroupTable select options (V, B, P, CY, FL, PP)
     const mappings = {
-        'V': 'VL',
-        'VL': 'VL',
-        'B': 'TC',
-        'TC': 'TC',
-        'BUS': 'TC',
-        'TRAM': 'TC',
-        'P': 'Piéton',
-        'PIETON': 'Piéton',
-        'PIÉTON': 'Piéton',
-        'PIETONS': 'Piéton',
-        'PIÉTONS': 'Piéton',
-        'CY': 'Cycliste',
-        'CYCLE': 'Cycliste',
-        'CYCLISTE': 'Cycliste',
-        'VELO': 'Cycliste',
-        'VÉLO': 'Cycliste',
+        'V': 'V',
+        'VL': 'V',
+        'B': 'B',
+        'TC': 'B',
+        'BUS': 'B',
+        'TRAM': 'B',
+        'P': 'P',
+        'PIETON': 'P',
+        'PIÉTON': 'P',
+        'PIETONS': 'P',
+        'PIÉTONS': 'P',
+        'CY': 'CY',
+        'CYCLE': 'CY',
+        'CYCLISTE': 'CY',
+        'VELO': 'CY',
+        'VÉLO': 'CY',
         'FL': 'FL',
         'FLECHE': 'FL',
         'FLÈCHE': 'FL',
@@ -238,13 +238,69 @@ function normalizeGroupType(typeValue) {
 }
 
 /**
+ * Normalize courant (traffic stream) from Excel to match the application's options
+ * Valid values: TD, TàD, TàG, TD-TàD, TD-TàG, TD_G_D, Piéton, Cycle
+ * Returns the value as-is if it matches, or tries to normalize common variations
+ */
+function normalizeCourant(courantValue) {
+    if (!courantValue) return '';
+
+    const normalized = String(courantValue).trim();
+    if (normalized === '') return '';
+
+    // Direct match check (case-sensitive since these are specific codes)
+    const validValues = ['TD', 'TàD', 'TàG', 'TD_TàD', 'TD_TàG', 'TD_G_D', 'Piéton', 'Cycle'];
+    if (validValues.includes(normalized)) {
+        return normalized;
+    }
+
+    // Case-insensitive and accent-insensitive mappings
+    const lower = normalized.toLowerCase();
+    const mappings = {
+        'td': 'TD',
+        'tad': 'TàD',
+        'tag': 'TàG',
+        'tàd': 'TàD',
+        'tàg': 'TàG',
+        'td-tad': 'TD_TàD',
+        'td-tag': 'TD_TàG',
+        'td-tàd': 'TD_TàD',
+        'td-tàg': 'TD_TàG',
+        'td_tad': 'TD_TàD',
+        'td_tag': 'TD_TàG',
+        'td_tàd': 'TD_TàD',
+        'td_tàg': 'TD_TàG',
+        'td_g_d': 'TD_G_D',
+        'pieton': 'Piéton',
+        'piéton': 'Piéton',
+        'cycle': 'Cycle',
+        // Additional variations
+        'tout droit': 'TD',
+        'tourne à droite': 'TàD',
+        'tourne a droite': 'TàD',
+        'tourne à gauche': 'TàG',
+        'tourne a gauche': 'TàG'
+    };
+
+    if (mappings[lower]) {
+        return mappings[lower];
+    }
+
+    // Return original if no mapping found (let it pass through)
+    console.log(`Unknown courant value "${courantValue}", using as-is`);
+    return normalized;
+}
+
+/**
  * Parse groups sheet - "Formulaire" sheet with specific cell positions
- * - H2: Number of groups
- * - Starting at C6: Groups (with blank lines between each group)
- * - Column C: GF number
- * - Column D: Type
- * - Column E: Vert mini
- * - Column F: Jaune/Orange
+ * Column A is hidden in Excel, so indices are: B=0, C=1, D=2, E=3, F=4, G=5, H=6
+ * - H2: Number of groups (index 6, row 1)
+ * - Starting at row 6 (index 5), every 2 rows:
+ *   - Column B (idx 0): GF number
+ *   - Column C (idx 1): Group name
+ *   - Column D (idx 2): Type (V, P, CY, B, FL, PP)
+ *   - Column E (idx 3): Vert mini
+ *   - Column F (idx 4): Jaune/Orange
  * Note: Cycle duration is read from PF sheets (AL3), not from Formulaire
  */
 function parseGroupsSheet(sheetData, result) {
@@ -256,15 +312,23 @@ function parseGroupsSheet(sheetData, result) {
         return;
     }
 
-    // Extract number of groups from H2 (row 1, column 7)
+    // Column indices (0-based, with column A hidden)
+    const COL_GF = 0;      // B → index 0
+    const COL_NAME = 1;    // C → index 1
+    const COL_TYPE = 2;    // D → index 2
+    const COL_MINGREEN = 3; // E → index 3
+    const COL_ORANGE = 4;  // F → index 4
+    const COL_H = 6;       // H → index 6 (for group count in H2)
+
+    // Extract number of groups from H2 (row 1, column H = index 6)
     let expectedGroupCount = null;
-    if (sheetData[1] && sheetData[1][7]) {
-        expectedGroupCount = parseNumber(sheetData[1][7], null);
+    if (sheetData[1] && sheetData[1][COL_H]) {
+        expectedGroupCount = parseNumber(sheetData[1][COL_H], null);
         console.log('Expected group count from H2:', expectedGroupCount);
     }
 
-    // Parse groups starting at row 5 (C6 = row index 5, column 2)
-    // Groups are at C6, C8, C10... (every 2 rows, with blank line between)
+    // Parse groups starting at row 6 (index 5)
+    // Groups are at rows 6, 8, 10... (every 2 rows, with blank line between)
     const groups = [];
     let currentRow = 5; // Start at row 6 (index 5)
 
@@ -273,22 +337,22 @@ function parseGroupsSheet(sheetData, result) {
     while (currentRow < sheetData.length) {
         const row = sheetData[currentRow];
 
-        console.log(`Checking row ${currentRow + 1} (Excel row ${currentRow + 1}):`, row ? row.slice(0, 10) : 'undefined');
+        console.log(`Checking row ${currentRow + 1}:`, row ? row.slice(0, 7) : 'undefined');
 
-        // Debug: show all columns A-F for this row
+        // Debug: show columns B-F for this row
         if (row) {
-            console.log(`  Col A (idx 0): "${row[0]}"  Col B (idx 1): "${row[1]}"  Col C (idx 2): "${row[2]}"`);
-            console.log(`  Col D (idx 3): "${row[3]}"  Col E (idx 4): "${row[4]}"  Col F (idx 5): "${row[5]}"`);
+            console.log(`  Col B (idx 0): "${row[COL_GF]}"  Col C (idx 1): "${row[COL_NAME]}"  Col D (idx 2): "${row[COL_TYPE]}"`);
+            console.log(`  Col E (idx 3): "${row[COL_MINGREEN]}"  Col F (idx 4): "${row[COL_ORANGE]}"`);
         }
 
-        // Check if this row has data in column A (index 0) or B (index 1) - the group number or name
-        if (row && (row[0] !== '' || row[1] !== '') && row[0] !== null && row[0] !== undefined) {
-            const gfNumber = parseNumber(row[0], groups.length + 1); // Column B (index 0) - GF number
-            const groupName = String(row[1] || '').trim(); // Column C (index 1) - Group name
-            const typeRaw = row[2]; // Column D (index 2) - Type
+        // Check if this row has a GF number
+        if (row && row[COL_GF] !== '' && row[COL_GF] !== null && row[COL_GF] !== undefined) {
+            const gfNumber = parseNumber(row[COL_GF], groups.length + 1);
+            const groupName = String(row[COL_NAME] || '').trim();
+            const typeRaw = row[COL_TYPE];
             const type = normalizeGroupType(typeRaw);
-            const minGreen = parseNumber(row[3], 6); // Column E (index 3) - Vert min
-            const orange = parseNumber(row[4], 3); // Column F (index 4) - Jaune
+            const minGreen = parseNumber(row[COL_MINGREEN], 6);
+            const orange = parseNumber(row[COL_ORANGE], 3);
 
             console.log(`Row ${currentRow + 1}, Parsed: GF=${gfNumber}, Name="${groupName}", TypeRaw="${typeRaw}", Type="${type}", MinGreen=${minGreen}, Orange=${orange}`);
 
@@ -299,7 +363,7 @@ function parseGroupsSheet(sheetData, result) {
                     type: type,
                     minGreen: minGreen,
                     offset: 0, // Will be calculated from diagram
-                    courant: '', // Will be filled from Trafic sheet
+                    trafficStream: '', // Will be filled from Trafic sheet
                     durations: {
                         green: 0, // Will be calculated from diagram
                         orange: orange,
@@ -312,7 +376,7 @@ function parseGroupsSheet(sheetData, result) {
             }
         }
 
-        // Skip to next group (every 2 rows: C6, C8, C10, C12...)
+        // Skip to next group (every 2 rows)
         currentRow += 2;
 
         // Stop if we have reached the expected number of groups
@@ -990,6 +1054,7 @@ function parseActionsSheet(sheetData, result) {
  * Parse traffic sheet - "Trafic" sheet with specific cell positions
  * Groups (Grp) and names (Nom) are copied from the Formulaire sheet (already in result.groups)
  * Import from Excel:
+ * - E6, E8, E10... (every 2 rows): Courant (traffic stream) - index 3
  * - I6, I8, I10... (every 2 rows): Coef (lane coefficient) - index 7
  * - J3: First dataset name, J6, J8, J10... (every 2 rows): First dataset traffic volume - index 8
  * - O3: Second dataset name, O6, O8, O10... (every 2 rows): Second dataset traffic volume - index 13
@@ -1001,7 +1066,8 @@ function parseTrafficSheet(sheetData, result) {
     console.log('sheetData length:', sheetData.length);
     console.log('Number of groups:', result.groups.length);
 
-    // Column indices (0-based, with column A hidden, so B=0, C=1, etc.)
+    // Column indices (0-based, with column A hidden, so B=0, C=1, D=2, E=3, etc.)
+    const COL_COURANT = 3;     // E → index 3 (Courant / traffic stream)
     const COL_COEF = 7;        // I → index 7
     const COL_TRAFIC_1 = 8;    // J → index 8 (first dataset)
     const COL_PF_NAME_1 = 8;   // J3 contains the first PF name
@@ -1039,11 +1105,18 @@ function parseTrafficSheet(sheetData, result) {
         const group = result.groups[groupIndex];
 
         if (row && group) {
+            const courantRaw = row[COL_COURANT] ? String(row[COL_COURANT]).trim() : '';
+            const courantValue = normalizeCourant(courantRaw);
             const coefValue = parseNumber(row[COL_COEF], null);
             const traficValue1 = parseNumber(row[COL_TRAFIC_1], null);
             const traficValue2 = parseNumber(row[COL_TRAFIC_2], null);
 
-            console.log(`Row ${currentRow + 1} -> Group ${group.id} (${group.name}): Coef=${coefValue}, Trafic1=${traficValue1}, Trafic2=${traficValue2}`);
+            console.log(`Row ${currentRow + 1} -> Group ${group.id} (${group.name}): Courant="${courantRaw}" -> "${courantValue}", Coef=${coefValue}, Trafic1=${traficValue1}, Trafic2=${traficValue2}`);
+
+            // Update group with courant if provided
+            if (courantValue) {
+                group.courant = courantValue;
+            }
 
             // Update group with laneCoef if provided
             if (coefValue !== null) {
@@ -1074,6 +1147,7 @@ function parseTrafficSheet(sheetData, result) {
     console.log('Groups after traffic import:', result.groups.map(g => ({
         id: g.id,
         name: g.name,
+        courant: g.courant,
         laneCoef: g.laneCoef
     })));
     console.log('Traffic datasets:', trafficDatasets);

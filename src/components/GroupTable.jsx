@@ -87,8 +87,8 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength }) => {
                                             g.courant === 'TD' ? 'Flèche tout droit' :
                                             g.courant === 'TàD' ? 'Flèche tourne à droite' :
                                             g.courant === 'TàG' ? 'Flèche tourne à gauche' :
-                                            g.courant === 'TD-TàD' ? 'Flèche tout droit - tourne à droite' :
-                                            g.courant === 'TD-TàG' ? 'Flèche tout droit - tourne à gauche' :
+                                            g.courant === 'TD_TàD' ? 'Flèche tout droit - tourne à droite' :
+                                            g.courant === 'TD_TàG' ? 'Flèche tout droit - tourne à gauche' :
                                             g.courant === 'TD_G_D' ? 'Flèche tout droit - tourne à gauche et à droite' :
                                             g.courant === 'Piéton' ? 'Flèche 2 sens' :
                                             g.courant === 'Cycle' ? 'Flèche 2 sens' : ''
@@ -98,8 +98,8 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength }) => {
                                         <option value="TD">TD</option>
                                         <option value="TàD">TàD</option>
                                         <option value="TàG">TàG</option>
-                                        <option value="TD-TàD">TD-TàD</option>
-                                        <option value="TD-TàG">TD-TàG</option>
+                                        <option value="TD_TàD">TD_TàD</option>
+                                        <option value="TD_TàG">TD_TàG</option>
                                         <option value="TD_G_D">TD_G_D</option>
                                         <option value="Piéton">Piéton</option>
                                         <option value="Cycle">Cycle</option>
