@@ -152,6 +152,64 @@ function App() {
         };
     }, [isResizing, handleResizeMove, handleResizeEnd]);
 
+    // Resizable horizontal splitter between diagram and action table
+    const [diagramHeight, setDiagramHeight] = useState(() => {
+        const saved = localStorage.getItem('diagram_height');
+        return saved ? parseInt(saved) : null; // null = auto (show full diagram)
+    });
+    const [isResizingDiagram, setIsResizingDiagram] = useState(false);
+    const diagramAreaRef = useRef(null);
+
+    // Save diagram height to localStorage
+    useEffect(() => {
+        if (diagramHeight !== null) {
+            localStorage.setItem('diagram_height', diagramHeight.toString());
+        }
+    }, [diagramHeight]);
+
+    // Handle horizontal resize drag
+    const handleDiagramResizeStart = useCallback((e) => {
+        e.preventDefault();
+        setIsResizingDiagram(true);
+    }, []);
+
+    const handleDiagramResizeMove = useCallback((e) => {
+        if (!isResizingDiagram || !diagramAreaRef.current) return;
+        const containerRect = diagramAreaRef.current.getBoundingClientRect();
+        const newHeight = e.clientY - containerRect.top - 40; // 40 = tabs height
+        // Limit between 100px and container height - 150px (for action table)
+        const maxHeight = containerRect.height - 150;
+        setDiagramHeight(Math.min(maxHeight, Math.max(100, newHeight)));
+    }, [isResizingDiagram]);
+
+    const handleDiagramResizeEnd = useCallback(() => {
+        setIsResizingDiagram(false);
+    }, []);
+
+    // Reset diagram height to auto (full diagram visible)
+    const resetDiagramHeight = useCallback(() => {
+        setDiagramHeight(null);
+        localStorage.removeItem('diagram_height');
+    }, []);
+
+    // Add/remove mouse event listeners for diagram resizing
+    useEffect(() => {
+        if (isResizingDiagram) {
+            document.addEventListener('mousemove', handleDiagramResizeMove);
+            document.addEventListener('mouseup', handleDiagramResizeEnd);
+            document.body.style.cursor = 'row-resize';
+            document.body.style.userSelect = 'none';
+        }
+        return () => {
+            document.removeEventListener('mousemove', handleDiagramResizeMove);
+            document.removeEventListener('mouseup', handleDiagramResizeEnd);
+            if (!isResizing) {
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        };
+    }, [isResizingDiagram, handleDiagramResizeMove, handleDiagramResizeEnd, isResizing]);
+
     // Calculate simulated diagram when in simulation mode
     const simulationResult = useMemo(() => {
         if (!simulationEnabled) return null;
@@ -1189,7 +1247,7 @@ function App() {
                     onMouseDown={handleResizeStart}
                 />
 
-                <section className="diagram-area" style={{ display: 'flex', flexDirection: 'column' }}>
+                <section className="diagram-area" ref={diagramAreaRef} style={{ display: 'flex', flexDirection: 'column' }}>
                     {/* PF Tabs */}
                     <div className="pf-tabs-bar">
                         {pfTabs.map((pf) => (
@@ -1272,7 +1330,17 @@ function App() {
                     </div>
 
                     {!phasageBulleEnabled && (
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div
+                            className="diagram-panel"
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                height: diagramHeight !== null ? `${diagramHeight}px` : 'auto',
+                                minHeight: diagramHeight !== null ? `${diagramHeight}px` : 'auto',
+                                maxHeight: diagramHeight !== null ? `${diagramHeight}px` : 'none',
+                                overflow: diagramHeight !== null ? 'auto' : 'visible'
+                            }}
+                        >
                             <TimelineDiagram
                                 groups={groups}
                                 globalTime={globalTime}
@@ -1300,7 +1368,24 @@ function App() {
                         </div>
                     )}
 
-                    <div style={{ borderTop: phasageBulleEnabled ? 'none' : '1px solid #333', marginTop: phasageBulleEnabled ? 0 : '1rem' }}>
+                    {/* Horizontal resizable divider */}
+                    {!phasageBulleEnabled && (
+                        <div
+                            className={`horizontal-resize-divider ${isResizingDiagram ? 'resizing' : ''}`}
+                            onMouseDown={handleDiagramResizeStart}
+                            onDoubleClick={resetDiagramHeight}
+                            title="Faites glisser pour redimensionner. Double-clic pour réinitialiser."
+                        >
+                            <div className="horizontal-resize-handle"></div>
+                        </div>
+                    )}
+
+                    <div className="action-panel" style={{
+                        borderTop: phasageBulleEnabled ? 'none' : 'none',
+                        marginTop: phasageBulleEnabled ? 0 : 0,
+                        flex: diagramHeight !== null ? '1' : '0 0 auto',
+                        overflow: 'auto'
+                    }}>
                         {phasageBulleEnabled ? (
                             <PhasageBulle
                                 key={phasageBulleVersion}
