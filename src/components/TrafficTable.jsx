@@ -9,7 +9,8 @@ const TrafficTable = ({
     setActiveTrafficDataset,
     updateTrafficData,
     getTrafficData,
-    updateGroupParams
+    updateGroupParams,
+    setHoveredGroupId
 }) => {
 
     // Update traffic volume (per dataset)
@@ -79,7 +80,11 @@ const TrafficTable = ({
                     {vlGroups.map(g => {
                         const trafficData = getTrafficData(g.id);
                         return (
-                            <tr key={g.id}>
+                            <tr
+                                key={g.id}
+                                onMouseEnter={() => setHoveredGroupId && setHoveredGroupId(g.id)}
+                                onMouseLeave={() => setHoveredGroupId && setHoveredGroupId(null)}
+                            >
                                 <td className="col-id">{g.id}</td>
                                 <td className="col-name-readonly">{g.name}</td>
 
