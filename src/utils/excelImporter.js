@@ -990,8 +990,9 @@ function parseActionsSheet(sheetData, result) {
  * Parse traffic sheet - "Trafic" sheet with specific cell positions
  * Groups (Grp) and names (Nom) are copied from the Formulaire sheet (already in result.groups)
  * Import from Excel:
- * - I6, I8, I10... (every 2 rows): Coef (lane coefficient) - index 8
- * - J6, J8, J10... (every 2 rows): Trafic (traffic volume) - index 9
+ * - I6, I8, I10... (every 2 rows): Coef (lane coefficient) - index 7
+ * - J3: First dataset name, J6, J8, J10... (every 2 rows): First dataset traffic volume - index 8
+ * - O3: Second dataset name, O6, O8, O10... (every 2 rows): Second dataset traffic volume - index 13
  */
 function parseTrafficSheet(sheetData, result) {
     if (sheetData.length < 6) return;
@@ -1000,16 +1001,33 @@ function parseTrafficSheet(sheetData, result) {
     console.log('sheetData length:', sheetData.length);
     console.log('Number of groups:', result.groups.length);
 
-    // Column indices (0-based, Excel A=0, B=1, etc.)
-    const COL_COEF = 7;    // I (Excel col 9) → index 7 (car colonne A masquée, donc I = index 7)
-    const COL_TRAFIC = 8;  // J (Excel col 10) → index 8
+    // Column indices (0-based, with column A hidden, so B=0, C=1, etc.)
+    const COL_COEF = 7;        // I → index 7
+    const COL_TRAFIC_1 = 8;    // J → index 8 (first dataset)
+    const COL_PF_NAME_1 = 8;   // J3 contains the first PF name
+    const COL_TRAFIC_2 = 13;   // O → index 13 (second dataset)
+    const COL_PF_NAME_2 = 13;  // O3 contains the second PF name
 
-    // Initialize trafficDatasets structure for all datasets
-    const TRAFFIC_DATASETS = ['HPM', 'HPS', 'HC', 'Estimation', 'Projection'];
-    const trafficDatasets = {};
-    TRAFFIC_DATASETS.forEach(ds => {
-        trafficDatasets[ds] = {};
-    });
+    // Read PF names from J3 and O3 (row 3 = index 2)
+    const pfName1 = sheetData[2]?.[COL_PF_NAME_1] || null;
+    const pfName2 = sheetData[2]?.[COL_PF_NAME_2] || null;
+    console.log('PF name from J3:', pfName1);
+    console.log('PF name from O3:', pfName2);
+
+    // Initialize trafficDatasets structure - start with existing or empty
+    const trafficDatasets = result.trafficDatasets || {};
+
+    // First dataset: use PF name from J3, fallback to 'HPM'
+    const targetDataset1 = pfName1 || 'HPM';
+    if (!trafficDatasets[targetDataset1]) {
+        trafficDatasets[targetDataset1] = {};
+    }
+
+    // Second dataset: use PF name from O3 (only if present)
+    const targetDataset2 = pfName2 || null;
+    if (targetDataset2 && !trafficDatasets[targetDataset2]) {
+        trafficDatasets[targetDataset2] = {};
+    }
 
     // Parse traffic data starting at row 6 (index 5)
     // Data is at rows 6, 8, 10... (every 2 rows, with blank line between)
@@ -1022,21 +1040,24 @@ function parseTrafficSheet(sheetData, result) {
 
         if (row && group) {
             const coefValue = parseNumber(row[COL_COEF], null);
-            const traficValue = parseNumber(row[COL_TRAFIC], null);
+            const traficValue1 = parseNumber(row[COL_TRAFIC_1], null);
+            const traficValue2 = parseNumber(row[COL_TRAFIC_2], null);
 
-            console.log(`Row ${currentRow + 1} -> Group ${group.id} (${group.name}): Coef=${coefValue}, Trafic=${traficValue}`);
+            console.log(`Row ${currentRow + 1} -> Group ${group.id} (${group.name}): Coef=${coefValue}, Trafic1=${traficValue1}, Trafic2=${traficValue2}`);
 
             // Update group with laneCoef if provided
             if (coefValue !== null) {
                 group.laneCoef = coefValue;
             }
 
-            // Store trafficVol in trafficDatasets for the first dataset (HPM)
-            // and initialize other datasets with the same value
-            if (traficValue !== null) {
-                TRAFFIC_DATASETS.forEach(ds => {
-                    trafficDatasets[ds][group.id] = { trafficVol: traficValue };
-                });
+            // Store trafficVol in first dataset
+            if (traficValue1 !== null) {
+                trafficDatasets[targetDataset1][group.id] = { trafficVol: traficValue1 };
+            }
+
+            // Store trafficVol in second dataset (if defined)
+            if (targetDataset2 && traficValue2 !== null) {
+                trafficDatasets[targetDataset2][group.id] = { trafficVol: traficValue2 };
             }
         }
 
@@ -1049,6 +1070,7 @@ function parseTrafficSheet(sheetData, result) {
     result.trafficDatasets = trafficDatasets;
 
     console.log('=== Traffic parsing complete ===');
+    console.log('Target datasets:', targetDataset1, targetDataset2);
     console.log('Groups after traffic import:', result.groups.map(g => ({
         id: g.id,
         name: g.name,

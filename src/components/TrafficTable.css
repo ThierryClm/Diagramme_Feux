@@ -21,11 +21,27 @@
     border-bottom: 1px solid #333;
 }
 
+.traffic-dataset-group {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.traffic-dataset-label {
+    color: #aaa;
+    font-size: 0.85rem;
+    background: #333;
+    border: 1px solid #555;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    padding: 4px 6px;
+}
+
 .traffic-dataset-selector {
     background: #333;
     color: #fff;
     border: 1px solid #555;
-    border-radius: 4px;
+    border-radius: 0 4px 4px 0;
     padding: 4px 8px;
     font-size: 0.85rem;
     cursor: pointer;

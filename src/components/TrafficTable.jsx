@@ -54,15 +54,18 @@ const TrafficTable = ({
         <div className="traffic-table-container">
             <div className="traffic-header">
                 <h3>Données Trafic</h3>
-                <select
-                    className="traffic-dataset-selector"
-                    value={activeTrafficDataset}
-                    onChange={(e) => setActiveTrafficDataset(e.target.value)}
-                >
-                    {trafficDatasetNames.map(ds => (
-                        <option key={ds} value={ds}>{ds}</option>
-                    ))}
-                </select>
+                <div className="traffic-dataset-group">
+                    <span className="traffic-dataset-label">Associé à</span>
+                    <select
+                        className="traffic-dataset-selector"
+                        value={activeTrafficDataset}
+                        onChange={(e) => setActiveTrafficDataset(e.target.value)}
+                    >
+                        {trafficDatasetNames.map(ds => (
+                            <option key={ds} value={ds}>{ds}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
             <table className="traffic-table">
                 <thead>

@@ -176,6 +176,16 @@ function App() {
         }
     }, [phasageBulleEnabled, intersectionArrows]);
 
+    // Synchronize traffic dataset with active PF tab
+    useEffect(() => {
+        if (pfTabs && pfTabs.length > 0 && activePFId) {
+            const activePF = pfTabs.find(pf => pf.id === activePFId);
+            if (activePF && trafficDatasetNames.includes(activePF.name)) {
+                setActiveTrafficDataset(activePF.name);
+            }
+        }
+    }, [activePFId, pfTabs, trafficDatasetNames, setActiveTrafficDataset]);
+
     // Toggle group visibility in phasage bulle
     const togglePhasageBulleGroup = (groupId) => {
         setPhasageBulleVisibleGroups(prev => {
