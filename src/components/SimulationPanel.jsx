@@ -69,7 +69,7 @@ const SimulationPanel = ({
     };
 
     // Filter only VL groups from simulated groups
-    const vlSimulatedGroups = simulatedGroups.filter(g => g.type === 'VL');
+    const vlSimulatedGroups = simulatedGroups.filter(g => g.type === 'VL' || g.type === 'V');
 
     return (
         <div className="simulation-panel">

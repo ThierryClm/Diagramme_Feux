@@ -22,7 +22,7 @@ const TrafficTable = ({
     };
 
     // Check if current dataset is empty
-    const vlGroups = groups.filter(g => g.type === 'VL');
+    const vlGroups = groups.filter(g => g.type === 'VL' || g.type === 'V');
     const isDatasetEmpty = useMemo(() => {
         return vlGroups.every(g => {
             const data = getTrafficData(g.id);

@@ -662,10 +662,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     title={g.name}
                                     style={{
                                         backgroundColor:
-                                            g.type === 'VL' ? 'rgba(100, 180, 255, 0.25)' :
-                                            g.type === 'TC' ? 'rgba(148, 0, 211, 0.1)' :
-                                            g.type === 'Piéton' ? 'rgba(0, 255, 0, 0.1)' :
-                                            g.type === 'Cycliste' ? 'rgba(255, 255, 0, 0.1)' :
+                                            (g.type === 'VL' || g.type === 'V') ? 'rgba(100, 180, 255, 0.25)' :
+                                            (g.type === 'TC' || g.type === 'B') ? 'rgba(148, 0, 211, 0.1)' :
+                                            (g.type === 'Piéton' || g.type === 'P') ? 'rgba(0, 255, 0, 0.1)' :
+                                            (g.type === 'Cycliste' || g.type === 'CY') ? 'rgba(255, 255, 0, 0.1)' :
                                             'transparent'
                                     }}
                                 >{g.name || '-'}</span>
