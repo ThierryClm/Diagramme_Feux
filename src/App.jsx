@@ -313,6 +313,198 @@ function App() {
     const [htmFile, setHtmFile] = useState(null);
     const [htmImportError, setHtmImportError] = useState('');
 
+    // File System Access API - mémoriser les derniers répertoires utilisés
+    const lastOpenDirectoryRef = useRef(null);
+    const lastSaveDirectoryRef = useRef(null);
+
+    // Fonctions pour sauvegarder/restaurer les handles de répertoire via IndexedDB
+    const openIndexedDB = useCallback(() => {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('DiagrammeFeux_FileHandles', 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('handles')) {
+                    db.createObjectStore('handles');
+                }
+            };
+        });
+    }, []);
+
+    const saveDirectoryHandle = useCallback(async (key, handle) => {
+        try {
+            const db = await openIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['handles'], 'readwrite');
+                const store = transaction.objectStore('handles');
+                const request = store.put(handle, key);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        } catch (e) {
+            console.error('Erreur sauvegarde handle:', e);
+        }
+    }, [openIndexedDB]);
+
+    const loadDirectoryHandle = useCallback(async (key) => {
+        try {
+            const db = await openIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['handles'], 'readonly');
+                const store = transaction.objectStore('handles');
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (e) {
+            console.error('Erreur chargement handle:', e);
+            return null;
+        }
+    }, [openIndexedDB]);
+
+    // Charger les derniers répertoires au démarrage
+    useEffect(() => {
+        const loadHandles = async () => {
+            try {
+                const openHandle = await loadDirectoryHandle('lastOpenDirectory');
+                const saveHandle = await loadDirectoryHandle('lastSaveDirectory');
+                if (openHandle) lastOpenDirectoryRef.current = openHandle;
+                if (saveHandle) lastSaveDirectoryRef.current = saveHandle;
+            } catch (e) {
+                console.error('Erreur chargement handles:', e);
+            }
+        };
+        loadHandles();
+    }, [loadDirectoryHandle]);
+
+    // Ouvrir un fichier JSON avec File System Access API
+    const handleOpenFileWithPicker = useCallback(async () => {
+        if (!window.showOpenFilePicker) {
+            // Fallback pour navigateurs sans File System Access API
+            setSelectedProject(null);
+            setOpenModal(true);
+            return;
+        }
+
+        try {
+            const options = {
+                types: [{
+                    description: 'Fichiers Projet',
+                    accept: { 'application/json': ['.json'] }
+                }],
+                multiple: false
+            };
+
+            // Utiliser le dernier répertoire si disponible
+            if (lastOpenDirectoryRef.current) {
+                options.startIn = lastOpenDirectoryRef.current;
+            }
+
+            const [fileHandle] = await window.showOpenFilePicker(options);
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+            const data = JSON.parse(content);
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastOpenDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastOpenDirectory', dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
+
+            // Charger les données du projet
+            const projectName = file.name.replace(/\.json$/i, '');
+            loadFullState({
+                intersectionName: projectName,
+                ...data
+            });
+
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur ouverture fichier:', e);
+                alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
+            }
+        }
+    }, [loadFullState, saveDirectoryHandle]);
+
+    // Enregistrer un fichier JSON avec File System Access API
+    const handleSaveFileWithPicker = useCallback(async () => {
+        if (!window.showSaveFilePicker) {
+            // Fallback pour navigateurs sans File System Access API
+            const name = prompt('Nom du projet:', intersectionName || 'Mon projet');
+            if (name) {
+                saveProject(name);
+            }
+            return;
+        }
+
+        try {
+            const options = {
+                suggestedName: `${intersectionName || 'projet'}.json`,
+                types: [{
+                    description: 'Fichier Projet JSON',
+                    accept: { 'application/json': ['.json'] }
+                }]
+            };
+
+            // Utiliser le dernier répertoire si disponible
+            if (lastSaveDirectoryRef.current) {
+                options.startIn = lastSaveDirectoryRef.current;
+            }
+
+            const fileHandle = await window.showSaveFilePicker(options);
+
+            // Préparer les données du projet
+            const fullState = getFullState();
+            const projectData = {
+                intersectionName: fullState.intersectionName,
+                groups: fullState.groups,
+                cycleLength: fullState.cycleLength,
+                conflictMatrix: fullState.conflictMatrix,
+                pfTabs: fullState.pfTabs,
+                activePFId: fullState.activePFId,
+                intersectionImage: fullState.intersectionImage,
+                intersectionArrows: fullState.intersectionArrows,
+                trafficDatasets: fullState.trafficDatasets,
+                activeTrafficDataset: fullState.activeTrafficDataset
+            };
+
+            // Écrire le fichier
+            const writable = await fileHandle.createWritable();
+            await writable.write(JSON.stringify(projectData, null, 2));
+            await writable.close();
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastSaveDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastSaveDirectory', dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
+
+            // Mettre à jour le nom du projet
+            const savedName = fileHandle.name.replace(/\.json$/i, '');
+            setIntersectionName(savedName);
+
+            // Sauvegarder aussi dans localStorage pour cohérence
+            saveProject(savedName);
+
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur sauvegarde fichier:', e);
+                alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
+            }
+        }
+    }, [intersectionName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle]);
+
     // Get all saved green waves (sorted by most recent first)
     const getSavedGreenWaves = () => {
         try {
@@ -486,14 +678,14 @@ function App() {
                 }
                 break;
             case 'open':
+                handleOpenFileWithPicker();
+                break;
+            case 'openLocalStorage':
                 setSelectedProject(null);
                 setOpenModal(true);
                 break;
             case 'save':
-                const name = prompt('Nom du projet:', intersectionName || 'Mon projet');
-                if (name) {
-                    saveProject(name);
-                }
+                handleSaveFileWithPicker();
                 break;
             case 'printMatrix':
                 setPrintType('matrix');
@@ -1376,6 +1568,7 @@ function App() {
                                 isPlayingSimulation={simulationEnabled && isPlayingSimulation}
                                 hoveredArrowGroupId={hoveredArrowGroupId}
                                 hoveredVUtile={hoveredVUtile}
+                                planName={simulationEnabled ? (pfTabs.find(pf => pf.id === activePFId)?.name || '') : ''}
                             />
                         </div>
                     )}

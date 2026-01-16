@@ -84,6 +84,7 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [],
             items: [
                 { label: 'Nouveau', action: 'new' },
                 { label: 'Ouvrir...', action: 'open' },
+                { label: 'Ouvrir depuis le local storage...', action: 'openLocalStorage' },
                 { label: 'Enregistrer', action: 'save' },
                 { type: 'separator' },
                 { label: 'Importer Excel...', action: 'import' },
