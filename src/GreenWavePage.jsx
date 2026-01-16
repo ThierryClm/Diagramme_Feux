@@ -662,111 +662,247 @@ const GreenWavePage = () => {
         };
 
         // ASCENDING bandwidth (bottom to top, positive slope) - uses Group 2 with distanceG2
-        const bottomGroupAsc = bottomIntersectionG2.groups.find(g => g.id === bottomIntersectionG2.selectedGroup2);
-
-        let ascResult = null;
+        // Calculate bandwidth successively: from 1st to last, 2nd to last, 3rd to last, etc.
+        // Then create segments that can widen when starting from a later intersection gives more bandwidth
+        let ascSegments = [];
         const bottomDistG2 = bottomIntersectionG2.distanceG2 ?? bottomIntersectionG2.distance;
 
-        if (bottomGroupAsc) {
-            const refStart = bottomGroupAsc.offset;
-            const refWidth = bottomGroupAsc.durations?.green || 0;
+        if (sortedByDistG2.length > 0) {
+            // Calculate bandwidth from each starting intersection to the top
+            const bandwidthFromEachStart = [];
 
-            // Start with the full reference window
-            let currentStart = 0; // Relative to refStart
-            let currentWidth = refWidth;
-
-            sortedByDistG2.forEach((intersection) => {
-                if (currentWidth <= 0) return; // Already no bandwidth
-
-                const group = intersection.groups.find(g => g.id === intersection.selectedGroup2);
-                if (!group) return;
-
-                // Use distanceG2 for Group 2
-                const distG2 = intersection.distanceG2 ?? intersection.distance;
-
-                // Time to travel from bottom to this intersection
-                const travelTime = (distG2 - bottomDistG2) / speedUpMps;
-
-                // Green window at this intersection, shifted back to bottom reference time
-                const greenStart = group.offset;
-                const greenWidth = group.durations?.green || 0;
-                const greenStartAtBottom = greenStart - travelTime;
-
-                // Intersect with current bandwidth window
-                const intersection2 = intersectWindows(
-                    refStart + currentStart,
-                    currentWidth,
-                    greenStartAtBottom,
-                    greenWidth
-                );
-
-                if (intersection2) {
-                    currentStart += intersection2.start;
-                    currentWidth = intersection2.width;
-                } else {
-                    currentWidth = 0; // No intersection
+            for (let startIdx = 0; startIdx < sortedByDistG2.length; startIdx++) {
+                const startIntersection = sortedByDistG2[startIdx];
+                const startGroup = startIntersection.groups.find(g => g.id === startIntersection.selectedGroup2);
+                if (!startGroup) {
+                    bandwidthFromEachStart.push({ width: 0, start: 0 });
+                    continue;
                 }
-            });
 
-            if (currentWidth > 0) {
-                ascResult = {
-                    start: normalizeTime(refStart + currentStart),
-                    width: currentWidth,
-                    refDistance: bottomDistG2
-                };
+                const startDistG2 = startIntersection.distanceG2 ?? startIntersection.distance;
+                const startRefStart = startGroup.offset;
+                const startRefWidth = startGroup.durations?.green || 0;
+
+                let calcStart = 0;
+                let calcWidth = startRefWidth;
+
+                // Calculate intersection of windows from startIdx to the end
+                for (let i = startIdx; i < sortedByDistG2.length; i++) {
+                    if (calcWidth <= 0) break;
+
+                    const intersection = sortedByDistG2[i];
+                    const group = intersection.groups.find(g => g.id === intersection.selectedGroup2);
+                    if (!group) continue;
+
+                    const distG2 = intersection.distanceG2 ?? intersection.distance;
+                    const travelTime = (distG2 - startDistG2) / speedUpMps;
+                    const greenStart = group.offset;
+                    const greenWidth = group.durations?.green || 0;
+                    const greenStartAtStart = greenStart - travelTime;
+
+                    const intersection2 = intersectWindows(
+                        startRefStart + calcStart,
+                        calcWidth,
+                        greenStartAtStart,
+                        greenWidth
+                    );
+
+                    if (intersection2) {
+                        calcStart += intersection2.start;
+                        calcWidth = intersection2.width;
+                    } else {
+                        calcWidth = 0;
+                    }
+                }
+
+                // Convert start time to bottom reference for consistent rendering
+                const travelTimeFromBottom = (startDistG2 - bottomDistG2) / speedUpMps;
+                const startAtBottom = normalizeTime(startRefStart + calcStart - travelTimeFromBottom);
+
+                bandwidthFromEachStart.push({
+                    width: calcWidth,
+                    start: startAtBottom,
+                    startDist: startDistG2
+                });
+            }
+
+            // Build segments: find where bandwidth can widen
+            // Each segment covers from its startIdx to the end, but only extends visually to
+            // where the next wider segment begins
+            let segmentStartIdx = 0;
+            let currentWidth = bandwidthFromEachStart[0]?.width || 0;
+            let currentStart = bandwidthFromEachStart[0]?.start || 0;
+
+            // Collect widening points
+            const wideningPoints = [{ idx: 0, width: currentWidth, start: currentStart }];
+
+            for (let i = 1; i < sortedByDistG2.length; i++) {
+                const maxFromHere = bandwidthFromEachStart[i]?.width || 0;
+
+                // If starting from this intersection gives a wider bandwidth
+                if (maxFromHere > currentWidth) {
+                    wideningPoints.push({
+                        idx: i,
+                        width: maxFromHere,
+                        start: bandwidthFromEachStart[i].start
+                    });
+                    currentWidth = maxFromHere;
+                }
+            }
+
+            // Create segments between widening points
+            for (let w = 0; w < wideningPoints.length; w++) {
+                const point = wideningPoints[w];
+                // Each segment goes from this widening point to the next one (or to the end)
+                const nextIdx = w + 1 < wideningPoints.length
+                    ? wideningPoints[w + 1].idx
+                    : sortedByDistG2.length;
+
+                if (point.width > 0) {
+                    ascSegments.push({
+                        startIdx: point.idx,
+                        endIdx: nextIdx - 1,
+                        width: point.width,
+                        start: point.start,
+                        refDistance: bottomDistG2
+                    });
+                }
             }
         }
 
+        // For backwards compatibility
+        let ascResult = null;
+        if (ascSegments.length > 0) {
+            const firstSegment = ascSegments[0];
+            ascResult = {
+                start: firstSegment.start,
+                width: firstSegment.width,
+                refDistance: firstSegment.refDistance,
+                segments: ascSegments
+            };
+        }
+
         // DESCENDING bandwidth (top to bottom, negative slope) - uses Group 1 with distance
-        const topGroupDesc = topIntersectionG1.groups.find(g => g.id === topIntersectionG1.selectedGroup1);
+        // Calculate bandwidth successively: from 1st (top) to last (bottom), 2nd to last, 3rd to last, etc.
+        // Then create segments that can widen when starting from a later intersection gives more bandwidth
+        let descSegments = [];
+        const topDist = topIntersectionG1.distance;
 
-        let descResult = null;
+        // sortedByDistG1 is sorted ascending (bottom to top), so we need to process from top to bottom
+        const sortedTopToBottom = [...sortedByDistG1].reverse();
 
-        if (topGroupDesc) {
-            const refStart = topGroupDesc.offset;
-            const refWidth = topGroupDesc.durations?.green || 0;
+        if (sortedTopToBottom.length > 0) {
+            // Calculate bandwidth from each starting intersection (top to bottom) to the bottom
+            const bandwidthFromEachStart = [];
 
-            // Start with the full reference window
-            let currentStart = 0; // Relative to refStart
-            let currentWidth = refWidth;
-
-            sortedByDistG1.forEach((intersection) => {
-                if (currentWidth <= 0) return; // Already no bandwidth
-
-                const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
-                if (!group) return;
-
-                // Time to travel from top to this intersection (going down)
-                const travelTime = (topIntersectionG1.distance - intersection.distance) / speedDownMps;
-
-                // Green window at this intersection, shifted back to top reference time
-                const greenStart = group.offset;
-                const greenWidth = group.durations?.green || 0;
-                const greenStartAtTop = greenStart - travelTime;
-
-                // Intersect with current bandwidth window
-                const intersection2 = intersectWindows(
-                    refStart + currentStart,
-                    currentWidth,
-                    greenStartAtTop,
-                    greenWidth
-                );
-
-                if (intersection2) {
-                    currentStart += intersection2.start;
-                    currentWidth = intersection2.width;
-                } else {
-                    currentWidth = 0; // No intersection
+            for (let startIdx = 0; startIdx < sortedTopToBottom.length; startIdx++) {
+                const startIntersection = sortedTopToBottom[startIdx];
+                const startGroup = startIntersection.groups.find(g => g.id === startIntersection.selectedGroup1);
+                if (!startGroup) {
+                    bandwidthFromEachStart.push({ width: 0, start: 0 });
+                    continue;
                 }
-            });
 
-            if (currentWidth > 0) {
-                descResult = {
-                    start: normalizeTime(refStart + currentStart),
-                    width: currentWidth,
-                    refDistance: topIntersectionG1.distance
-                };
+                const startDist = startIntersection.distance;
+                const startRefStart = startGroup.offset;
+                const startRefWidth = startGroup.durations?.green || 0;
+
+                let calcStart = 0;
+                let calcWidth = startRefWidth;
+
+                // Calculate intersection of windows from startIdx to the end (bottom)
+                for (let i = startIdx; i < sortedTopToBottom.length; i++) {
+                    if (calcWidth <= 0) break;
+
+                    const intersection = sortedTopToBottom[i];
+                    const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
+                    if (!group) continue;
+
+                    const dist = intersection.distance;
+                    const travelTime = (startDist - dist) / speedDownMps;
+                    const greenStart = group.offset;
+                    const greenWidth = group.durations?.green || 0;
+                    const greenStartAtStart = greenStart - travelTime;
+
+                    const intersection2 = intersectWindows(
+                        startRefStart + calcStart,
+                        calcWidth,
+                        greenStartAtStart,
+                        greenWidth
+                    );
+
+                    if (intersection2) {
+                        calcStart += intersection2.start;
+                        calcWidth = intersection2.width;
+                    } else {
+                        calcWidth = 0;
+                    }
+                }
+
+                // Convert start time to top reference for consistent rendering
+                const travelTimeFromTop = (topDist - startDist) / speedDownMps;
+                const startAtTop = normalizeTime(startRefStart + calcStart - travelTimeFromTop);
+
+                bandwidthFromEachStart.push({
+                    width: calcWidth,
+                    start: startAtTop,
+                    startDist: startDist
+                });
             }
+
+            // Build segments: find where bandwidth can widen
+            // Each segment covers from its startIdx to the end, but only extends visually to
+            // where the next wider segment begins
+            let currentWidth = bandwidthFromEachStart[0]?.width || 0;
+            let currentStart = bandwidthFromEachStart[0]?.start || 0;
+
+            // Collect widening points
+            const wideningPoints = [{ idx: 0, width: currentWidth, start: currentStart }];
+
+            for (let i = 1; i < sortedTopToBottom.length; i++) {
+                const maxFromHere = bandwidthFromEachStart[i]?.width || 0;
+
+                // If starting from this intersection gives a wider bandwidth
+                if (maxFromHere > currentWidth) {
+                    wideningPoints.push({
+                        idx: i,
+                        width: maxFromHere,
+                        start: bandwidthFromEachStart[i].start
+                    });
+                    currentWidth = maxFromHere;
+                }
+            }
+
+            // Create segments between widening points
+            for (let w = 0; w < wideningPoints.length; w++) {
+                const point = wideningPoints[w];
+                // Each segment goes from this widening point to the next one (or to the end)
+                const nextIdx = w + 1 < wideningPoints.length
+                    ? wideningPoints[w + 1].idx
+                    : sortedTopToBottom.length;
+
+                if (point.width > 0) {
+                    descSegments.push({
+                        startIdx: point.idx,
+                        endIdx: nextIdx - 1,
+                        width: point.width,
+                        start: point.start,
+                        refDistance: topDist
+                    });
+                }
+            }
+        }
+
+        // For backwards compatibility
+        let descResult = null;
+        if (descSegments.length > 0) {
+            const firstSegment = descSegments[0];
+            descResult = {
+                start: firstSegment.start,
+                width: firstSegment.width,
+                refDistance: firstSegment.refDistance,
+                segments: descSegments
+            };
         }
 
         return {
@@ -1489,119 +1625,142 @@ const GreenWavePage = () => {
                         );
                     })}
 
-                    {/* Ascending bandwidth corridor (bottom to top) - as polygon surface */}
-                    {bandwidthData?.ascending && intersections && (() => {
+                    {/* Ascending bandwidth corridor (bottom to top) - as polygon surface with segments */}
+                    {bandwidthData?.ascending?.segments && intersections && (() => {
                         // Sort by distanceG2 for ascending (Group 2)
                         const sortedByDistG2 = [...intersections].sort((a, b) =>
                             (a.distanceG2 ?? a.distance) - (b.distanceG2 ?? b.distance)
                         );
-                        const bottomDist = sortedByDistG2[0].distanceG2 ?? sortedByDistG2[0].distance;
-                        const { start, width } = bandwidthData.ascending;
+                        const segments = bandwidthData.ascending.segments;
 
                         const elements = [];
-                        for (let cycle = 0; cycle < 2; cycle++) {
-                            const cycleOffset = cycle * cycleLength;
-                            // Apply speedLineOffsetUp to align bandwidth with the draggable speed lines
-                            const bandStartAtBottom = start + cycleOffset + speedLineOffsetUp;
-                            const bandEndAtBottom = bandStartAtBottom + width;
 
-                            // Build polygon points for the bandwidth surface
-                            const leftPoints = []; // Points going up (left edge of bandwidth)
-                            const rightPoints = []; // Points going up (right edge of bandwidth)
+                        // Draw each segment as a separate polygon
+                        segments.forEach((segment, segIdx) => {
+                            const { startIdx, endIdx, width, start, refDistance } = segment;
 
-                            sortedByDistG2.forEach((intersection) => {
-                                const group = intersection.groups.find(g => g.id === intersection.selectedGroup2);
-                                if (!group) return;
+                            for (let cycle = 0; cycle < 2; cycle++) {
+                                const cycleOffset = cycle * cycleLength;
+                                const bandStartAtRef = start + cycleOffset + speedLineOffsetUp;
+                                const bandEndAtRef = bandStartAtRef + width;
 
-                                const distG2 = intersection.distanceG2 ?? intersection.distance;
-                                const y = distanceToY(distG2);
-                                const travelTime = (distG2 - bottomDist) / speedUpMps;
+                                const leftPoints = [];
+                                const rightPoints = [];
 
-                                // Bandwidth window at this intersection
-                                const bandStart = bandStartAtBottom + travelTime;
-                                const bandEnd = bandEndAtBottom + travelTime;
-
-                                leftPoints.push({ x: timeToX(bandStart), y });
-                                rightPoints.push({ x: timeToX(bandEnd), y });
-                            });
-
-                            // Create polygon: left points going up, then right points going down
-                            if (leftPoints.length >= 2) {
-                                const polygonPoints = [
-                                    ...leftPoints.map(p => `${p.x},${p.y}`),
-                                    ...[...rightPoints].reverse().map(p => `${p.x},${p.y}`)
-                                ].join(' ');
-
-                                elements.push(
-                                    <polygon
-                                        key={`asc-polygon-c${cycle}`}
-                                        points={polygonPoints}
-                                        fill="#4CAF50"
-                                        opacity={0.2}
-                                        stroke="#81C784"
-                                        strokeWidth={2}
-                                    />
+                                // Process intersections in this segment
+                                // Include endIdx + 1 if it exists to ensure we have at least 2 points for polygon
+                                const actualEndIdx = Math.min(
+                                    endIdx < sortedByDistG2.length - 1 ? endIdx + 1 : endIdx,
+                                    sortedByDistG2.length - 1
                                 );
+
+                                for (let i = startIdx; i <= actualEndIdx; i++) {
+                                    const intersection = sortedByDistG2[i];
+                                    const group = intersection.groups.find(g => g.id === intersection.selectedGroup2);
+                                    if (!group) continue;
+
+                                    const distG2 = intersection.distanceG2 ?? intersection.distance;
+                                    const y = distanceToY(distG2);
+
+                                    // Time to travel from segment's reference distance
+                                    const travelTime = (distG2 - refDistance) / speedUpMps;
+
+                                    const bandStart = bandStartAtRef + travelTime;
+                                    const bandEnd = bandEndAtRef + travelTime;
+
+                                    leftPoints.push({ x: timeToX(bandStart), y });
+                                    rightPoints.push({ x: timeToX(bandEnd), y });
+                                }
+
+                                if (leftPoints.length >= 2) {
+                                    const polygonPoints = [
+                                        ...leftPoints.map(p => `${p.x},${p.y}`),
+                                        ...[...rightPoints].reverse().map(p => `${p.x},${p.y}`)
+                                    ].join(' ');
+
+                                    elements.push(
+                                        <polygon
+                                            key={`asc-polygon-seg${segIdx}-c${cycle}`}
+                                            points={polygonPoints}
+                                            fill="#4CAF50"
+                                            opacity={0.2}
+                                            stroke="#81C784"
+                                            strokeWidth={2}
+                                        />
+                                    );
+                                }
                             }
-                        }
+                        });
+
                         return elements;
                     })()}
 
-                    {/* Descending bandwidth corridor (top to bottom) - as polygon surface */}
-                    {bandwidthData?.descending && intersections && (() => {
-                        // Sort by distance for descending (Group 1)
+                    {/* Descending bandwidth corridor (top to bottom) - as polygon surface with segments */}
+                    {bandwidthData?.descending?.segments && intersections && (() => {
+                        // Sort by distance for descending (Group 1) - top to bottom
                         const sortedByDistG1 = [...intersections].sort((a, b) => a.distance - b.distance);
-                        const topDist = sortedByDistG1[sortedByDistG1.length - 1].distance;
-                        const { start, width } = bandwidthData.descending;
+                        const sortedTopToBottom = [...sortedByDistG1].reverse();
+                        const segments = bandwidthData.descending.segments;
 
                         const elements = [];
-                        for (let cycle = 0; cycle < 2; cycle++) {
-                            const cycleOffset = cycle * cycleLength;
-                            // Apply speedLineOffsetDown to align bandwidth with the draggable speed lines
-                            const bandStartAtTop = start + cycleOffset + speedLineOffsetDown;
-                            const bandEndAtTop = bandStartAtTop + width;
 
-                            // Build polygon points for the bandwidth surface
-                            // Process from top to bottom
-                            const sortedTopToBottom = [...sortedByDistG1].reverse();
-                            const leftPoints = []; // Points going down (left edge of bandwidth)
-                            const rightPoints = []; // Points going down (right edge of bandwidth)
+                        // Draw each segment as a separate polygon
+                        segments.forEach((segment, segIdx) => {
+                            const { startIdx, endIdx, width, start, refDistance } = segment;
 
-                            sortedTopToBottom.forEach((intersection) => {
-                                const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
-                                if (!group) return;
+                            for (let cycle = 0; cycle < 2; cycle++) {
+                                const cycleOffset = cycle * cycleLength;
+                                const bandStartAtRef = start + cycleOffset + speedLineOffsetDown;
+                                const bandEndAtRef = bandStartAtRef + width;
 
-                                const dist = intersection.distance;
-                                const y = distanceToY(dist);
-                                const travelTime = (topDist - dist) / speedDownMps;
+                                const leftPoints = [];
+                                const rightPoints = [];
 
-                                // Bandwidth window at this intersection
-                                const bandStart = bandStartAtTop + travelTime;
-                                const bandEnd = bandEndAtTop + travelTime;
-
-                                leftPoints.push({ x: timeToX(bandStart), y });
-                                rightPoints.push({ x: timeToX(bandEnd), y });
-                            });
-
-                            // Create polygon: left points going down, then right points going up
-                            if (leftPoints.length >= 2) {
-                                const polygonPoints = [
-                                    ...leftPoints.map(p => `${p.x},${p.y}`),
-                                    ...[...rightPoints].reverse().map(p => `${p.x},${p.y}`)
-                                ].join(' ');
-
-                                elements.push(
-                                    <polygon
-                                        key={`desc-polygon-c${cycle}`}
-                                        points={polygonPoints}
-                                        fill="#FF9800"
-                                        opacity={0.2}
-                                        stroke="#FFAB91"
-                                        strokeWidth={2}
-                                    />
+                                // Process intersections in this segment
+                                // Include endIdx + 1 if it exists to ensure we have at least 2 points for polygon
+                                const actualEndIdx = Math.min(
+                                    endIdx < sortedTopToBottom.length - 1 ? endIdx + 1 : endIdx,
+                                    sortedTopToBottom.length - 1
                                 );
+
+                                for (let i = startIdx; i <= actualEndIdx; i++) {
+                                    const intersection = sortedTopToBottom[i];
+                                    const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
+                                    if (!group) continue;
+
+                                    const dist = intersection.distance;
+                                    const y = distanceToY(dist);
+
+                                    // Time to travel from segment's reference distance (going down)
+                                    const travelTime = (refDistance - dist) / speedDownMps;
+
+                                    const bandStart = bandStartAtRef + travelTime;
+                                    const bandEnd = bandEndAtRef + travelTime;
+
+                                    leftPoints.push({ x: timeToX(bandStart), y });
+                                    rightPoints.push({ x: timeToX(bandEnd), y });
+                                }
+
+                                if (leftPoints.length >= 2) {
+                                    const polygonPoints = [
+                                        ...leftPoints.map(p => `${p.x},${p.y}`),
+                                        ...[...rightPoints].reverse().map(p => `${p.x},${p.y}`)
+                                    ].join(' ');
+
+                                    elements.push(
+                                        <polygon
+                                            key={`desc-polygon-seg${segIdx}-c${cycle}`}
+                                            points={polygonPoints}
+                                            fill="#FF9800"
+                                            opacity={0.2}
+                                            stroke="#FFAB91"
+                                            strokeWidth={2}
+                                        />
+                                    );
+                                }
                             }
-                        }
+                        });
+
                         return elements;
                     })()}
 
