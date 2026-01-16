@@ -22,6 +22,21 @@
     align-items: center;
     padding: 0.5rem;
     border-bottom: 1px solid #333;
+    gap: 1rem;
+}
+
+.traffic-all-groups-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: #aaa;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.traffic-all-groups-checkbox input {
+    cursor: pointer;
 }
 
 .traffic-dataset-group {

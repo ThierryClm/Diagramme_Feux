@@ -15,14 +15,17 @@ const TrafficTable = ({
     copyTrafficDataset
 }) => {
     const [showPasteDropdown, setShowPasteDropdown] = useState(false);
+    const [showAllGroups, setShowAllGroups] = useState(false);
 
     // Update traffic volume (per dataset)
     const handleTrafficChange = (id, value) => {
         updateTrafficData(id, 'trafficVol', value);
     };
 
-    // Check if current dataset is empty
-    const vlGroups = groups.filter(g => g.type === 'VL' || g.type === 'V');
+    // Filter groups based on showAllGroups checkbox
+    const vlGroups = showAllGroups
+        ? groups
+        : groups.filter(g => g.type === 'VL' || g.type === 'V');
     const isDatasetEmpty = useMemo(() => {
         return vlGroups.every(g => {
             const data = getTrafficData(g.id);
@@ -75,6 +78,14 @@ const TrafficTable = ({
         <div className="traffic-table-container">
             <div className="traffic-header">
                 <h3>Données Trafic</h3>
+                <label className="traffic-all-groups-checkbox">
+                    <input
+                        type="checkbox"
+                        checked={showAllGroups}
+                        onChange={(e) => setShowAllGroups(e.target.checked)}
+                    />
+                    Tous les Grp
+                </label>
                 <div className="traffic-dataset-group">
                     <span className="traffic-dataset-label">Associé à</span>
                     <select
