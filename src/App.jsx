@@ -770,6 +770,9 @@ function App() {
                 setOpenGreenWaveModal(true);
                 setSelectedGreenWave(null);
                 break;
+            case 'openGreenWaveFromFile':
+                handleOpenGreenWaveFromFile();
+                break;
             case 'closeGreenWave':
                 setGreenWaveViewer(false);
                 setGreenWaveData(null);
@@ -855,6 +858,62 @@ function App() {
         } catch (e) {
             console.error('Failed to open green wave', e);
             alert('Erreur lors de l\'ouverture de l\'onde verte');
+        }
+    };
+
+    // Handle opening green wave from file system
+    const handleOpenGreenWaveFromFile = async () => {
+        if (!window.showOpenFilePicker) {
+            alert('Votre navigateur ne supporte pas l\'ouverture de fichiers. Utilisez "Ouvrir une onde verte..." pour charger depuis le local storage.');
+            return;
+        }
+
+        try {
+            const options = {
+                types: [{
+                    description: 'Fichier Onde Verte JSON',
+                    accept: { 'application/json': ['.json'] }
+                }],
+                multiple: false
+            };
+
+            const [fileHandle] = await window.showOpenFilePicker(options);
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+            const greenWaveData = JSON.parse(content);
+
+            if (greenWaveData && greenWaveData.intersections) {
+                // Generate unique ID
+                const greenWaveId = Date.now().toString();
+
+                // Save data to sessionStorage
+                sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
+
+                // Also save additional settings
+                sessionStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
+                    name: greenWaveData.name || file.name.replace(/\.json$/i, ''),
+                    speed: greenWaveData.speed,
+                    speedUp: greenWaveData.speedUp,
+                    speedDown: greenWaveData.speedDown,
+                    speedLineOffsetUp: greenWaveData.speedLineOffsetUp,
+                    speedLineOffsetDown: greenWaveData.speedLineOffsetDown,
+                    showSpeedLines: greenWaveData.showSpeedLines,
+                    pfParams: greenWaveData.pfParams,
+                    pixelsPerSecond: greenWaveData.pixelsPerSecond,
+                    pixelsPerMeter: greenWaveData.pixelsPerMeter,
+                    displayCycles: greenWaveData.displayCycles
+                }));
+
+                // Open new tab with green wave page
+                window.open(`${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
+            } else {
+                alert('Le fichier ne contient pas de données d\'onde verte valides.');
+            }
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur ouverture fichier onde verte:', e);
+                alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
+            }
         }
     };
 

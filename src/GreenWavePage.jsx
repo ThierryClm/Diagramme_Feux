@@ -85,6 +85,75 @@ const GreenWavePage = () => {
         alert(`Onde verte "${name}" enregistrée avec succès.`);
     };
 
+    // Save green wave data to file system (network)
+    const handleSaveGreenWaveToFile = async () => {
+        if (!intersections) return;
+
+        if (!window.showSaveFilePicker) {
+            alert('Votre navigateur ne supporte pas la sauvegarde de fichiers. Utilisez "Enregistrer" pour sauvegarder dans le local storage.');
+            return;
+        }
+
+        // Save current PF params before saving
+        const currentPfName = getCurrentPfName();
+        const updatedPfParams = {
+            ...pfParams,
+            [currentPfName]: {
+                speedUp,
+                speedDown,
+                offsetUp: speedLineOffsetUp,
+                offsetDown: speedLineOffsetDown,
+                showSpeedLines
+            }
+        };
+        setPfParams(updatedPfParams);
+
+        const greenWaveData = {
+            name: greenWaveName || 'Onde verte',
+            intersections,
+            speedUp,
+            speedDown,
+            speedLineOffsetUp,
+            speedLineOffsetDown,
+            showSpeedLines,
+            pfParams: updatedPfParams,
+            pixelsPerSecond,
+            pixelsPerMeter,
+            displayCycles,
+            savedAt: new Date().toISOString()
+        };
+
+        try {
+            const options = {
+                suggestedName: `${greenWaveName || 'onde_verte'}.json`,
+                types: [{
+                    description: 'Fichier Onde Verte JSON',
+                    accept: { 'application/json': ['.json'] }
+                }]
+            };
+
+            const fileHandle = await window.showSaveFilePicker(options);
+
+            // Write the file
+            const writable = await fileHandle.createWritable();
+            await writable.write(JSON.stringify(greenWaveData, null, 2));
+            await writable.close();
+
+            // Update name from filename if not set
+            const savedName = fileHandle.name.replace(/\.json$/i, '');
+            if (!greenWaveName) {
+                setGreenWaveName(savedName);
+            }
+
+            alert(`Onde verte enregistrée dans "${fileHandle.name}".`);
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur sauvegarde fichier:', e);
+                alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
+            }
+        }
+    };
+
     // Synchronize green wave data from saved projects
     const handleSyncGreenWave = () => {
         if (!intersections) return;
@@ -1075,6 +1144,9 @@ const GreenWavePage = () => {
                     </button>
                     <button className="green-wave-save-btn" onClick={handleSaveGreenWave}>
                         Enregistrer
+                    </button>
+                    <button className="green-wave-save-btn" onClick={handleSaveGreenWaveToFile} title="Enregistrer dans un fichier sur le réseau">
+                        Enregistrer sur réseau
                     </button>
                     <button className="green-wave-print-btn" onClick={() => {
                         const svgElement = document.querySelector('.green-wave-svg');

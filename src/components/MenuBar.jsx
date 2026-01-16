@@ -134,6 +134,7 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [],
             label: 'Onde verte',
             items: [
                 { label: 'Ouvrir une onde verte...', action: 'openGreenWave' },
+                { label: 'Ouvrir depuis le réseau...', action: 'openGreenWaveFromFile' },
                 { label: 'Créer une onde verte...', action: 'createGreenWave' }
             ]
         },
