@@ -22,7 +22,7 @@
 }
 
 .green-wave-dialog {
-    width: 1150px;
+    width: 1250px;
 }
 
 .dialog-header {
@@ -169,6 +169,20 @@
     text-align: right;
 }
 
+.col-distance-d {
+    width: 90px;
+}
+
+.col-distance-d input {
+    width: 70px;
+    padding: 5px 8px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 3px;
+    color: #fff;
+    text-align: right;
+}
+
 .col-group {
     width: 200px;
 }
@@ -184,29 +198,10 @@
 }
 
 .col-actions {
-    width: 100px;
+    width: 50px;
     display: flex;
     gap: 5px;
     justify-content: flex-end;
-}
-
-.btn-move {
-    padding: 4px 8px;
-    background: #444;
-    border: 1px solid #555;
-    border-radius: 3px;
-    color: #aaa;
-    cursor: pointer;
-}
-
-.btn-move:hover:not(:disabled) {
-    background: #555;
-    color: #fff;
-}
-
-.btn-move:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
 }
 
 .btn-remove {

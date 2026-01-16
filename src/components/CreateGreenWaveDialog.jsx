@@ -56,6 +56,20 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
         ));
     };
 
+    // Auto-fill Distance D when Distance M is validated (onBlur)
+    const handleDistanceMBlur = (id) => {
+        setIntersections(intersections.map(i => {
+            if (i.id !== id) return i;
+
+            // If Distance D is empty, set it to Distance M + 20
+            if (i.distanceD === undefined || i.distanceD === '' || i.distanceD === 0) {
+                return { ...i, distanceD: i.distance + 20 };
+            }
+
+            return i;
+        }));
+    };
+
     const updateSelectedPf = (id, pfId) => {
         setIntersections(intersections.map(i => {
             if (i.id === id) {
@@ -70,23 +84,25 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
         }));
     };
 
-    const moveIntersection = (index, direction) => {
-        if (direction === 'up' && index === 0) return;
-        if (direction === 'down' && index === intersections.length - 1) return;
-
-        const newIntersections = [...intersections];
-        const targetIndex = direction === 'up' ? index - 1 : index + 1;
-        [newIntersections[index], newIntersections[targetIndex]] =
-            [newIntersections[targetIndex], newIntersections[index]];
-        setIntersections(newIntersections);
-    };
-
     const handleConfirm = () => {
         if (intersections.length < 2) {
             alert('Veuillez ajouter au moins 2 carrefours');
             return;
         }
-        onConfirm(intersections);
+        // Map and sort intersections by distance (descending)
+        // In CreateGreenWaveDialog: selectedGroup1 = GF montant, selectedGroup2 = GF descendant
+        // In GreenWavePage: selectedGroup2 = GF montant (distanceG2), selectedGroup1 = GF descendant (distance)
+        const mappedIntersections = intersections.map(i => ({
+            ...i,
+            // Swap group selections for GreenWavePage compatibility
+            selectedGroup2: i.selectedGroup1, // GF montant -> selectedGroup2
+            selectedGroup1: i.selectedGroup2, // GF descendant -> selectedGroup1
+            // Map distances
+            distanceG2: i.distance,           // Distance M -> distanceG2 (for GF montant)
+            distance: i.distanceD || i.distance // Distance D -> distance (for GF descendant)
+        }));
+        const sortedIntersections = mappedIntersections.sort((a, b) => b.distance - a.distance);
+        onConfirm(sortedIntersections);
     };
 
     if (!isOpen) return null;
@@ -101,7 +117,7 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
 
                 <div className="dialog-content">
                     <div className="add-project-section">
-                        <label>Ajouter un carrefour :</label>
+                        <label>Ajouter un carrefour : (en commençant par le carrefour sud, origine 0)</label>
                         <div className="add-project-row">
                             <select
                                 value={selectedProject}
@@ -128,12 +144,13 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                                 <span className="col-order">#</span>
                                 <span className="col-name">Carrefour</span>
                                 <span className="col-pf">Plan de feu</span>
-                                <span className="col-distance">Distance (m)</span>
-                                <span className="col-group">GF descendant</span>
+                                <span className="col-distance" title="en mètres">Distance M</span>
                                 <span className="col-group">GF montant</span>
+                                <span className="col-distance-d" title="en mètres">Distance D</span>
+                                <span className="col-group">GF descendant</span>
                                 <span className="col-actions">Actions</span>
                             </div>
-                            {intersections.map((intersection, index) => (
+                            {[...intersections].sort((a, b) => b.distance - a.distance).map((intersection, index) => (
                                 <div key={intersection.id} className="intersection-row">
                                     <span className="col-order">{index + 1}</span>
                                     <span className="col-name">{intersection.projectName}</span>
@@ -160,7 +177,9 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                                             'distance',
                                             parseInt(e.target.value) || 0
                                         )}
+                                        onBlur={() => handleDistanceMBlur(intersection.id)}
                                         min="0"
+                                        title="en mètres"
                                     />
                                     <select
                                         className="col-group"
@@ -177,6 +196,18 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                                             </option>
                                         ))}
                                     </select>
+                                    <input
+                                        type="number"
+                                        className="col-distance-d"
+                                        value={intersection.distanceD || ''}
+                                        onChange={(e) => updateIntersection(
+                                            intersection.id,
+                                            'distanceD',
+                                            parseInt(e.target.value) || 0
+                                        )}
+                                        min="0"
+                                        title="en mètres"
+                                    />
                                     <select
                                         className="col-group"
                                         value={intersection.selectedGroup2}
@@ -193,22 +224,6 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                                         ))}
                                     </select>
                                     <div className="col-actions">
-                                        <button
-                                            className="btn-move"
-                                            onClick={() => moveIntersection(index, 'up')}
-                                            disabled={index === 0}
-                                            title="Monter"
-                                        >
-                                            ↑
-                                        </button>
-                                        <button
-                                            className="btn-move"
-                                            onClick={() => moveIntersection(index, 'down')}
-                                            disabled={index === intersections.length - 1}
-                                            title="Descendre"
-                                        >
-                                            ↓
-                                        </button>
                                         <button
                                             className="btn-remove"
                                             onClick={() => removeIntersection(intersection.id)}
