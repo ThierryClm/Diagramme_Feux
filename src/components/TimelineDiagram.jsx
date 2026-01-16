@@ -73,58 +73,36 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             }
         }
 
-        // If we have a groupId, use the actual group shift (more accurate for Adaptatif vertical)
-        // NOTE: "Seconde lucarne" actions are NOT shifted by group glissement (from Fermeture anticipée)
+        // For actions with a groupId, use the actual group shift (getGroupShift) which already
+        // accounts for Escamotage de phase, Adaptatif vertical (full and partial) via simulatedOffset.
+        // For actions WITHOUT a groupId, use timeShifts instead.
+        // This avoids double-counting when both mechanisms would apply the same shift.
+        // NOTE: "Seconde lucarne" actions are NOT shifted by group glissement (from Fermeture anticipée),
+        //       but SHOULD be shifted by Escamotage de phase timeShifts.
         if (groupId && simulationResult && actionType !== 'Seconde lucarne') {
             const groupShift = getGroupShift(groupId);
             if (groupShift > 0) {
                 totalShift = groupShift;
             }
-        }
-
-        // Actions that should be shifted by Adaptatif vertical or Escamotage de phase
-        const adaptatifShiftableActions = [
-            'Seconde lucarne',
-            'Fermeture anticipée',
-            'Priorité piétons',
-            'Escamotage',
-            'Ouverture anticipée',
-            'Signa d\'aide à la conduite',
-            'Adaptatif vertical',
-            'Escamotage de phase'
-        ];
-
-        // Find stopping points (Point de repos, Synchro BTS)
-        const stoppingActions = actionData.filter(a =>
-            (a.action === 'Point de repos' || a.action === 'Synchro BTS') &&
-            a.deb !== ''
-        );
-        let maxStopTime = -1;
-        stoppingActions.forEach(stopAction => {
-            const stopTime = parseInt(stopAction.deb) || 0;
-            if (stopTime > maxStopTime) {
-                maxStopTime = stopTime;
-            }
-        });
-
-        // Also apply global time shifts (from Escamotage de phase and Adaptatif vertical)
-        if (simulationResult?.timeShifts?.length) {
+            // Note: No need to add partial Adaptatif vertical shifts here - getGroupShift() already
+            // includes them since simulatedOffset is modified for groups in the plage range.
+        } else if (simulationResult?.timeShifts?.length) {
+            // For actions without a groupId, OR for "Seconde lucarne" (which has groupId but
+            // should NOT use getGroupShift), use timeShifts directly for Escamotage de phase shifts
             simulationResult.timeShifts.forEach(shift => {
-                if (shift.plage1 && shift.plage2) {
-                    // This is PARTIAL Adaptatif vertical shift - apply to specific action types
-                    // BUT NOT to 'Adaptatif vertical' or 'Escamotage de phase' overlays themselves
-                    // Only if action is after the adaptatif zone and before stopping point
-                    const excludedFromPartialShift = ['Adaptatif vertical', 'Escamotage de phase'];
-                    if (adaptatifShiftableActions.includes(actionType) && !excludedFromPartialShift.includes(actionType)) {
-                        const isAfterZone = deb >= shift.from;
-                        const isBeforeStop = maxStopTime < 0 || deb <= maxStopTime;
-                        if (isAfterZone && isBeforeStop) {
+                if (deb >= shift.from) {
+                    if (!shift.isPartial) {
+                        // Full shift (Escamotage de phase)
+                        totalShift += shift.amount;
+                    } else if (groupId) {
+                        // Partial shift (Adaptatif vertical) - check if group is in plage range
+                        const gId = parseInt(groupId);
+                        if (gId >= shift.plage1 && gId <= shift.plage2) {
                             totalShift += shift.amount;
                         }
-                    }
-                } else {
-                    // Global shift (Escamotage de phase or FULL Adaptatif vertical) - apply if position is after the shift point
-                    if (deb >= shift.from) {
+                    } else {
+                        // Partial shift for actions without groupId (e.g., Priorité piétons)
+                        // These actions are shifted if they fall within the adaptatif zone
                         totalShift += shift.amount;
                     }
                 }
@@ -1433,9 +1411,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 const sourceY = getGroupRowY(sourceGf);
                                 const targetY = getGroupRowY(targetGf);
                                 if (sourceY === null || targetY === null) return null;
-                                // Apply group shift to source position in simulation mode
-                                const sourceShift = getGroupShift(sourceGf);
-                                const shiftedFin = Math.max(0, fin - sourceShift);
+                                // Apply time shifts (from Adaptatif vertical) to source position in simulation mode
+                                const shiftedPos = getShiftedActionPosition(fin, fin, sourceGf, 'Fermeture anticipée');
+                                const shiftedFin = shiftedPos.deb;
                                 const sourceX = shiftedFin * pixelsPerSecond;
                                 const targetX = targetPos * pixelsPerSecond;
                                 const cycleEndX = effectiveCycleLength * pixelsPerSecond;
@@ -2194,15 +2172,21 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {/* Priorité piétons - intermittent yellow bar */}
                         {prioritePietonsActions.map((action, idx) => {
                             const gf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
-                            const deb = parseInt(action.deb) || 0;
-                            const fin = parseInt(action.fin) || 0;
+                            const rawDeb = parseInt(action.deb) || 0;
+                            const rawFin = parseInt(action.fin) || 0;
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
 
                             // Find group index in array
                             const groupIndex = groups.findIndex(g => g.id === gf);
                             if (groupIndex === -1) return null;
-                            if (deb === fin) return null;
+                            if (rawDeb === rawFin) return null;
+
+                            // Apply time shifts (from Adaptatif vertical) in simulation mode
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawFin, gf, 'Priorité piétons');
+                            if (shiftedPos.hidden) return null;
+                            const deb = shiftedPos.deb;
+                            const fin = shiftedPos.fin;
 
                             // Check for wrap-around (fin < deb means the bar crosses cycle boundary)
                             const wrapsAround = deb > fin;
@@ -2240,7 +2224,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             if (wrapsAround) {
                                 // Wrap-around case: draw 2 bars
                                 const firstPartLeft = deb * pixelsPerSecond;
-                                const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
+                                const firstPartWidth = (effectiveCycleLength - deb) * pixelsPerSecond;
                                 const secondPartLeft = 0;
                                 const secondPartWidth = fin * pixelsPerSecond;
 

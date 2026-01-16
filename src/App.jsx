@@ -1163,9 +1163,9 @@ function App() {
                                         // Calculate optimal width for matrix:
                                         // Find longest group name to calculate Nom column width
                                         const maxNameLength = Math.max(3, ...groups.map(g => (g.name || '').length));
-                                        const nomColWidth = Math.max(70, maxNameLength * 8); // ~8px per character at 0.75em font-size
-                                        // GF col (24px) + Nom col (variable) + groups (19px each with border) + sidebar padding (32px) + matrix padding (8px) - 60px offset
-                                        const matrixWidth = 24 + nomColWidth + (groups.length * 19) + 32 + 8 - 60;
+                                        const nomColWidth = Math.max(70, maxNameLength * 7); // ~7px per character at 0.75em font-size
+                                        // Row header (24px) + Nom col (variable) + data cells (19px each with border) + first header col (19px) + padding (51px)
+                                        const matrixWidth = 24 + nomColWidth + (groups.length * 19) + 19 + 51;
                                         setSidebarWidth(Math.min(1200, Math.max(300, matrixWidth)));
                                     }}
                                 >

@@ -227,13 +227,14 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         });
     });
 
-    // 3. Adaptatif vertical - shift bars to the left for groups in range
+    // 3. Adaptatif vertical - shift groups/actions after 'deb' by the duration, reduce cycle length
+    // If plage1/plage2 are defined, only groups in that range are affected for green cutting
+    // If not defined, all groups are affected
+    // In all cases, groups starting after 'deb' are shifted
     const adaptatifActions = selectedActions.filter(a =>
         a.action === 'Adaptatif vertical' &&
         a.deb !== '' &&
-        a.fin !== '' &&
-        a.plage1 !== '' &&
-        a.plage2 !== ''
+        a.fin !== ''
     );
 
     const totalGroups = groups.length;
@@ -241,114 +242,85 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
     adaptatifActions.forEach(action => {
         const deb = parseInt(action.deb) || 0;
         const fin = parseInt(action.fin) || 0;
-        const plage1 = parseInt(action.plage1) || 1;
-        const plage2 = parseInt(action.plage2) || totalGroups;
         const shiftAmount = fin > deb ? fin - deb : (fin + simulatedCycleLength - deb);
 
-        // Check if this covers ALL groups
-        const coversAllGroups = plage1 <= 1 && plage2 >= totalGroups;
+        // Determine affected group range
+        // If plage1/plage2 not defined, all groups are affected
+        const hasPlageRange = action.plage1 !== '' && action.plage2 !== '';
+        const plage1 = hasPlageRange ? (parseInt(action.plage1) || 1) : 1;
+        const plage2 = hasPlageRange ? (parseInt(action.plage2) || totalGroups) : totalGroups;
 
-        if (coversAllGroups) {
-            // Same behavior as Escamotage de phase - remove the slice entirely
-            removedPeriods.push({ deb, fin });
-            timeShifts.push({ from: fin, amount: shiftAmount });
+        // Record removed period and time shift for action overlays
+        // Include plage range so actions can check if they should be shifted
+        removedPeriods.push({ deb, fin });
+        timeShifts.push({
+            from: deb,
+            amount: shiftAmount,
+            plage1: plage1,
+            plage2: plage2,
+            isPartial: hasPlageRange  // true if plage1/plage2 were explicitly set
+        });
 
-            // Cut green bars for all groups
-            simulatedGroups.forEach(g => {
-                if (g.isEscamoted) return;
+        // Process groups in the affected range: cut green bars that overlap [deb, fin]
+        // and shift their offset if they start at or after deb
+        simulatedGroups.forEach(g => {
+            if (g.isEscamoted) return;
 
+            // Only process groups in the plage range (for partial) or all groups (for full)
+            const isInPlageRange = g.id >= plage1 && g.id <= plage2;
+
+            if (isInPlageRange) {
                 const offset = g.simulatedOffset;
                 const greenEnd = offset + g.simulatedGreen;
 
                 if (fin > deb) {
+                    // Case 1: Green bar starts before deb and extends into [deb, fin]
                     if (offset < deb && greenEnd > deb) {
                         const cutAmount = Math.min(greenEnd, fin) - deb;
                         g.simulatedGreen = Math.max(0, g.simulatedGreen - cutAmount);
-                    } else if (offset >= deb && offset < fin) {
+                    }
+                    // Case 2: Green bar starts within [deb, fin]
+                    else if (offset >= deb && offset < fin) {
                         if (greenEnd <= fin) {
+                            // Entirely within - escamote the group
                             g.isEscamoted = true;
                             g.simulatedGreen = 0;
                         } else {
+                            // Starts in [deb, fin] but extends past fin
                             const cutAmount = fin - offset;
                             g.simulatedGreen = Math.max(0, g.simulatedGreen - cutAmount);
-                        }
-                    }
-                }
-            });
-
-            // Reduce cycle length
-            simulatedCycleLength -= shiftAmount;
-
-            // Shift groups
-            simulatedGroups.forEach(g => {
-                if (!g.isEscamoted && g.simulatedOffset >= fin) {
-                    g.simulatedOffset = Math.max(0, g.simulatedOffset - shiftAmount);
-                } else if (!g.isEscamoted && g.simulatedOffset >= deb) {
-                    g.simulatedOffset = deb;
-                }
-            });
-        } else {
-            // Only affects groups in range - reduce green duration for overlapping bars
-            // and shift their offsets. But stop at "Point de repos" or "Synchro BTS" actions
-            timeShifts.push({ from: fin, amount: shiftAmount, plage1, plage2 });
-
-            // Find stopping points from ALL actions (not just selected)
-            // These are global stopping points - no group can shift below them
-            const stoppingActions = actionData.filter(a =>
-                (a.action === 'Point de repos' || a.action === 'Synchro BTS') &&
-                a.deb !== ''
-            );
-
-            // Find the maximum stopping point (the floor)
-            let maxStopTime = -1;
-            stoppingActions.forEach(stopAction => {
-                const stopTime = parseInt(stopAction.deb) || 0;
-                if (stopTime > maxStopTime) {
-                    maxStopTime = stopTime;
-                }
-            });
-
-            simulatedGroups.forEach(g => {
-                if (g.id >= plage1 && g.id <= plage2 && !g.isEscamoted) {
-                    const originalOffset = g.simulatedOffset;
-                    const greenEnd = originalOffset + g.simulatedGreen;
-
-                    // Check if green bar overlaps with the adaptatif zone [deb, fin]
-                    // If yes, reduce green duration by the overlap amount
-                    if (fin > deb) {
-                        // Normal case (no wrap-around)
-                        if (originalOffset < fin && greenEnd > deb) {
-                            // There's an overlap - calculate how much
-                            const overlapStart = Math.max(originalOffset, deb);
-                            const overlapEnd = Math.min(greenEnd, fin);
-                            if (overlapEnd > overlapStart) {
-                                const overlapAmount = overlapEnd - overlapStart;
-                                g.simulatedGreen = Math.max(0, g.simulatedGreen - overlapAmount);
+                            // Shift this group to start at deb (partial mode)
+                            if (hasPlageRange) {
+                                g.simulatedOffset = deb;
                             }
                         }
-                    } else {
-                        // Wrap-around case for adaptatif zone
-                        // Zone is [deb, cycle) + [0, fin)
-                        if (originalOffset >= deb || greenEnd <= fin || (originalOffset < fin && greenEnd > deb)) {
-                            // Simplified: reduce by full shiftAmount if any overlap
-                            g.simulatedGreen = Math.max(0, g.simulatedGreen - shiftAmount);
-                        }
                     }
-
-                    // Shift offset for groups that start at or after 'fin'
-                    if (maxStopTime >= 0) {
-                        // There's a stopping point
-                        // Only shift groups with offset in [fin, maxStopTime]
-                        if (originalOffset >= fin && originalOffset <= maxStopTime) {
-                            g.simulatedOffset = Math.max(0, originalOffset - shiftAmount);
-                        }
-                    } else {
-                        // No stopping point - apply shift to groups with offset >= fin
-                        if (originalOffset >= fin) {
-                            g.simulatedOffset = (originalOffset - shiftAmount + simulatedCycleLength) % simulatedCycleLength;
-                        }
+                    // Case 3: Green bar starts at or after fin - shift left by full amount (partial mode)
+                    else if (offset >= fin && hasPlageRange) {
+                        g.simulatedOffset = Math.max(0, g.simulatedOffset - shiftAmount);
                     }
                 }
+            }
+        });
+
+        // Only reduce cycle length and shift ALL groups if Adaptatif vertical is NOT partial
+        // When partial (plage defined), only groups in the plage range are shifted (done above), cycle stays the same
+        if (!hasPlageRange) {
+            // Reduce cycle length by the adaptatif duration
+            simulatedCycleLength -= shiftAmount;
+
+            // Shift ALL groups that start at or after 'deb' by -shiftAmount
+            simulatedGroups.forEach(g => {
+                if (g.isEscamoted) return;
+
+                if (g.simulatedOffset >= fin) {
+                    // Group starts after the adaptatif zone - shift left by full amount
+                    g.simulatedOffset = Math.max(0, g.simulatedOffset - shiftAmount);
+                } else if (g.simulatedOffset >= deb) {
+                    // Group starts within [deb, fin) - move to deb
+                    g.simulatedOffset = deb;
+                }
+                // Groups starting before deb are not shifted
             });
         }
     });
