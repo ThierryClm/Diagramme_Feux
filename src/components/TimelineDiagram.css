@@ -42,9 +42,9 @@
     align-items: center;
     background: #222;
     border-bottom: 1px solid #444;
-    position: relative;
+    position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: 20;
     padding: 0 6px;
     gap: 3px;
 }
@@ -183,10 +183,10 @@
 .timeline-ruler {
     height: 50px;
     border-bottom: 1px solid #444;
-    position: relative;
+    position: sticky;
     top: 0;
     background: #222;
-    z-index: 1;
+    z-index: 20;
     width: 100%;
 }
 

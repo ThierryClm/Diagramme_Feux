@@ -1157,8 +1157,8 @@ function App() {
                                         // Find longest group name to calculate Nom column width
                                         const maxNameLength = Math.max(3, ...groups.map(g => (g.name || '').length));
                                         const nomColWidth = Math.max(70, maxNameLength * 8); // ~8px per character at 0.75em font-size
-                                        // GF col (24px) + Nom col (variable) + groups (19px each with border) + sidebar padding (32px) + matrix padding (32px) + extra margin (20px)
-                                        const matrixWidth = 24 + nomColWidth + (groups.length * 19) + 32 + 32 + 20;
+                                        // GF col (24px) + Nom col (variable) + groups (19px each with border) + sidebar padding (32px) + matrix padding (8px) - 60px offset
+                                        const matrixWidth = 24 + nomColWidth + (groups.length * 19) + 32 + 8 - 60;
                                         setSidebarWidth(Math.min(1200, Math.max(300, matrixWidth)));
                                     }}
                                 >
@@ -1166,7 +1166,12 @@ function App() {
                                 </button>
                                 <button
                                     className={`tab-btn ${activeTab === 'traffic' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('traffic')}
+                                    onClick={() => {
+                                        setActiveTab('traffic');
+                                        // Set width to display full traffic table
+                                        // Grp(28) + Nom(200) + Coef(55) + Trafic(55) + V.Utile(55) + Cap.U(55) + Retard(55) + Attente(55) + padding(40)
+                                        setSidebarWidth(650);
+                                    }}
                                 >
                                     Trafic
                                 </button>

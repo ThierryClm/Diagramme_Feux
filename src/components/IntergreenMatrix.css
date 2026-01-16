@@ -4,7 +4,7 @@
     height: 100%;
     background: #1e1e1e;
     border-radius: 8px;
-    padding: 1rem;
+    padding: 1rem 0 1rem 0.25rem;
     overflow: hidden;
 }
 
@@ -17,11 +17,12 @@
 .matrix-scroll {
     flex-grow: 1;
     overflow: auto;
-    padding: 1rem;
+    padding: 1rem 0 1rem 0.25rem;
 }
 
 .matrix-grid {
     border-collapse: collapse;
+    margin-top: 10px;
 }
 
 .matrix-grid th {
@@ -42,7 +43,7 @@
     padding: 0;
     text-align: center;
     width: 18px;
-    height: 18px;
+    height: 30px;
     min-width: 18px;
     max-width: 18px;
 }

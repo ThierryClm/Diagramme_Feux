@@ -15,10 +15,9 @@
 }
 
 .action-table-scroll {
-    overflow: auto;
+    overflow: visible;
     flex-grow: 1;
     border: 1px solid #333;
-    max-height: 400px;
 }
 
 .action-table {
@@ -38,7 +37,7 @@
     border: 1px solid #555;
     text-align: left;
     white-space: nowrap;
-    z-index: 10;
+    z-index: 20;
 }
 
 .action-table thead tr.header-group th {
