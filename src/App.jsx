@@ -549,10 +549,17 @@ function App() {
                 setHelpModal(true);
                 break;
             case 'import':
-            case 'browseImport':
                 setImportFile(null);
                 setImportError('');
                 setImportHintDir('');
+                setImportModal(true);
+                break;
+            case 'browseImport':
+                setImportFile(null);
+                setImportError('');
+                // Use the most recent directory as hint
+                const recentDirs = getRecentDirectories();
+                setImportHintDir(recentDirs.length > 0 ? recentDirs[0] : '');
                 setImportModal(true);
                 break;
             case 'importHTM':

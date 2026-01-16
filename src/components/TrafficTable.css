@@ -8,6 +8,7 @@
     width: 650px;
     min-width: 650px;
     max-width: 650px;
+    margin-top: 8px;
 }
 
 .traffic-table-container h3 {
@@ -111,13 +112,13 @@
 }
 
 .traffic-table tr {
-    height: 26px;
+    height: 30px;
 }
 
 .traffic-table td {
     padding: 0 2px;
     border-bottom: 1px solid #333;
-    height: 26px;
+    height: 30px;
     vertical-align: middle;
 }
 
