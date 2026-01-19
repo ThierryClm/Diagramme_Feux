@@ -405,31 +405,7 @@ export const useTrafficLight = () => {
         setGlobalTime(0);
     };
 
-    // Save/Load Logic
-    const saveProject = (name) => {
-        if (!name) return;
-        const projectData = {
-            intersectionName,
-            groups,
-            cycleLength,
-            conflictMatrix,
-            pfTabs,
-            activePFId,
-            intersectionImage,
-            intersectionArrows,
-            trafficDatasets,
-            activeTrafficDataset,
-            dependencyGap
-            // Note: simulation state is NOT saved with project (per user request)
-        };
-        try {
-            localStorage.setItem(`traffic_project_${name}`, JSON.stringify(projectData));
-            return true;
-        } catch (e) {
-            console.error("Save failed", e);
-            return false;
-        }
-    };
+    // Save/Load Logic - saveProject is defined later after all state declarations
 
     const loadProject = (name) => {
         try {
@@ -930,6 +906,32 @@ export const useTrafficLight = () => {
     const deselectAllSimulationActions = useCallback(() => {
         setSimulationSelectedActions([]);
     }, []);
+
+    // Save project - defined after all state declarations to capture current values
+    const saveProject = useCallback((name) => {
+        if (!name) return;
+        const projectData = {
+            intersectionName,
+            groups,
+            cycleLength,
+            conflictMatrix,
+            pfTabs,
+            activePFId,
+            intersectionImage,
+            intersectionArrows,
+            trafficDatasets,
+            activeTrafficDataset,
+            dependencyGap
+            // Note: simulation state is NOT saved with project (per user request)
+        };
+        try {
+            localStorage.setItem(`traffic_project_${name}`, JSON.stringify(projectData));
+            return true;
+        } catch (e) {
+            console.error("Save failed", e);
+            return false;
+        }
+    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap]);
 
     // Save pfTabs to localStorage
     useEffect(() => {
