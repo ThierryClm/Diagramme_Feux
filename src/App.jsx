@@ -73,7 +73,9 @@ function App() {
         updateTrafficData,
         getTrafficData,
         trafficDatasetNames,
-        copyTrafficDataset
+        copyTrafficDataset,
+        dependencyGap,
+        setDependencyGap
     } = useTrafficLight();
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -1307,6 +1309,20 @@ function App() {
                     >
                         ⟷ Dépendance
                     </button>
+                    {showDependencies && (
+                        <input
+                            type="number"
+                            min="1"
+                            max="99"
+                            value={dependencyGap}
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value) || 20;
+                                setDependencyGap(Math.max(1, Math.min(99, val)));
+                            }}
+                            className="input-dependency-gap"
+                            title="Écart maximum pour afficher les dépendances (secondes)"
+                        />
+                    )}
                     <button
                         className="toggle-btn phasage-btn"
                         onClick={() => setPhasageBulleModal(true)}
@@ -1619,6 +1635,7 @@ function App() {
                                 startDrag={startDrag}
                                 endDrag={endDrag}
                                 showDependencies={showDependencies}
+                                dependencyGap={dependencyGap}
                                 hoveredActionId={hoveredActionId}
                                 setHoveredActionId={setHoveredActionId}
                                 simulationFilter={simulationEnabled ? new Set(simulationSelectedActions) : null}

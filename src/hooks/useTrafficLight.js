@@ -14,6 +14,7 @@ const createEmptyTrafficData = () => ({
 export const useTrafficLight = () => {
     const [intersectionName, setIntersectionName] = useState(() => localStorage.getItem('trafficName') || "Nouveau Carrefour");
     const [cycleLength, setCycleLength] = useState(() => parseInt(localStorage.getItem('trafficCycle')) || DEFAULT_CYCLE);
+    const [dependencyGap, setDependencyGap] = useState(() => parseInt(localStorage.getItem('trafficDependencyGap')) || 20);
     const [globalTime, setGlobalTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
 
@@ -79,7 +80,8 @@ export const useTrafficLight = () => {
         localStorage.setItem('trafficMatrix', JSON.stringify(conflictMatrix));
         localStorage.setItem('trafficName', intersectionName);
         localStorage.setItem('trafficCycle', cycleLength.toString());
-    }, [groups, conflictMatrix, intersectionName, cycleLength]);
+        localStorage.setItem('trafficDependencyGap', dependencyGap.toString());
+    }, [groups, conflictMatrix, intersectionName, cycleLength, dependencyGap]);
 
     const setGroupCountInternal = (count) => {
         const newCount = Math.max(1, parseInt(count) || 1);
@@ -416,7 +418,8 @@ export const useTrafficLight = () => {
             intersectionImage,
             intersectionArrows,
             trafficDatasets,
-            activeTrafficDataset
+            activeTrafficDataset,
+            dependencyGap
             // Note: simulation state is NOT saved with project (per user request)
         };
         try {
@@ -472,6 +475,9 @@ export const useTrafficLight = () => {
             if (data.activeTrafficDataset) {
                 setActiveTrafficDataset(data.activeTrafficDataset);
             }
+
+            // Load dependency gap (default to 20 if not present)
+            setDependencyGap(data.dependencyGap !== undefined ? data.dependencyGap : 20);
 
             // Reset simulation state when loading a project
             setSimulationEnabled(false);
@@ -1393,6 +1399,8 @@ export const useTrafficLight = () => {
         setGroupCount: setGroupCountWithHistory,
         cycleLength,
         setCycleLength: setCycleLengthWithHistory,
+        dependencyGap,
+        setDependencyGap,
         conflictMatrix,
         setMatrixValue: setMatrixValueWithHistory,
         conflicts,

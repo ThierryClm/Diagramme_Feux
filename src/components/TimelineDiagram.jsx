@@ -1,11 +1,13 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, hoveredVUtile = null }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, hoveredVUtile = null, planName = '' }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
     const [dragState, setDragState] = useState(null);
+    // Hovered group id for showing dependencies only for that group
+    const [hoveredGroupId, setHoveredGroupId] = useState(null);
     // dragState = { groupId, type: 'start' | 'end', initialMouseX, initialValue }
     // OR dragState = { actionId, field: 'deb' | 'fin', initialMouseX, initialValue }
     // Use simulated cycle length when in simulation mode
@@ -612,7 +614,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
     return (
         <div className={`timeline-container ${dragState ? 'dragging' : ''}`} ref={containerRef}>
-            <h3 className="diagram-title">Diagramme</h3>
+            <h3 className="diagram-title">
+                Diagramme{planName ? ` : simulation du plan de feu ${planName}` : ''}
+            </h3>
             <div className="timeline-layout">
                 <div className="timeline-sidebar">
                     {/* Header Label for Sidebar */}
@@ -767,6 +771,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     className={`timeline-row-track ${isConflict ? 'row-conflict' : ''}`}
                                     onClick={() => onGroupClick(group)}
                                     style={{ backgroundColor: isConflict ? 'rgba(231, 76, 60, 0.1)' : 'transparent' }}
+                                    onMouseEnter={() => setHoveredGroupId(group.id)}
+                                    onMouseLeave={() => setHoveredGroupId(null)}
                                 >
                                     {/* Base bars from group Début/Fin (sidebar values) - only if phase exists */}
                                     {hasPhase && (() => {
@@ -1046,8 +1052,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                 <div
                                                                     className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                                     style={{ left: `${leftPos}px` }}
-                                                                    onMouseEnter={() => setHoveredActionId(action.id)}
-                                                                    onMouseLeave={() => setHoveredActionId(null)}
+                                                                    onMouseEnter={() => { setHoveredActionId(action.id); setHoveredGroupId(group.id); }}
+                                                                    onMouseLeave={() => { setHoveredActionId(null); setHoveredGroupId(null); }}
                                                                 >
                                                                     <div
                                                                         className="drag-handle drag-handle-start"
@@ -1060,8 +1066,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                 <div
                                                                     className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                                     style={{ left: '0px' }}
-                                                                    onMouseEnter={() => setHoveredActionId(action.id)}
-                                                                    onMouseLeave={() => setHoveredActionId(null)}
+                                                                    onMouseEnter={() => { setHoveredActionId(action.id); setHoveredGroupId(group.id); }}
+                                                                    onMouseLeave={() => { setHoveredActionId(null); setHoveredGroupId(null); }}
                                                                 >
                                                                     <div className="phase-bar green-dark" style={{ width: `${secondPartWidth}px` }}></div>
                                                                     <div className={`phase-bar ${lucarneOrangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
@@ -1079,8 +1085,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         <div
                                                             className={`cycle-block lucarne ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                                                             style={{ left: `${leftPos}px` }}
-                                                            onMouseEnter={() => setHoveredActionId(action.id)}
-                                                            onMouseLeave={() => setHoveredActionId(null)}
+                                                            onMouseEnter={() => { setHoveredActionId(action.id); setHoveredGroupId(group.id); }}
+                                                            onMouseLeave={() => { setHoveredActionId(null); setHoveredGroupId(null); }}
                                                         >
                                                             <div
                                                                 className="drag-handle drag-handle-start"
@@ -2659,6 +2665,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const toId = toGroup.id;
                                         if (fromId === toId) return null;
 
+                                        // Filter: only show arrows for hovered group (source or target)
+                                        if (hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
 
@@ -2669,8 +2678,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         // If gap is 0, it means they're at the same time, consider it as full cycle
                                         if (gap === 0) gap = cycleLength;
 
-                                        // Don't show arrow if gap > 20 seconds
-                                        if (gap > 20) return null;
+                                        // Don't show arrow if gap > dependencyGap seconds
+                                        if (gap > dependencyGap) return null;
 
                                         // Arrow ends at: end of green + intergreen time
                                         const arrowEndTime = (fromGreenEnd + intergreenTime) % cycleLength;
@@ -2737,6 +2746,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const toId = toGroup.id;
                                         if (fromId === toId) return null;
 
+                                        // Filter: only show arrows for hovered group (source or target)
+                                        if (hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
 
@@ -2746,8 +2758,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         let gap = (toOffset - lucarneEnd + cycleLength) % cycleLength;
                                         if (gap === 0) gap = cycleLength;
 
-                                        // Don't show arrow if gap > 20 seconds
-                                        if (gap > 20) return null;
+                                        // Don't show arrow if gap > dependencyGap seconds
+                                        if (gap > dependencyGap) return null;
 
                                         // Arrow ends at: end of lucarne + intergreen time
                                         const arrowEndTime = (lucarneEnd + intergreenTime) % cycleLength;
@@ -2787,6 +2799,90 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         return (
                                             <line
                                                 key={`dep-luc-${lIdx}-${toId}`}
+                                                x1={fromX}
+                                                y1={fromRowY}
+                                                x2={toX}
+                                                y2={toRowY}
+                                                stroke="#999"
+                                                strokeWidth="1"
+                                                markerEnd="url(#dep-arrowhead)"
+                                                opacity="0.6"
+                                            />
+                                        );
+                                    });
+                                })}
+
+                                {/* Arrows from Seconde lucarne to other Seconde lucarne */}
+                                {actionData.filter(a => a.action === 'Seconde lucarne' && a.gf && a.fin !== '' && (!simulationFilter || simulationFilter.has(a.id))).map((fromLucarne, fromLIdx) => {
+                                    const fromId = parseInt(fromLucarne.gf);
+                                    const fromIndex = groups.findIndex(g => g.id === fromId);
+                                    if (fromIndex === -1) return null;
+
+                                    const fromLucarneEnd = parseInt(fromLucarne.fin) || 0;
+                                    const fromRowY = RULER_HEIGHT + 1 + (fromIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
+                                    const fromX = fromLucarneEnd * pixelsPerSecond;
+
+                                    return actionData.filter(a => a.action === 'Seconde lucarne' && a.gf && a.deb !== '' && (!simulationFilter || simulationFilter.has(a.id))).map((toLucarne, toLIdx) => {
+                                        const toId = parseInt(toLucarne.gf);
+                                        if (fromId === toId) return null;
+                                        if (fromLIdx === toLIdx) return null;
+
+                                        // Filter: only show arrows for hovered group (source or target)
+                                        if (hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+
+                                        const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
+                                        if (intergreenTime <= 0) return null;
+
+                                        const toIndex = groups.findIndex(g => g.id === toId);
+                                        if (toIndex === -1) return null;
+
+                                        const toLucarneDeb = parseInt(toLucarne.deb) || 0;
+
+                                        // Calculate gap between end of fromLucarne and start of toLucarne
+                                        let gap = (toLucarneDeb - fromLucarneEnd + cycleLength) % cycleLength;
+                                        if (gap === 0) gap = cycleLength;
+
+                                        // Don't show arrow if gap > dependencyGap seconds
+                                        if (gap > dependencyGap) return null;
+
+                                        // Arrow ends at: end of lucarne + intergreen time
+                                        const arrowEndTime = (fromLucarneEnd + intergreenTime) % cycleLength;
+                                        const toX = arrowEndTime * pixelsPerSecond;
+                                        const toRowY = RULER_HEIGHT + 1 + (toIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
+                                        const cycleEndX = cycleLength * pixelsPerSecond;
+
+                                        // If arrow would go backwards, split into two segments
+                                        if (fromX > toX) {
+                                            return (
+                                                <g key={`dep-luc2luc-${fromLIdx}-${toLIdx}`}>
+                                                    {/* First segment: from start to end of cycle */}
+                                                    <line
+                                                        x1={fromX}
+                                                        y1={fromRowY}
+                                                        x2={cycleEndX}
+                                                        y2={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
+                                                        stroke="#999"
+                                                        strokeWidth="1"
+                                                        opacity="0.6"
+                                                    />
+                                                    {/* Second segment: from start of cycle to end point */}
+                                                    <line
+                                                        x1={0}
+                                                        y1={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
+                                                        x2={toX}
+                                                        y2={toRowY}
+                                                        stroke="#999"
+                                                        strokeWidth="1"
+                                                        markerEnd="url(#dep-arrowhead)"
+                                                        opacity="0.6"
+                                                    />
+                                                </g>
+                                            );
+                                        }
+
+                                        return (
+                                            <line
+                                                key={`dep-luc2luc-${fromLIdx}-${toLIdx}`}
                                                 x1={fromX}
                                                 y1={fromRowY}
                                                 x2={toX}
