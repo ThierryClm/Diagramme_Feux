@@ -22,12 +22,17 @@ const IntersectionImage = ({
     selectedActions = [],
     // File System Access API for remembering directory
     lastImageDirectoryRef,
-    saveDirectoryHandle
+    saveDirectoryHandle,
+    // Recent directories
+    recentImageDirs = [],
+    addRecentDirectory
 }) => {
     const fileInputRef = useRef(null);
     const containerRef = useRef(null);
     const [selectedArrow, setSelectedArrow] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [showImageMenu, setShowImageMenu] = useState(false);
+    const imageMenuRef = useRef(null);
 
     // Load display options from localStorage
     const [showGroupNumbers, setShowGroupNumbers] = useState(() => {
@@ -48,6 +53,19 @@ const IntersectionImage = ({
     useEffect(() => {
         localStorage.setItem('intersection_showGroupNames', JSON.stringify(showGroupNames));
     }, [showGroupNames]);
+
+    // Close image menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (imageMenuRef.current && !imageMenuRef.current.contains(e.target)) {
+                setShowImageMenu(false);
+            }
+        };
+        if (showImageMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showImageMenu]);
 
     // Animation refs
     const animationRef = useRef(null);
@@ -95,6 +113,10 @@ const IntersectionImage = ({
                     if (dirHandle && lastImageDirectoryRef && saveDirectoryHandle) {
                         lastImageDirectoryRef.current = dirHandle;
                         await saveDirectoryHandle('lastImageDirectory', dirHandle);
+                        // Ajouter aux répertoires récents
+                        if (addRecentDirectory) {
+                            addRecentDirectory('image', dirHandle.name, dirHandle);
+                        }
                     }
                 } catch (err) {
                     // getParent not always available
@@ -577,12 +599,42 @@ const IntersectionImage = ({
                             </span>
                         </div>
                     )}
-                    <button
-                        className="upload-btn"
-                        onClick={() => handleImageUpload()}
-                    >
-                        {imageData ? 'Changer' : 'Charger'} image
-                    </button>
+                    <div className="upload-btn-container" ref={imageMenuRef}>
+                        <button
+                            className="upload-btn"
+                            onClick={() => {
+                                if (recentImageDirs.length > 0) {
+                                    setShowImageMenu(!showImageMenu);
+                                } else {
+                                    handleImageUpload();
+                                }
+                            }}
+                        >
+                            {imageData ? 'Changer' : 'Charger'} image
+                            {recentImageDirs.length > 0 && <span className="dropdown-arrow">▼</span>}
+                        </button>
+                        {showImageMenu && recentImageDirs.length > 0 && (
+                            <div className="upload-dropdown">
+                                <button onClick={() => { setShowImageMenu(false); handleImageUpload(); }}>
+                                    Parcourir...
+                                </button>
+                                <div className="dropdown-separator" />
+                                <div className="dropdown-header">Répertoires récents</div>
+                                {recentImageDirs.map((dir, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => {
+                                            setShowImageMenu(false);
+                                            handleImageUpload();
+                                        }}
+                                        title={dir.name}
+                                    >
+                                        {dir.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <input
                     ref={fileInputRef}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTrafficLight } from './hooks/useTrafficLight';
+import { useAuth, PERMISSIONS } from './hooks/useAuth';
 import TimelineDiagram from './components/TimelineDiagram';
 import GroupTable from './components/GroupTable';
 import TrafficTable from './components/TrafficTable';
@@ -12,6 +13,8 @@ import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import GreenWaveViewer from './components/GreenWaveViewer';
 import SimulationPanel from './components/SimulationPanel';
 import PhasageBulle from './components/PhasageBulle';
+import LoginModal from './components/LoginModal';
+import UserManagerModal from './components/UserManagerModal';
 import { calculateSimulatedDiagram } from './utils/simulationCalculator';
 import { importExcelFile } from './utils/excelImporter';
 
@@ -77,6 +80,27 @@ function App() {
         dependencyGap,
         setDependencyGap
     } = useTrafficLight();
+
+    // Authentification
+    const {
+        currentUser,
+        isAuthenticated,
+        isLoading: authLoading,
+        hasUsers,
+        login,
+        logout,
+        createUser,
+        updateUser,
+        deleteUser,
+        resetPassword,
+        hasPermission,
+        getUsersList,
+        exportUsersToFile,
+        importUsersFromFile
+    } = useAuth();
+
+    // État pour le modal de gestion des utilisateurs
+    const [showUserManager, setShowUserManager] = useState(false);
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
     const [pixelsPerSecond, setPixelsPerSecond] = useState(10);
@@ -321,6 +345,50 @@ function App() {
     const lastImportDirectoryRef = useRef(null);
     const lastImageDirectoryRef = useRef(null);
 
+    // Liste des 5 derniers répertoires par type (pour affichage dans les menus)
+    const [recentOpenDirs, setRecentOpenDirs] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('recentOpenDirs') || '[]');
+        } catch { return []; }
+    });
+    const [recentImportDirs, setRecentImportDirs] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('recentImportDirs') || '[]');
+        } catch { return []; }
+    });
+    const [recentImageDirs, setRecentImageDirs] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('recentImageDirs') || '[]');
+        } catch { return []; }
+    });
+
+    // Fonction pour ajouter un répertoire à la liste des récents
+    const addRecentDirectory = useCallback((type, dirName, dirHandle) => {
+        const updateList = (currentList, setList, storageKey) => {
+            // Créer un nouvel élément
+            const newEntry = { name: dirName, timestamp: Date.now() };
+            // Filtrer pour éviter les doublons
+            const filtered = currentList.filter(d => d.name !== dirName);
+            // Ajouter en tête et limiter à 5
+            const updated = [newEntry, ...filtered].slice(0, 5);
+            setList(updated);
+            localStorage.setItem(storageKey, JSON.stringify(updated));
+            return updated;
+        };
+
+        switch (type) {
+            case 'open':
+                updateList(recentOpenDirs, setRecentOpenDirs, 'recentOpenDirs');
+                break;
+            case 'import':
+                updateList(recentImportDirs, setRecentImportDirs, 'recentImportDirs');
+                break;
+            case 'image':
+                updateList(recentImageDirs, setRecentImageDirs, 'recentImageDirs');
+                break;
+        }
+    }, [recentOpenDirs, recentImportDirs, recentImageDirs]);
+
     // Fonctions pour sauvegarder/restaurer les handles de répertoire via IndexedDB
     const openIndexedDB = useCallback(() => {
         return new Promise((resolve, reject) => {
@@ -420,6 +488,8 @@ function App() {
                 if (dirHandle) {
                     lastOpenDirectoryRef.current = dirHandle;
                     await saveDirectoryHandle('lastOpenDirectory', dirHandle);
+                    // Ajouter aux répertoires récents
+                    addRecentDirectory('open', dirHandle.name, dirHandle);
                 }
             } catch (e) {
                 // getParent n'est pas toujours disponible
@@ -438,7 +508,63 @@ function App() {
                 alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
             }
         }
-    }, [loadFullState, saveDirectoryHandle]);
+    }, [loadFullState, saveDirectoryHandle, addRecentDirectory]);
+
+    // Ouvrir un fichier depuis un répertoire récent
+    const handleOpenFileFromRecentDir = useCallback(async (dirIndex) => {
+        if (!window.showOpenFilePicker) {
+            alert('API File System non supportée par ce navigateur');
+            return;
+        }
+
+        try {
+            const dirInfo = recentOpenDirs[dirIndex];
+            if (!dirInfo) return;
+
+            const options = {
+                types: [{
+                    description: 'Fichiers Projet',
+                    accept: { 'application/json': ['.json'] }
+                }],
+                multiple: false
+            };
+
+            // Essayer de récupérer le handle du répertoire depuis IndexedDB
+            const savedHandle = await loadDirectoryHandle(`recentOpenDir_${dirIndex}`);
+            if (savedHandle) {
+                options.startIn = savedHandle;
+            }
+
+            const [fileHandle] = await window.showOpenFilePicker(options);
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+            const data = JSON.parse(content);
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastOpenDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastOpenDirectory', dirHandle);
+                    addRecentDirectory('open', dirHandle.name, dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
+
+            const projectName = file.name.replace(/\.json$/i, '');
+            loadFullState({
+                intersectionName: projectName,
+                ...data
+            });
+
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur ouverture fichier:', e);
+                alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
+            }
+        }
+    }, [recentOpenDirs, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, loadFullState]);
 
     // Enregistrer un fichier JSON avec File System Access API
     const handleSaveFileWithPicker = useCallback(async () => {
@@ -804,6 +930,18 @@ function App() {
                         setImportHintDir(dirs[dirIndex].path);
                         setImportModal(true);
                     }
+                } else if (action.startsWith('openFromRecentDir:')) {
+                    // Open file from recent directory
+                    const dirIndex = parseInt(action.replace('openFromRecentDir:', ''));
+                    if (recentOpenDirs[dirIndex]) {
+                        handleOpenFileFromRecentDir(dirIndex);
+                    }
+                } else if (action.startsWith('importFromRecentDir:')) {
+                    // Import Excel from recent directory
+                    const dirIndex = parseInt(action.replace('importFromRecentDir:', ''));
+                    if (recentImportDirs[dirIndex]) {
+                        handleImportExcelFromRecentDir(dirIndex);
+                    }
                 } else {
                     console.log('Action non implémentée:', action);
                 }
@@ -997,6 +1135,8 @@ function App() {
                 if (dirHandle) {
                     lastImportDirectoryRef.current = dirHandle;
                     await saveDirectoryHandle('lastImportDirectory', dirHandle);
+                    // Ajouter aux répertoires récents
+                    addRecentDirectory('import', dirHandle.name, dirHandle);
                 }
             } catch (e) {
                 // getParent n'est pas toujours disponible
@@ -1017,6 +1157,80 @@ function App() {
             });
 
             // Apply traffic data if available
+            if (importedData.trafficData && Object.keys(importedData.trafficData).length > 0) {
+                importedData.groups.forEach((group) => {
+                    const trafficInfo = importedData.trafficData[group.id];
+                    if (trafficInfo && trafficInfo.courant) {
+                        updateGroupParams(group.id, { courant: trafficInfo.courant });
+                    }
+                });
+            }
+
+            alert(`Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`);
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur import Excel:', e);
+                alert('Erreur lors de l\'import: ' + e.message);
+            }
+        }
+    };
+
+    // Import Excel depuis un répertoire récent
+    const handleImportExcelFromRecentDir = async (dirIndex) => {
+        if (!window.showOpenFilePicker) {
+            alert('API File System non supportée par ce navigateur');
+            return;
+        }
+
+        try {
+            const dirInfo = recentImportDirs[dirIndex];
+            if (!dirInfo) return;
+
+            const options = {
+                types: [{
+                    description: 'Fichiers Excel',
+                    accept: {
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+                        'application/vnd.ms-excel': ['.xls']
+                    }
+                }],
+                multiple: false
+            };
+
+            // Essayer de récupérer le handle du répertoire depuis IndexedDB
+            const savedHandle = await loadDirectoryHandle(`recentImportDir_${dirIndex}`);
+            if (savedHandle) {
+                options.startIn = savedHandle;
+            }
+
+            const [fileHandle] = await window.showOpenFilePicker(options);
+            const file = await fileHandle.getFile();
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastImportDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastImportDirectory', dirHandle);
+                    addRecentDirectory('import', dirHandle.name, dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
+
+            const importedData = await importExcelFile(file);
+
+            loadFullState({
+                intersectionName: importedData.intersectionName,
+                groups: importedData.groups,
+                cycleLength: importedData.cycleLength,
+                conflictMatrix: importedData.conflictMatrix,
+                actionData: importedData.actionData,
+                pfTabs: importedData.pfTabs.length > 0 ? importedData.pfTabs : undefined,
+                activePFId: 1,
+                trafficDatasets: importedData.trafficDatasets
+            });
+
             if (importedData.trafficData && Object.keys(importedData.trafficData).length > 0) {
                 importedData.groups.forEach((group) => {
                     const trafficInfo = importedData.trafficData[group.id];
@@ -1309,6 +1523,18 @@ function App() {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [undo, redo]);
 
+    // Afficher l'écran de connexion si non authentifié
+    if (!isAuthenticated) {
+        return (
+            <LoginModal
+                onLogin={login}
+                onCreateUser={createUser}
+                hasUsers={hasUsers()}
+                isLoading={authLoading}
+            />
+        );
+    }
+
     return (
         <div className="app-container">
             <MenuBar
@@ -1317,6 +1543,11 @@ function App() {
                     onArrowStyleChange={setDiagramArrowStyle}
                     importedFiles={importedHTMFiles}
                     recentDirectories={getRecentDirectoriesForMenu()}
+                    recentOpenDirs={recentOpenDirs}
+                    recentImportDirs={recentImportDirs}
+                    currentUser={currentUser}
+                    hasPermission={hasPermission}
+                    onManageUsers={() => setShowUserManager(true)}
                 />
             <header className="app-header">
                 <div className="header-inputs">
@@ -1418,6 +1649,20 @@ function App() {
                     ) : (
                         <div className="status-ok">Valide</div>
                     )}
+                </div>
+
+                <div className="user-info">
+                    <span className="user-name" title={`Permissions: ${PERMISSIONS[currentUser?.permissions]?.label || 'Inconnues'}`}>
+                        {currentUser?.username}
+                        {currentUser?.isAdmin && ' (Admin)'}
+                    </span>
+                    <button
+                        className="logout-btn"
+                        onClick={logout}
+                        title="Se déconnecter"
+                    >
+                        Déconnexion
+                    </button>
                 </div>
             </header>
 
@@ -1781,6 +2026,8 @@ function App() {
                                 selectedActions={simulationSelectedActions}
                                 lastImageDirectoryRef={lastImageDirectoryRef}
                                 saveDirectoryHandle={saveDirectoryHandle}
+                                recentImageDirs={recentImageDirs}
+                                addRecentDirectory={addRecentDirectory}
                             />
                         ) : (
                             <ActionTable
@@ -2570,6 +2817,20 @@ function App() {
                     </div>
                 </div>
             )}
+
+            {/* User Manager Modal */}
+            <UserManagerModal
+                isOpen={showUserManager}
+                onClose={() => setShowUserManager(false)}
+                currentUser={currentUser}
+                getUsersList={getUsersList}
+                createUser={createUser}
+                updateUser={updateUser}
+                deleteUser={deleteUser}
+                resetPassword={resetPassword}
+                exportUsersToFile={exportUsersToFile}
+                importUsersFromFile={importUsersFromFile}
+            />
         </div>
     )
 }

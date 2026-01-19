@@ -132,6 +132,34 @@
     color: #2ecc71;
 }
 
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: 16px;
+}
+
+.user-name {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.logout-btn {
+    background: #444;
+    border: 1px solid #555;
+    color: #ccc;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background: #555;
+    color: #fff;
+}
+
 .split-view {
     display: flex;
     flex-grow: 1;

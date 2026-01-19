@@ -54,9 +54,21 @@
     white-space: nowrap;
 }
 
-.menu-item:hover {
+.menu-item:hover:not(:disabled) {
     background: #3a3a3a;
     color: #fff;
+}
+
+.menu-item:disabled,
+.menu-item.disabled {
+    color: #666;
+    cursor: not-allowed;
+}
+
+.menu-item:disabled:hover,
+.menu-item.disabled:hover {
+    background: transparent;
+    color: #666;
 }
 
 .menu-separator {

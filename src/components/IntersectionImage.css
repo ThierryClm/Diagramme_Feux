@@ -21,6 +21,10 @@
     flex: 1;
 }
 
+.upload-btn-container {
+    position: relative;
+}
+
 .upload-btn {
     padding: 4px 10px;
     background: #4a4a6a;
@@ -29,10 +33,64 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.8em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .upload-btn:hover {
     background: #5a5a7a;
+}
+
+.upload-btn .dropdown-arrow {
+    font-size: 0.7em;
+    opacity: 0.7;
+}
+
+.upload-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 180px;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    margin-top: 2px;
+}
+
+.upload-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    color: #ddd;
+    text-align: left;
+    font-size: 0.85em;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.upload-dropdown button:hover {
+    background: #3a3a3a;
+    color: #fff;
+}
+
+.upload-dropdown .dropdown-separator {
+    height: 1px;
+    background: #444;
+    margin: 4px 8px;
+}
+
+.upload-dropdown .dropdown-header {
+    padding: 6px 12px;
+    color: #888;
+    font-size: 0.75em;
+    text-transform: uppercase;
 }
 
 /* Container for image + sidebar side by side */

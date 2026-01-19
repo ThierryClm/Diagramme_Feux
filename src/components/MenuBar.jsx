@@ -1,7 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './MenuBar.css';
 
-const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [], recentDirectories = [] }) => {
+const MenuBar = ({
+    onAction,
+    arrowStyle,
+    onArrowStyleChange,
+    importedFiles = [],
+    recentDirectories = [],
+    recentOpenDirs = [],
+    recentImportDirs = [],
+    currentUser = null,
+    hasPermission = () => true,
+    onManageUsers
+}) => {
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const menuRef = useRef(null);
@@ -34,6 +45,13 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [],
     const handleItemClick = (action) => {
         setOpenMenu(null);
         setOpenSubmenu(null);
+
+        // Handle special actions
+        if (action === 'manageUsers' && onManageUsers) {
+            onManageUsers();
+            return;
+        }
+
         if (onAction) {
             onAction(action);
         }
@@ -78,21 +96,59 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [],
         )
     ];
 
+    // Build recent open directories submenu
+    const recentOpenDirsSubmenu = [
+        { label: 'Parcourir...', action: 'open' },
+        ...(recentOpenDirs.length > 0 ? [
+            { type: 'separator' },
+            { label: 'Répertoires récents', type: 'header' },
+            ...recentOpenDirs.map((dir, idx) => ({
+                label: dir.name,
+                action: `openFromRecentDir:${idx}`
+            }))
+        ] : [])
+    ];
+
+    // Build recent import directories submenu
+    const recentImportDirsSubmenu = [
+        { label: 'Parcourir...', action: 'import' },
+        ...(recentImportDirs.length > 0 ? [
+            { type: 'separator' },
+            { label: 'Répertoires récents', type: 'header' },
+            ...recentImportDirs.map((dir, idx) => ({
+                label: dir.name,
+                action: `importFromRecentDir:${idx}`
+            }))
+        ] : [])
+    ];
+
     const menus = {
         fichier: {
             label: 'Fichier',
             items: [
-                { label: 'Nouveau', action: 'new' },
-                { label: 'Ouvrir...', action: 'open' },
+                { label: 'Nouveau', action: 'new', disabled: !hasPermission('canModifyDiagram') },
+                ...(recentOpenDirs.length > 0 ? [{
+                    label: 'Ouvrir...',
+                    type: 'submenu',
+                    submenuId: 'openRecent',
+                    submenu: recentOpenDirsSubmenu
+                }] : [{ label: 'Ouvrir...', action: 'open' }]),
                 { label: 'Ouvrir depuis le local storage...', action: 'openLocalStorage' },
-                { label: 'Enregistrer', action: 'save' },
+                { label: 'Enregistrer', action: 'save', disabled: !hasPermission('canSave') },
                 { type: 'separator' },
-                { label: 'Importer Excel...', action: 'import' },
+                ...(recentImportDirs.length > 0 ? [{
+                    label: 'Importer Excel...',
+                    type: 'submenu',
+                    submenuId: 'importRecent',
+                    submenu: recentImportDirsSubmenu,
+                    disabled: !hasPermission('canImportExcel')
+                }] : [{ label: 'Importer Excel...', action: 'import', disabled: !hasPermission('canImportExcel') }]),
                 {
                     label: 'Importer fichier depuis...',
                     type: 'submenu',
                     submenuId: 'importFrom',
-                    submenu: recentDirsSubmenu
+                    submenu: recentDirsSubmenu,
+                    disabled: !hasPermission('canImportExcel')
                 },
                 { label: 'Exporter...', action: 'export' },
                 { type: 'separator' },
@@ -106,13 +162,13 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [],
         diagramme: {
             label: 'Diagramme',
             items: [
-                { label: 'Dupliquer le diagramme', action: 'duplicate' },
-                { label: 'Supprimer le diagramme actif', action: 'deleteActiveDiagram' },
-                { label: 'Déplacer un groupe de feu...', action: 'moveGroup' },
+                { label: 'Dupliquer le diagramme', action: 'duplicate', disabled: !hasPermission('canDuplicate') },
+                { label: 'Supprimer le diagramme actif', action: 'deleteActiveDiagram', disabled: !hasPermission('canModifyDiagram') },
+                { label: 'Déplacer un groupe de feu...', action: 'moveGroup', disabled: !hasPermission('canModifyDiagram') },
                 { type: 'separator' },
-                { label: 'Glisser...', action: 'slide' },
-                { label: 'Inserer...', action: 'insert' },
-                { label: 'Réduire...', action: 'reduce' },
+                { label: 'Glisser...', action: 'slide', disabled: !hasPermission('canModifyDiagram') },
+                { label: 'Inserer...', action: 'insert', disabled: !hasPermission('canModifyDiagram') },
+                { label: 'Réduire...', action: 'reduce', disabled: !hasPermission('canModifyDiagram') },
                 { type: 'separator' },
                 {
                     label: 'Options...',
@@ -144,7 +200,15 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [],
                 { label: 'Aide', action: 'help' },
                 { label: 'Crédit', action: 'credit' }
             ]
-        }
+        },
+        ...(currentUser?.isAdmin ? {
+            utilisateurs: {
+                label: 'Utilisateurs',
+                items: [
+                    { label: 'Gérer les utilisateurs...', action: 'manageUsers' }
+                ]
+            }
+        } : {})
     };
 
     // Render submenu item (for Options submenu)
@@ -195,8 +259,8 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [],
             return (
                 <div
                     key={idx}
-                    className="menu-item-with-submenu"
-                    onMouseEnter={() => handleSubmenuHover(item.submenuId)}
+                    className={`menu-item-with-submenu ${item.disabled ? 'disabled' : ''}`}
+                    onMouseEnter={() => !item.disabled && handleSubmenuHover(item.submenuId)}
                     onMouseLeave={(e) => {
                         // Only close if not moving to submenu
                         const relatedTarget = e.relatedTarget;
@@ -205,11 +269,11 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [],
                         }
                     }}
                 >
-                    <button className="menu-item has-submenu">
+                    <button className={`menu-item has-submenu ${item.disabled ? 'disabled' : ''}`} disabled={item.disabled}>
                         {item.label}
                         <span className="submenu-arrow">▶</span>
                     </button>
-                    {openSubmenu === item.submenuId && (
+                    {openSubmenu === item.submenuId && !item.disabled && (
                         <div className="submenu-dropdown">
                             {item.submenu.map((subItem, subIdx) =>
                                 renderSubmenuItem(subItem, subIdx, item.submenuId)
@@ -223,9 +287,10 @@ const MenuBar = ({ onAction, arrowStyle, onArrowStyleChange, importedFiles = [],
         return (
             <button
                 key={idx}
-                className="menu-item"
-                onClick={() => handleItemClick(item.action)}
+                className={`menu-item ${item.disabled ? 'disabled' : ''}`}
+                onClick={() => !item.disabled && handleItemClick(item.action)}
                 onMouseEnter={() => setOpenSubmenu(null)}
+                disabled={item.disabled}
             >
                 {item.label}
             </button>
