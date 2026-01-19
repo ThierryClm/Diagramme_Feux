@@ -2895,6 +2895,171 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         );
                                     });
                                 })}
+
+                                {/* Arrows from main green phases to Seconde lucarne */}
+                                {groups.map((fromGroup, fromIndex) => {
+                                    const fromId = fromGroup.id;
+                                    const fromOffset = fromGroup.offset % cycleLength;
+                                    const fromGreenEnd = (fromOffset + fromGroup.durations.green) % cycleLength;
+                                    const fromRowY = RULER_HEIGHT + 1 + (fromIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
+                                    const fromX = fromGreenEnd * pixelsPerSecond;
+
+                                    return actionData.filter(a => a.action === 'Seconde lucarne' && a.gf && a.deb !== '' && (!simulationFilter || simulationFilter.has(a.id))).map((toLucarne, toLIdx) => {
+                                        const toId = parseInt(toLucarne.gf);
+                                        if (fromId === toId) return null;
+
+                                        // Filter: only show arrows for hovered group (source or target)
+                                        if (hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+
+                                        const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
+                                        if (intergreenTime <= 0) return null;
+
+                                        const toIndex = groups.findIndex(g => g.id === toId);
+                                        if (toIndex === -1) return null;
+
+                                        const toLucarneDeb = parseInt(toLucarne.deb) || 0;
+
+                                        // Calculate gap between end of main green and start of lucarne
+                                        let gap = (toLucarneDeb - fromGreenEnd + cycleLength) % cycleLength;
+                                        if (gap === 0) gap = cycleLength;
+
+                                        // Don't show arrow if gap > dependencyGap seconds
+                                        if (gap > dependencyGap) return null;
+
+                                        // Arrow ends at: end of green + intergreen time
+                                        const arrowEndTime = (fromGreenEnd + intergreenTime) % cycleLength;
+                                        const toX = arrowEndTime * pixelsPerSecond;
+                                        const toRowY = RULER_HEIGHT + 1 + (toIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
+                                        const cycleEndX = cycleLength * pixelsPerSecond;
+
+                                        // If arrow would go backwards, split into two segments
+                                        if (fromX > toX) {
+                                            return (
+                                                <g key={`dep-main2luc-${fromId}-${toLIdx}`}>
+                                                    {/* First segment: from start to end of cycle */}
+                                                    <line
+                                                        x1={fromX}
+                                                        y1={fromRowY}
+                                                        x2={cycleEndX}
+                                                        y2={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
+                                                        stroke="#999"
+                                                        strokeWidth="1"
+                                                        opacity="0.6"
+                                                    />
+                                                    {/* Second segment: from start of cycle to end point */}
+                                                    <line
+                                                        x1={0}
+                                                        y1={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
+                                                        x2={toX}
+                                                        y2={toRowY}
+                                                        stroke="#999"
+                                                        strokeWidth="1"
+                                                        markerEnd="url(#dep-arrowhead)"
+                                                        opacity="0.6"
+                                                    />
+                                                </g>
+                                            );
+                                        }
+
+                                        return (
+                                            <line
+                                                key={`dep-main2luc-${fromId}-${toLIdx}`}
+                                                x1={fromX}
+                                                y1={fromRowY}
+                                                x2={toX}
+                                                y2={toRowY}
+                                                stroke="#999"
+                                                strokeWidth="1"
+                                                markerEnd="url(#dep-arrowhead)"
+                                                opacity="0.6"
+                                            />
+                                        );
+                                    });
+                                })}
+
+                                {/* Arrows from Seconde lucarne to Seconde lucarne (end to start) */}
+                                {actionData.filter(a => a.action === 'Seconde lucarne' && a.gf && a.fin !== '' && (!simulationFilter || simulationFilter.has(a.id))).map((fromLucarne, fromLIdx) => {
+                                    const fromId = parseInt(fromLucarne.gf);
+                                    const fromIndex = groups.findIndex(g => g.id === fromId);
+                                    if (fromIndex === -1) return null;
+
+                                    const fromLucarneEnd = parseInt(fromLucarne.fin) || 0;
+                                    const fromRowY = RULER_HEIGHT + 1 + (fromIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
+                                    const fromX = fromLucarneEnd * pixelsPerSecond;
+
+                                    return actionData.filter(a => a.action === 'Seconde lucarne' && a.gf && a.deb !== '' && (!simulationFilter || simulationFilter.has(a.id))).map((toLucarne, toLIdx) => {
+                                        const toId = parseInt(toLucarne.gf);
+                                        if (fromId === toId) return null;
+                                        if (fromLIdx === toLIdx) return null;
+
+                                        // Filter: only show arrows for hovered group (source or target)
+                                        if (hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+
+                                        const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
+                                        if (intergreenTime <= 0) return null;
+
+                                        const toIndex = groups.findIndex(g => g.id === toId);
+                                        if (toIndex === -1) return null;
+
+                                        const toLucarneDeb = parseInt(toLucarne.deb) || 0;
+
+                                        // Calculate gap between end of fromLucarne and start of toLucarne
+                                        let gap = (toLucarneDeb - fromLucarneEnd + cycleLength) % cycleLength;
+                                        if (gap === 0) gap = cycleLength;
+
+                                        // Don't show arrow if gap > dependencyGap seconds
+                                        if (gap > dependencyGap) return null;
+
+                                        // Arrow ends at: end of lucarne + intergreen time
+                                        const arrowEndTime = (fromLucarneEnd + intergreenTime) % cycleLength;
+                                        const toX = arrowEndTime * pixelsPerSecond;
+                                        const toRowY = RULER_HEIGHT + 1 + (toIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
+                                        const cycleEndX = cycleLength * pixelsPerSecond;
+
+                                        // If arrow would go backwards, split into two segments
+                                        if (fromX > toX) {
+                                            return (
+                                                <g key={`dep-luc2lucdeb-${fromLIdx}-${toLIdx}`}>
+                                                    {/* First segment: from start to end of cycle */}
+                                                    <line
+                                                        x1={fromX}
+                                                        y1={fromRowY}
+                                                        x2={cycleEndX}
+                                                        y2={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
+                                                        stroke="#999"
+                                                        strokeWidth="1"
+                                                        opacity="0.6"
+                                                    />
+                                                    {/* Second segment: from start of cycle to end point */}
+                                                    <line
+                                                        x1={0}
+                                                        y1={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
+                                                        x2={toX}
+                                                        y2={toRowY}
+                                                        stroke="#999"
+                                                        strokeWidth="1"
+                                                        markerEnd="url(#dep-arrowhead)"
+                                                        opacity="0.6"
+                                                    />
+                                                </g>
+                                            );
+                                        }
+
+                                        return (
+                                            <line
+                                                key={`dep-luc2lucdeb-${fromLIdx}-${toLIdx}`}
+                                                x1={fromX}
+                                                y1={fromRowY}
+                                                x2={toX}
+                                                y2={toRowY}
+                                                stroke="#999"
+                                                strokeWidth="1"
+                                                markerEnd="url(#dep-arrowhead)"
+                                                opacity="0.6"
+                                            />
+                                        );
+                                    });
+                                })}
                             </svg>
                         )}
                     </div>
