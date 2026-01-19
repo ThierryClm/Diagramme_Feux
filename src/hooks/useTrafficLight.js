@@ -736,6 +736,8 @@ export const useTrafficLight = () => {
 
         // Check intergreen time conflicts (existing logic)
         for (let from = 0; from < count; from++) {
+            // Safety check: skip if row doesn't exist in matrix
+            if (!conflictMatrix[from]) continue;
             for (let to = 0; to < count; to++) {
                 const minGap = conflictMatrix[from][to];
                 // Skip empty values

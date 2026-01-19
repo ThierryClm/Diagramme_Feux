@@ -19,7 +19,10 @@ const IntersectionImage = ({
     setHoveredArrowGroupId,
     // Action data for special actions simulation
     actionData = [],
-    selectedActions = []
+    selectedActions = [],
+    // File System Access API for remembering directory
+    lastImageDirectoryRef,
+    saveDirectoryHandle
 }) => {
     const fileInputRef = useRef(null);
     const containerRef = useRef(null);
@@ -50,15 +53,68 @@ const IntersectionImage = ({
     const animationRef = useRef(null);
     const lastTimeRef = useRef(null);
 
-    // Handle image upload
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                onImageChange(event.target.result);
-            };
-            reader.readAsDataURL(file);
+    // Handle image upload via File System Access API
+    const handleImageUpload = async (e) => {
+        // If called from input element (fallback)
+        if (e && e.target && e.target.files) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    onImageChange(event.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+            return;
+        }
+
+        // Use File System Access API if available
+        if (window.showOpenFilePicker) {
+            try {
+                const options = {
+                    types: [{
+                        description: 'Images',
+                        accept: {
+                            'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp']
+                        }
+                    }],
+                    multiple: false
+                };
+
+                // Use last image directory if available
+                if (lastImageDirectoryRef?.current) {
+                    options.startIn = lastImageDirectoryRef.current;
+                }
+
+                const [fileHandle] = await window.showOpenFilePicker(options);
+                const file = await fileHandle.getFile();
+
+                // Save directory handle
+                try {
+                    const dirHandle = await fileHandle.getParent?.();
+                    if (dirHandle && lastImageDirectoryRef && saveDirectoryHandle) {
+                        lastImageDirectoryRef.current = dirHandle;
+                        await saveDirectoryHandle('lastImageDirectory', dirHandle);
+                    }
+                } catch (err) {
+                    // getParent not always available
+                }
+
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        onImageChange(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Erreur sélection image:', err);
+                }
+            }
+        } else {
+            // Fallback to input element
+            fileInputRef.current?.click();
         }
     };
 
@@ -523,7 +579,7 @@ const IntersectionImage = ({
                     )}
                     <button
                         className="upload-btn"
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => handleImageUpload()}
                     >
                         {imageData ? 'Changer' : 'Charger'} image
                     </button>
