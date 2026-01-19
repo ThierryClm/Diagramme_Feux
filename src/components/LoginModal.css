@@ -1,0 +1,125 @@
+.login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.login-modal {
+    background: #2a2a2a;
+    border-radius: 8px;
+    padding: 32px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.login-header h2 {
+    color: #fff;
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.login-subtitle {
+    color: #888;
+    margin: 0;
+    font-size: 14px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.login-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.login-field label {
+    color: #aaa;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.login-field input {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.login-field input:focus {
+    border-color: #4a9eff;
+}
+
+.login-field input::placeholder {
+    color: #666;
+}
+
+.login-error {
+    background: rgba(255, 77, 77, 0.15);
+    border: 1px solid rgba(255, 77, 77, 0.3);
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: #ff6b6b;
+    font-size: 13px;
+    text-align: center;
+}
+
+.login-button {
+    background: #4a9eff;
+    border: none;
+    border-radius: 4px;
+    padding: 12px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 8px;
+}
+
+.login-button:hover:not(:disabled) {
+    background: #3a8eef;
+}
+
+.login-button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+.login-info {
+    color: #888;
+    font-size: 12px;
+    text-align: center;
+    margin: 16px 0 0 0;
+    padding: 12px;
+    background: rgba(74, 158, 255, 0.1);
+    border-radius: 4px;
+}
+
+.login-loading {
+    color: #888;
+    text-align: center;
+    padding: 40px;
+    font-size: 14px;
+}

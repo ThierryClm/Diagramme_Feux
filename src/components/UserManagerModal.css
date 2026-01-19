@@ -1,0 +1,236 @@
+.user-manager {
+    min-width: 450px;
+}
+
+.user-manager-section {
+    margin-bottom: 24px;
+}
+
+.user-manager-section h3 {
+    color: #fff;
+    font-size: 14px;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #444;
+}
+
+.user-manager-error {
+    background: rgba(255, 77, 77, 0.15);
+    border: 1px solid rgba(255, 77, 77, 0.3);
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: #ff6b6b;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+.user-manager-success {
+    background: rgba(46, 204, 113, 0.15);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: #2ecc71;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+/* Table des utilisateurs */
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.user-table th {
+    text-align: left;
+    padding: 8px;
+    background: #333;
+    color: #aaa;
+    font-weight: 500;
+}
+
+.user-table td {
+    padding: 8px;
+    border-bottom: 1px solid #333;
+    color: #ddd;
+}
+
+.user-table select {
+    background: #333;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.user-table select:disabled {
+    opacity: 0.5;
+}
+
+.admin-badge {
+    background: #4a9eff;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    margin-left: 8px;
+    text-transform: uppercase;
+}
+
+.current-badge {
+    background: #2ecc71;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    margin-left: 8px;
+}
+
+.user-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.user-action-btn {
+    background: #444;
+    border: 1px solid #555;
+    color: #ddd;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.user-action-btn:hover:not(:disabled) {
+    background: #555;
+}
+
+.user-action-btn.delete:hover:not(:disabled) {
+    background: #c0392b;
+    border-color: #e74c3c;
+}
+
+.user-action-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Formulaire de création */
+.create-user-form {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.create-user-form input {
+    background: #333;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    flex: 1;
+    min-width: 120px;
+}
+
+.create-user-form input:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
+.create-user-form select {
+    background: #333;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.create-user-form button {
+    background: #4a9eff;
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.create-user-form button:hover:not(:disabled) {
+    background: #3a8eef;
+}
+
+.create-user-form button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+/* Reset password section */
+.reset-password-section {
+    background: rgba(74, 158, 255, 0.1);
+    padding: 16px;
+    border-radius: 4px;
+}
+
+.reset-password-form {
+    display: flex;
+    gap: 8px;
+}
+
+.reset-password-form input {
+    background: #333;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    flex: 1;
+}
+
+.reset-password-form button {
+    background: #4a9eff;
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.reset-password-form button:hover {
+    background: #3a8eef;
+}
+
+.reset-password-form .cancel-btn {
+    background: #555;
+}
+
+.reset-password-form .cancel-btn:hover {
+    background: #666;
+}
+
+/* Import/Export buttons */
+.import-export-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.import-export-buttons button {
+    background: #444;
+    border: 1px solid #555;
+    color: #ddd;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.import-export-buttons button:hover {
+    background: #555;
+    color: #fff;
+}
