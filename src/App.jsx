@@ -318,6 +318,8 @@ function App() {
     // File System Access API - mémoriser les derniers répertoires utilisés
     const lastOpenDirectoryRef = useRef(null);
     const lastSaveDirectoryRef = useRef(null);
+    const lastImportDirectoryRef = useRef(null);
+    const lastImageDirectoryRef = useRef(null);
 
     // Fonctions pour sauvegarder/restaurer les handles de répertoire via IndexedDB
     const openIndexedDB = useCallback(() => {
@@ -371,8 +373,12 @@ function App() {
             try {
                 const openHandle = await loadDirectoryHandle('lastOpenDirectory');
                 const saveHandle = await loadDirectoryHandle('lastSaveDirectory');
+                const importHandle = await loadDirectoryHandle('lastImportDirectory');
+                const imageHandle = await loadDirectoryHandle('lastImageDirectory');
                 if (openHandle) lastOpenDirectoryRef.current = openHandle;
                 if (saveHandle) lastSaveDirectoryRef.current = saveHandle;
+                if (importHandle) lastImportDirectoryRef.current = importHandle;
+                if (imageHandle) lastImageDirectoryRef.current = imageHandle;
             } catch (e) {
                 console.error('Erreur chargement handles:', e);
             }
@@ -743,10 +749,7 @@ function App() {
                 setHelpModal(true);
                 break;
             case 'import':
-                setImportFile(null);
-                setImportError('');
-                setImportHintDir('');
-                setImportModal(true);
+                handleImportExcelDirect();
                 break;
             case 'browseImport':
                 setImportFile(null);
@@ -954,6 +957,81 @@ function App() {
             // Add to recent files (webkitRelativePath or name only due to browser security)
             const filePath = file.webkitRelativePath || file.name;
             addToRecentFiles(filePath, file.name);
+        }
+    };
+
+    // Handle direct Excel import via File System Access API
+    const handleImportExcelDirect = async () => {
+        if (!window.showOpenFilePicker) {
+            // Fallback pour navigateurs sans File System Access API
+            setImportFile(null);
+            setImportError('');
+            setImportHintDir('');
+            setImportModal(true);
+            return;
+        }
+
+        try {
+            const options = {
+                types: [{
+                    description: 'Fichiers Excel',
+                    accept: {
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+                        'application/vnd.ms-excel': ['.xls']
+                    }
+                }],
+                multiple: false
+            };
+
+            // Utiliser le dernier répertoire d'import si disponible
+            if (lastImportDirectoryRef.current) {
+                options.startIn = lastImportDirectoryRef.current;
+            }
+
+            const [fileHandle] = await window.showOpenFilePicker(options);
+            const file = await fileHandle.getFile();
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastImportDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastImportDirectory', dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
+
+            const importedData = await importExcelFile(file);
+
+            // Load the imported data
+            loadFullState({
+                intersectionName: importedData.intersectionName,
+                groups: importedData.groups,
+                cycleLength: importedData.cycleLength,
+                conflictMatrix: importedData.conflictMatrix,
+                actionData: importedData.actionData,
+                pfTabs: importedData.pfTabs.length > 0 ? importedData.pfTabs : undefined,
+                activePFId: 1,
+                trafficDatasets: importedData.trafficDatasets
+            });
+
+            // Apply traffic data if available
+            if (importedData.trafficData && Object.keys(importedData.trafficData).length > 0) {
+                importedData.groups.forEach((group) => {
+                    const trafficInfo = importedData.trafficData[group.id];
+                    if (trafficInfo && trafficInfo.courant) {
+                        updateGroupParams(group.id, { courant: trafficInfo.courant });
+                    }
+                });
+            }
+
+            alert(`Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`);
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur import Excel:', e);
+                alert('Erreur lors de l\'import: ' + e.message);
+            }
         }
     };
 
@@ -1701,6 +1779,8 @@ function App() {
                                 setHoveredArrowGroupId={setHoveredArrowGroupId}
                                 actionData={actionData}
                                 selectedActions={simulationSelectedActions}
+                                lastImageDirectoryRef={lastImageDirectoryRef}
+                                saveDirectoryHandle={saveDirectoryHandle}
                             />
                         ) : (
                             <ActionTable
