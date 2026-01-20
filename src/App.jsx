@@ -44,6 +44,7 @@ function App() {
         deleteSave,
         getFullState,
         loadFullState,
+        resetToNewProject,
         actionData,
         updateActionRow,
         reorderActions,
@@ -321,6 +322,7 @@ function App() {
     // Print preview states
     const [printPreviewModal, setPrintPreviewModal] = useState(false);
     const [printType, setPrintType] = useState(null); // 'matrix', 'form', 'diagram'
+    const [currentProjectPath, setCurrentProjectPath] = useState(''); // Chemin du projet courant
 
     // Move group modal states
     const [moveGroupModal, setMoveGroupModal] = useState(false);
@@ -511,6 +513,9 @@ function App() {
                 ...data
             });
 
+            // Mémoriser le chemin du projet
+            setCurrentProjectPath(file.name);
+
             // Restaurer la hauteur du diagramme si présente
             if (data.diagramHeight !== undefined) {
                 setDiagramHeight(data.diagramHeight);
@@ -571,6 +576,9 @@ function App() {
                 intersectionName: projectName,
                 ...data
             });
+
+            // Mémoriser le chemin du projet
+            setCurrentProjectPath(file.name);
 
             // Restaurer la hauteur du diagramme si présente
             if (data.diagramHeight !== undefined) {
@@ -650,6 +658,9 @@ function App() {
             const savedName = fileHandle.name.replace(/\.json$/i, '');
             setIntersectionName(savedName);
 
+            // Mémoriser le chemin du projet
+            setCurrentProjectPath(fileHandle.name);
+
             // Sauvegarder aussi dans localStorage pour cohérence
             saveProject(savedName);
 
@@ -724,6 +735,9 @@ function App() {
             // Mettre à jour le nom du projet
             const savedName = fileHandle.name.replace(/\.json$/i, '');
             setIntersectionName(savedName);
+
+            // Mémoriser le chemin du projet
+            setCurrentProjectPath(fileHandle.name);
 
             // Sauvegarder aussi dans localStorage pour cohérence
             saveProject(savedName);
@@ -905,7 +919,12 @@ function App() {
         switch (action) {
             case 'new':
                 if (confirm('Créer un nouveau projet ? Les modifications non enregistrées seront perdues.')) {
-                    window.location.reload();
+                    resetToNewProject();
+                    setActiveTab('config');
+                    setDiagramHeight(null);
+                    setGroupCountInput('8');
+                    setCycleLengthInput('60');
+                    setCurrentProjectPath('');
                 }
                 break;
             case 'open':
@@ -2894,45 +2913,130 @@ function App() {
 
             {/* Print Preview Modal */}
             {printPreviewModal && (
-                <div className="modal-overlay" onClick={() => setPrintPreviewModal(false)}>
-                    <div className="modal-content print-preview-modal" onClick={e => e.stopPropagation()}>
+                <div className="modal-overlay print-preview-overlay" onClick={() => setPrintPreviewModal(false)}>
+                    <div className="modal-content print-preview-modal-large" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>
-                                {printType === 'matrix' && 'Imprimer la matrice'}
-                                {printType === 'form' && 'Imprimer le formulaire'}
-                                {printType === 'diagram' && 'Imprimer le diagramme'}
+                                {printType === 'matrix' && 'Aperçu - Matrice de dégagement'}
+                                {printType === 'form' && 'Aperçu - Formulaire'}
+                                {printType === 'diagram' && 'Aperçu - Diagramme'}
                             </h3>
                             <button className="modal-close" onClick={() => setPrintPreviewModal(false)}>×</button>
                         </div>
-                        <div className="modal-body print-preview-body">
-                            <div className="print-preview-content">
+                        <div className="print-preview-container">
+                            <div className="print-preview-page">
+                                {/* Header commun (sauf pour diagramme qui a son propre en-tête) */}
+                                {printType !== 'diagram' && (
+                                    <div className="print-preview-header">
+                                        <h2>{intersectionName || 'Sans titre'}</h2>
+                                        <p>{groups.length} groupes - Cycle: {cycleLength}s</p>
+                                    </div>
+                                )}
+
+                                {/* Contenu selon le type */}
                                 {printType === 'matrix' && (
-                                    <div className="print-section">
-                                        <h4>{intersectionName || 'Sans titre'}</h4>
-                                        <p>Matrice des temps intervert - {groups.length} groupes</p>
-                                        <p>Durée du cycle: {cycleLength}s</p>
+                                    <div className="print-preview-matrix">
+                                        <table className="preview-matrix-table">
+                                            <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    {groups.map(g => (
+                                                        <th key={g.id}>{g.id}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {groups.map((fromGroup, fromIdx) => (
+                                                    <tr key={fromGroup.id}>
+                                                        <td className="row-header">{fromGroup.id}</td>
+                                                        {groups.map((toGroup, toIdx) => (
+                                                            <td
+                                                                key={toGroup.id}
+                                                                className={fromIdx === toIdx ? 'diagonal' : ''}
+                                                            >
+                                                                {fromIdx !== toIdx ? (conflictMatrix[fromIdx]?.[toIdx] || '') : ''}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 )}
+
                                 {printType === 'form' && (
-                                    <div className="print-section">
-                                        <h4>{intersectionName || 'Sans titre'}</h4>
-                                        <p>Formulaire de configuration</p>
-                                        <p>{groups.length} groupes - Cycle: {cycleLength}s</p>
+                                    <div className="print-preview-form">
+                                        <table className="preview-form-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>GF</th>
+                                                    <th>Nom</th>
+                                                    <th>Type</th>
+                                                    <th>Déc</th>
+                                                    <th>V</th>
+                                                    <th>J</th>
+                                                    <th>R</th>
+                                                    <th>Vm</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {groups.map(g => (
+                                                    <tr key={g.id}>
+                                                        <td>{g.id}</td>
+                                                        <td>{g.name || ''}</td>
+                                                        <td>{g.type || 'VL'}</td>
+                                                        <td>{g.offset}</td>
+                                                        <td>{g.durations?.green || 0}</td>
+                                                        <td>{g.durations?.orange || 0}</td>
+                                                        <td>{g.durations?.red || 0}</td>
+                                                        <td>{g.minGreen || 0}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 )}
+
                                 {printType === 'diagram' && (
-                                    <div className="print-section">
-                                        <h4>{intersectionName || 'Sans titre'}</h4>
-                                        <p>Diagramme avec tableau des actions</p>
-                                        <p>{groups.length} groupes - Cycle: {cycleLength}s</p>
-                                        <p>{actionData.filter(a => a.gf || a.action).length} actions définies</p>
+                                    <div className="print-preview-diagram print-preview-landscape">
+                                        {/* En-tête du diagramme - nom du carrefour et plan de feu actif */}
+                                        <div className="print-diagram-header">
+                                            <h3>{intersectionName || 'Sans titre'} - {pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}</h3>
+                                        </div>
+
+                                        {/* Diagramme réel - A4 paysage: ~670px disponibles pour timeline */}
+                                        <div className="print-diagram-content">
+                                            <TimelineDiagram
+                                                groups={groups}
+                                                globalTime={0}
+                                                onGroupClick={() => {}}
+                                                pixelsPerSecond={Math.max(2, Math.min(8, Math.floor(650 / cycleLength)))}
+                                                conflicts={[]}
+                                                conflictMatrix={conflictMatrix}
+                                                updateGroupParams={() => {}}
+                                                cycleLength={cycleLength}
+                                                actionData={actionData}
+                                                updateActionRow={() => {}}
+                                                startDrag={() => {}}
+                                                endDrag={() => {}}
+                                                showDependencies={false}
+                                                dependencyGap={20}
+                                                hoveredActionId={null}
+                                                setHoveredActionId={() => {}}
+                                                planName={pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}
+                                            />
+                                        </div>
+
+                                        {/* Pied de page: chemin du fichier JSON à gauche, date à droite */}
+                                        <div className="print-diagram-footer">
+                                            <span className="print-footer-path">
+                                                {currentProjectPath || 'Projet non enregistré'}
+                                            </span>
+                                            <span className="print-footer-date">{new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
-                            <p className="print-info">
-                                Cliquez sur "Imprimer" pour ouvrir la boîte de dialogue d'impression.
-                                Vous pourrez y choisir l'imprimante et les options d'impression.
-                            </p>
                         </div>
                         <div className="modal-footer">
                             <button className="btn-cancel" onClick={() => setPrintPreviewModal(false)}>
@@ -2941,14 +3045,12 @@ function App() {
                             <button
                                 className="btn-confirm"
                                 onClick={() => {
-                                    setPrintPreviewModal(false);
-                                    // Add print class to body for CSS targeting
+                                    // Ajouter la classe pour l'impression AVANT d'imprimer
                                     document.body.classList.add(`print-${printType}`);
+                                    // Imprimer avec le modal ouvert
                                     window.print();
-                                    // Remove class after print dialog closes
-                                    setTimeout(() => {
-                                        document.body.classList.remove(`print-${printType}`);
-                                    }, 100);
+                                    // Retirer la classe après l'impression
+                                    document.body.classList.remove(`print-${printType}`);
                                 }}
                             >
                                 Imprimer

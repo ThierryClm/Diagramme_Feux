@@ -803,44 +803,343 @@
 }
 
 /* Print Preview Modal */
-.print-preview-modal {
-    max-width: 500px;
+.print-preview-overlay {
+    z-index: 1100;
 }
 
-.print-preview-body {
+.print-preview-modal-large {
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
 }
 
-.print-preview-content {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 4px;
-    padding: 1rem;
+.print-preview-container {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    background: #333;
+    display: flex;
+    justify-content: center;
 }
 
-.print-section h4 {
-    color: #fff;
-    margin: 0 0 0.5rem 0;
-    font-size: 1.1rem;
+.print-preview-page {
+    background: white;
+    color: black;
+    padding: 30px;
+    min-width: 600px;
+    max-width: 700px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    border-radius: 2px;
 }
 
-.print-section p {
-    color: #aaa;
-    margin: 0.25rem 0;
+.print-preview-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #333;
+}
+
+.print-preview-header h2 {
+    margin: 0 0 5px 0;
+    font-size: 1.4rem;
+    color: #000;
+}
+
+.print-preview-header p {
+    margin: 0;
+    color: #666;
     font-size: 0.9rem;
 }
 
-.print-info {
-    color: #888;
+/* Matrix preview */
+.print-preview-matrix {
+    overflow-x: auto;
+}
+
+.preview-matrix-table {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 0.85rem;
-    font-style: italic;
+}
+
+.preview-matrix-table th,
+.preview-matrix-table td {
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    text-align: center;
+    min-width: 35px;
+}
+
+.preview-matrix-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+
+.preview-matrix-table td.row-header {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+
+.preview-matrix-table td.diagonal {
+    background: #e0e0e0;
+}
+
+/* Form preview */
+.print-preview-form {
+    overflow-x: auto;
+}
+
+.preview-form-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.preview-form-table th,
+.preview-form-table td {
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    text-align: center;
+}
+
+.preview-form-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+
+.preview-form-table.preview-form-small {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* Diagram preview */
+.print-preview-diagram {
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+
+.print-preview-diagram.print-preview-landscape {
+    min-width: 900px;
+}
+
+.print-diagram-header {
+    text-align: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #333;
+}
+
+.print-diagram-header h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.3rem;
+    color: #000;
+}
+
+.print-diagram-subtitle {
     margin: 0;
+    color: #444;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.print-diagram-content {
+    flex: 1;
+    overflow: visible;
+    background: #fff !important;
+}
+
+/* Assurer que le layout est bien collé */
+.print-diagram-content .timeline-layout {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0 !important;
+}
+
+.print-diagram-content .timeline-sidebar {
+    flex-shrink: 0 !important;
+}
+
+.print-diagram-content .timeline-scroll-area {
+    flex-grow: 1 !important;
+    overflow: visible !important;
+}
+
+/* Force fond blanc sur tout le diagramme */
+.print-diagram-content,
+.print-diagram-content * {
+    background-color: #fff !important;
+}
+
+.print-diagram-content .timeline-diagram,
+.print-diagram-content .timeline-wrapper,
+.print-diagram-content .timeline-container,
+.print-diagram-content .timeline-content,
+.print-diagram-content .diagram-area {
+    background: #fff !important;
+    background-color: #fff !important;
+}
+
+.print-diagram-content .sidebar-column,
+.print-diagram-content .sidebar-header-row {
+    background: #f0f0f0 !important;
+    background-color: #f0f0f0 !important;
+    color: #000 !important;
+}
+
+.print-diagram-content .group-row,
+.print-diagram-content .group-row-content {
+    background: #fff !important;
+    background-color: #fff !important;
+}
+
+.print-diagram-content .group-row-label,
+.print-diagram-content .group-label {
+    color: #000 !important;
+    background: #f0f0f0 !important;
+    background-color: #f0f0f0 !important;
+}
+
+.print-diagram-content .ruler,
+.print-diagram-content .ruler-container {
+    background: #e8e8e8 !important;
+    background-color: #e8e8e8 !important;
+    color: #000 !important;
+}
+
+.print-diagram-content .ruler-tick-label,
+.print-diagram-content .tick-label {
+    color: #333 !important;
+}
+
+/* Assurer que les barres de temps restent colorées */
+.print-diagram-content .phase-bar,
+.print-diagram-content .green-bar,
+.print-diagram-content .orange-bar,
+.print-diagram-content .red-bar {
+    /* Les barres gardent leurs couleurs */
+}
+
+/* Texte noir pour l'impression */
+.print-diagram-content .diagram-title,
+.print-diagram-content .col-label,
+.print-diagram-content .label-id,
+.print-diagram-content .label-name,
+.print-diagram-content .ruler-tick,
+.print-diagram-content span,
+.print-diagram-content div {
+    color: #000 !important;
+}
+
+/* Cadre du diagramme en noir */
+.print-diagram-content .timeline-container {
+    border: 2px solid #000 !important;
+}
+
+.print-diagram-content .timeline-sidebar {
+    border-right: 1px solid #000 !important;
+}
+
+.print-diagram-content .sidebar-header-row {
+    border-bottom: 1px solid #000 !important;
+}
+
+/* Séparateurs entre les groupes de feux */
+.print-diagram-content .row-label-container,
+.print-diagram-content .timeline-row-track {
+    border-bottom: 1px solid #999 !important;
+}
+
+/* Quadrillage par seconde visible */
+.print-diagram-content .grid-line {
+    background: rgba(0, 0, 0, 0.15) !important;
+}
+
+.print-diagram-content .grid-5s {
+    background: rgba(0, 0, 0, 0.25) !important;
+}
+
+.print-diagram-content .grid-10s {
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Règle en haut avec bordure */
+.print-diagram-content .timeline-ruler {
+    border-bottom: 1px solid #000 !important;
+}
+
+/* Masquer les inputs dans la zone d'impression */
+.print-diagram-content input {
+    background: transparent !important;
+    border: none !important;
+    color: #000 !important;
+}
+
+/* Titre du diagramme en noir */
+.print-diagram-content .diagram-title {
+    background: #f0f0f0 !important;
+    border-bottom: 1px solid #000 !important;
+}
+
+.print-diagram-preview {
+    flex: 1;
+}
+
+.print-preview-actions-count {
+    margin-top: 15px;
+    color: #666;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.print-diagram-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.print-footer-path {
+    text-align: left;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.print-footer-date {
+    text-align: right;
+}
+
+.print-preview-diagram-note {
+    color: #666;
+    font-style: italic;
+    margin-bottom: 20px;
+}
+
+/* Modal plus large pour le diagramme en paysage */
+.print-preview-modal-large:has(.print-preview-landscape) {
+    max-width: 95%;
+    width: 1100px;
+}
+
+.print-preview-page:has(.print-preview-landscape) {
+    min-width: 950px;
+    max-width: none;
 }
 
 /* Print Media Queries */
 @media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
     /* Hide everything by default */
     body * {
         visibility: hidden;
@@ -874,33 +1173,188 @@
         color: black !important;
     }
 
-    /* Diagram print */
-    body.print-diagram .diagram-section,
-    body.print-diagram .diagram-section *,
-    body.print-diagram .action-table-container,
-    body.print-diagram .action-table-container * {
-        visibility: visible;
+    /* Diagram print - Format A4 paysage */
+    body.print-diagram,
+    body.print-diagram .print-preview-modal,
+    body.print-diagram .print-preview-modal * {
+        visibility: visible !important;
+        background-color: white !important;
+        color: black !important;
     }
-    body.print-diagram .diagram-section {
+
+    body.print-diagram {
+        background: white !important;
+    }
+
+    body.print-diagram .print-preview-modal {
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
-    }
-    body.print-diagram .action-table-container {
-        position: absolute;
-        left: 0;
-        top: 60%;
-        width: 100%;
+        height: auto;
         background: white !important;
+    }
+
+    body.print-diagram .print-preview-overlay {
+        position: static !important;
+        background: white !important;
+    }
+
+    body.print-diagram .print-preview-modal-content {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: none !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+
+    body.print-diagram .modal-header,
+    body.print-diagram .modal-footer {
+        display: none !important;
+    }
+
+    body.print-diagram .print-preview-page {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 10mm !important;
+        margin: 0 !important;
+        max-width: none !important;
+        min-width: auto !important;
+        background: white !important;
+    }
+
+    body.print-diagram .print-preview-diagram {
+        width: 100% !important;
+        background: white !important;
+    }
+
+    body.print-diagram .print-diagram-content {
+        background: white !important;
+    }
+
+    /* Forcer le fond blanc sur le diagramme timeline */
+    body.print-diagram .timeline-container,
+    body.print-diagram .timeline-layout,
+    body.print-diagram .timeline-sidebar,
+    body.print-diagram .timeline-scroll-area,
+    body.print-diagram .timeline-track-container,
+    body.print-diagram .timeline-row-track,
+    body.print-diagram .sidebar-header-row,
+    body.print-diagram .row-label-container {
+        background: white !important;
+        background-color: white !important;
+    }
+
+    /* Sidebar avec fond légèrement gris pour contraste */
+    body.print-diagram .timeline-sidebar,
+    body.print-diagram .sidebar-header-row,
+    body.print-diagram .row-label-container {
+        background: #f5f5f5 !important;
+        background-color: #f5f5f5 !important;
+    }
+
+    /* Texte noir */
+    body.print-diagram .label-id,
+    body.print-diagram .label-name,
+    body.print-diagram .col-label,
+    body.print-diagram .ruler-tick,
+    body.print-diagram .diagram-title {
         color: black !important;
     }
 
-    /* General print styles */
-    @page {
-        size: landscape;
-        margin: 1cm;
+    /* Titre du diagramme */
+    body.print-diagram .diagram-title {
+        background: #e8e8e8 !important;
     }
+
+    /* Masquer les inputs ou les rendre transparents */
+    body.print-diagram .input-time-sm,
+    body.print-diagram .input-da {
+        background: transparent !important;
+        border: none !important;
+        color: black !important;
+    }
+
+    /* Grille visible */
+    body.print-diagram .grid-line {
+        background: rgba(0, 0, 0, 0.1) !important;
+    }
+
+    body.print-diagram .grid-5s {
+        background: rgba(0, 0, 0, 0.2) !important;
+    }
+
+    body.print-diagram .grid-10s {
+        background: rgba(0, 0, 0, 0.35) !important;
+    }
+
+    /* Bordures noires */
+    body.print-diagram .timeline-container {
+        border: 1px solid black !important;
+    }
+
+    body.print-diagram .timeline-sidebar {
+        border-right: 1px solid black !important;
+    }
+
+    body.print-diagram .row-label-container,
+    body.print-diagram .timeline-row-track {
+        border-bottom: 1px solid #ccc !important;
+    }
+
+    body.print-diagram .sidebar-header-row {
+        border-bottom: 1px solid black !important;
+    }
+
+    body.print-diagram .timeline-ruler {
+        background: #e8e8e8 !important;
+        border-bottom: 1px solid black !important;
+    }
+
+    /* Mise à l'échelle du diagramme pour tenir dans la page A4 paysage */
+    body.print-diagram .print-diagram-content {
+        width: 100% !important;
+        max-width: 257mm !important; /* Largeur A4 paysage - marges */
+        overflow: visible !important;
+    }
+
+    body.print-diagram .print-diagram-content .timeline-container {
+        transform-origin: top left;
+        width: 100% !important;
+    }
+
+    body.print-diagram .print-diagram-content .timeline-layout {
+        width: 100% !important;
+    }
+
+    body.print-diagram .print-diagram-content .timeline-scroll-area {
+        overflow: visible !important;
+        width: auto !important;
+        flex: 1 !important;
+    }
+
+    body.print-diagram .print-diagram-content .timeline-track-container {
+        width: 100% !important;
+    }
+}
+
+/* Format A4 paysage spécifique pour le diagramme */
+@page {
+    size: A4 portrait;
+    margin: 10mm;
+}
+
+@media print {
+    body.print-diagram {
+        size: A4 landscape;
+    }
+}
+
+@page diagram-landscape {
+    size: A4 landscape;
+    margin: 10mm;
 }
 
 /* Phasage bulle sidebar styles */
