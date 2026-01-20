@@ -361,6 +361,11 @@ function App() {
             return JSON.parse(localStorage.getItem('recentImageDirs') || '[]');
         } catch { return []; }
     });
+    const [recentSaveDirs, setRecentSaveDirs] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('recentSaveDirs') || '[]');
+        } catch { return []; }
+    });
 
     // Fonction pour ajouter un répertoire à la liste des récents
     const addRecentDirectory = useCallback((type, dirName, dirHandle) => {
@@ -386,8 +391,11 @@ function App() {
             case 'image':
                 updateList(recentImageDirs, setRecentImageDirs, 'recentImageDirs');
                 break;
+            case 'save':
+                updateList(recentSaveDirs, setRecentSaveDirs, 'recentSaveDirs');
+                break;
         }
-    }, [recentOpenDirs, recentImportDirs, recentImageDirs]);
+    }, [recentOpenDirs, recentImportDirs, recentImageDirs, recentSaveDirs]);
 
     // Fonctions pour sauvegarder/restaurer les handles de répertoire via IndexedDB
     const openIndexedDB = useCallback(() => {
@@ -619,6 +627,8 @@ function App() {
                 if (dirHandle) {
                     lastSaveDirectoryRef.current = dirHandle;
                     await saveDirectoryHandle('lastSaveDirectory', dirHandle);
+                    // Ajouter aux répertoires récents d'enregistrement
+                    addRecentDirectory('save', dirHandle.name, dirHandle);
                 }
             } catch (e) {
                 // getParent n'est pas toujours disponible
@@ -637,7 +647,81 @@ function App() {
                 alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
             }
         }
-    }, [intersectionName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle]);
+    }, [intersectionName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle, addRecentDirectory]);
+
+    // Enregistrer un fichier dans un répertoire récent
+    const handleSaveFileToRecentDir = useCallback(async (dirIndex) => {
+        if (!window.showSaveFilePicker) {
+            alert('API File System non supportée par ce navigateur');
+            return;
+        }
+
+        try {
+            const dirInfo = recentSaveDirs[dirIndex];
+            if (!dirInfo) return;
+
+            const options = {
+                suggestedName: `${intersectionName || 'projet'}.json`,
+                types: [{
+                    description: 'Fichier Projet JSON',
+                    accept: { 'application/json': ['.json'] }
+                }]
+            };
+
+            // Essayer de récupérer le handle du répertoire depuis IndexedDB
+            const savedHandle = await loadDirectoryHandle(`recentSaveDir_${dirIndex}`);
+            if (savedHandle) {
+                options.startIn = savedHandle;
+            }
+
+            const fileHandle = await window.showSaveFilePicker(options);
+
+            // Préparer les données du projet
+            const fullState = getFullState();
+            const projectData = {
+                intersectionName: fullState.intersectionName,
+                groups: fullState.groups,
+                cycleLength: fullState.cycleLength,
+                conflictMatrix: fullState.conflictMatrix,
+                pfTabs: fullState.pfTabs,
+                activePFId: fullState.activePFId,
+                intersectionImage: fullState.intersectionImage,
+                intersectionArrows: fullState.intersectionArrows,
+                trafficDatasets: fullState.trafficDatasets,
+                activeTrafficDataset: fullState.activeTrafficDataset
+            };
+
+            // Écrire le fichier
+            const writable = await fileHandle.createWritable();
+            await writable.write(JSON.stringify(projectData, null, 2));
+            await writable.close();
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastSaveDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastSaveDirectory', dirHandle);
+                    addRecentDirectory('save', dirHandle.name, dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
+
+            // Mettre à jour le nom du projet
+            const savedName = fileHandle.name.replace(/\.json$/i, '');
+            setIntersectionName(savedName);
+
+            // Sauvegarder aussi dans localStorage pour cohérence
+            saveProject(savedName);
+
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur sauvegarde fichier:', e);
+                alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
+            }
+        }
+    }, [recentSaveDirs, intersectionName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject]);
 
     // Get all saved green waves (sorted by most recent first)
     const getSavedGreenWaves = () => {
@@ -941,6 +1025,12 @@ function App() {
                     const dirIndex = parseInt(action.replace('importFromRecentDir:', ''));
                     if (recentImportDirs[dirIndex]) {
                         handleImportExcelFromRecentDir(dirIndex);
+                    }
+                } else if (action.startsWith('saveToRecentDir:')) {
+                    // Save to recent directory
+                    const dirIndex = parseInt(action.replace('saveToRecentDir:', ''));
+                    if (recentSaveDirs[dirIndex]) {
+                        handleSaveFileToRecentDir(dirIndex);
                     }
                 } else {
                     console.log('Action non implémentée:', action);
@@ -1545,6 +1635,7 @@ function App() {
                     recentDirectories={getRecentDirectoriesForMenu()}
                     recentOpenDirs={recentOpenDirs}
                     recentImportDirs={recentImportDirs}
+                    recentSaveDirs={recentSaveDirs}
                     currentUser={currentUser}
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
@@ -2331,12 +2422,30 @@ function App() {
                     </section>
 
                     <section className="help-section">
+                        <h4>Authentification</h4>
+                        <p>L'application nécessite une connexion pour accéder aux fonctionnalités :</p>
+                        <ul>
+                            <li><strong>Premier utilisateur :</strong> Le premier compte créé devient automatiquement administrateur</li>
+                            <li><strong>Niveaux de permissions :</strong></li>
+                            <ul>
+                                <li><em>Lecture seule :</em> Consultation uniquement (ouvrir, imprimer, onde verte)</li>
+                                <li><em>Modification partielle :</em> Ouvrir, enregistrer, importer Excel, imprimer, dupliquer</li>
+                                <li><em>Modification totale :</em> Toutes les fonctionnalités + gestion des utilisateurs</li>
+                            </ul>
+                            <li><strong>Gestion des utilisateurs :</strong> Menu "Utilisateurs" (admin uniquement) pour créer, modifier ou supprimer des comptes</li>
+                            <li><strong>Import/Export :</strong> Possibilité d'exporter et importer la liste des utilisateurs en JSON</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
                         <h4>Sauvegarde et projets</h4>
                         <ul>
                             <li><strong>Sauvegarde automatique :</strong> Les données sont sauvegardées automatiquement dans le navigateur</li>
                             <li><strong>Projets nommés :</strong> Utilisez l'onglet Projets pour sauvegarder et charger des configurations</li>
                             <li><strong>Export :</strong> Menu Fichier → Exporter pour télécharger un fichier JSON</li>
                             <li><strong>Import JSON :</strong> Menu Fichier → Importer pour charger un fichier JSON</li>
+                            <li><strong>Répertoires récents :</strong> Les menus "Ouvrir", "Importer Excel" et "Charger image" proposent les 5 derniers répertoires utilisés</li>
+                            <li><strong>Sauvegarde complète :</strong> Chaque plan de feux (PF) conserve sa propre matrice de dégagement et ses données de diagramme</li>
                         </ul>
                     </section>
 
@@ -2355,6 +2464,7 @@ function App() {
                             <li>Colonne O : Second jeu de données trafic, nommé par la cellule O3</li>
                         </ul>
                         <p><strong>Synchronisation automatique :</strong> Quand vous changez d'onglet PF (PF1, PF2...), le jeu de données trafic "Associé à" se synchronise automatiquement avec l'onglet actif si un dataset du même nom existe.</p>
+                        <p><strong>Groupes :</strong> Tous les groupes de 1 au nombre total (cellule H2) sont importés, y compris les groupes vides (sans nom ni configuration).</p>
                     </section>
                 </div>
                 <div className="modal-actions" style={{ marginTop: '20px' }}>

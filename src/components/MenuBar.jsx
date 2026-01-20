@@ -9,6 +9,7 @@ const MenuBar = ({
     recentDirectories = [],
     recentOpenDirs = [],
     recentImportDirs = [],
+    recentSaveDirs = [],
     currentUser = null,
     hasPermission = () => true,
     onManageUsers
@@ -122,6 +123,19 @@ const MenuBar = ({
         ] : [])
     ];
 
+    // Build recent save directories submenu
+    const recentSaveDirsSubmenu = [
+        { label: 'Parcourir...', action: 'save' },
+        ...(recentSaveDirs.length > 0 ? [
+            { type: 'separator' },
+            { label: 'Répertoires récents', type: 'header' },
+            ...recentSaveDirs.map((dir, idx) => ({
+                label: dir.name,
+                action: `saveToRecentDir:${idx}`
+            }))
+        ] : [])
+    ];
+
     const menus = {
         fichier: {
             label: 'Fichier',
@@ -134,7 +148,13 @@ const MenuBar = ({
                     submenu: recentOpenDirsSubmenu
                 }] : [{ label: 'Ouvrir...', action: 'open' }]),
                 { label: 'Ouvrir depuis le local storage...', action: 'openLocalStorage' },
-                { label: 'Enregistrer', action: 'save', disabled: !hasPermission('canSave') },
+                ...(recentSaveDirs.length > 0 ? [{
+                    label: 'Enregistrer...',
+                    type: 'submenu',
+                    submenuId: 'saveRecent',
+                    submenu: recentSaveDirsSubmenu,
+                    disabled: !hasPermission('canSave')
+                }] : [{ label: 'Enregistrer', action: 'save', disabled: !hasPermission('canSave') }]),
                 { type: 'separator' },
                 ...(recentImportDirs.length > 0 ? [{
                     label: 'Importer Excel...',
@@ -143,13 +163,6 @@ const MenuBar = ({
                     submenu: recentImportDirsSubmenu,
                     disabled: !hasPermission('canImportExcel')
                 }] : [{ label: 'Importer Excel...', action: 'import', disabled: !hasPermission('canImportExcel') }]),
-                {
-                    label: 'Importer fichier depuis...',
-                    type: 'submenu',
-                    submenuId: 'importFrom',
-                    submenu: recentDirsSubmenu,
-                    disabled: !hasPermission('canImportExcel')
-                },
                 { label: 'Exporter...', action: 'export' },
                 { type: 'separator' },
                 { label: 'Imprimer la matrice...', action: 'printMatrix' },
