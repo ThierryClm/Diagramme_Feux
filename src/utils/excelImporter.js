@@ -331,41 +331,96 @@ function parseGroupsSheet(sheetData, result) {
     // Groups are at rows 6, 8, 10... (every 2 rows, with blank line between)
     const groups = [];
     let currentRow = 5; // Start at row 6 (index 5)
+    let groupId = 1; // Compteur de groupe de feu
 
     console.log('Starting to parse groups from row 6...');
 
-    while (currentRow < sheetData.length) {
-        const row = sheetData[currentRow];
+    // Si on a un nombre de groupes attendu, on crée tous les groupes de 1 à ce nombre
+    if (expectedGroupCount !== null && expectedGroupCount > 0) {
+        console.log(`Creating ${expectedGroupCount} groups (including empty ones)`);
 
-        console.log(`Checking row ${currentRow + 1}:`, row ? row.slice(0, 7) : 'undefined');
+        for (let i = 0; i < expectedGroupCount; i++) {
+            const rowIndex = 5 + (i * 2); // Lignes 6, 8, 10... (index 5, 7, 9...)
+            const row = sheetData[rowIndex];
 
-        // Debug: show columns B-F for this row
-        if (row) {
-            console.log(`  Col B (idx 0): "${row[COL_GF]}"  Col C (idx 1): "${row[COL_NAME]}"  Col D (idx 2): "${row[COL_TYPE]}"`);
-            console.log(`  Col E (idx 3): "${row[COL_MINGREEN]}"  Col F (idx 4): "${row[COL_ORANGE]}"`);
+            console.log(`Checking row ${rowIndex + 1} for group ${i + 1}:`, row ? row.slice(0, 7) : 'undefined');
+
+            // Extraire les données si la ligne existe
+            const gfNumber = i + 1;
+            let groupName = '';
+            let type = '';
+            let minGreen = 0;
+            let orange = 0;
+
+            if (row) {
+                groupName = String(row[COL_NAME] || '').trim();
+                const typeRaw = row[COL_TYPE];
+                type = normalizeGroupType(typeRaw) || '';
+                // Ne mettre les valeurs que si elles existent dans le fichier
+                const minGreenRaw = row[COL_MINGREEN];
+                const orangeRaw = row[COL_ORANGE];
+                minGreen = (minGreenRaw !== '' && minGreenRaw !== null && minGreenRaw !== undefined) ? parseNumber(minGreenRaw, 0) : 0;
+                orange = (orangeRaw !== '' && orangeRaw !== null && orangeRaw !== undefined) ? parseNumber(orangeRaw, 0) : 0;
+
+                console.log(`  Col B (idx 0): "${row[COL_GF]}"  Col C (idx 1): "${row[COL_NAME]}"  Col D (idx 2): "${row[COL_TYPE]}"`);
+                console.log(`  Col E (idx 3): "${row[COL_MINGREEN]}"  Col F (idx 4): "${row[COL_ORANGE]}"`);
+            }
+
+            // Groupe vide : aucune valeur par défaut, juste l'ID
+            const group = {
+                id: gfNumber,
+                name: groupName,
+                type: type,
+                minGreen: minGreen,
+                offset: 0,
+                trafficStream: '',
+                durations: {
+                    green: 0,
+                    orange: orange,
+                    red: 0
+                }
+            };
+
+            console.log(`Added group ${gfNumber}:`, group);
+            groups.push(group);
         }
+    } else {
+        // Fallback: parcourir les lignes jusqu'à trouver une ligne vide
+        while (currentRow < sheetData.length) {
+            const row = sheetData[currentRow];
 
-        // Check if this row has a GF number
-        if (row && row[COL_GF] !== '' && row[COL_GF] !== null && row[COL_GF] !== undefined) {
-            const gfNumber = parseNumber(row[COL_GF], groups.length + 1);
-            const groupName = String(row[COL_NAME] || '').trim();
-            const typeRaw = row[COL_TYPE];
-            const type = normalizeGroupType(typeRaw);
-            const minGreen = parseNumber(row[COL_MINGREEN], 6);
-            const orange = parseNumber(row[COL_ORANGE], 3);
+            console.log(`Checking row ${currentRow + 1}:`, row ? row.slice(0, 7) : 'undefined');
 
-            console.log(`Row ${currentRow + 1}, Parsed: GF=${gfNumber}, Name="${groupName}", TypeRaw="${typeRaw}", Type="${type}", MinGreen=${minGreen}, Orange=${orange}`);
+            // Debug: show columns B-F for this row
+            if (row) {
+                console.log(`  Col B (idx 0): "${row[COL_GF]}"  Col C (idx 1): "${row[COL_NAME]}"  Col D (idx 2): "${row[COL_TYPE]}"`);
+                console.log(`  Col E (idx 3): "${row[COL_MINGREEN]}"  Col F (idx 4): "${row[COL_ORANGE]}"`);
+            }
 
-            if (gfNumber && groupName) {
+            // Check if this row has a GF number
+            if (row && row[COL_GF] !== '' && row[COL_GF] !== null && row[COL_GF] !== undefined) {
+                const gfNumber = parseNumber(row[COL_GF], groups.length + 1);
+                const groupName = String(row[COL_NAME] || '').trim();
+                const typeRaw = row[COL_TYPE];
+                const type = normalizeGroupType(typeRaw) || '';
+                // Ne mettre les valeurs que si elles existent dans le fichier
+                const minGreenRaw = row[COL_MINGREEN];
+                const orangeRaw = row[COL_ORANGE];
+                const minGreen = (minGreenRaw !== '' && minGreenRaw !== null && minGreenRaw !== undefined) ? parseNumber(minGreenRaw, 0) : 0;
+                const orange = (orangeRaw !== '' && orangeRaw !== null && orangeRaw !== undefined) ? parseNumber(orangeRaw, 0) : 0;
+
+                console.log(`Row ${currentRow + 1}, Parsed: GF=${gfNumber}, Name="${groupName}", TypeRaw="${typeRaw}", Type="${type}", MinGreen=${minGreen}, Orange=${orange}`);
+
+                // Groupe vide : aucune valeur par défaut
                 const group = {
                     id: gfNumber,
                     name: groupName,
                     type: type,
                     minGreen: minGreen,
-                    offset: 0, // Will be calculated from diagram
-                    trafficStream: '', // Will be filled from Trafic sheet
+                    offset: 0,
+                    trafficStream: '',
                     durations: {
-                        green: 0, // Will be calculated from diagram
+                        green: 0,
                         orange: orange,
                         red: 0
                     }
@@ -374,15 +429,15 @@ function parseGroupsSheet(sheetData, result) {
                 console.log('Added group:', group);
                 groups.push(group);
             }
-        }
 
-        // Skip to next group (every 2 rows)
-        currentRow += 2;
+            // Skip to next group (every 2 rows)
+            currentRow += 2;
 
-        // Stop if we have reached the expected number of groups
-        if (expectedGroupCount !== null && groups.length >= expectedGroupCount) {
-            console.log('Reached expected group count, stopping');
-            break;
+            // Arrêter après 32 groupes maximum
+            if (groups.length >= 32) {
+                console.log('Reached maximum group count (32), stopping');
+                break;
+            }
         }
     }
 
