@@ -635,6 +635,69 @@
     pointer-events: none;
 }
 
+/* Contrôle de flot */
+.controle-flot-wrapper {
+    position: absolute;
+    pointer-events: auto;
+    z-index: 15;
+}
+
+.controle-flot-intermittent {
+    position: absolute;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 10;
+    background: repeating-linear-gradient(
+        90deg,
+        #FFD700,
+        #FFD700 var(--stripe-width, 10px),
+        #808080 var(--stripe-width, 10px),
+        #808080 calc(var(--stripe-width, 10px) * 2)
+    );
+    box-shadow: 0 0 3px rgba(255, 215, 0, 0.5);
+}
+
+.controle-flot-orange {
+    position: absolute;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 10;
+    background: linear-gradient(to bottom, #FF8C00, #CC7000);
+    box-shadow: 0 0 3px rgba(255, 140, 0, 0.5);
+}
+
+.controle-flot-red {
+    position: absolute;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 10;
+    background: linear-gradient(to bottom, #ff0000, #cc0000);
+    box-shadow: 0 0 3px rgba(255, 0, 0, 0.5);
+}
+
+.controle-flot-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.65em;
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8), 0 0 1px #000;
+    white-space: nowrap;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.controle-flot-wrapper.highlighted,
+.controle-flot-intermittent.highlighted,
+.controle-flot-orange.highlighted,
+.controle-flot-red.highlighted {
+    outline: 2px solid #ffcc00;
+    outline-offset: 1px;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
 /* Highlighted state for action overlays */
 .cycle-block.highlighted,
 .brace-marker.highlighted,

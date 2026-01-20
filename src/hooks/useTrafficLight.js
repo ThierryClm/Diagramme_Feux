@@ -929,6 +929,13 @@ export const useTrafficLight = () => {
         ));
     }, []);
 
+    // Set PF color (for validation)
+    const setPFColor = useCallback((pfId, color) => {
+        setPfTabs(prev => prev.map(pf =>
+            pf.id === pfId ? { ...pf, color: color } : pf
+        ));
+    }, []);
+
     // Simulation functions
     const toggleSimulationAction = useCallback((actionId) => {
         setSimulationSelectedActions(prev => {
@@ -983,10 +990,23 @@ export const useTrafficLight = () => {
         localStorage.setItem('trafficActivePF', activePFId.toString());
     }, [pfTabs, activePFId]);
 
+    // Flag to prevent sync during initial load
+    const isInitialLoadRef = useRef(true);
+    useEffect(() => {
+        // Allow sync after a short delay to let initial data settle
+        const timer = setTimeout(() => {
+            isInitialLoadRef.current = false;
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
     // Synchronize current conflict matrix with active PF tab
     // Use a ref to prevent infinite loops
     const lastSyncedMatrixRef = useRef(null);
     useEffect(() => {
+        // Skip during initial load
+        if (isInitialLoadRef.current) return;
+
         // Only sync if we have a valid active PF and the matrix has changed
         const matrixKey = JSON.stringify(conflictMatrix);
         if (lastSyncedMatrixRef.current === matrixKey) {
@@ -1017,6 +1037,9 @@ export const useTrafficLight = () => {
     // Synchronize current groups (diagram data) with active PF tab
     const lastSyncedGroupsRef = useRef(null);
     useEffect(() => {
+        // Skip during initial load
+        if (isInitialLoadRef.current) return;
+
         // Build diagram data from groups
         const diagramData = groups.map(g => ({
             groupId: g.id,
@@ -1546,6 +1569,7 @@ export const useTrafficLight = () => {
         duplicatePF,
         deletePF,
         renamePF,
+        setPFColor,
         // Undo/Redo
         undo,
         redo,

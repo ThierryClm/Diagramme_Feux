@@ -132,6 +132,18 @@
     color: #2ecc71;
 }
 
+.status-ok.status-clickable {
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.status-ok.status-clickable:hover {
+    background-color: rgba(46, 204, 113, 0.2);
+    transform: scale(1.05);
+}
+
 .user-info {
     display: flex;
     align-items: center;

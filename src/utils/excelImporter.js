@@ -37,8 +37,11 @@ function normalizeActionName(actionName) {
         'instant coordination': 'Instant Co',
         'instant co': 'Instant Co',
         'seconde lucarne': 'Seconde lucarne',
-        'signal aide conduite': 'Signa d\'aide à la conduite',
-        'signa aide conduite': 'Signa d\'aide à la conduite',
+        'signal aide conduite': 'Signal aide conduite',
+        'signa aide conduite': 'Signal aide conduite',
+        'signa d\'aide à la conduite': 'Signal aide conduite',
+        'controle de flot': 'Contrôle de flot',
+        'contrôle de flot': 'Contrôle de flot',
     };
 
     // Check for exact match (case-insensitive)

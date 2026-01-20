@@ -53,6 +53,7 @@ function App() {
         duplicatePF,
         deletePF,
         renamePF,
+        setPFColor,
         undo,
         redo,
         canUndo,
@@ -510,13 +511,18 @@ function App() {
                 ...data
             });
 
+            // Restaurer la hauteur du diagramme si présente
+            if (data.diagramHeight !== undefined) {
+                setDiagramHeight(data.diagramHeight);
+            }
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier:', e);
                 alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
             }
         }
-    }, [loadFullState, saveDirectoryHandle, addRecentDirectory]);
+    }, [loadFullState, saveDirectoryHandle, addRecentDirectory, setDiagramHeight]);
 
     // Ouvrir un fichier depuis un répertoire récent
     const handleOpenFileFromRecentDir = useCallback(async (dirIndex) => {
@@ -566,13 +572,18 @@ function App() {
                 ...data
             });
 
+            // Restaurer la hauteur du diagramme si présente
+            if (data.diagramHeight !== undefined) {
+                setDiagramHeight(data.diagramHeight);
+            }
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier:', e);
                 alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
             }
         }
-    }, [recentOpenDirs, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, loadFullState]);
+    }, [recentOpenDirs, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, loadFullState, setDiagramHeight]);
 
     // Enregistrer un fichier JSON avec File System Access API
     const handleSaveFileWithPicker = useCallback(async () => {
@@ -613,7 +624,8 @@ function App() {
                 intersectionImage: fullState.intersectionImage,
                 intersectionArrows: fullState.intersectionArrows,
                 trafficDatasets: fullState.trafficDatasets,
-                activeTrafficDataset: fullState.activeTrafficDataset
+                activeTrafficDataset: fullState.activeTrafficDataset,
+                diagramHeight: diagramHeight
             };
 
             // Écrire le fichier
@@ -688,7 +700,8 @@ function App() {
                 intersectionImage: fullState.intersectionImage,
                 intersectionArrows: fullState.intersectionArrows,
                 trafficDatasets: fullState.trafficDatasets,
-                activeTrafficDataset: fullState.activeTrafficDataset
+                activeTrafficDataset: fullState.activeTrafficDataset,
+                diagramHeight: diagramHeight
             };
 
             // Écrire le fichier
@@ -1738,7 +1751,20 @@ function App() {
                             {conflicts.length} CONFLITS !
                         </div>
                     ) : (
-                        <div className="status-ok">Valide</div>
+                        <div
+                            className="status-ok status-clickable"
+                            onClick={() => {
+                                const activePF = pfTabs.find(pf => pf.id === activePFId);
+                                if (activePF?.color) {
+                                    setPFColor(activePFId, null);
+                                } else {
+                                    setPFColor(activePFId, '#4CAF50');
+                                }
+                            }}
+                            title={pfTabs.find(pf => pf.id === activePFId)?.color ? "Cliquez pour invalider ce plan de feux" : "Cliquez pour valider ce plan de feux"}
+                        >
+                            {pfTabs.find(pf => pf.id === activePFId)?.color ? 'Validé' : 'Valider'}
+                        </div>
                     )}
                 </div>
 
@@ -2273,7 +2299,7 @@ function App() {
                             <div className="legend-signa-orange"></div>
                             <div className="legend-signa-blue"></div>
                         </div>
-                        <span>Signa d'aide à la conduite</span>
+                        <span>Signal aide conduite</span>
                     </div>
                     <div className="legend-item">
                         <div className="legend-preview legend-bande-debut"></div>
@@ -2327,16 +2353,17 @@ function App() {
                     </section>
 
                     <section className="help-section">
-                        <h4>Tableau des actions</h4>
+                        <h4>Conditions de micro-régulation</h4>
                         <p>Permet de définir des actions spéciales sur le diagramme. Survolez une ligne pour mettre en surbrillance l'action correspondante dans le diagramme (et inversement).</p>
                         <ul>
                             <li><strong>Adaptatif vertical :</strong> Zone d'adaptation du temps de vert (rectangle bleu). Utilisez Plage1/Plage2 pour définir les groupes concernés.</li>
+                            <li><strong>Contrôle de flot :</strong> Contrôle du flux de trafic.</li>
                             <li><strong>Seconde lucarne :</strong> Deuxième phase de vert (vert foncé + orange). Crée une barre supplémentaire sur la ligne du groupe.</li>
                             <li><strong>Escamotage de phase :</strong> Phase pouvant être supprimée (rectangle gris transparent sur toute la hauteur).</li>
                             <li><strong>Escamotage :</strong> Escamotage lié à un groupe spécifique. Définissez GF (source) et Action GF 1 (cible) pour afficher les flèches de dépendance.</li>
                             <li><strong>Ouverture anticipée :</strong> Anticipation du passage au vert (barre hachurée verte).</li>
                             <li><strong>Fermeture anticipée :</strong> Anticipation du passage au rouge (accolade orange sous la barre).</li>
-                            <li><strong>Signa d'aide à la conduite :</strong> Signal d'information conducteur (orange clignotant + bleu fixe).</li>
+                            <li><strong>Signal aide conduite :</strong> Signal d'information conducteur (orange clignotant + bleu fixe).</li>
                             <li><strong>Début/Fin de bande passante :</strong> Lignes verticales verte/rouge marquant la coordination.</li>
                             <li><strong>Priorité piétons :</strong> Action pour la priorité aux piétons.</li>
                             <li><strong>Instant Co :</strong> Point de synchronisation dans le cycle.</li>

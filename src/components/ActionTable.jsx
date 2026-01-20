@@ -12,6 +12,7 @@ const autoResizeTextarea = (textarea) => {
 const ACTION_OPTIONS = [
     '',
     'Adaptatif vertical',
+    'Contrôle de flot',
     'Début de bande passante',
     'Escamotage',
     'Escamotage de phase',
@@ -22,19 +23,20 @@ const ACTION_OPTIONS = [
     'Point de repos',
     'Priorité piétons',
     'Seconde lucarne',
-    'Signa d\'aide à la conduite',
+    'Signal aide conduite',
     'Synchro BTS'
 ];
 
 // Actions where all Action GF fields (1, 2, 3, 4) should be disabled
 const GF_DISABLED_ACTIONS = [
     'Adaptatif vertical',
+    'Contrôle de flot',
     'Escamotage de phase',
     'Ouverture anticipée',
     'Point de repos',
     'Priorité piétons',
     'Seconde lucarne',
-    'Signa d\'aide à la conduite',
+    'Signal aide conduite',
     'Synchro BTS'
 ];
 
@@ -46,6 +48,7 @@ const GF234_DISABLED_ACTIONS = [
 
 // Actions where Plage 1 and Plage 2 fields should be disabled
 const PLAGE_DISABLED_ACTIONS = [
+    'Contrôle de flot',
     'Début de bande passante',
     'Escamotage',
     'Escamotage de phase',
@@ -54,7 +57,7 @@ const PLAGE_DISABLED_ACTIONS = [
     'Ouverture anticipée',
     'Priorité piétons',
     'Seconde lucarne',
-    'Signa d\'aide à la conduite'
+    'Signal aide conduite'
 ];
 
 // Check if a row has any data
@@ -160,7 +163,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
 
     return (
         <div className="action-table-container">
-            <h3>Tableau des Actions</h3>
+            <h3>Conditions de micro-régulation</h3>
             <div className="action-table-scroll">
                 <table className="action-table">
                     <thead>
