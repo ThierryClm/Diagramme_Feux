@@ -996,7 +996,7 @@ export const useTrafficLight = () => {
         // Allow sync after a short delay to let initial data settle
         const timer = setTimeout(() => {
             isInitialLoadRef.current = false;
-        }, 1000);
+        }, 2000);
         return () => clearTimeout(timer);
     }, []);
 

@@ -2330,8 +2330,10 @@ function App() {
                         <ul>
                             <li><strong>En-tête :</strong> Nom du carrefour, nombre de groupes, durée du cycle, zoom</li>
                             <li><strong>Panneau gauche :</strong> Onglets Projets, Configuration et Trafic</li>
-                            <li><strong>Zone centrale :</strong> Diagramme temporel et tableau des actions</li>
+                            <li><strong>Zone centrale :</strong> Diagramme temporel et tableau des conditions de micro-régulation</li>
                             <li><strong>Onglets PF :</strong> Gérez plusieurs plans de feux (PF1, PF2...) avec le bouton "+"</li>
+                            <li><strong>Indicateur Valider/Validé :</strong> Cliquez sur "Valider" (quand aucun conflit) pour marquer l'onglet PF en vert. Cliquez à nouveau pour annuler la validation.</li>
+                            <li><strong>Séparateur ajustable :</strong> La position du séparateur entre le diagramme et les conditions de micro-régulation est sauvegardée avec le projet.</li>
                         </ul>
                     </section>
 
@@ -2357,7 +2359,7 @@ function App() {
                         <p>Permet de définir des actions spéciales sur le diagramme. Survolez une ligne pour mettre en surbrillance l'action correspondante dans le diagramme (et inversement).</p>
                         <ul>
                             <li><strong>Adaptatif vertical :</strong> Zone d'adaptation du temps de vert (rectangle bleu). Utilisez Plage1/Plage2 pour définir les groupes concernés.</li>
-                            <li><strong>Contrôle de flot :</strong> Contrôle du flux de trafic.</li>
+                            <li><strong>Contrôle de flot :</strong> Contrôle du flux de trafic. Affiche une barre intermittente jaune/gris de DEB à (DEB + Vert minimum), puis orange pour la durée de jaune, puis rouge jusqu'à FIN.</li>
                             <li><strong>Seconde lucarne :</strong> Deuxième phase de vert (vert foncé + orange). Crée une barre supplémentaire sur la ligne du groupe.</li>
                             <li><strong>Escamotage de phase :</strong> Phase pouvant être supprimée (rectangle gris transparent sur toute la hauteur).</li>
                             <li><strong>Escamotage :</strong> Escamotage lié à un groupe spécifique. Définissez GF (source) et Action GF 1 (cible) pour afficher les flèches de dépendance.</li>
@@ -2366,8 +2368,9 @@ function App() {
                             <li><strong>Signal aide conduite :</strong> Signal d'information conducteur (orange clignotant + bleu fixe).</li>
                             <li><strong>Début/Fin de bande passante :</strong> Lignes verticales verte/rouge marquant la coordination.</li>
                             <li><strong>Priorité piétons :</strong> Action pour la priorité aux piétons.</li>
-                            <li><strong>Instant Co :</strong> Point de synchronisation dans le cycle.</li>
-                            <li><strong>Synchro BTS :</strong> Synchronisation avec le système BTS.</li>
+                            <li><strong>Instant Co :</strong> Point de synchronisation dans le cycle. Si Plage 1/2 non renseignées, s'applique à tous les groupes.</li>
+                            <li><strong>Point de repos :</strong> Point de repos dans le cycle. Si Plage 1/2 non renseignées, s'applique à tous les groupes.</li>
+                            <li><strong>Synchro BTS :</strong> Synchronisation avec le système BTS. Si Plage 1/2 non renseignées, s'applique à tous les groupes.</li>
                         </ul>
                     </section>
 
