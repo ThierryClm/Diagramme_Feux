@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './LoginModal.css';
 
 const LoginModal = ({ onLogin, onCreateUser, hasUsers, isLoading }) => {
@@ -9,10 +9,14 @@ const LoginModal = ({ onLogin, onCreateUser, hasUsers, isLoading }) => {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Mettre à jour le mode si hasUsers change
-    if (!hasUsers && mode === 'login') {
-        setMode('register');
-    }
+    // Mettre à jour le mode si hasUsers change après le chargement
+    useEffect(() => {
+        if (hasUsers && mode === 'register') {
+            setMode('login');
+        } else if (!hasUsers && mode === 'login') {
+            setMode('register');
+        }
+    }, [hasUsers]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

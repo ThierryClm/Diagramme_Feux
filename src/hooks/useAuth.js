@@ -121,9 +121,23 @@ export const useAuth = () => {
         setUsers(usersData);
     }, []);
 
-    // Vérifier s'il y a des utilisateurs
+    // Vérifier s'il y a des utilisateurs (vérifie directement localStorage pour éviter les problèmes de timing)
     const hasUsers = useCallback(() => {
-        return Object.keys(users).length > 0;
+        // Vérifier d'abord l'état local
+        if (Object.keys(users).length > 0) {
+            return true;
+        }
+        // Sinon vérifier directement localStorage (au cas où l'état n'est pas encore synchronisé)
+        try {
+            const savedUsers = localStorage.getItem('auth_users');
+            if (savedUsers) {
+                const parsedUsers = JSON.parse(savedUsers);
+                return Object.keys(parsedUsers).length > 0;
+            }
+        } catch (e) {
+            console.error('Erreur vérification utilisateurs:', e);
+        }
+        return false;
     }, [users]);
 
     // Connexion
