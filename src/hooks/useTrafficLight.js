@@ -530,32 +530,69 @@ export const useTrafficLight = () => {
     // Load full state (for duplication)
     const loadFullState = (state) => {
         try {
-            if (state.intersectionName) setIntersectionName(state.intersectionName);
-            if (state.groups) setGroups(state.groups);
-            if (state.cycleLength) setCycleLength(state.cycleLength);
-            if (state.conflictMatrix) {
+            // Toujours mettre à jour le nom (avec valeur par défaut si absent)
+            setIntersectionName(state.intersectionName || "Nouveau Carrefour");
+
+            // Toujours mettre à jour les groupes (avec valeur par défaut si absent)
+            if (state.groups && Array.isArray(state.groups) && state.groups.length > 0) {
+                setGroups(state.groups);
+            } else {
+                // Réinitialiser avec 5 groupes par défaut
+                setGroups(Array.from({ length: 5 }, (_, i) => createGroup(i + 1)));
+            }
+
+            // Toujours mettre à jour la durée du cycle
+            setCycleLength(state.cycleLength || DEFAULT_CYCLE);
+
+            // Mettre à jour la matrice de conflits
+            if (state.conflictMatrix && Array.isArray(state.conflictMatrix)) {
                 const cleanedMatrix = state.conflictMatrix.map(row => row.map(val => {
                     if (val === 0 || val === '0') return '';
                     if (typeof val === 'number' && (val < 3 || val > 20)) return '';
                     return val;
                 }));
                 setConflictMatrix(cleanedMatrix);
+            } else {
+                // Réinitialiser la matrice selon le nombre de groupes
+                const groupCount = (state.groups && state.groups.length) || 5;
+                setConflictMatrix(Array.from({ length: groupCount }, () => Array(groupCount).fill('')));
             }
+
             // Handle new pfTabs format or old actionData format
-            if (state.pfTabs) {
+            if (state.pfTabs && Array.isArray(state.pfTabs) && state.pfTabs.length > 0) {
                 setPfTabs(state.pfTabs);
-                setActivePFId(state.activePFId || 1);  // Always set activePFId
-            } else if (state.actionData) {
+                setActivePFId(state.activePFId || 1);
+            } else if (state.actionData && Array.isArray(state.actionData)) {
                 setPfTabs([{ id: 1, name: 'PF1', data: state.actionData }]);
                 setActivePFId(1);
+            } else {
+                // Réinitialiser avec un PF vide (structure inline pour éviter dépendance)
+                const emptyRow = (id) => ({
+                    id, gf: '', action: '', description: '', deb: '', fin: '',
+                    abrv: '', micro: '', plage1: '', plage2: '',
+                    actGf1: '', actGf1Gf2: '', actGf1Gf3: '', actGf1Gf4: ''
+                });
+                setPfTabs([{ id: 1, name: 'PF1', data: Array.from({ length: 20 }, (_, i) => emptyRow(i + 1)) }]);
+                setActivePFId(1);
             }
+
             // Load traffic datasets if provided
             if (state.trafficDatasets) {
                 setTrafficDatasets(state.trafficDatasets);
+            } else {
+                // Réinitialiser les datasets de trafic
+                setTrafficDatasets({});
             }
+
             // Reset simulation state when loading full state
             setSimulationEnabled(false);
             setSimulationSelectedActions([]);
+
+            // Reset dependency gap if provided
+            if (state.dependencyGap !== undefined) {
+                setDependencyGap(state.dependencyGap);
+            }
+
             return true;
         } catch (e) {
             console.error("Load full state failed", e);
@@ -563,14 +600,19 @@ export const useTrafficLight = () => {
         }
     };
 
-    // Get full state (for duplication)
+    // Get full state (for saving/duplication)
     const getFullState = () => ({
         intersectionName,
         groups,
         cycleLength,
         conflictMatrix,
         pfTabs,
-        activePFId
+        activePFId,
+        intersectionImage,
+        intersectionArrows,
+        trafficDatasets,
+        activeTrafficDataset,
+        dependencyGap
         // Note: simulation state is NOT included (per user request)
     });
 
@@ -940,6 +982,75 @@ export const useTrafficLight = () => {
         localStorage.setItem('trafficPfTabs', JSON.stringify(pfTabs));
         localStorage.setItem('trafficActivePF', activePFId.toString());
     }, [pfTabs, activePFId]);
+
+    // Synchronize current conflict matrix with active PF tab
+    // Use a ref to prevent infinite loops
+    const lastSyncedMatrixRef = useRef(null);
+    useEffect(() => {
+        // Only sync if we have a valid active PF and the matrix has changed
+        const matrixKey = JSON.stringify(conflictMatrix);
+        if (lastSyncedMatrixRef.current === matrixKey) {
+            return; // Already synced this matrix
+        }
+        lastSyncedMatrixRef.current = matrixKey;
+
+        setPfTabs(prevTabs => {
+            const tabIndex = prevTabs.findIndex(pf => pf.id === activePFId);
+            if (tabIndex === -1) return prevTabs;
+
+            // Check if matrix actually changed
+            const currentPfMatrix = prevTabs[tabIndex].conflictMatrix;
+            if (JSON.stringify(currentPfMatrix) === matrixKey) {
+                return prevTabs; // No change needed
+            }
+
+            // Update the PF with the new matrix
+            const newTabs = [...prevTabs];
+            newTabs[tabIndex] = {
+                ...newTabs[tabIndex],
+                conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix))
+            };
+            return newTabs;
+        });
+    }, [conflictMatrix, activePFId]);
+
+    // Synchronize current groups (diagram data) with active PF tab
+    const lastSyncedGroupsRef = useRef(null);
+    useEffect(() => {
+        // Build diagram data from groups
+        const diagramData = groups.map(g => ({
+            groupId: g.id,
+            offset: g.offset,
+            greenDuration: g.durations.green,
+            da: g.da || ''
+        }));
+        const groupsKey = JSON.stringify(diagramData);
+
+        if (lastSyncedGroupsRef.current === groupsKey) {
+            return; // Already synced
+        }
+        lastSyncedGroupsRef.current = groupsKey;
+
+        setPfTabs(prevTabs => {
+            const tabIndex = prevTabs.findIndex(pf => pf.id === activePFId);
+            if (tabIndex === -1) return prevTabs;
+
+            // Check if diagram actually changed
+            const currentPfDiagram = prevTabs[tabIndex].diagram;
+            if (JSON.stringify(currentPfDiagram) === groupsKey) {
+                return prevTabs; // No change needed
+            }
+
+            // Update the PF with the new diagram data
+            const newTabs = [...prevTabs];
+            newTabs[tabIndex] = {
+                ...newTabs[tabIndex],
+                diagram: diagramData,
+                cycleLength: cycleLength
+            };
+            return newTabs;
+        });
+    }, [groups, cycleLength, activePFId]);
 
     // Apply diagram data from active PF tab to groups when changing tabs
     // Use a ref to track the last applied PF to avoid unnecessary re-renders
