@@ -34,6 +34,7 @@ export const useTrafficLight = () => {
         durations: { green: 0, orange: 3, red: 0 }, // New groups start with no green duration
         offset: 0, // New groups start at 0
         da: '', // DA field (2 characters)
+        comment: '', // Comment field (50 characters max, not printable)
         // Traffic Engineering Props
         trafficStream: '', // Courant de circulation
         laneCoef: 1, // Coef voie

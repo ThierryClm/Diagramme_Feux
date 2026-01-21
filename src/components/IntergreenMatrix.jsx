@@ -1,5 +1,58 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import './IntergreenMatrix.css';
+
+// Input component with local state for intermediate values during typing
+const MatrixInput = ({ value, onChange, className }) => {
+    const [localValue, setLocalValue] = useState(value === '' ? '' : String(value));
+    const [isEditing, setIsEditing] = useState(false);
+
+    // Sync local value with prop when not editing
+    React.useEffect(() => {
+        if (!isEditing) {
+            setLocalValue(value === '' ? '' : String(value));
+        }
+    }, [value, isEditing]);
+
+    const handleChange = (e) => {
+        // Only allow digits
+        const newValue = e.target.value.replace(/[^0-9]/g, '');
+        setLocalValue(newValue);
+    };
+
+    const handleFocus = (e) => {
+        setIsEditing(true);
+        // Select all text on focus for easy replacement
+        e.target.select();
+    };
+
+    const handleBlur = () => {
+        setIsEditing(false);
+        // Validate and commit on blur
+        onChange(localValue);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            setIsEditing(false);
+            onChange(localValue);
+            e.target.blur();
+        }
+    };
+
+    return (
+        <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            className={className}
+            value={isEditing ? localValue : (value === '' ? '' : String(value))}
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+        />
+    );
+};
 
 const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs }) => {
 
@@ -348,13 +401,10 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                                             {fromIdx === toIdx ? (
                                                 <span className="diagonal">-</span>
                                             ) : (
-                                                <input
-                                                    type="number"
+                                                <MatrixInput
                                                     className={inputClass}
                                                     value={val}
-                                                    onChange={(e) => setMatrixValue(fromIdx + 1, toIdx + 1, e.target.value)}
-                                                    min="3"
-                                                    max="20"
+                                                    onChange={(newValue) => setMatrixValue(fromIdx + 1, toIdx + 1, newValue)}
                                                 />
                                             )}
                                         </td>

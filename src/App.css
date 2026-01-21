@@ -1246,6 +1246,11 @@
         visibility: hidden;
     }
 
+    /* Hide elements with no-print class */
+    .no-print {
+        display: none !important;
+    }
+
     /* Matrix print */
     body.print-matrix .print-preview-overlay,
     body.print-matrix .print-preview-overlay *,

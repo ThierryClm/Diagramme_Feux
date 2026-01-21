@@ -249,18 +249,28 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                 </td>
                                 <td>
                                     <input
-                                        type="number"
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
                                         className="input-time-xs"
                                         value={row.deb}
-                                        onChange={(e) => updateActionRow(row.id, 'deb', e.target.value)}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            updateActionRow(row.id, 'deb', val);
+                                        }}
                                     />
                                 </td>
                                 <td>
                                     <input
-                                        type="number"
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
                                         className="input-time-xs"
                                         value={row.fin}
-                                        onChange={(e) => updateActionRow(row.id, 'fin', e.target.value)}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            updateActionRow(row.id, 'fin', val);
+                                        }}
                                     />
                                 </td>
                                 <td>

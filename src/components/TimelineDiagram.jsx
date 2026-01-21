@@ -3486,6 +3486,29 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         )}
                     </div>
                 </div>
+
+                {/* Comments column - not printable */}
+                <div className="timeline-comments no-print">
+                    {/* Header for comments */}
+                    <div className="comments-header">
+                        <span>Commentaire</span>
+                    </div>
+
+                    {/* Comment input for each group */}
+                    {groups.map(g => (
+                        <div key={g.id} className="comment-row">
+                            <input
+                                type="text"
+                                className="input-comment"
+                                value={g.comment || ''}
+                                onChange={(e) => updateGroupParams(g.id, { comment: e.target.value.slice(0, 50) })}
+                                placeholder=""
+                                maxLength={50}
+                                title="Commentaire (50 caractères max)"
+                            />
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
