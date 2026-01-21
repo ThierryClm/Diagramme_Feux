@@ -600,6 +600,50 @@ export const useTrafficLight = () => {
         }
     };
 
+    // Reset to a new empty project (8 groups, 60s cycle)
+    const resetToNewProject = () => {
+        // Reset intersection name
+        setIntersectionName("Nouveau Carrefour");
+
+        // Reset to 8 groups with 60s cycle
+        const newGroups = Array.from({ length: 8 }, (_, i) => createGroup(i + 1));
+        setGroups(newGroups);
+        setCycleLength(60);
+
+        // Reset conflict matrix (8x8)
+        setConflictMatrix(Array.from({ length: 8 }, () => Array(8).fill('')));
+
+        // Reset to single empty PF tab
+        const emptyRow = (id) => ({
+            id, gf: '', action: '', description: '', deb: '', fin: '',
+            abrv: '', micro: '', plage1: '', plage2: '',
+            actGf1: '', actGf1Gf2: '', actGf1Gf3: '', actGf1Gf4: ''
+        });
+        setPfTabs([{ id: 1, name: 'PF1', data: Array.from({ length: 30 }, (_, i) => emptyRow(i + 1)) }]);
+        setActivePFId(1);
+
+        // Reset traffic datasets
+        setTrafficDatasets({});
+        setActiveTrafficDataset('HPM');
+
+        // Reset intersection image and arrows
+        setIntersectionImage(null);
+        setIntersectionArrows([]);
+
+        // Reset dependency gap
+        setDependencyGap(20);
+
+        // Reset simulation state
+        setSimulationEnabled(false);
+        setSimulationSelectedActions([]);
+
+        // Clear history
+        setHistory([]);
+        setRedoHistory([]);
+
+        return true;
+    };
+
     // Get full state (for saving/duplication)
     const getFullState = () => ({
         intersectionName,
@@ -768,6 +812,24 @@ export const useTrafficLight = () => {
             targetGf: parseInt(action.actGf1)
         }));
 
+        // Get flèche d'anticipation actions - these override the green phase timing for conflict calculation
+        const flecheAnticipations = actionData.filter(action =>
+            action.action === "Flèche d'anticipation" &&
+            action.gf !== '' &&
+            action.deb !== '' &&
+            action.fin !== ''
+        ).reduce((acc, action) => {
+            const gf = parseInt(action.gf);
+            // Store the first flèche d'anticipation for each group
+            if (!acc[gf]) {
+                acc[gf] = {
+                    deb: parseInt(action.deb),
+                    fin: parseInt(action.fin)
+                };
+            }
+            return acc;
+        }, {});
+
         // Helper to check if an escamotage exists between two groups
         const hasEscamotage = (gfA, gfB) => {
             return escamotages.some(e =>
@@ -788,8 +850,19 @@ export const useTrafficLight = () => {
                 const gFrom = groups[from];
                 const gTo = groups[to];
 
-                const endGreenA_Absolute = (gFrom.offset + gFrom.durations.green) % cycleLength;
-                const startGreenB_Absolute = gTo.offset % cycleLength;
+                // Check if groups have flèche d'anticipation - use those timings instead
+                const flecheFrom = flecheAnticipations[gFrom.id];
+                const flecheTo = flecheAnticipations[gTo.id];
+
+                // For "from" group: end of green (or end of flèche d'anticipation)
+                const endGreenA_Absolute = flecheFrom
+                    ? flecheFrom.fin % cycleLength
+                    : (gFrom.offset + gFrom.durations.green) % cycleLength;
+
+                // For "to" group: start of green (or start of flèche d'anticipation)
+                const startGreenB_Absolute = flecheTo
+                    ? flecheTo.deb % cycleLength
+                    : gTo.offset % cycleLength;
 
                 let distance = (startGreenB_Absolute - endGreenA_Absolute + cycleLength) % cycleLength;
 
@@ -804,10 +877,11 @@ export const useTrafficLight = () => {
                 }
 
                 // Check for actual overlap between antagonist groups
-                const startA = gFrom.offset;
-                const endA = gFrom.offset + gFrom.durations.green;
-                const startB = gTo.offset;
-                const endB = gTo.offset + gTo.durations.green;
+                // Use flèche d'anticipation timings if present
+                const startA = flecheFrom ? flecheFrom.deb : gFrom.offset;
+                const endA = flecheFrom ? flecheFrom.fin : gFrom.offset + gFrom.durations.green;
+                const startB = flecheTo ? flecheTo.deb : gTo.offset;
+                const endB = flecheTo ? flecheTo.fin : gTo.offset + gTo.durations.green;
 
                 if (rangesOverlap(startA, endA, startB, endB, cycleLength)) {
                     // Skip if there's an escamotage between these groups (overlap is managed)
@@ -1558,6 +1632,7 @@ export const useTrafficLight = () => {
         deleteSave,
         getFullState,
         loadFullState,
+        resetToNewProject,
         // Action Table
         actionData,
         updateActionRow: updateActionRowWithHistory,

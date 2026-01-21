@@ -18,6 +18,7 @@ const ACTION_OPTIONS = [
     'Escamotage de phase',
     'Fermeture anticipée',
     'Fin de bande passante',
+    'Flèche d\'anticipation',
     'Instant Co',
     'Ouverture anticipée',
     'Point de repos',

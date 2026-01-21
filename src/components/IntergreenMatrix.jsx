@@ -202,6 +202,28 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
 
     const asymmetricPairs = getAsymmetricPairs();
 
+    // Get flèche d'anticipation actions - these override the green phase timing
+    const getFlecheAnticipations = () => {
+        if (!actionData) return {};
+        return actionData.filter(action =>
+            action.action === "Flèche d'anticipation" &&
+            action.gf !== '' &&
+            action.deb !== '' &&
+            action.fin !== ''
+        ).reduce((acc, action) => {
+            const gf = parseInt(action.gf);
+            if (!acc[gf]) {
+                acc[gf] = {
+                    deb: parseInt(action.deb),
+                    fin: parseInt(action.fin)
+                };
+            }
+            return acc;
+        }, {});
+    };
+
+    const flecheAnticipations = getFlecheAnticipations();
+
     // Check if two groups have overlapping green phases
     const hasOverlap = (fromIdx, toIdx) => {
         const matrixVal = conflictMatrix[fromIdx][toIdx];
@@ -213,10 +235,14 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
         const groupB = groups[toIdx];
         const cycle = cycleLength || 100;
 
-        const aStart = groupA.offset % cycle;
-        const aEnd = (groupA.offset + groupA.durations.green) % cycle;
-        const bStart = groupB.offset % cycle;
-        const bEnd = (groupB.offset + groupB.durations.green) % cycle;
+        // Check for flèche d'anticipation - use those timings instead
+        const flecheA = flecheAnticipations[groupA.id];
+        const flecheB = flecheAnticipations[groupB.id];
+
+        const aStart = flecheA ? flecheA.deb % cycle : groupA.offset % cycle;
+        const aEnd = flecheA ? flecheA.fin % cycle : (groupA.offset + groupA.durations.green) % cycle;
+        const bStart = flecheB ? flecheB.deb % cycle : groupB.offset % cycle;
+        const bEnd = flecheB ? flecheB.fin % cycle : (groupB.offset + groupB.durations.green) % cycle;
 
         // Check for overlap considering cyclic timeline
         // Two intervals overlap if they share any common point
@@ -252,10 +278,18 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
         const toGroup = groups[toIdx];
         const cycle = cycleLength || 100;
 
-        // End of fromGroup green phase
-        const fromEnd = (fromGroup.offset + fromGroup.durations.green) % cycle;
-        // Start of toGroup green phase
-        const toStart = toGroup.offset % cycle;
+        // Check for flèche d'anticipation - use those timings instead
+        const flecheFrom = flecheAnticipations[fromGroup.id];
+        const flecheTo = flecheAnticipations[toGroup.id];
+
+        // End of fromGroup green phase (or flèche d'anticipation fin)
+        const fromEnd = flecheFrom
+            ? flecheFrom.fin % cycle
+            : (fromGroup.offset + fromGroup.durations.green) % cycle;
+        // Start of toGroup green phase (or flèche d'anticipation deb)
+        const toStart = flecheTo
+            ? flecheTo.deb % cycle
+            : toGroup.offset % cycle;
 
         // Calculate actual delay
         let actualDelay = toStart - fromEnd;

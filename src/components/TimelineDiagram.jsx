@@ -524,6 +524,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         return true;
     });
 
+    // Get all "Flèche d'anticipation" actions (same representation as Priorité piétons)
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
+    // Also hide if within a SELECTED Escamotage de phase or Adaptatif vertical
+    const flecheAnticipationActions = actionData.filter(action => {
+        if (action.action !== "Flèche d'anticipation") return false;
+        if (action.gf === '' || action.deb === '' || action.fin === '') return false;
+        if (simulationFilter && simulationFilter.has(action.id)) return false;
+        // Hide if within a selected Escamotage de phase or Adaptatif vertical
+        const deb = parseInt(action.deb) || 0;
+        const fin = parseInt(action.fin) || 0;
+        if (isWithinSelectedEscamotageOrAdaptatif(deb, fin)) return false;
+        return true;
+    });
+
     // Get all "Début de bande passante" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     // Also hide if within a SELECTED Escamotage de phase or Adaptatif vertical
@@ -794,6 +808,11 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     {hasPhase && (() => {
                                         const isPedestrian = group.type === 'P' || group.type === 'Piéton';
                                         const isCyclist = group.type === 'CY' || group.type === 'Cycliste';
+                                        const isFlOrPP = group.type === 'FL' || group.type === 'PP';
+
+                                        // FL and PP types don't show the green bar (only yellow intermittent bar)
+                                        if (isFlOrPP) return null;
+
                                         // P (piéton) gets red bar (pedestrian-orange), CY (cycle) gets dashed red bar (cyclist-orange), others get yellow (orange)
                                         const orangeClass = isPedestrian ? 'pedestrian-orange' : isCyclist ? 'cyclist-orange' : 'orange';
                                         const orangeDur = group.durations.orange;
@@ -2505,6 +2524,275 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     </div>
                                 </React.Fragment>
                             );
+                        })}
+
+                        {/* Flèche d'anticipation - intermittent yellow bar (same as Priorité piétons) */}
+                        {flecheAnticipationActions.map((action, idx) => {
+                            const gf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                            const rawDeb = parseInt(action.deb) || 0;
+                            const rawFin = parseInt(action.fin) || 0;
+                            const abrv = action.abrv || '';
+                            const isHighlighted = hoveredActionId === action.id;
+
+                            // Find group index in array
+                            const groupIndex = groups.findIndex(g => g.id === gf);
+                            if (groupIndex === -1) return null;
+                            if (rawDeb === rawFin) return null;
+
+                            // Apply time shifts (from Adaptatif vertical) in simulation mode
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawFin, gf, "Flèche d'anticipation");
+                            if (shiftedPos.hidden) return null;
+                            const deb = shiftedPos.deb;
+                            const fin = shiftedPos.fin;
+
+                            // Check for wrap-around (fin < deb means the bar crosses cycle boundary)
+                            const wrapsAround = deb > fin;
+
+                            // Vertical position aligned with the group's phase bar
+                            const height = ROW_HEIGHT - 14;
+                            const rowTotalHeight = ROW_HEIGHT + 1;
+                            const topPos = RULER_HEIGHT + 1 + (groupIndex * rowTotalHeight) + Math.floor((ROW_HEIGHT - height) / 2);
+
+                            // Stripe width based on 1 second interval
+                            const stripeWidth = pixelsPerSecond;
+
+                            // Common style for the yellow intermittent bar
+                            const barStyle = (left, width) => ({
+                                position: 'absolute',
+                                left: `${left}px`,
+                                width: `${width}px`,
+                                top: `${topPos}px`,
+                                height: `${height}px`,
+                                borderRadius: '2px',
+                                pointerEvents: 'none',
+                                zIndex: 15,
+                                background: `repeating-linear-gradient(
+                                    90deg,
+                                    #FFFF00,
+                                    #FFFF00 ${stripeWidth}px,
+                                    transparent ${stripeWidth}px,
+                                    transparent ${stripeWidth * 2}px
+                                )`,
+                                boxShadow: '0 0 3px rgba(255, 255, 0, 0.5)'
+                            });
+
+                            if (wrapsAround) {
+                                // Wrap-around case: draw 2 bars
+                                const firstPartLeft = deb * pixelsPerSecond;
+                                const firstPartWidth = (effectiveCycleLength - deb) * pixelsPerSecond;
+                                const secondPartLeft = 0;
+                                const secondPartWidth = fin * pixelsPerSecond;
+
+                                return (
+                                    <React.Fragment key={`fleche-anticipation-${idx}`}>
+                                        {/* First part: from deb to end of cycle */}
+                                        <div
+                                            className={`fleche-anticipation-wrapper ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={{
+                                                position: 'absolute',
+                                                left: `${firstPartLeft}px`,
+                                                width: `${firstPartWidth}px`,
+                                                top: `${topPos}px`,
+                                                height: `${height}px`,
+                                                pointerEvents: 'auto'
+                                            }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                        >
+                                            <div
+                                                className="action-drag-handle action-drag-handle-start"
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                title="Glisser pour modifier le début"
+                                                style={{ pointerEvents: 'auto' }}
+                                            />
+                                        </div>
+                                        <div
+                                            className={`fleche-anticipation-bar ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={barStyle(firstPartLeft, firstPartWidth)}
+                                        />
+                                        {/* Second part: from start of cycle to fin */}
+                                        <div
+                                            className={`fleche-anticipation-wrapper ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={{
+                                                position: 'absolute',
+                                                left: `${secondPartLeft}px`,
+                                                width: `${secondPartWidth}px`,
+                                                top: `${topPos}px`,
+                                                height: `${height}px`,
+                                                pointerEvents: 'auto'
+                                            }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                        >
+                                            <div
+                                                className="action-drag-handle action-drag-handle-end"
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                title="Glisser pour modifier la fin"
+                                                style={{ pointerEvents: 'auto' }}
+                                            />
+                                        </div>
+                                        <div
+                                            className={`fleche-anticipation-bar ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={barStyle(secondPartLeft, secondPartWidth)}
+                                        >
+                                            {abrv && (
+                                                <span className="fleche-anticipation-label" style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '50%',
+                                                    transform: 'translate(-50%, -50%)',
+                                                    fontSize: '0.65em',
+                                                    color: '#000',
+                                                    fontWeight: 'bold',
+                                                    textShadow: '0 0 2px rgba(255, 255, 255, 0.8)',
+                                                    whiteSpace: 'nowrap',
+                                                    zIndex: 50,
+                                                    pointerEvents: 'none'
+                                                }}>
+                                                    {abrv}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </React.Fragment>
+                                );
+                            } else {
+                                // Normal case: single bar
+                                const leftPos = deb * pixelsPerSecond;
+                                const barWidth = (fin - deb) * pixelsPerSecond;
+
+                                return (
+                                    <React.Fragment key={`fleche-anticipation-${idx}`}>
+                                        <div
+                                            className={`fleche-anticipation-wrapper ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={{
+                                                position: 'absolute',
+                                                left: `${leftPos}px`,
+                                                width: `${barWidth}px`,
+                                                top: `${topPos}px`,
+                                                height: `${height}px`,
+                                                pointerEvents: 'auto'
+                                            }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                        >
+                                            <div
+                                                className="action-drag-handle action-drag-handle-start"
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                title="Glisser pour modifier le début"
+                                                style={{ pointerEvents: 'auto' }}
+                                            />
+                                            <div
+                                                className="action-drag-handle action-drag-handle-end"
+                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                title="Glisser pour modifier la fin"
+                                                style={{ pointerEvents: 'auto' }}
+                                            />
+                                        </div>
+                                        <div
+                                            className={`fleche-anticipation-bar ${isHighlighted ? 'highlighted' : ''}`}
+                                            style={barStyle(leftPos, barWidth)}
+                                        >
+                                            {abrv && (
+                                                <span className="fleche-anticipation-label" style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '50%',
+                                                    transform: 'translate(-50%, -50%)',
+                                                    fontSize: '0.65em',
+                                                    color: '#000',
+                                                    fontWeight: 'bold',
+                                                    textShadow: '0 0 2px rgba(255, 255, 255, 0.8)',
+                                                    whiteSpace: 'nowrap',
+                                                    zIndex: 50,
+                                                    pointerEvents: 'none'
+                                                }}>
+                                                    {abrv}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </React.Fragment>
+                                );
+                            }
+                        })}
+
+                        {/* Groupes de type FL ou PP - intermittent yellow bar based on green phase */}
+                        {groups.filter(g => g.type === 'FL' || g.type === 'PP').map((group, idx) => {
+                            const groupIndex = groups.findIndex(g => g.id === group.id);
+                            if (groupIndex === -1) return null;
+
+                            // Use simulated group data if available
+                            const simGroup = getSimulatedGroup(group.id);
+                            const offset = simGroup ? simGroup.simulatedOffset : group.offset;
+                            const greenDuration = simGroup ? simGroup.simulatedGreen : group.durations.green;
+
+                            if (greenDuration <= 0) return null;
+
+                            const deb = offset;
+                            const fin = (offset + greenDuration) % effectiveCycleLength;
+
+                            // Check for wrap-around
+                            const wrapsAround = offset + greenDuration > effectiveCycleLength;
+
+                            // Vertical position aligned with the group's phase bar
+                            const height = ROW_HEIGHT - 14;
+                            const rowTotalHeight = ROW_HEIGHT + 1;
+                            const topPos = RULER_HEIGHT + 1 + (groupIndex * rowTotalHeight) + Math.floor((ROW_HEIGHT - height) / 2);
+
+                            // Stripe width based on 1 second interval
+                            const stripeWidth = pixelsPerSecond;
+
+                            // Common style for the yellow intermittent bar
+                            const barStyle = (left, width) => ({
+                                position: 'absolute',
+                                left: `${left}px`,
+                                width: `${width}px`,
+                                top: `${topPos}px`,
+                                height: `${height}px`,
+                                borderRadius: '2px',
+                                pointerEvents: 'none',
+                                zIndex: 15,
+                                background: `repeating-linear-gradient(
+                                    90deg,
+                                    #FFFF00,
+                                    #FFFF00 ${stripeWidth}px,
+                                    transparent ${stripeWidth}px,
+                                    transparent ${stripeWidth * 2}px
+                                )`,
+                                boxShadow: '0 0 3px rgba(255, 255, 0, 0.5)'
+                            });
+
+                            if (wrapsAround) {
+                                // Wrap-around case: draw 2 bars
+                                const firstPartLeft = deb * pixelsPerSecond;
+                                const firstPartWidth = (effectiveCycleLength - deb) * pixelsPerSecond;
+                                const secondPartLeft = 0;
+                                const secondPartWidth = fin * pixelsPerSecond;
+
+                                return (
+                                    <React.Fragment key={`type-fl-pp-${group.id}-${idx}`}>
+                                        <div
+                                            className="type-fl-pp-bar"
+                                            style={barStyle(firstPartLeft, firstPartWidth)}
+                                        />
+                                        <div
+                                            className="type-fl-pp-bar"
+                                            style={barStyle(secondPartLeft, secondPartWidth)}
+                                        />
+                                    </React.Fragment>
+                                );
+                            } else {
+                                // Normal case: single bar
+                                const leftPos = deb * pixelsPerSecond;
+                                const barWidth = greenDuration * pixelsPerSecond;
+
+                                return (
+                                    <div
+                                        key={`type-fl-pp-${group.id}-${idx}`}
+                                        className="type-fl-pp-bar"
+                                        style={barStyle(leftPos, barWidth)}
+                                    />
+                                );
+                            }
                         })}
 
                         {/* Début de bande passante arrows - dashed green diagonal arrows */}
