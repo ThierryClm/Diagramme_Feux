@@ -2499,6 +2499,29 @@ function App() {
                     </section>
 
                     <section className="help-section">
+                        <h4>Impression</h4>
+                        <p>Le menu Fichier propose trois options d'impression avec prévisualisation :</p>
+                        <ul>
+                            <li><strong>Imprimer la matrice :</strong> Imprime la matrice de dégagement avec le nom du carrefour</li>
+                            <li><strong>Imprimer le formulaire :</strong> Imprime la liste des groupes avec leurs paramètres</li>
+                            <li><strong>Imprimer le diagramme :</strong> Imprime le diagramme temporel complet en format A4 paysage, incluant :
+                                <ul>
+                                    <li>En-tête : nom du carrefour et plan de feu actif</li>
+                                    <li>Diagramme des phases avec les barres colorées</li>
+                                    <li>Tableau des conditions de micro-régulation (si définies)</li>
+                                    <li>Pied de page : nom du fichier projet et date d'impression</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p><strong>Paramètres d'impression recommandés :</strong></p>
+                        <ul>
+                            <li><strong>Couleur :</strong> Sélectionnez "Couleur" pour imprimer les barres du diagramme en couleur</li>
+                            <li><strong>Marges :</strong> Sélectionnez "Minimum" ou "Aucune" pour maximiser l'espace</li>
+                            <li><strong>Graphiques d'arrière-plan :</strong> Activez cette option pour imprimer les couleurs des barres de phase</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
                         <h4>Import Excel</h4>
                         <p>L'application peut importer des fichiers Excel (.xlsx) contenant la configuration complète du carrefour :</p>
                         <ul>
@@ -3026,6 +3049,64 @@ function App() {
                                                 planName={pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}
                                             />
                                         </div>
+
+                                        {/* Conditions de micro-régulation */}
+                                        {actionData.filter(row => row.gf || row.action || row.description || row.deb !== '' || row.fin !== '').length > 0 && (
+                                            <div className="print-actions-section">
+                                                <h4>Conditions de micro-régulation</h4>
+                                                <table className="print-actions-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>GF</th>
+                                                            <th>Action</th>
+                                                            <th>Description</th>
+                                                            <th>Déb</th>
+                                                            <th>Fin</th>
+                                                            <th>Abrv</th>
+                                                            <th>Action_Micro</th>
+                                                            <th colSpan="2">Plage</th>
+                                                            <th colSpan="4">Action GF</th>
+                                                        </tr>
+                                                        <tr className="print-actions-subheader">
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th>1</th>
+                                                            <th>2</th>
+                                                            <th>1</th>
+                                                            <th>2</th>
+                                                            <th>3</th>
+                                                            <th>4</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {actionData
+                                                            .filter(row => row.gf || row.action || row.description || row.deb !== '' || row.fin !== '')
+                                                            .map(row => (
+                                                                <tr key={row.id}>
+                                                                    <td>{row.gf}</td>
+                                                                    <td>{row.action}</td>
+                                                                    <td>{row.description}</td>
+                                                                    <td>{row.deb}</td>
+                                                                    <td>{row.fin}</td>
+                                                                    <td>{row.abrv}</td>
+                                                                    <td>{row.micro}</td>
+                                                                    <td>{row.plage1}</td>
+                                                                    <td>{row.plage2}</td>
+                                                                    <td>{row.actGf1}</td>
+                                                                    <td>{row.actGf1Gf2}</td>
+                                                                    <td>{row.actGf1Gf3}</td>
+                                                                    <td>{row.actGf1Gf4}</td>
+                                                                </tr>
+                                                            ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
 
                                         {/* Pied de page: chemin du fichier JSON à gauche, date à droite */}
                                         <div className="print-diagram-footer">

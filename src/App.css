@@ -1104,6 +1104,56 @@
     color: #666;
 }
 
+/* Tableau des conditions de micro-régulation pour l'impression */
+.print-actions-section {
+    margin-top: 20px;
+    background: #fff;
+}
+
+.print-actions-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.9rem;
+    color: #333;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+}
+
+.print-actions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.7rem;
+    background: #fff;
+}
+
+.print-actions-table th,
+.print-actions-table td {
+    border: 1px solid #999;
+    padding: 3px 5px;
+    text-align: center;
+    color: #000;
+    background: #fff;
+}
+
+.print-actions-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+
+.print-actions-table .print-actions-subheader th {
+    font-size: 0.65rem;
+    padding: 2px 3px;
+}
+
+.print-actions-table td:nth-child(2),
+.print-actions-table td:nth-child(3),
+.print-actions-table td:nth-child(7) {
+    text-align: left;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .print-footer-path {
     text-align: left;
     max-width: 60%;
@@ -1174,33 +1224,31 @@
     }
 
     /* Diagram print - Format A4 paysage */
-    body.print-diagram,
-    body.print-diagram .print-preview-modal,
-    body.print-diagram .print-preview-modal * {
-        visibility: visible !important;
-        background-color: white !important;
-        color: black !important;
-    }
-
     body.print-diagram {
         background: white !important;
     }
 
-    body.print-diagram .print-preview-modal {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: auto;
-        background: white !important;
+    body.print-diagram .print-preview-overlay,
+    body.print-diagram .print-preview-overlay *,
+    body.print-diagram .print-preview-modal-large,
+    body.print-diagram .print-preview-modal-large * {
+        visibility: visible !important;
     }
 
     body.print-diagram .print-preview-overlay {
-        position: static !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
         background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
     }
 
-    body.print-diagram .print-preview-modal-content {
+    body.print-diagram .print-preview-modal-large {
+        position: relative !important;
         box-shadow: none !important;
         border: none !important;
         max-width: none !important;
@@ -1208,11 +1256,18 @@
         margin: 0 !important;
         padding: 0 !important;
         background: white !important;
+        border-radius: 0 !important;
     }
 
     body.print-diagram .modal-header,
     body.print-diagram .modal-footer {
         display: none !important;
+    }
+
+    body.print-diagram .print-preview-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: white !important;
     }
 
     body.print-diagram .print-preview-page {
@@ -1288,6 +1343,55 @@
 
     body.print-diagram .grid-10s {
         background: rgba(0, 0, 0, 0.35) !important;
+    }
+
+    /* IMPORTANT: Préserver les couleurs des barres de phase */
+    body.print-diagram .phase-bar.green {
+        background: linear-gradient(to bottom, #00FF00, #00CC00) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    body.print-diagram .phase-bar.green-dark {
+        background: linear-gradient(to bottom, #008800, #006600) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    body.print-diagram .phase-bar.orange {
+        background: linear-gradient(to bottom, #FFFF00, #CCCC00) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    body.print-diagram .phase-bar.red {
+        background: linear-gradient(to bottom, #FF0000, #CC0000) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    body.print-diagram .phase-bar.pedestrian-orange::after,
+    body.print-diagram .phase-bar.cyclist-orange::after {
+        background: repeating-linear-gradient(
+            45deg,
+            #FFFF00,
+            #FFFF00 2px,
+            transparent 2px,
+            transparent 4px
+        ) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    body.print-diagram .cycle-block {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
     }
 
     /* Bordures noires */
