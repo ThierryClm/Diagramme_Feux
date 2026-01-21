@@ -3022,18 +3022,18 @@ function App() {
 
                                 {printType === 'diagram' && (
                                     <div className="print-preview-diagram print-preview-landscape">
-                                        {/* En-tête du diagramme - nom du carrefour et plan de feu actif */}
+                                        {/* En-tête du diagramme */}
                                         <div className="print-diagram-header">
-                                            <h3>{intersectionName || 'Sans titre'} - {pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}</h3>
+                                            <h3>Diagramme {intersectionName || 'Sans titre'} - {pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}</h3>
                                         </div>
 
-                                        {/* Diagramme réel - A4 paysage: ~670px disponibles pour timeline */}
+                                        {/* Diagramme réel - A4 paysage: optimisé sur 800px */}
                                         <div className="print-diagram-content">
                                             <TimelineDiagram
                                                 groups={groups}
                                                 globalTime={0}
                                                 onGroupClick={() => {}}
-                                                pixelsPerSecond={Math.max(2, Math.min(8, Math.floor(650 / cycleLength)))}
+                                                pixelsPerSecond={Math.max(2, Math.min(10, Math.floor(800 / cycleLength)))}
                                                 conflicts={[]}
                                                 conflictMatrix={conflictMatrix}
                                                 updateGroupParams={() => {}}

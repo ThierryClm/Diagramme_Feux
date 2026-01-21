@@ -856,20 +856,22 @@
 /* Matrix preview */
 .print-preview-matrix {
     overflow-x: auto;
+    margin: 0;
+    padding: 0;
 }
 
 .preview-matrix-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
 }
 
 .preview-matrix-table th,
 .preview-matrix-table td {
     border: 1px solid #ccc;
-    padding: 6px 10px;
+    padding: 4px 6px;
     text-align: center;
-    min-width: 35px;
+    min-width: 25px;
 }
 
 .preview-matrix-table th {
@@ -923,6 +925,10 @@
 
 .print-preview-diagram.print-preview-landscape {
     min-width: 900px;
+    /* Mise à l'échelle pour simuler A4 paysage dans l'aperçu */
+    transform: scale(0.9);
+    transform-origin: top left;
+    width: 111%; /* Compense le scale pour l'affichage */
 }
 
 .print-diagram-header {
@@ -946,9 +952,10 @@
 }
 
 .print-diagram-content {
-    flex: 1;
+    flex: 0 0 auto;
     overflow: visible;
     background: #fff !important;
+    min-height: 200px;
 }
 
 /* Assurer que le layout est bien collé */
@@ -967,10 +974,46 @@
     overflow: visible !important;
 }
 
-/* Force fond blanc sur tout le diagramme */
-.print-diagram-content,
-.print-diagram-content * {
+/* Force fond blanc sur le diagramme - éléments spécifiques seulement */
+.print-diagram-content {
     background-color: #fff !important;
+}
+
+/* Fond blanc pour les conteneurs principaux */
+.print-diagram-content .timeline-container,
+.print-diagram-content .timeline-layout,
+.print-diagram-content .timeline-scroll-area,
+.print-diagram-content .timeline-track-container,
+.print-diagram-content .timeline-row-track,
+.print-diagram-content .grid-container {
+    background-color: #fff !important;
+}
+
+/* Cycle-block doit être transparent pour laisser voir les barres */
+.print-diagram-content .cycle-block {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Couleurs des barres de phase dans la prévisualisation */
+.print-diagram-content .phase-bar.green {
+    background: linear-gradient(to bottom, #00FF00, #00CC00) !important;
+    background-color: #00FF00 !important;
+}
+
+.print-diagram-content .phase-bar.green-dark {
+    background: linear-gradient(to bottom, #008800, #006600) !important;
+    background-color: #008800 !important;
+}
+
+.print-diagram-content .phase-bar.orange {
+    background: linear-gradient(to bottom, #FFFF00, #CCCC00) !important;
+    background-color: #FFFF00 !important;
+}
+
+.print-diagram-content .phase-bar.red {
+    background: linear-gradient(to bottom, #FF0000, #CC0000) !important;
+    background-color: #FF0000 !important;
 }
 
 .print-diagram-content .timeline-diagram,
@@ -982,15 +1025,22 @@
     background-color: #fff !important;
 }
 
+/* Sidebar et en-tête sur fond blanc */
 .print-diagram-content .sidebar-column,
 .print-diagram-content .sidebar-header-row {
-    background: #f0f0f0 !important;
-    background-color: #f0f0f0 !important;
+    background: #fff !important;
+    background-color: #fff !important;
     color: #000 !important;
 }
 
+.print-diagram-content .timeline-sidebar {
+    background: #fff !important;
+    background-color: #fff !important;
+}
+
 .print-diagram-content .group-row,
-.print-diagram-content .group-row-content {
+.print-diagram-content .group-row-content,
+.print-diagram-content .row-label-container {
     background: #fff !important;
     background-color: #fff !important;
 }
@@ -998,14 +1048,16 @@
 .print-diagram-content .group-row-label,
 .print-diagram-content .group-label {
     color: #000 !important;
-    background: #f0f0f0 !important;
-    background-color: #f0f0f0 !important;
+    background: #fff !important;
+    background-color: #fff !important;
 }
 
+/* Règle du temps sur fond blanc */
 .print-diagram-content .ruler,
-.print-diagram-content .ruler-container {
-    background: #e8e8e8 !important;
-    background-color: #e8e8e8 !important;
+.print-diagram-content .ruler-container,
+.print-diagram-content .timeline-ruler {
+    background: #fff !important;
+    background-color: #fff !important;
     color: #000 !important;
 }
 
@@ -1077,10 +1129,9 @@
     color: #000 !important;
 }
 
-/* Titre du diagramme en noir */
+/* Masquer le titre du diagramme dans la fenêtre (déjà affiché dans l'en-tête) */
 .print-diagram-content .diagram-title {
-    background: #f0f0f0 !important;
-    border-bottom: 1px solid #000 !important;
+    display: none !important;
 }
 
 .print-diagram-preview {
@@ -1196,46 +1247,19 @@
     }
 
     /* Matrix print */
-    body.print-matrix .intergreen-matrix,
-    body.print-matrix .intergreen-matrix * {
-        visibility: visible;
-    }
-    body.print-matrix .intergreen-matrix {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background: white !important;
-        color: black !important;
-    }
-
-    /* Form print */
-    body.print-form .group-table-container,
-    body.print-form .group-table-container * {
-        visibility: visible;
-    }
-    body.print-form .group-table-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background: white !important;
-        color: black !important;
-    }
-
-    /* Diagram print - Format A4 paysage */
-    body.print-diagram {
-        background: white !important;
-    }
-
-    body.print-diagram .print-preview-overlay,
-    body.print-diagram .print-preview-overlay *,
-    body.print-diagram .print-preview-modal-large,
-    body.print-diagram .print-preview-modal-large * {
+    body.print-matrix .print-preview-overlay,
+    body.print-matrix .print-preview-overlay *,
+    body.print-matrix .modal-overlay,
+    body.print-matrix .modal-overlay *,
+    body.print-matrix .print-preview-modal-large,
+    body.print-matrix .print-preview-modal-large *,
+    body.print-matrix .modal-content,
+    body.print-matrix .modal-content * {
         visibility: visible !important;
     }
 
-    body.print-diagram .print-preview-overlay {
+    body.print-matrix .print-preview-overlay,
+    body.print-matrix .modal-overlay {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
@@ -1244,19 +1268,213 @@
         background: white !important;
         padding: 0 !important;
         margin: 0 !important;
-        display: block !important;
+        overflow: visible !important;
     }
 
-    body.print-diagram .print-preview-modal-large {
+    body.print-matrix .print-preview-modal-large,
+    body.print-matrix .modal-content {
         position: relative !important;
         box-shadow: none !important;
         border: none !important;
         max-width: none !important;
+        max-height: none !important;
         width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    body.print-matrix .modal-header,
+    body.print-matrix .modal-footer {
+        display: none !important;
+    }
+
+    body.print-matrix .modal-body {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    body.print-matrix .print-preview-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    body.print-matrix .print-preview-page {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+        background: white !important;
+        overflow: visible !important;
+        /* Mise à l'échelle pour tenir dans la page */
+        transform: scale(0.85);
+        transform-origin: top left;
+    }
+
+    /* Caler la matrice en haut à gauche */
+    body.print-matrix .print-preview-header {
+        text-align: left !important;
+        margin: 0 0 10px 0 !important;
+        padding: 0 0 10px 0 !important;
+    }
+
+    body.print-matrix .print-preview-matrix {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    body.print-matrix .preview-matrix-table {
+        margin: 0 !important;
+        margin-left: 0 !important;
+    }
+
+    body.print-matrix .preview-matrix-table {
+        font-size: 0.6rem !important;
+    }
+
+    body.print-matrix .preview-matrix-table th,
+    body.print-matrix .preview-matrix-table td {
+        padding: 2px 4px !important;
+        min-width: 20px !important;
+    }
+
+    /* Form print */
+    body.print-form .print-preview-overlay,
+    body.print-form .print-preview-overlay *,
+    body.print-form .modal-overlay,
+    body.print-form .modal-overlay *,
+    body.print-form .print-preview-modal-large,
+    body.print-form .print-preview-modal-large *,
+    body.print-form .modal-content,
+    body.print-form .modal-content * {
+        visibility: visible !important;
+    }
+
+    body.print-form .print-preview-overlay,
+    body.print-form .modal-overlay {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+
+    body.print-form .print-preview-modal-large,
+    body.print-form .modal-content {
+        position: relative !important;
+        box-shadow: none !important;
+        border: none !important;
+        max-width: none !important;
+        max-height: none !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    body.print-form .modal-header,
+    body.print-form .modal-footer {
+        display: none !important;
+    }
+
+    body.print-form .modal-body {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    body.print-form .print-preview-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    body.print-form .print-preview-page {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+        background: white !important;
+        overflow: visible !important;
+        /* Mise à l'échelle pour tenir dans la page */
+        transform: scale(0.9);
+        transform-origin: top left;
+    }
+
+    /* Diagram print - Format A4 paysage */
+    body.print-diagram {
+        background: white !important;
+    }
+
+    body.print-diagram .print-preview-overlay,
+    body.print-diagram .print-preview-modal-large {
+        visibility: visible !important;
+    }
+
+    body.print-diagram .print-preview-overlay *,
+    body.print-diagram .print-preview-modal-large * {
+        visibility: visible !important;
+    }
+
+    /* S'assurer que le tableau des actions n'interfère pas avec le diagramme */
+    body.print-diagram .print-actions-section,
+    body.print-diagram .print-actions-section * {
+        visibility: visible !important;
+    }
+
+    body.print-diagram .print-actions-table {
+        background: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body.print-diagram .print-actions-table th {
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body.print-diagram .print-preview-overlay,
+    body.print-diagram .modal-overlay {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        overflow: visible !important;
+    }
+
+    body.print-diagram .print-preview-modal-large,
+    body.print-diagram .modal-content {
+        position: relative !important;
+        box-shadow: none !important;
+        border: none !important;
+        max-width: none !important;
+        max-height: none !important;
+        width: 100% !important;
+        height: auto !important;
         margin: 0 !important;
         padding: 0 !important;
         background: white !important;
         border-radius: 0 !important;
+        overflow: visible !important;
     }
 
     body.print-diagram .modal-header,
@@ -1264,29 +1482,84 @@
         display: none !important;
     }
 
+    body.print-diagram .modal-body {
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
     body.print-diagram .print-preview-container {
         padding: 0 !important;
         margin: 0 !important;
         background: white !important;
+        overflow: visible !important;
+        max-height: none !important;
+        height: auto !important;
     }
 
     body.print-diagram .print-preview-page {
         box-shadow: none !important;
         border: none !important;
-        padding: 10mm !important;
+        padding: 0 !important; /* Marges à zéro */
         margin: 0 !important;
         max-width: none !important;
+        max-height: none !important;
         min-width: auto !important;
+        height: auto !important;
         background: white !important;
+        overflow: visible !important;
     }
 
     body.print-diagram .print-preview-diagram {
         width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
         background: white !important;
+        overflow: visible !important;
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        /* Mise à l'échelle pour tenir dans la page A4 paysage */
+        transform: scale(0.85);
+        transform-origin: top left;
     }
 
     body.print-diagram .print-diagram-content {
         background: white !important;
+        overflow: visible !important;
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    body.print-diagram .print-diagram-header {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    body.print-diagram .print-actions-section {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    body.print-diagram .print-diagram-footer {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    /* S'assurer que le tableau des actions est visible */
+    body.print-diagram .print-actions-section {
+        display: block !important;
+        visibility: visible !important;
+        overflow: visible !important;
+        page-break-inside: avoid;
+    }
+
+    body.print-diagram .print-actions-table {
+        display: table !important;
+        visibility: visible !important;
+    }
+
+    body.print-diagram .print-actions-table * {
+        visibility: visible !important;
     }
 
     /* Forcer le fond blanc sur le diagramme timeline */
@@ -1413,11 +1686,24 @@
     }
 
     body.print-diagram .timeline-ruler {
-        background: #e8e8e8 !important;
+        background: #fff !important;
         border-bottom: 1px solid black !important;
     }
 
+    /* Fond blanc pour sidebar et en-tête */
+    body.print-diagram .timeline-sidebar,
+    body.print-diagram .sidebar-header-row,
+    body.print-diagram .row-label-container {
+        background: #fff !important;
+        background-color: #fff !important;
+    }
+
     /* Mise à l'échelle du diagramme pour tenir dans la page A4 paysage */
+    body.print-diagram .print-preview-diagram {
+        transform-origin: top left;
+        max-height: 180mm !important; /* Hauteur A4 paysage - marges - en-tête/pied */
+    }
+
     body.print-diagram .print-diagram-content {
         width: 100% !important;
         max-width: 257mm !important; /* Largeur A4 paysage - marges */
@@ -1442,6 +1728,32 @@
     body.print-diagram .print-diagram-content .timeline-track-container {
         width: 100% !important;
     }
+
+    /* Tableau des actions - saut de page si nécessaire */
+    body.print-diagram .print-actions-section {
+        margin-top: 10px !important;
+        page-break-before: auto;
+        page-break-inside: avoid;
+    }
+
+    body.print-diagram .print-actions-section h4 {
+        font-size: 0.8rem !important;
+        margin-bottom: 5px !important;
+    }
+
+    body.print-diagram .print-actions-table {
+        font-size: 0.6rem !important;
+    }
+
+    body.print-diagram .print-actions-table th,
+    body.print-diagram .print-actions-table td {
+        padding: 2px 3px !important;
+    }
+
+    /* Pied de page sur la dernière page */
+    body.print-diagram .print-diagram-footer {
+        page-break-before: avoid;
+    }
 }
 
 /* Format A4 paysage spécifique pour le diagramme */
@@ -1453,12 +1765,14 @@
 @media print {
     body.print-diagram {
         size: A4 landscape;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 }
 
 @page diagram-landscape {
     size: A4 landscape;
-    margin: 10mm;
+    margin: 0; /* Marges à zéro */
 }
 
 /* Phasage bulle sidebar styles */
