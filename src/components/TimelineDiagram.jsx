@@ -1,13 +1,21 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, hoveredVUtile = null, planName = '' }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '' }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
     const [dragState, setDragState] = useState(null);
     // Hovered group id for showing dependencies only for that group
-    const [hoveredGroupId, setHoveredGroupId] = useState(null);
+    const [hoveredGroupIdLocal, setHoveredGroupIdLocal] = useState(null);
+    // Use local state for internal logic, but also call prop setter if provided
+    const hoveredGroupId = hoveredGroupIdLocal;
+    const setHoveredGroupId = useCallback((id) => {
+        setHoveredGroupIdLocal(id);
+        if (setHoveredGroupIdProp) {
+            setHoveredGroupIdProp(id);
+        }
+    }, [setHoveredGroupIdProp]);
     // dragState = { groupId, type: 'start' | 'end', initialMouseX, initialValue }
     // OR dragState = { actionId, field: 'deb' | 'fin', initialMouseX, initialValue }
     // Use simulated cycle length when in simulation mode
@@ -802,7 +810,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     onClick={() => onGroupClick(group)}
                                     style={{ backgroundColor: isConflict ? 'rgba(231, 76, 60, 0.1)' : 'transparent' }}
                                     onMouseEnter={() => setHoveredGroupId(group.id)}
-                                    onMouseLeave={() => setHoveredGroupId(null)}
+                                    onMouseLeave={() => {
+                                        setHoveredGroupId(null);
+                                        if (setHoveredDiagramTime) setHoveredDiagramTime(null);
+                                    }}
+                                    onMouseMove={(e) => {
+                                        if (setHoveredDiagramTime) {
+                                            const rect = e.currentTarget.getBoundingClientRect();
+                                            const x = e.clientX - rect.left;
+                                            const time = Math.floor(x / pixelsPerSecond);
+                                            setHoveredDiagramTime(Math.max(0, Math.min(time, effectiveCycleLength - 1)));
+                                        }
+                                    }}
                                 >
                                     {/* Base bars from group Début/Fin (sidebar values) - only if phase exists */}
                                     {hasPhase && (() => {

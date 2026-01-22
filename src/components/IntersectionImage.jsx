@@ -25,7 +25,9 @@ const IntersectionImage = ({
     saveDirectoryHandle,
     // Recent directories
     recentImageDirs = [],
-    addRecentDirectory
+    addRecentDirectory,
+    // Floating image callback (handled by parent)
+    onShowFloatingImage
 }) => {
     const fileInputRef = useRef(null);
     const containerRef = useRef(null);
@@ -598,6 +600,14 @@ const IntersectionImage = ({
                                 {currentTime || 0}s / {simulationResult?.cycleLength || cycleLength}s
                             </span>
                         </div>
+                    )}
+                    {imageData && onShowFloatingImage && (
+                        <button
+                            className="upload-btn floating-btn"
+                            onClick={onShowFloatingImage}
+                        >
+                            Incruster image
+                        </button>
                     )}
                     <div className="upload-btn-container" ref={imageMenuRef}>
                         <button

@@ -114,6 +114,23 @@ function App() {
     const [isPlayingSimulation, setIsPlayingSimulation] = useState(false);
     const [simulationCurrentTime, setSimulationCurrentTime] = useState(0);
     const [hoveredArrowGroupId, setHoveredArrowGroupId] = useState(null);
+    const [hoveredDiagramTime, setHoveredDiagramTime] = useState(null); // Time position when hovering diagram
+
+    // Floating image state (persists across tab changes and page reloads)
+    const [showFloatingImage, setShowFloatingImage] = useState(() => {
+        const saved = localStorage.getItem('floating_image_visible');
+        return saved === 'true';
+    });
+    const [floatingPosition, setFloatingPosition] = useState(() => {
+        try {
+            const saved = localStorage.getItem('floating_image_position');
+            return saved ? JSON.parse(saved) : { x: 100, y: 100 };
+        } catch {
+            return { x: 100, y: 100 };
+        }
+    });
+    const [isFloatingDragging, setIsFloatingDragging] = useState(false);
+    const floatingDragOffset = useRef({ x: 0, y: 0 });
 
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
@@ -142,6 +159,15 @@ function App() {
     useEffect(() => {
         localStorage.setItem('sidebar_width', sidebarWidth.toString());
     }, [sidebarWidth]);
+
+    // Save floating image state to localStorage
+    useEffect(() => {
+        localStorage.setItem('floating_image_visible', showFloatingImage.toString());
+    }, [showFloatingImage]);
+
+    useEffect(() => {
+        localStorage.setItem('floating_image_position', JSON.stringify(floatingPosition));
+    }, [floatingPosition]);
 
     // Handle resize drag
     const handleResizeStart = useCallback((e) => {
@@ -179,6 +205,39 @@ function App() {
             document.body.style.userSelect = '';
         };
     }, [isResizing, handleResizeMove, handleResizeEnd]);
+
+    // Handle floating image drag
+    const handleFloatingMouseDown = useCallback((e) => {
+        if (e.target.classList.contains('floating-close-btn')) return;
+        setIsFloatingDragging(true);
+        floatingDragOffset.current = {
+            x: e.clientX - floatingPosition.x,
+            y: e.clientY - floatingPosition.y
+        };
+    }, [floatingPosition]);
+
+    useEffect(() => {
+        if (!isFloatingDragging) return;
+
+        const handleMouseMove = (e) => {
+            setFloatingPosition({
+                x: e.clientX - floatingDragOffset.current.x,
+                y: e.clientY - floatingDragOffset.current.y
+            });
+        };
+
+        const handleMouseUp = () => {
+            setIsFloatingDragging(false);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isFloatingDragging]);
 
     // Resizable horizontal splitter between diagram and action table
     const [diagramHeight, setDiagramHeight] = useState(() => {
@@ -1645,6 +1704,95 @@ function App() {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [undo, redo]);
 
+    // Render arrow SVG for floating image
+    const renderFloatingArrowSVG = (courant, color, arrowLength = 1, turnLength = 1) => {
+        const strokeWidth = 3;
+        const thinStrokeWidth = 2;
+        const size = 32;
+
+        switch (courant) {
+            case 'TD':
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <line x1="16" y1="28" x2="16" y2="6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="8,14 16,6 24,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'TàD': {
+                const tadEndX = 14 + (12 * turnLength);
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <path d={`M8,24 L8,12 Q8,8 12,8 L${tadEndX},8`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points={`${tadEndX - 6},2 ${tadEndX},8 ${tadEndX - 6},14`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            }
+            case 'TàG': {
+                const tagEndX = 18 - (12 * turnLength);
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <path d={`M24,24 L24,12 Q24,8 20,8 L${tagEndX},8`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points={`${tagEndX + 6},2 ${tagEndX},8 ${tagEndX + 6},14`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            }
+            case 'TDTàD':
+            case 'TD-TàD':
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <line x1="12" y1="28" x2="12" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="6,14 12,8 18,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M12,20 Q20,20 20,12 L20,8" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="16,12 20,8 24,12" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'TDTàG':
+            case 'TD-TàG':
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <line x1="20" y1="28" x2="20" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="14,14 20,8 26,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M20,20 Q12,20 12,12 L12,8" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="8,12 12,8 16,12" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'TD_G_D':
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <line x1="16" y1="28" x2="16" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="10,14 16,8 22,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M16,20 Q8,20 8,12 L8,10" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="4,14 8,10 12,14" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M16,20 Q24,20 24,12 L24,10" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="20,14 24,10 28,14" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'Piéton':
+            case 'Cycle': {
+                const extendedHeight = size + (arrowLength - 1) * 24;
+                const viewBoxHeight = 32 + (arrowLength - 1) * 24;
+                const topY = 6;
+                const bottomY = 26 + (arrowLength - 1) * 24;
+                const centerY = (topY + bottomY) / 2;
+                return (
+                    <svg width={size} height={extendedHeight} viewBox={`0 0 32 ${viewBoxHeight}`}>
+                        <line x1="16" y1={centerY} x2="16" y2={topY} stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" />
+                        <polyline points={`11,${topY + 5} 16,${topY} 21,${topY + 5}`} fill="none" stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="16" y1={centerY} x2="16" y2={bottomY} stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" />
+                        <polyline points={`11,${bottomY - 5} 16,${bottomY} 21,${bottomY - 5}`} fill="none" stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            }
+            default:
+                return (
+                    <svg width={size} height={size} viewBox="0 0 32 32">
+                        <line x1="16" y1="28" x2="16" y2="6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+                        <polyline points="8,14 16,6 24,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+        }
+    };
+
     // Afficher l'écran de connexion si non authentifié
     if (!isAuthenticated) {
         return (
@@ -2102,6 +2250,8 @@ function App() {
                                 simulationCurrentTime={simulationEnabled ? simulationCurrentTime : null}
                                 isPlayingSimulation={simulationEnabled && isPlayingSimulation}
                                 hoveredArrowGroupId={hoveredArrowGroupId}
+                                setHoveredGroupId={setHoveredArrowGroupId}
+                                setHoveredDiagramTime={setHoveredDiagramTime}
                                 hoveredVUtile={hoveredVUtile}
                                 planName={simulationEnabled ? (pfTabs.find(pf => pf.id === activePFId)?.name || '') : ''}
                             />
@@ -2164,6 +2314,7 @@ function App() {
                                 saveDirectoryHandle={saveDirectoryHandle}
                                 recentImageDirs={recentImageDirs}
                                 addRecentDirectory={addRecentDirectory}
+                                onShowFloatingImage={() => setShowFloatingImage(true)}
                             />
                         ) : (
                             <ActionTable
@@ -3154,6 +3305,87 @@ function App() {
                 exportUsersToFile={exportUsersToFile}
                 importUsersFromFile={importUsersFromFile}
             />
+
+            {/* Floating image modal (persists across tab changes) */}
+            {showFloatingImage && intersectionImage && (
+                <div
+                    className="floating-image-modal"
+                    style={{
+                        left: floatingPosition.x,
+                        top: floatingPosition.y
+                    }}
+                >
+                    <div
+                        className="floating-image-header"
+                        onMouseDown={handleFloatingMouseDown}
+                    >
+                        <span>Image du carrefour</span>
+                        <button
+                            className="floating-close-btn"
+                            onClick={() => setShowFloatingImage(false)}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <div className="floating-image-content">
+                        <div className="floating-image-wrapper">
+                            <img src={intersectionImage} alt="Carrefour" />
+                            {intersectionArrows.map(arrow => {
+                                const group = groups.find(g => g.id === arrow.groupId);
+                                const courant = group?.courant || '';
+                                const groupType = group?.type || '';
+                                const rotation = arrow.rotation || 0;
+                                const scale = arrow.scale || 1;
+                                const arrowLength = arrow.length || 1;
+                                const turnLength = arrow.turnLength || 1;
+                                const isHovered = hoveredArrowGroupId === arrow.groupId;
+
+                                // Calculate arrow color based on diagram time position
+                                let arrowColor = '#000000'; // Default: BLACK
+
+                                if (hoveredDiagramTime !== null && group) {
+                                    // Calculate phase color based on time
+                                    const offset = group.offset || 0;
+                                    const greenDuration = group.durations?.green || 0;
+                                    const orangeDuration = group.durations?.orange || 0;
+                                    const cycle = cycleLength || 100;
+
+                                    // Normalize time relative to group offset
+                                    let relativeTime = (hoveredDiagramTime - offset + cycle) % cycle;
+
+                                    if (relativeTime < greenDuration) {
+                                        arrowColor = '#00cc00'; // Green phase
+                                    } else if (relativeTime < greenDuration + orangeDuration) {
+                                        arrowColor = '#ff9900'; // Orange phase
+                                    } else {
+                                        arrowColor = '#cc0000'; // Red phase
+                                    }
+                                }
+
+                                return (
+                                    <div
+                                        key={arrow.id}
+                                        className={`floating-arrow-marker ${isHovered ? 'hovered' : ''}`}
+                                        style={{
+                                            left: `${arrow.x}%`,
+                                            top: `${arrow.y}%`
+                                        }}
+                                    >
+                                        <div
+                                            className="arrow-symbol"
+                                            style={{
+                                                transform: `rotate(${rotation}deg) scale(${scale})`
+                                            }}
+                                        >
+                                            {renderFloatingArrowSVG(courant, arrowColor, arrowLength, turnLength)}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

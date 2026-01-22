@@ -3,7 +3,7 @@
     flex-direction: column;
     background: #1e1e1e;
     border-radius: 4px;
-    padding: 10px;
+    padding: 0;
     margin-top: 1rem;
 }
 
@@ -11,7 +11,12 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #1e1e1e;
+    padding: 10px;
 }
 
 .intersection-header h3 {
@@ -666,4 +671,95 @@
 .arrow-marker.hovered .arrow-label {
     background: #66f;
     box-shadow: 0 0 8px rgba(100, 100, 255, 0.8);
+}
+
+/* Floating image modal */
+.floating-image-modal {
+    position: fixed;
+    z-index: 99999;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.floating-image-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #3a3a4a;
+    cursor: move;
+    user-select: none;
+}
+
+.floating-image-header span {
+    color: #eee;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.floating-close-btn {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 1em;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.floating-close-btn:hover {
+    background: #555;
+    color: #fff;
+}
+
+.floating-image-content {
+    padding: 0;
+}
+
+.floating-btn {
+    margin-right: 8px;
+}
+
+.floating-image-wrapper {
+    position: relative;
+    width: 750px;
+    height: 530px;
+    background: #252525;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.floating-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.floating-arrow-marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    cursor: default;
+    z-index: 10;
+}
+
+.floating-arrow-marker .arrow-symbol {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.floating-arrow-marker .arrow-symbol svg {
+    width: 96px;
+    height: 96px;
+}
+
+.floating-arrow-marker.hovered {
+    z-index: 20;
+}
+
+.floating-arrow-marker.hovered .arrow-symbol {
+    filter: drop-shadow(0 0 8px #00ff00) drop-shadow(0 0 16px #00ff00);
 }
