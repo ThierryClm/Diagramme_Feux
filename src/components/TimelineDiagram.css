@@ -927,10 +927,26 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
     background: #222;
     border-bottom: 1px solid #444;
     font-size: 0.75em;
     color: #888;
+}
+
+.comment-color-btn {
+    font-weight: bold;
+    font-size: 1.2em;
+    cursor: default;
+    user-select: none;
+}
+
+.comment-color-plus {
+    color: #4CAF50;
+}
+
+.comment-color-minus {
+    color: #F44336;
 }
 
 .comment-row {
@@ -960,4 +976,12 @@
 
 .input-comment::placeholder {
     color: #666;
+}
+
+.input-comment.comment-green {
+    color: #4CAF50;
+}
+
+.input-comment.comment-red {
+    color: #F44336;
 }

@@ -3492,6 +3492,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     {/* Header for comments */}
                     <div className="comments-header">
                         <span>Commentaire</span>
+                        <span className="comment-color-btn comment-color-plus" title="Couleur verte (+)">+</span>
+                        <span className="comment-color-btn comment-color-minus" title="Couleur rouge (-)">−</span>
                     </div>
 
                     {/* Comment input for each group */}
@@ -3499,12 +3501,21 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         <div key={g.id} className="comment-row">
                             <input
                                 type="text"
-                                className="input-comment"
+                                className={`input-comment ${g.commentColor === 'green' ? 'comment-green' : g.commentColor === 'red' ? 'comment-red' : ''}`}
                                 value={g.comment || ''}
                                 onChange={(e) => updateGroupParams(g.id, { comment: e.target.value.slice(0, 50) })}
+                                onKeyDown={(e) => {
+                                    if (e.key === '+') {
+                                        e.preventDefault();
+                                        updateGroupParams(g.id, { commentColor: g.commentColor === 'green' ? '' : 'green' });
+                                    } else if (e.key === '-') {
+                                        e.preventDefault();
+                                        updateGroupParams(g.id, { commentColor: g.commentColor === 'red' ? '' : 'red' });
+                                    }
+                                }}
                                 placeholder=""
                                 maxLength={50}
-                                title="Commentaire (50 caractères max)"
+                                title="Commentaire (50 caractères max) - Appuyez sur + pour vert, - pour rouge"
                             />
                         </div>
                     ))}

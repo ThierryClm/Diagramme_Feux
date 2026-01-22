@@ -35,6 +35,7 @@ export const useTrafficLight = () => {
         offset: 0, // New groups start at 0
         da: '', // DA field (2 characters)
         comment: '', // Comment field (50 characters max, not printable)
+        commentColor: '', // Comment color: 'green', 'red', or '' (default)
         // Traffic Engineering Props
         trafficStream: '', // Courant de circulation
         laneCoef: 1, // Coef voie
@@ -1120,7 +1121,9 @@ export const useTrafficLight = () => {
             groupId: g.id,
             offset: g.offset,
             greenDuration: g.durations.green,
-            da: g.da || ''
+            da: g.da || '',
+            comment: g.comment || '',
+            commentColor: g.commentColor || ''
         }));
         const groupsKey = JSON.stringify(diagramData);
 
@@ -1175,6 +1178,8 @@ export const useTrafficLight = () => {
                             ...group,
                             offset: diagramEntry.offset,
                             da: diagramEntry.da,
+                            comment: diagramEntry.comment !== undefined ? diagramEntry.comment : group.comment,
+                            commentColor: diagramEntry.commentColor !== undefined ? diagramEntry.commentColor : group.commentColor,
                             durations: {
                                 ...group.durations,
                                 green: diagramEntry.greenDuration
