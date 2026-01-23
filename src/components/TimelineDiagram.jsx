@@ -689,16 +689,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             'transparent'
                                     }}
                                 >{g.name || '-'}</span>
-                                <input
-                                    type="text"
-                                    className="input-da"
-                                    value={g.da || ''}
-                                    onChange={(e) => updateGroupParams(g.id, { da: e.target.value.slice(0, 2) })}
-                                    onClick={(e) => e.stopPropagation()}
-                                    title="DA (Délai d'approche)"
-                                    maxLength={2}
-                                    placeholder=""
-                                />
+                                {(g.type === 'V' || g.type === 'B') ? (
+                                    <input
+                                        type="text"
+                                        className="input-da"
+                                        value={g.da || ''}
+                                        onChange={(e) => updateGroupParams(g.id, { da: e.target.value.slice(0, 2) })}
+                                        onClick={(e) => e.stopPropagation()}
+                                        title="DA (Délai d'approche)"
+                                        maxLength={2}
+                                        placeholder=""
+                                    />
+                                ) : (
+                                    <span className="input-da-placeholder"></span>
+                                )}
                                 <input
                                     type="number"
                                     className="input-time-sm"
@@ -728,7 +732,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     style={{
                                         color: duration < g.minGreen ? '#ff4d4d' : 'inherit',
                                         cursor: 'default',
-                                        opacity: 0.8
+                                        background: 'transparent',
+                                        border: 'none'
                                     }}
                                     placeholder=""
                                 />

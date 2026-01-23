@@ -357,7 +357,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
 
     return (
         <div className="matrix-container-inline">
-            <h3>Matrice de Temps Intervert (Sécurité)</h3>
+            <h3>Matrice des temps interverts</h3>
 
             <div className="matrix-scroll">
                 <table className="matrix-grid">

@@ -75,6 +75,7 @@
 .col-label.col-da {
     width: 20px;
     flex-shrink: 0;
+    margin-left: -15px;
 }
 
 .row-label-container {
@@ -143,6 +144,11 @@
     background: #444;
     outline: none;
     border-color: #666;
+}
+
+.input-da-placeholder {
+    width: 20px;
+    flex-shrink: 0;
 }
 
 .input-time {
@@ -482,6 +488,7 @@
     border: 2px solid rgba(100, 180, 255, 0.7);
     border-radius: 4px;
     z-index: 18;
+    pointer-events: none;
 }
 
 .escamotage-label {

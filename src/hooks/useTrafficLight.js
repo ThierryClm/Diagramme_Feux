@@ -585,6 +585,22 @@ export const useTrafficLight = () => {
                 // Réinitialiser les datasets de trafic
                 setTrafficDatasets({});
             }
+            // Load active traffic dataset
+            if (state.activeTrafficDataset) {
+                setActiveTrafficDataset(state.activeTrafficDataset);
+            }
+
+            // Load intersection image and arrows
+            if (state.intersectionImage !== undefined) {
+                setIntersectionImage(state.intersectionImage);
+            } else {
+                setIntersectionImage(null);
+            }
+            if (state.intersectionArrows !== undefined) {
+                setIntersectionArrows(state.intersectionArrows);
+            } else {
+                setIntersectionArrows([]);
+            }
 
             // Reset simulation state when loading full state
             setSimulationEnabled(false);
