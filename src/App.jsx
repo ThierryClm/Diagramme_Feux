@@ -140,6 +140,14 @@ function App() {
         }
     });
     const [showCropControls, setShowCropControls] = useState(false);
+    const [floatingZoom, setFloatingZoom] = useState(() => {
+        try {
+            const saved = localStorage.getItem('floating_image_zoom');
+            return saved ? parseFloat(saved) : 1;
+        } catch {
+            return 1;
+        }
+    });
 
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
@@ -181,6 +189,10 @@ function App() {
     useEffect(() => {
         localStorage.setItem('floating_image_crop', JSON.stringify(floatingCrop));
     }, [floatingCrop]);
+
+    useEffect(() => {
+        localStorage.setItem('floating_image_zoom', floatingZoom.toString());
+    }, [floatingZoom]);
 
     // Handle resize drag
     const handleResizeStart = useCallback((e) => {
@@ -598,6 +610,16 @@ function App() {
                 setFloatingCrop(data.floatingCrop);
             }
 
+            // Restaurer le zoom de l'image flottante si présent
+            if (data.floatingZoom !== undefined) {
+                setFloatingZoom(data.floatingZoom);
+            }
+
+            // Restaurer la position de l'image flottante si présente
+            if (data.floatingPosition !== undefined) {
+                setFloatingPosition(data.floatingPosition);
+            }
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier:', e);
@@ -667,6 +689,16 @@ function App() {
                 setFloatingCrop(data.floatingCrop);
             }
 
+            // Restaurer le zoom de l'image flottante si présent
+            if (data.floatingZoom !== undefined) {
+                setFloatingZoom(data.floatingZoom);
+            }
+
+            // Restaurer la position de l'image flottante si présente
+            if (data.floatingPosition !== undefined) {
+                setFloatingPosition(data.floatingPosition);
+            }
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier:', e);
@@ -716,7 +748,9 @@ function App() {
                 trafficDatasets: fullState.trafficDatasets,
                 activeTrafficDataset: fullState.activeTrafficDataset,
                 diagramHeight: diagramHeight,
-                floatingCrop: floatingCrop
+                floatingCrop: floatingCrop,
+                floatingZoom: floatingZoom,
+                floatingPosition: floatingPosition
             };
 
             // Écrire le fichier
@@ -796,7 +830,9 @@ function App() {
                 trafficDatasets: fullState.trafficDatasets,
                 activeTrafficDataset: fullState.activeTrafficDataset,
                 diagramHeight: diagramHeight,
-                floatingCrop: floatingCrop
+                floatingCrop: floatingCrop,
+                floatingZoom: floatingZoom,
+                floatingPosition: floatingPosition
             };
 
             // Écrire le fichier
@@ -3346,6 +3382,23 @@ function App() {
                     >
                         <span>Image du carrefour</span>
                         <div className="floating-header-buttons">
+                            <div className="floating-zoom-control">
+                                <button
+                                    className="floating-zoom-btn"
+                                    onClick={() => setFloatingZoom(z => Math.max(0.3, z - 0.1))}
+                                    title="Réduire"
+                                >
+                                    −
+                                </button>
+                                <span className="floating-zoom-value">{Math.round(floatingZoom * 100)}%</span>
+                                <button
+                                    className="floating-zoom-btn"
+                                    onClick={() => setFloatingZoom(z => Math.min(2, z + 0.1))}
+                                    title="Agrandir"
+                                >
+                                    +
+                                </button>
+                            </div>
                             <button
                                 className={`floating-crop-btn ${showCropControls ? 'active' : ''}`}
                                 onClick={() => setShowCropControls(!showCropControls)}
@@ -3419,8 +3472,8 @@ function App() {
                         <div
                             className="floating-image-wrapper"
                             style={{
-                                width: 750 - floatingCrop.left - floatingCrop.right,
-                                height: 530 - floatingCrop.top - floatingCrop.bottom
+                                width: (750 - floatingCrop.left - floatingCrop.right) * floatingZoom,
+                                height: (530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom
                             }}
                         >
                             <div
@@ -3429,7 +3482,9 @@ function App() {
                                     marginTop: -floatingCrop.top,
                                     marginLeft: -floatingCrop.left,
                                     width: 750,
-                                    height: 530
+                                    height: 530,
+                                    transform: `scale(${floatingZoom})`,
+                                    transformOrigin: 'top left'
                                 }}
                             >
                                 <img src={intersectionImage} alt="Carrefour" />
