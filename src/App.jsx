@@ -3443,10 +3443,15 @@ function App() {
                                     const turnLength = arrow.turnLength || 1;
                                     const isHovered = hoveredArrowGroupId === arrow.groupId;
 
-                                    // Calculate arrow color based on diagram time position
+                                    // Calculate arrow color based on diagram time position or simulation
                                     let arrowColor = '#000000'; // Default: BLACK
 
-                                    if (hoveredDiagramTime !== null && group) {
+                                    // Use simulation time when playing, otherwise use hovered time
+                                    const activeTime = (simulationEnabled && isPlayingSimulation)
+                                        ? simulationCurrentTime
+                                        : hoveredDiagramTime;
+
+                                    if (activeTime !== null && group) {
                                         // Calculate phase color based on time
                                         const offset = group.offset || 0;
                                         const greenDuration = group.durations?.green || 0;
@@ -3454,7 +3459,7 @@ function App() {
                                         const cycle = cycleLength || 100;
 
                                         // Normalize time relative to group offset
-                                        let relativeTime = (hoveredDiagramTime - offset + cycle) % cycle;
+                                        let relativeTime = (activeTime - offset + cycle) % cycle;
 
                                         if (relativeTime < greenDuration) {
                                             arrowColor = '#00cc00'; // Green phase
