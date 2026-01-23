@@ -131,6 +131,15 @@ function App() {
     });
     const [isFloatingDragging, setIsFloatingDragging] = useState(false);
     const floatingDragOffset = useRef({ x: 0, y: 0 });
+    const [floatingCrop, setFloatingCrop] = useState(() => {
+        try {
+            const saved = localStorage.getItem('floating_image_crop');
+            return saved ? JSON.parse(saved) : { top: 0, bottom: 0, left: 0, right: 0 };
+        } catch {
+            return { top: 0, bottom: 0, left: 0, right: 0 };
+        }
+    });
+    const [showCropControls, setShowCropControls] = useState(false);
 
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
@@ -168,6 +177,10 @@ function App() {
     useEffect(() => {
         localStorage.setItem('floating_image_position', JSON.stringify(floatingPosition));
     }, [floatingPosition]);
+
+    useEffect(() => {
+        localStorage.setItem('floating_image_crop', JSON.stringify(floatingCrop));
+    }, [floatingCrop]);
 
     // Handle resize drag
     const handleResizeStart = useCallback((e) => {
@@ -580,6 +593,11 @@ function App() {
                 setDiagramHeight(data.diagramHeight);
             }
 
+            // Restaurer le rognage de l'image flottante si présent
+            if (data.floatingCrop !== undefined) {
+                setFloatingCrop(data.floatingCrop);
+            }
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier:', e);
@@ -644,6 +662,11 @@ function App() {
                 setDiagramHeight(data.diagramHeight);
             }
 
+            // Restaurer le rognage de l'image flottante si présent
+            if (data.floatingCrop !== undefined) {
+                setFloatingCrop(data.floatingCrop);
+            }
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier:', e);
@@ -692,7 +715,8 @@ function App() {
                 intersectionArrows: fullState.intersectionArrows,
                 trafficDatasets: fullState.trafficDatasets,
                 activeTrafficDataset: fullState.activeTrafficDataset,
-                diagramHeight: diagramHeight
+                diagramHeight: diagramHeight,
+                floatingCrop: floatingCrop
             };
 
             // Écrire le fichier
@@ -771,7 +795,8 @@ function App() {
                 intersectionArrows: fullState.intersectionArrows,
                 trafficDatasets: fullState.trafficDatasets,
                 activeTrafficDataset: fullState.activeTrafficDataset,
-                diagramHeight: diagramHeight
+                diagramHeight: diagramHeight,
+                floatingCrop: floatingCrop
             };
 
             // Écrire le fichier
@@ -3320,68 +3345,147 @@ function App() {
                         onMouseDown={handleFloatingMouseDown}
                     >
                         <span>Image du carrefour</span>
-                        <button
-                            className="floating-close-btn"
-                            onClick={() => setShowFloatingImage(false)}
-                        >
-                            ✕
-                        </button>
+                        <div className="floating-header-buttons">
+                            <button
+                                className={`floating-crop-btn ${showCropControls ? 'active' : ''}`}
+                                onClick={() => setShowCropControls(!showCropControls)}
+                                title="Rogner l'image"
+                            >
+                                ✂
+                            </button>
+                            <button
+                                className="floating-close-btn"
+                                onClick={() => setShowFloatingImage(false)}
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
+                    {showCropControls && (
+                        <div className="floating-crop-controls">
+                            <div className="crop-control">
+                                <label>Haut</label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="250"
+                                    value={floatingCrop.top}
+                                    onChange={(e) => setFloatingCrop(prev => ({ ...prev, top: parseInt(e.target.value) }))}
+                                />
+                                <span>{floatingCrop.top}px</span>
+                            </div>
+                            <div className="crop-control">
+                                <label>Bas</label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="250"
+                                    value={floatingCrop.bottom}
+                                    onChange={(e) => setFloatingCrop(prev => ({ ...prev, bottom: parseInt(e.target.value) }))}
+                                />
+                                <span>{floatingCrop.bottom}px</span>
+                            </div>
+                            <div className="crop-control">
+                                <label>Gauche</label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="350"
+                                    value={floatingCrop.left}
+                                    onChange={(e) => setFloatingCrop(prev => ({ ...prev, left: parseInt(e.target.value) }))}
+                                />
+                                <span>{floatingCrop.left}px</span>
+                            </div>
+                            <div className="crop-control">
+                                <label>Droite</label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="350"
+                                    value={floatingCrop.right}
+                                    onChange={(e) => setFloatingCrop(prev => ({ ...prev, right: parseInt(e.target.value) }))}
+                                />
+                                <span>{floatingCrop.right}px</span>
+                            </div>
+                            <button
+                                className="crop-reset-btn"
+                                onClick={() => setFloatingCrop({ top: 0, bottom: 0, left: 0, right: 0 })}
+                            >
+                                Réinitialiser
+                            </button>
+                        </div>
+                    )}
                     <div className="floating-image-content">
-                        <div className="floating-image-wrapper">
-                            <img src={intersectionImage} alt="Carrefour" />
-                            {intersectionArrows.map(arrow => {
-                                const group = groups.find(g => g.id === arrow.groupId);
-                                const courant = group?.courant || '';
-                                const groupType = group?.type || '';
-                                const rotation = arrow.rotation || 0;
-                                const scale = arrow.scale || 1;
-                                const arrowLength = arrow.length || 1;
-                                const turnLength = arrow.turnLength || 1;
-                                const isHovered = hoveredArrowGroupId === arrow.groupId;
+                        <div
+                            className="floating-image-wrapper"
+                            style={{
+                                width: 750 - floatingCrop.left - floatingCrop.right,
+                                height: 530 - floatingCrop.top - floatingCrop.bottom
+                            }}
+                        >
+                            <div
+                                className="floating-image-inner"
+                                style={{
+                                    marginTop: -floatingCrop.top,
+                                    marginLeft: -floatingCrop.left,
+                                    width: 750,
+                                    height: 530
+                                }}
+                            >
+                                <img src={intersectionImage} alt="Carrefour" />
+                                {intersectionArrows.map(arrow => {
+                                    const group = groups.find(g => g.id === arrow.groupId);
+                                    const courant = group?.courant || '';
+                                    const groupType = group?.type || '';
+                                    const rotation = arrow.rotation || 0;
+                                    const scale = arrow.scale || 1;
+                                    const arrowLength = arrow.length || 1;
+                                    const turnLength = arrow.turnLength || 1;
+                                    const isHovered = hoveredArrowGroupId === arrow.groupId;
 
-                                // Calculate arrow color based on diagram time position
-                                let arrowColor = '#000000'; // Default: BLACK
+                                    // Calculate arrow color based on diagram time position
+                                    let arrowColor = '#000000'; // Default: BLACK
 
-                                if (hoveredDiagramTime !== null && group) {
-                                    // Calculate phase color based on time
-                                    const offset = group.offset || 0;
-                                    const greenDuration = group.durations?.green || 0;
-                                    const orangeDuration = group.durations?.orange || 0;
-                                    const cycle = cycleLength || 100;
+                                    if (hoveredDiagramTime !== null && group) {
+                                        // Calculate phase color based on time
+                                        const offset = group.offset || 0;
+                                        const greenDuration = group.durations?.green || 0;
+                                        const orangeDuration = group.durations?.orange || 0;
+                                        const cycle = cycleLength || 100;
 
-                                    // Normalize time relative to group offset
-                                    let relativeTime = (hoveredDiagramTime - offset + cycle) % cycle;
+                                        // Normalize time relative to group offset
+                                        let relativeTime = (hoveredDiagramTime - offset + cycle) % cycle;
 
-                                    if (relativeTime < greenDuration) {
-                                        arrowColor = '#00cc00'; // Green phase
-                                    } else if (relativeTime < greenDuration + orangeDuration) {
-                                        arrowColor = '#ff9900'; // Orange phase
-                                    } else {
-                                        arrowColor = '#cc0000'; // Red phase
+                                        if (relativeTime < greenDuration) {
+                                            arrowColor = '#00cc00'; // Green phase
+                                        } else if (relativeTime < greenDuration + orangeDuration) {
+                                            arrowColor = '#ff9900'; // Orange phase
+                                        } else {
+                                            arrowColor = '#cc0000'; // Red phase
+                                        }
                                     }
-                                }
 
-                                return (
-                                    <div
-                                        key={arrow.id}
-                                        className={`floating-arrow-marker ${isHovered ? 'hovered' : ''}`}
-                                        style={{
-                                            left: `${arrow.x}%`,
-                                            top: `${arrow.y}%`
-                                        }}
-                                    >
+                                    return (
                                         <div
-                                            className="arrow-symbol"
+                                            key={arrow.id}
+                                            className={`floating-arrow-marker ${isHovered ? 'hovered' : ''}`}
                                             style={{
-                                                transform: `rotate(${rotation}deg) scale(${scale})`
+                                                left: `${arrow.x}%`,
+                                                top: `${arrow.y}%`
                                             }}
                                         >
-                                            {renderFloatingArrowSVG(courant, arrowColor, arrowLength, turnLength)}
+                                            <div
+                                                className="arrow-symbol"
+                                                style={{
+                                                    transform: `rotate(${rotation}deg) scale(${scale})`
+                                                }}
+                                            >
+                                                {renderFloatingArrowSVG(courant, arrowColor, arrowLength, turnLength)}
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 </div>
