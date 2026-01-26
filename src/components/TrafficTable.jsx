@@ -151,24 +151,42 @@ const TrafficTable = ({
                                 <td className="col-name-readonly">{g.name}</td>
 
                                 {/* Coef Voie (shared across all datasets) */}
-                                <td>
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        className="input-trafic-num"
-                                        value={g.laneCoef || ''}
-                                        onChange={(e) => handleSharedChange(g.id, 'laneCoef', parseFloat(e.target.value) || 0)}
-                                    />
-                                </td>
+                                {(() => {
+                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    return (
+                                        <td
+                                            onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
+                                            onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
+                                        >
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                className="input-trafic-num"
+                                                value={g.laneCoef || ''}
+                                                onChange={(e) => handleSharedChange(g.id, 'laneCoef', parseFloat(e.target.value) || 0)}
+                                            />
+                                        </td>
+                                    );
+                                })()}
                                 {/* Trafic (per dataset) */}
-                                <td>
-                                    <input
-                                        type="number"
-                                        className="input-trafic-num"
-                                        value={trafficData.trafficVol || ''}
-                                        onChange={(e) => handleTrafficChange(g.id, parseInt(e.target.value) || 0)}
-                                    />
-                                </td>
+                                {(() => {
+                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    return (
+                                        <td
+                                            onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
+                                            onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
+                                        >
+                                            <input
+                                                type="number"
+                                                className="input-trafic-num"
+                                                value={trafficData.trafficVol || ''}
+                                                onChange={(e) => handleTrafficChange(g.id, parseInt(e.target.value) || 0)}
+                                            />
+                                        </td>
+                                    );
+                                })()}
                                 {/* Vert Utile (calculé) */}
                                 {(() => {
                                     const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
@@ -185,21 +203,46 @@ const TrafficTable = ({
                                 })()}
                                 {/* Capacité Utilisée (calculée: V.Utile / temps vert * 100) */}
                                 {(() => {
-                                    const capacity = calculateCapacity(g.durations?.green, calculateVUtile(trafficData.trafficVol, g.laneCoef));
+                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
                                     return (
-                                        <td className={`col-calculated ${getCapacityColorClass(capacity.value)}`}>
+                                        <td
+                                            className={`col-calculated ${getCapacityColorClass(capacity.value)}`}
+                                            onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
+                                            onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
+                                        >
                                             {capacity.display}
                                         </td>
                                     );
                                 })()}
                                 {/* Retard (calculé - lecture seule) */}
-                                <td className="col-calculated">
-                                    {g.delay || ''}
-                                </td>
+                                {(() => {
+                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    return (
+                                        <td
+                                            className="col-calculated"
+                                            onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
+                                            onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
+                                        >
+                                            {g.delay || ''}
+                                        </td>
+                                    );
+                                })()}
                                 {/* Ile d'attente (calculé - lecture seule) */}
-                                <td className="col-calculated">
-                                    {g.queueLength || ''}
-                                </td>
+                                {(() => {
+                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    return (
+                                        <td
+                                            className="col-calculated"
+                                            onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
+                                            onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
+                                        >
+                                            {g.queueLength || ''}
+                                        </td>
+                                    );
+                                })()}
                             </tr>
                         );
                     })}

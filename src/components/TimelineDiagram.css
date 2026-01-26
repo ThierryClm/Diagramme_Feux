@@ -894,28 +894,31 @@
     bottom: 0;
     pointer-events: none;
     z-index: 5;
-    background: transparent;
     border: 2px solid currentColor;
     border-left: none;
 }
 
-/* V.Utile overlay colors based on capacity - border only */
+/* V.Utile overlay colors based on capacity - border + fill */
 .vutile-overlay.vutile-green {
+    background: rgba(76, 175, 80, 0.85);
     border-color: #4CAF50;
     box-shadow: 0 0 4px #4CAF50;
 }
 
 .vutile-overlay.vutile-orange {
+    background: rgba(255, 152, 0, 0.85);
     border-color: #FF9800;
     box-shadow: 0 0 4px #FF9800;
 }
 
 .vutile-overlay.vutile-red {
+    background: rgba(244, 67, 54, 0.85);
     border-color: #F44336;
     box-shadow: 0 0 4px #F44336;
 }
 
 .vutile-overlay.vutile-black {
+    background: rgba(33, 33, 33, 0.85);
     border-color: #212121;
     box-shadow: 0 0 4px #000;
 }
