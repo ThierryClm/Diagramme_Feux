@@ -1410,7 +1410,12 @@ function App() {
                 });
             }
 
-            alert(`Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`);
+            // Afficher le résultat avec les avertissements éventuels
+            let message = `Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`;
+            if (importedData.warnings && importedData.warnings.length > 0) {
+                message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
+            }
+            alert(message);
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur import Excel:', e);
@@ -1484,7 +1489,12 @@ function App() {
                 });
             }
 
-            alert(`Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`);
+            // Afficher le résultat avec les avertissements éventuels
+            let message = `Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`;
+            if (importedData.warnings && importedData.warnings.length > 0) {
+                message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
+            }
+            alert(message);
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur import Excel:', e);
@@ -1533,7 +1543,12 @@ function App() {
                 setImportModal(false);
                 setImportFile(null);
                 setImportError('');
-                alert(`Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`);
+                // Afficher le résultat avec les avertissements éventuels
+                let message = `Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`;
+                if (importedData.warnings && importedData.warnings.length > 0) {
+                    message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
+                }
+                alert(message);
             }
             // Handle CSV files
             else if (fileExt === 'csv') {

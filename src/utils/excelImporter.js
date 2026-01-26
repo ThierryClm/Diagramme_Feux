@@ -61,6 +61,93 @@ function normalizeActionName(actionName) {
 }
 
 /**
+ * Parse sheet manually cell by cell when sheet_to_json fails
+ * This allows us to identify and skip problematic cells
+ * @param {Object} sheet - The worksheet object
+ * @param {string} sheetName - Sheet name for error reporting
+ * @param {Object} result - Result object to add warnings to
+ * @returns {Array} - 2D array of cell values
+ */
+function parseSheetManually(sheet, sheetName, result) {
+    const sheetData = [];
+
+    // Get sheet range
+    const range = sheet['!ref'];
+    if (!range) {
+        result.warnings.push(`Feuille "${sheetName}": aucune plage de données trouvée`);
+        return sheetData;
+    }
+
+    // Parse range (e.g., "A1:CZ200")
+    const rangeMatch = range.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/);
+    if (!rangeMatch) {
+        result.warnings.push(`Feuille "${sheetName}": format de plage invalide (${range})`);
+        return sheetData;
+    }
+
+    const startCol = colNameToIndex(rangeMatch[1]);
+    const startRow = parseInt(rangeMatch[2], 10) - 1;
+    const endCol = colNameToIndex(rangeMatch[3]);
+    const endRow = parseInt(rangeMatch[4], 10) - 1;
+
+    console.log(`Parsing sheet "${sheetName}" manually: rows ${startRow + 1}-${endRow + 1}, cols ${rangeMatch[1]}-${rangeMatch[3]}`);
+
+    const problematicCells = [];
+
+    for (let r = startRow; r <= endRow; r++) {
+        const rowData = [];
+        for (let c = startCol; c <= endCol; c++) {
+            try {
+                const cellAddress = XLSX.utils.encode_cell({ r, c });
+                const cell = sheet[cellAddress];
+
+                if (!cell) {
+                    rowData.push('');
+                } else if (typeof cell === 'object') {
+                    // Safely get value, avoiding problematic properties
+                    if (cell.v !== undefined) {
+                        rowData.push(cell.v);
+                    } else if (cell.w !== undefined) {
+                        // Formatted text
+                        rowData.push(cell.w);
+                    } else {
+                        rowData.push('');
+                    }
+                } else {
+                    rowData.push('');
+                }
+            } catch (cellErr) {
+                const cellAddr = XLSX.utils.encode_cell({ r, c });
+                problematicCells.push(cellAddr);
+                console.warn(`Error reading cell ${cellAddr} in "${sheetName}":`, cellErr.message);
+                rowData.push(''); // Valeur par défaut pour cellule problématique
+            }
+        }
+        sheetData.push(rowData);
+    }
+
+    if (problematicCells.length > 0) {
+        const cellList = problematicCells.length <= 10
+            ? problematicCells.join(', ')
+            : `${problematicCells.slice(0, 10).join(', ')}... et ${problematicCells.length - 10} autres`;
+        result.warnings.push(`Feuille "${sheetName}": cellules ignorées (${cellList})`);
+    }
+
+    return sheetData;
+}
+
+/**
+ * Convert column name (A, B, ..., Z, AA, AB, ...) to 0-based index
+ */
+function colNameToIndex(colName) {
+    let index = 0;
+    for (let i = 0; i < colName.length; i++) {
+        index = index * 26 + (colName.charCodeAt(i) - 64);
+    }
+    return index - 1;
+}
+
+/**
  * Helper function to get cell value, handling merged cells
  * @param {Object} sheet - The worksheet object
  * @param {number} row - 0-based row index
@@ -68,30 +155,36 @@ function normalizeActionName(actionName) {
  * @returns {any} - The cell value or empty string
  */
 function getCellValue(sheet, row, col) {
-    // Convert to Excel cell address (e.g., A1, B2, etc.)
-    const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-    const cell = sheet[cellAddress];
+    try {
+        // Convert to Excel cell address (e.g., A1, B2, etc.)
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        const cell = sheet[cellAddress];
 
-    if (cell) {
-        return cell.v !== undefined ? cell.v : '';
-    }
+        if (cell && typeof cell === 'object') {
+            return cell.v !== undefined ? cell.v : '';
+        }
 
-    // If cell is empty, check if it's part of a merged range
-    if (sheet['!merges']) {
-        for (const merge of sheet['!merges']) {
-            // Check if this cell is within the merged range
-            if (row >= merge.s.r && row <= merge.e.r && col >= merge.s.c && col <= merge.e.c) {
-                // Get value from the top-left cell of the merge
-                const mergeAddress = XLSX.utils.encode_cell({ r: merge.s.r, c: merge.s.c });
-                const mergeCell = sheet[mergeAddress];
-                if (mergeCell) {
-                    return mergeCell.v !== undefined ? mergeCell.v : '';
+        // If cell is empty, check if it's part of a merged range
+        if (sheet['!merges'] && Array.isArray(sheet['!merges'])) {
+            for (const merge of sheet['!merges']) {
+                if (!merge || !merge.s || !merge.e) continue;
+                // Check if this cell is within the merged range
+                if (row >= merge.s.r && row <= merge.e.r && col >= merge.s.c && col <= merge.e.c) {
+                    // Get value from the top-left cell of the merge
+                    const mergeAddress = XLSX.utils.encode_cell({ r: merge.s.r, c: merge.s.c });
+                    const mergeCell = sheet[mergeAddress];
+                    if (mergeCell && typeof mergeCell === 'object') {
+                        return mergeCell.v !== undefined ? mergeCell.v : '';
+                    }
                 }
             }
         }
-    }
 
-    return '';
+        return '';
+    } catch (err) {
+        console.warn(`Error getting cell value at row ${row}, col ${col}:`, err);
+        return '';
+    }
 }
 
 /**
@@ -112,7 +205,42 @@ export async function importExcelFile(file) {
         reader.onload = (e) => {
             try {
                 const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+
+                let workbook;
+                let readWarnings = [];
+
+                // Essayer plusieurs stratégies de lecture
+                const readStrategies = [
+                    { type: 'array' },  // Stratégie par défaut
+                    { type: 'array', cellStyles: false },  // Sans les styles
+                    { type: 'array', cellStyles: false, cellNF: false },  // Sans styles ni formats
+                    { type: 'array', cellStyles: false, cellNF: false, cellDates: false, raw: true }  // Mode minimal
+                ];
+
+                for (let i = 0; i < readStrategies.length; i++) {
+                    try {
+                        console.log(`Trying read strategy ${i + 1}:`, readStrategies[i]);
+                        workbook = XLSX.read(data, readStrategies[i]);
+                        console.log(`Strategy ${i + 1} succeeded. Sheets:`, workbook.SheetNames);
+                        if (i > 0) {
+                            readWarnings.push(`Fichier lu avec options réduites (stratégie ${i + 1}/${readStrategies.length})`);
+                        }
+                        break; // Succès, sortir de la boucle
+                    } catch (readErr) {
+                        console.error(`Error reading Excel workbook (strategy ${i + 1}):`, readErr);
+                        console.error(`Stack trace:`, readErr.stack);
+                        if (i === readStrategies.length - 1) {
+                            // Dernière stratégie échouée - afficher plus de détails
+                            const errorDetail = readErr.stack ? readErr.stack.split('\n').slice(0, 5).join('\n') : readErr.message;
+                            reject(new Error(`Le fichier Excel ne peut pas être lu.\n\nEssayez de :\n1. Ouvrir le fichier dans Excel\n2. Enregistrer sous un nouveau nom (format .xlsx)\n3. Réessayer l'import\n\nDétail technique:\n${errorDetail}`));
+                            return;
+                        }
+                        // Sinon, essayer la stratégie suivante
+                        console.log(`Trying next read strategy...`);
+                    }
+                }
+
+                console.log('Workbook loaded successfully, processing sheets...');
 
                 const result = {
                     intersectionName: file.name.replace(/\.(xlsx?|xls)$/i, ''),
@@ -121,7 +249,8 @@ export async function importExcelFile(file) {
                     conflictMatrix: null,
                     actionData: [],
                     trafficData: {},
-                    pfTabs: []
+                    pfTabs: [],
+                    warnings: [...readWarnings] // Inclure les avertissements de lecture
                 };
 
                 // Parse specific sheets based on user specifications:
@@ -132,31 +261,71 @@ export async function importExcelFile(file) {
                 console.log('Available sheets:', workbook.SheetNames);
 
                 workbook.SheetNames.forEach((sheetName, sheetIndex) => {
-                    const sheet = workbook.Sheets[sheetName];
-                    const sheetData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-                    const normalizedSheetName = sheetName.toLowerCase().trim();
+                    console.log(`\n=== Processing sheet ${sheetIndex}: "${sheetName}" ===`);
+                    try {
+                        const sheet = workbook.Sheets[sheetName];
 
-                    console.log(`Processing sheet ${sheetIndex}: "${sheetName}" (normalized: "${normalizedSheetName}")`);
+                        // Vérifier que la feuille existe
+                        if (!sheet) {
+                            console.warn(`Sheet "${sheetName}" is empty or undefined, skipping`);
+                            result.warnings.push(`Feuille "${sheetName}" vide ou non trouvée, ignorée`);
+                            return;
+                        }
 
-                    // Parse "Formulaire" sheet for groups configuration
-                    if (normalizedSheetName.includes('formulaire')) {
-                        console.log('Found Formulaire sheet, parsing groups...');
-                        parseGroupsSheet(sheetData, result, sheetName);
-                    }
-                    // Parse Traffic sheet if found (check before PF sheets to ensure it's detected)
-                    else if (normalizedSheetName.includes('trafic') || normalizedSheetName.includes('traffic')) {
-                        console.log('Found Trafic sheet, parsing traffic data...');
-                        parseTrafficSheet(sheetData, result);
-                    }
-                    // Parse 6th sheet (index 5) for conflict matrix, diagram data, and action table (PF1)
-                    else if (sheetIndex === 5) {
-                        parseMatrixSheet(sheetData, result, sheet, sheetName);
-                    }
-                    // Parse sheets after index 5 as additional PF tabs (PF2, PF3, ...)
-                    else if (sheetIndex > 5) {
-                        const pfNumber = sheetIndex - 4; // index 6 = PF2, index 7 = PF3, etc.
-                        console.log(`Parsing additional PF sheet: PF${pfNumber} from sheet ${sheetIndex}`);
-                        parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet);
+                        console.log(`Sheet "${sheetName}" ref:`, sheet['!ref']);
+
+                        let sheetData;
+                        try {
+                            console.log(`Trying sheet_to_json for "${sheetName}"...`);
+                            sheetData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
+                            console.log(`sheet_to_json succeeded for "${sheetName}", rows:`, sheetData.length);
+                        } catch (sheetErr) {
+                            console.error(`Error parsing sheet "${sheetName}" with sheet_to_json:`, sheetErr);
+                            console.error(`Stack:`, sheetErr.stack);
+                            // Essayer une approche alternative : lecture cellule par cellule
+                            console.log(`Trying manual parsing for sheet "${sheetName}"...`);
+                            try {
+                                sheetData = parseSheetManually(sheet, sheetName, result);
+                                console.log(`Manual parsing succeeded for "${sheetName}", rows:`, sheetData.length);
+                                result.warnings.push(`Feuille "${sheetName}": lecture manuelle (certaines cellules peuvent manquer)`);
+                            } catch (manualErr) {
+                                console.error(`Manual parsing also failed for "${sheetName}":`, manualErr);
+                                result.warnings.push(`Feuille "${sheetName}": impossible de lire (${sheetErr.message})`);
+                                return; // Continuer avec les autres feuilles
+                            }
+                        }
+
+                        const normalizedSheetName = sheetName.toLowerCase().trim();
+
+                        console.log(`Processing sheet ${sheetIndex}: "${sheetName}" (normalized: "${normalizedSheetName}")`);
+
+                        // Parse "Formulaire" sheet for groups configuration
+                        if (normalizedSheetName.includes('formulaire')) {
+                            console.log('Found Formulaire sheet, parsing groups...');
+                            parseGroupsSheet(sheetData, result, sheetName);
+                        }
+                        // Parse Traffic sheet if found (check before PF sheets to ensure it's detected)
+                        else if (normalizedSheetName.includes('trafic') || normalizedSheetName.includes('traffic')) {
+                            console.log('Found Trafic sheet, parsing traffic data...');
+                            parseTrafficSheet(sheetData, result);
+                        }
+                        // Parse 6th sheet (index 5) for conflict matrix, diagram data, and action table (PF1)
+                        else if (sheetIndex === 5) {
+                            parseMatrixSheet(sheetData, result, sheet, sheetName);
+                        }
+                        // Parse sheets after index 5 as additional PF tabs (PF2, PF3, ...)
+                        else if (sheetIndex > 5) {
+                            const pfNumber = sheetIndex - 4; // index 6 = PF2, index 7 = PF3, etc.
+                            console.log(`Parsing additional PF sheet: PF${pfNumber} from sheet ${sheetIndex}`);
+                            parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet);
+                        }
+                    } catch (parseErr) {
+                        console.error(`Error processing sheet "${sheetName}":`, parseErr);
+                        console.error(`Stack:`, parseErr.stack);
+                        // Extraire la ligne de l'erreur si possible
+                        const stackLine = parseErr.stack ? parseErr.stack.split('\n')[1] : '';
+                        result.warnings.push(`Feuille "${sheetName}": erreur (${parseErr.message}) ${stackLine}`);
+                        // Continuer avec les autres feuilles au lieu de tout arrêter
                     }
                 });
 
@@ -175,9 +344,12 @@ export async function importExcelFile(file) {
 
                 resolve(result);
             } catch (err) {
+                console.error('Excel import error:', err);
                 // Check if it's a password-protected file
                 if (err.message && err.message.includes('password')) {
                     reject(new Error('Le fichier Excel est protégé par mot de passe.\n\nPour l\'importer, veuillez :\n1. Ouvrir le fichier dans Excel\n2. Aller dans Fichier → Informations → Protéger le classeur\n3. Supprimer le mot de passe\n4. Enregistrer le fichier\n5. Réessayer l\'import'));
+                } else if (err.message && (err.message.includes("'t'") || err.message.includes("undefined"))) {
+                    reject(new Error(`Le fichier Excel contient des cellules mal formées ou un format non supporté.\n\nEssayez de :\n1. Ouvrir le fichier dans Excel\n2. Enregistrer sous un nouveau nom (format .xlsx)\n3. Réessayer l'import\n\nDétail technique: ${err.message}`));
                 } else {
                     reject(new Error(`Erreur lors de la lecture du fichier Excel: ${err.message}`));
                 }
