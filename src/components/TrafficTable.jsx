@@ -79,6 +79,16 @@ const TrafficTable = ({
         return Math.round(result); // Arrondi à l'unité
     };
 
+    // Calculate File d'attente = (Math.floor(Trafic × (Cycle - Vert) / 3600 / Coef) + 1) × 6
+    const calculateQueue = (greenTime, trafficVol, laneCoef) => {
+        if (!greenTime || !trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
+        const redTime = cycleLength - greenTime;
+        // Formule : (partie entière de (Trafic * (cycle - vert) / 3600 / Coef) + 1) * 6
+        const innerValue = trafficVol * redTime / 3600 / laneCoef;
+        const result = (Math.floor(innerValue) + 1) * 6;
+        return result;
+    };
+
     // Get capacity color class based on value
     const getCapacityColorClass = (value) => {
         if (value === null) return '';
@@ -211,7 +221,7 @@ const TrafficTable = ({
                                             onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
                                             onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
                                         >
-                                            {vUtile || ''}
+                                            {vUtile ? `${vUtile}''` : ''}
                                         </td>
                                     );
                                 })()}
@@ -240,21 +250,22 @@ const TrafficTable = ({
                                             onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
                                             onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
                                         >
-                                            {delay !== null ? delay : ''}
+                                            {delay !== null ? `${delay}''` : ''}
                                         </td>
                                     );
                                 })()}
-                                {/* Ile d'attente (calculé - lecture seule) */}
+                                {/* File d'attente (calculé) = (Trafic * (cycle - vert) / (3600 / Coef)) * 6 */}
                                 {(() => {
                                     const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
                                     const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    const queue = calculateQueue(g.durations?.green, trafficData.trafficVol, g.laneCoef);
                                     return (
                                         <td
                                             className="col-calculated"
                                             onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
                                             onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
                                         >
-                                            {g.queueLength || ''}
+                                            {queue !== null ? `${queue}m` : ''}
                                         </td>
                                     );
                                 })()}

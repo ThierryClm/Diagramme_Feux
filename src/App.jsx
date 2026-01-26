@@ -2568,7 +2568,7 @@ function App() {
             </Modal>
 
             {/* Modal Aide en ligne */}
-            <Modal isOpen={helpModal} onClose={() => setHelpModal(false)} title="Aide - Diagramme de Feux">
+            <Modal isOpen={helpModal} onClose={() => setHelpModal(false)} title="Aide - Diagramme de Feux" className="modal-wide">
                 <div className="help-content">
                     <section className="help-section">
                         <h4>Présentation</h4>
@@ -2616,7 +2616,7 @@ function App() {
                             <li><strong>Ouverture anticipée :</strong> Anticipation du passage au vert (barre hachurée verte).</li>
                             <li><strong>Fermeture anticipée :</strong> Anticipation du passage au rouge (accolade orange sous la barre).</li>
                             <li><strong>Signal aide conduite :</strong> Signal d'information conducteur (orange clignotant + bleu fixe).</li>
-                            <li><strong>Début/Fin de bande passante :</strong> Lignes verticales verte/rouge marquant la coordination.</li>
+                            <li><strong>Début/Fin de bande passante :</strong> Ligne discontinue affichant la synchronisation à l'ouverture ou à la fermeture entre 2 groupes de feu.</li>
                             <li><strong>Priorité piétons :</strong> Action pour la priorité aux piétons.</li>
                             <li><strong>Instant Co :</strong> Point de synchronisation dans le cycle. Si Plage 1/2 non renseignées, s'applique à tous les groupes.</li>
                             <li><strong>Point de repos :</strong> Point de repos dans le cycle. Si Plage 1/2 non renseignées, s'applique à tous les groupes.</li>
@@ -2687,9 +2687,10 @@ function App() {
                             <li><strong>Trafic :</strong> Volume de trafic (véh/h) - spécifique à chaque jeu de données</li>
                             <li><strong>V.Utile :</strong> Calculé automatiquement = Trafic / (1800 × Coef / Cycle)</li>
                             <li><strong>Cap.U :</strong> Capacité utilisée = (V.Utile / Vert) × 100%</li>
-                            <li><strong>Retard :</strong> Retard moyen (calculé)</li>
-                            <li><strong>Attente :</strong> Longueur de file d'attente (calculé)</li>
+                            <li><strong>Retard :</strong> Retard moyen = (Cycle - Vert)² / (2 × Cycle × (1 - Trafic / (1800 × Coef)))</li>
+                            <li><strong>File d'attente :</strong> Longueur = (partie entière de (Trafic × (Cycle - Vert) / 3600 / Coef) + 1) × 6 mètres</li>
                         </ul>
+                        <p><strong>Surbrillance interactive :</strong> Le survol des champs Coef, Trafic, V.Utile, Cap.U, Retard ou File d'attente met en surbrillance la barre correspondante dans le diagramme.</p>
                         <p><strong>Jeux de données :</strong> La listbox "Associé à" permet de basculer entre plusieurs jeux de données trafic (HPM, HPS, etc.). Chaque jeu de données conserve ses propres valeurs de trafic.</p>
                         <p><strong>Bouton Coller :</strong> Si le jeu de données sélectionné est vide, un bouton "Coller..." apparaît pour copier les données depuis un autre jeu de données.</p>
                         <p><strong>Code couleur Cap.U :</strong></p>
