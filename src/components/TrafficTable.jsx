@@ -65,6 +65,20 @@ const TrafficTable = ({
         return { value: result, display: result + '%' };
     };
 
+    // Calculate Retard = (cycle - vert)² / (2 * cycle * (1 - trafic / (1800 * coef)))
+    const calculateDelay = (greenTime, trafficVol, laneCoef) => {
+        if (!greenTime || !trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
+        const saturationFlow = 1800 * laneCoef;
+        const ratio = trafficVol / saturationFlow;
+        // Éviter division par zéro si ratio >= 1
+        if (ratio >= 1) return null;
+        const denominator = 2 * cycleLength * (1 - ratio);
+        if (denominator === 0) return null;
+        const redTime = cycleLength - greenTime;
+        const result = (redTime * redTime) / denominator;
+        return Math.round(result); // Arrondi à l'unité
+    };
+
     // Get capacity color class based on value
     const getCapacityColorClass = (value) => {
         if (value === null) return '';
@@ -135,7 +149,7 @@ const TrafficTable = ({
                         <th>V.<br/>Utile</th>
                         <th>Cap.<br/>U</th>
                         <th>Retard</th>
-                        <th>Attente</th>
+                        <th title="File d'attente par cycle en mètre">File<br/>d'attente</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -215,17 +229,18 @@ const TrafficTable = ({
                                         </td>
                                     );
                                 })()}
-                                {/* Retard (calculé - lecture seule) */}
+                                {/* Retard (calculé) = (cycle - vert)² / (2 * cycle * (1 - trafic / (1800 * coef))) */}
                                 {(() => {
                                     const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
                                     const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    const delay = calculateDelay(g.durations?.green, trafficData.trafficVol, g.laneCoef);
                                     return (
                                         <td
                                             className="col-calculated"
                                             onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
                                             onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
                                         >
-                                            {g.delay || ''}
+                                            {delay !== null ? delay : ''}
                                         </td>
                                     );
                                 })()}

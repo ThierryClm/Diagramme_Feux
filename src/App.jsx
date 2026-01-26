@@ -2127,9 +2127,9 @@ function App() {
                                     className={`tab-btn ${activeTab === 'traffic' ? 'active' : ''}`}
                                     onClick={() => {
                                         setActiveTab('traffic');
-                                        // Set width to display full traffic table
-                                        // Grp(28) + Nom(200) + Coef(55) + Trafic(55) + V.Utile(55) + Cap.U(55) + Retard(55) + Attente(55) + padding(40)
-                                        setSidebarWidth(650);
+                                        // Set width to display full traffic table (optimized)
+                                        // Grp(28) + Nom(160) + inputs(38*6) + padding
+                                        setSidebarWidth(520);
                                     }}
                                 >
                                     Trafic
