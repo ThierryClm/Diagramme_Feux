@@ -2590,18 +2590,34 @@ function App() {
                     <section className="help-section">
                         <h4>Configuration des groupes</h4>
                         <ul>
-                            <li><strong>Type :</strong> VL (véhicules), TC (transports en commun), Cycliste, Piéton</li>
-                            <li><strong>Déc (Décalage) :</strong> Position de départ du vert dans le cycle</li>
-                            <li><strong>V (Vert) :</strong> Durée du feu vert</li>
-                            <li><strong>J (Jaune) :</strong> Durée du feu jaune/orange</li>
-                            <li><strong>Vm (Vert minimum) :</strong> Durée minimale du vert</li>
+                            <li><strong>Type :</strong> Catégorie d'usager du groupe de feux
+                                <ul>
+                                    <li><em>VL :</em> Véhicules légers (voitures, motos)</li>
+                                    <li><em>TC :</em> Transports en commun (bus, tramway)</li>
+                                    <li><em>Cycliste :</em> Pistes cyclables</li>
+                                    <li><em>Piéton :</em> Passages piétons</li>
+                                </ul>
+                            </li>
+                            <li><strong>Courant :</strong> Identification du mouvement de trafic associé au groupe de feux (ex: "Entrée Nord", "Tourne-à-gauche Est")</li>
+                            <li><strong>J (Jaune) :</strong> Durée du feu jaune/orange pour les véhicules. <em>Pour les types Piéton et Cycliste, ce champ correspond au temps de dégagement (affiché dans le diagramme après le vert).</em></li>
+                            <li><strong>Vm (Vert minimum) :</strong> Durée minimale du vert garantie, utilisée pour les calculs de micro-régulation</li>
                         </ul>
                     </section>
 
                     <section className="help-section">
-                        <h4>Matrice de dégagement</h4>
+                        <h4>Matrice des temps interverts</h4>
                         <p>Définit les temps de dégagement (intervert) entre groupes conflictuels.
                         Valeurs acceptées : 3 à 20 secondes.</p>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Diagramme</h4>
+                        <ul>
+                            <li><strong>DA (Délai d'approche) :</strong> Temps nécessaire pour qu'un véhicule atteigne la ligne de feu depuis le détecteur d'approche</li>
+                            <li><strong>Déb (Début de vert) :</strong> Position de départ du vert dans le cycle (en secondes depuis le début du cycle)</li>
+                            <li><strong>Fin (Fin de vert) :</strong> Position de fin du vert dans le cycle (en secondes depuis le début du cycle)</li>
+                            <li><strong>V (Vert) :</strong> Durée du feu vert, calculée automatiquement comme la différence entre Fin et Déb</li>
+                        </ul>
                     </section>
 
                     <section className="help-section">
@@ -2683,12 +2699,12 @@ function App() {
                         <h4>Données Trafic</h4>
                         <p>L'onglet Trafic permet de saisir les données de trafic par groupe :</p>
                         <ul>
-                            <li><strong>Coef :</strong> Coefficient de voie (partagé entre tous les jeux de données)</li>
+                            <li><strong>Coef :</strong> Coefficient de voie correspondant aux courants de circulation du groupe de feu (partagé entre tous les jeux de données)</li>
                             <li><strong>Trafic :</strong> Volume de trafic (véh/h) - spécifique à chaque jeu de données</li>
-                            <li><strong>V.Utile :</strong> Calculé automatiquement = Trafic / (1800 × Coef / Cycle)</li>
-                            <li><strong>Cap.U :</strong> Capacité utilisée = (V.Utile / Vert) × 100%</li>
-                            <li><strong>Retard :</strong> Retard moyen = (Cycle - Vert)² / (2 × Cycle × (1 - Trafic / (1800 × Coef)))</li>
-                            <li><strong>File d'attente :</strong> Longueur = (partie entière de (Trafic × (Cycle - Vert) / 3600 / Coef) + 1) × 6 mètres</li>
+                            <li><strong>V.Utile :</strong> Durée de vert nécessaire pour passer le trafic. Formule = Trafic / (1800 × Coef / Cycle)</li>
+                            <li><strong>Cap.U :</strong> Capacité utilisée pour passer le trafic affecté au groupe de feu. Formule = (V.Utile / Vert) × 100%</li>
+                            <li><strong>Retard :</strong> Temps d'attente théorique moyen en pied de feu hors saturation. Formule = (Cycle - Vert)² / (2 × Cycle × (1 - Trafic / (1800 × Coef)))</li>
+                            <li><strong>File d'attente :</strong> File d'attente théorique maximale hors saturation. Formule = (partie entière de (Trafic × (Cycle - Vert) / 3600 / Coef) + 1) × 6 mètres</li>
                         </ul>
                         <p><strong>Surbrillance interactive :</strong> Le survol des champs Coef, Trafic, V.Utile, Cap.U, Retard ou File d'attente met en surbrillance la barre correspondante dans le diagramme.</p>
                         <p><strong>Jeux de données :</strong> La listbox "Associé à" permet de basculer entre plusieurs jeux de données trafic (HPM, HPS, etc.). Chaque jeu de données conserve ses propres valeurs de trafic.</p>

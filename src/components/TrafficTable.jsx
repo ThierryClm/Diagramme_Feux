@@ -128,7 +128,7 @@ const TrafficTable = ({
                     <tr>
                         <th className="col-grp">Grp</th>
                         <th className="col-nom">Nom</th>
-                        <th>Coef</th>
+                        <th title="Coefficient de voie correspondant aux courants de circulation du groupe de feu">Coef</th>
                         <th className="col-trafic-header">
                             {isDatasetEmpty && otherDatasetsWithData.length > 0 ? (
                                 <div className="paste-button-container">
@@ -156,10 +156,10 @@ const TrafficTable = ({
                                 'Trafic'
                             )}
                         </th>
-                        <th>V.<br/>Utile</th>
-                        <th>Cap.<br/>U</th>
-                        <th>Retard</th>
-                        <th title="File d'attente par cycle en mètre">File<br/>d'attente</th>
+                        <th title="Durée de vert nécessaire pour passer le trafic">V.<br/>Utile</th>
+                        <th title="Capacité utilisée pour passer le trafic affecté au groupe de feu">Cap.<br/>U</th>
+                        <th title="Temps d'attente théorique moyen en pied de feu hors saturation">Retard</th>
+                        <th title="File d'attente théorique maximale hors saturation">File<br/>d'attente</th>
                     </tr>
                 </thead>
                 <tbody>
