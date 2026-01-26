@@ -61,6 +61,13 @@ const PLAGE_DISABLED_ACTIONS = [
     'Signal aide conduite'
 ];
 
+// Actions where Fin field should be disabled
+const FIN_DISABLED_ACTIONS = [
+    'Point de repos',
+    'Instant Co',
+    'Synchro BTS'
+];
+
 // Check if a row has any data
 const isRowFilled = (row) => {
     return row.gf || row.action || row.description || row.deb !== '' || row.fin !== '' ||
@@ -68,33 +75,43 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId }) => {
+const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = ['', '', '', ''], updateMicroCustomField }) => {
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
 
-    // Validate group field value (1 to maxGroup, or empty)
+    // Validate group field value (0 to maxGroup, or empty)
     const handleGroupFieldChange = useCallback((rowId, field, value) => {
         // Allow empty value
         if (value === '') {
             updateActionRow(rowId, field, '');
             return;
         }
-        // Parse as number and validate
+        // Parse as number and validate (0 is allowed for GF field)
         const numValue = parseInt(value);
-        if (!isNaN(numValue) && numValue >= 1 && numValue <= maxGroup) {
+        if (!isNaN(numValue) && numValue >= 0 && numValue <= maxGroup) {
             updateActionRow(rowId, field, value);
         }
         // Reject invalid values silently
     }, [updateActionRow, maxGroup]);
 
     // Handle action change - clear disabled fields when action changes
-    const handleActionChange = useCallback((rowId, newAction) => {
+    const handleActionChange = useCallback((rowId, newAction, currentRow) => {
         updateActionRow(rowId, 'action', newAction);
 
         // Clear plage fields if they become disabled
         if (PLAGE_DISABLED_ACTIONS.includes(newAction)) {
             updateActionRow(rowId, 'plage1', '');
             updateActionRow(rowId, 'plage2', '');
+        }
+
+        // Clear fin field if it becomes disabled
+        if (FIN_DISABLED_ACTIONS.includes(newAction)) {
+            updateActionRow(rowId, 'fin', '');
+        }
+
+        // Set default micro text for Point de repos if micro is empty
+        if (newAction === 'Point de repos' && (!currentRow?.micro || currentRow.micro === '')) {
+            updateActionRow(rowId, 'micro', 'Attente quittée si ');
         }
 
         // Clear all Action GF fields if they become disabled
@@ -220,7 +237,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                 <td>
                                     <input
                                         type="number"
-                                        min="1"
+                                        min="0"
                                         max={maxGroup}
                                         className="input-gf"
                                         value={row.gf}
@@ -231,7 +248,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                     <select
                                         className="input-action"
                                         value={row.action}
-                                        onChange={(e) => handleActionChange(row.id, e.target.value)}
+                                        onChange={(e) => handleActionChange(row.id, e.target.value, row)}
                                     >
                                         {ACTION_OPTIONS.map((opt) => (
                                             <option key={opt} value={opt}>{opt || '—'}</option>
@@ -265,12 +282,13 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                         type="text"
                                         inputMode="numeric"
                                         pattern="[0-9]*"
-                                        className="input-time-xs"
+                                        className={`input-time-xs ${FIN_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
                                         value={row.fin}
                                         onChange={(e) => {
                                             const val = e.target.value.replace(/[^0-9]/g, '');
                                             updateActionRow(row.id, 'fin', val);
                                         }}
+                                        disabled={FIN_DISABLED_ACTIONS.includes(row.action)}
                                     />
                                 </td>
                                 <td>
@@ -367,6 +385,24 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Custom fields for micro variables */}
+            <div className="micro-custom-fields">
+                <h4>Variables micro</h4>
+                <div className="custom-fields-list">
+                    {microCustomFields.map((field, index) => (
+                        <input
+                            key={index}
+                            type="text"
+                            maxLength={60}
+                            className="custom-field-input"
+                            value={field}
+                            onChange={(e) => updateMicroCustomField && updateMicroCustomField(index, e.target.value)}
+                            placeholder={`Variable ${index + 1}`}
+                        />
+                    ))}
+                </div>
             </div>
         </div>
     );

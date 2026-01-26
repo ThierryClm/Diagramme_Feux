@@ -792,6 +792,26 @@ export const useTrafficLight = () => {
         return activePF ? activePF.data : createEmptyActionData();
     }, [pfTabs, activePFId]);
 
+    // Get current microCustomFields based on active PF (4 fields for modification notes)
+    const microCustomFields = useMemo(() => {
+        const activePF = pfTabs.find(pf => pf.id === activePFId);
+        return activePF?.microCustomFields || ['', '', '', ''];
+    }, [pfTabs, activePFId]);
+
+    // Update microCustomFields for the active PF
+    const updateMicroCustomField = useCallback((index, value) => {
+        setPfTabs(prev => prev.map(pf =>
+            pf.id === activePFId
+                ? {
+                    ...pf,
+                    microCustomFields: (pf.microCustomFields || ['', '', '', '']).map((f, i) =>
+                        i === index ? value : f
+                    )
+                }
+                : pf
+        ));
+    }, [activePFId]);
+
     // Dynamic traffic dataset names based on PF tabs (+ Projection at the end)
     const trafficDatasetNames = useMemo(() => {
         if (pfTabs && pfTabs.length > 0) {
@@ -1659,6 +1679,8 @@ export const useTrafficLight = () => {
         actionData,
         updateActionRow: updateActionRowWithHistory,
         reorderActions,
+        microCustomFields,
+        updateMicroCustomField,
         // PF (Plans de Feux) management
         pfTabs,
         activePFId,

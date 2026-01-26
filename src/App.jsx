@@ -48,6 +48,8 @@ function App() {
         actionData,
         updateActionRow,
         reorderActions,
+        microCustomFields,
+        updateMicroCustomField,
         pfTabs,
         activePFId,
         setActivePFId,
@@ -2386,6 +2388,8 @@ function App() {
                                 maxGroup={groups.length}
                                 hoveredActionId={hoveredActionId}
                                 setHoveredActionId={setHoveredActionId}
+                                microCustomFields={microCustomFields}
+                                updateMicroCustomField={updateMicroCustomField}
                             />
                         )}
                     </div>
