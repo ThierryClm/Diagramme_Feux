@@ -1178,6 +1178,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     onMouseEnter={() => setHoveredActionId(action.id)}
                                                                     onMouseLeave={() => setHoveredActionId(null)}
                                                                 >
+                                                                    <span className="brace-point"></span>
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-start"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
@@ -1190,12 +1191,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     onMouseEnter={() => setHoveredActionId(action.id)}
                                                                     onMouseLeave={() => setHoveredActionId(null)}
                                                                 >
+                                                                    <span className="brace-point"></span>
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-end"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
                                                                         title="Glisser pour modifier la fin"
                                                                     />
-                                                                    <span className="brace-text">⏎</span>
                                                                 </div>
                                                             </React.Fragment>
                                                         );
@@ -1207,6 +1208,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             onMouseEnter={() => setHoveredActionId(action.id)}
                                                             onMouseLeave={() => setHoveredActionId(null)}
                                                         >
+                                                            <span className="brace-point"></span>
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-start"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
@@ -1217,7 +1219,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
                                                                 title="Glisser pour modifier la fin"
                                                             />
-                                                            <span className="brace-text">⏎</span>
                                                         </div>
                                                     );
                                                 })()}

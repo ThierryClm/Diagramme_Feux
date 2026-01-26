@@ -426,7 +426,7 @@
     background: rgba(255, 255, 255, 0.25);
 }
 
-/* Brace marker for Fermeture anticipée */
+/* Brace marker for Fermeture anticipée - accolade rouge */
 .brace-marker {
     position: absolute;
     top: 0;
@@ -438,29 +438,46 @@
     pointer-events: none;
 }
 
+/* Partie gauche de l'accolade - trait interrompu au centre */
 .brace-marker::before {
     content: '';
     position: absolute;
-    top: 2px;
+    top: 6px;
     left: 0;
-    right: 0;
-    height: 10px;
-    border: 1px solid #ff6b6b;
+    width: calc(50% - 4px);
+    height: 4px;
+    border: 3px solid #e53935;
     border-bottom: none;
-    border-radius: 6px 6px 0 0;
+    border-right: none;
+    border-radius: 4px 0 0 0;
 }
 
+/* Partie droite de l'accolade - trait interrompu au centre */
 .brace-marker::after {
     content: '';
     position: absolute;
-    top: 12px;
+    top: 6px;
+    right: 0;
+    width: calc(50% - 4px);
+    height: 4px;
+    border: 3px solid #e53935;
+    border-bottom: none;
+    border-left: none;
+    border-radius: 0 4px 0 0;
+}
+
+/* Pointe centrale de l'accolade - chevron évidé pointant vers le haut, base collée au trait */
+.brace-marker .brace-point {
+    position: absolute;
+    top: 2px;
     left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 6px solid #ff6b6b;
+    transform: translateX(-50%) rotate(45deg);
+    width: 4px;
+    height: 4px;
+    border: 3px solid #e53935;
+    border-bottom: none;
+    border-right: none;
+    background: transparent;
 }
 
 .brace-text {
@@ -723,8 +740,13 @@
     box-shadow: inset 0 0 10px rgba(255, 204, 0, 0.3);
 }
 
-.brace-marker.highlighted {
+.brace-marker.highlighted::before,
+.brace-marker.highlighted::after {
     border-color: #ffcc00;
+}
+
+.brace-marker.highlighted .brace-point {
+    border-top-color: #ffcc00;
 }
 
 .ouverture-anticipee.highlighted {
