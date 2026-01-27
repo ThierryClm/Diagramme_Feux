@@ -632,7 +632,23 @@ function App() {
             const [fileHandle] = await window.showOpenFilePicker(options);
             const file = await fileHandle.getFile();
             const content = await file.text();
-            const data = JSON.parse(content);
+
+            // Validation du contenu avant parsing
+            if (!content || content.trim() === '') {
+                alert('Erreur: Le fichier est vide');
+                return;
+            }
+
+            let data;
+            try {
+                data = JSON.parse(content);
+            } catch (parseError) {
+                console.error('Erreur parsing JSON:', parseError);
+                alert('Erreur: Le fichier JSON est invalide ou corrompu.\n\n' +
+                      'Détails: ' + parseError.message + '\n\n' +
+                      'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
+                return;
+            }
 
             // Mémoriser le répertoire parent
             try {
@@ -713,7 +729,23 @@ function App() {
             const [fileHandle] = await window.showOpenFilePicker(options);
             const file = await fileHandle.getFile();
             const content = await file.text();
-            const data = JSON.parse(content);
+
+            // Validation du contenu avant parsing
+            if (!content || content.trim() === '') {
+                alert('Erreur: Le fichier est vide');
+                return;
+            }
+
+            let data;
+            try {
+                data = JSON.parse(content);
+            } catch (parseError) {
+                console.error('Erreur parsing JSON:', parseError);
+                alert('Erreur: Le fichier JSON est invalide ou corrompu.\n\n' +
+                      'Détails: ' + parseError.message + '\n\n' +
+                      'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
+                return;
+            }
 
             // Mémoriser le répertoire parent
             try {
@@ -811,9 +843,23 @@ function App() {
             };
 
             // Écrire le fichier
+            const jsonContent = JSON.stringify(projectData, null, 2);
             const writable = await fileHandle.createWritable();
-            await writable.write(JSON.stringify(projectData, null, 2));
+            await writable.write(jsonContent);
             await writable.close();
+
+            // Vérifier que le fichier n'est pas vide après sauvegarde
+            try {
+                const savedFile = await fileHandle.getFile();
+                const savedContent = await savedFile.text();
+                if (!savedContent || savedContent.trim() === '') {
+                    alert('Attention: Le fichier semble vide après la sauvegarde.\n\n' +
+                          'Veuillez réessayer la sauvegarde ou utiliser "Enregistrer" pour sauvegarder dans le localStorage.');
+                    return;
+                }
+            } catch (verifyError) {
+                console.warn('Impossible de vérifier le fichier sauvegardé:', verifyError);
+            }
 
             // Mémoriser le répertoire parent
             try {
@@ -893,9 +939,23 @@ function App() {
             };
 
             // Écrire le fichier
+            const jsonContent = JSON.stringify(projectData, null, 2);
             const writable = await fileHandle.createWritable();
-            await writable.write(JSON.stringify(projectData, null, 2));
+            await writable.write(jsonContent);
             await writable.close();
+
+            // Vérifier que le fichier n'est pas vide après sauvegarde
+            try {
+                const savedFile = await fileHandle.getFile();
+                const savedContent = await savedFile.text();
+                if (!savedContent || savedContent.trim() === '') {
+                    alert('Attention: Le fichier semble vide après la sauvegarde.\n\n' +
+                          'Veuillez réessayer la sauvegarde ou utiliser "Enregistrer" pour sauvegarder dans le localStorage.');
+                    return;
+                }
+            } catch (verifyError) {
+                console.warn('Impossible de vérifier le fichier sauvegardé:', verifyError);
+            }
 
             // Mémoriser le répertoire parent
             try {
@@ -1325,7 +1385,23 @@ function App() {
             const [fileHandle] = await window.showOpenFilePicker(options);
             const file = await fileHandle.getFile();
             const content = await file.text();
-            const greenWaveData = JSON.parse(content);
+
+            // Validation du contenu avant parsing
+            if (!content || content.trim() === '') {
+                alert('Erreur: Le fichier est vide');
+                return;
+            }
+
+            let greenWaveData;
+            try {
+                greenWaveData = JSON.parse(content);
+            } catch (parseError) {
+                console.error('Erreur parsing JSON:', parseError);
+                alert('Erreur: Le fichier JSON est invalide ou corrompu.\n\n' +
+                      'Détails: ' + parseError.message + '\n\n' +
+                      'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
+                return;
+            }
 
             if (greenWaveData && greenWaveData.intersections) {
                 // Generate unique ID
