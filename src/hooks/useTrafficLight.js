@@ -12,9 +12,9 @@ const createEmptyTrafficData = () => ({
 });
 
 export const useTrafficLight = () => {
-    const [intersectionName, setIntersectionName] = useState(() => localStorage.getItem('trafficName') || "Nouveau Carrefour");
-    const [cycleLength, setCycleLength] = useState(() => parseInt(localStorage.getItem('trafficCycle')) || DEFAULT_CYCLE);
-    const [dependencyGap, setDependencyGap] = useState(() => parseInt(localStorage.getItem('trafficDependencyGap')) || 20);
+    const [intersectionName, setIntersectionName] = useState("Nouveau Carrefour");
+    const [cycleLength, setCycleLength] = useState(DEFAULT_CYCLE);
+    const [dependencyGap, setDependencyGap] = useState(20);
     const [globalTime, setGlobalTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
 
@@ -46,35 +46,12 @@ export const useTrafficLight = () => {
         queueLength: 0, // Ile d'attente
     });
 
-    const [groups, setGroups] = useState(() => {
-        try {
-            const saved = localStorage.getItem('trafficGroups');
-            return saved ? JSON.parse(saved) : Array.from({ length: 5 }, (_, i) => createGroup(i + 1));
-        } catch (e) {
-            return Array.from({ length: 5 }, (_, i) => createGroup(i + 1));
-        }
-    });
+    const [groups, setGroups] = useState(() => Array.from({ length: 5 }, (_, i) => createGroup(i + 1)));
 
     // Matrix: Size depends on number of groups.
     // We store as a URL-like generic object or always resize.
     // Let's keep it as 2D array, resizing when groups change.
-    const [conflictMatrix, setConflictMatrix] = useState(() => {
-        try {
-            const saved = localStorage.getItem('trafficMatrix');
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                // Clean 0 values and values outside 3-20 range
-                return parsed.map(row => row.map(val => {
-                    if (val === 0 || val === '0') return '';
-                    if (typeof val === 'number' && (val < 3 || val > 20)) return '';
-                    return val;
-                }));
-            }
-            return Array.from({ length: 5 }, () => Array(5).fill(''));
-        } catch (e) {
-            return Array.from({ length: 5 }, () => Array(5).fill(''));
-        }
-    });
+    const [conflictMatrix, setConflictMatrix] = useState(() => Array.from({ length: 5 }, () => Array(5).fill('')));
 
     // Auto-save Effect
     useEffect(() => {
@@ -703,63 +680,20 @@ export const useTrafficLight = () => {
     const createEmptyActionData = () => Array.from({ length: 30 }, (_, i) => createEmptyActionRow(i + 1));
 
     // Multiple PF (Plans de Feux) support
-    const [pfTabs, setPfTabs] = useState(() => {
-        try {
-            const saved = localStorage.getItem('trafficPfTabs');
-            if (saved) {
-                return JSON.parse(saved);
-            }
-            // Migrate from old single actionData format
-            const oldData = localStorage.getItem('trafficActionData');
-            if (oldData) {
-                return [{ id: 1, name: 'PF1', data: JSON.parse(oldData) }];
-            }
-            return [{ id: 1, name: 'PF1', data: createEmptyActionData() }];
-        } catch (e) {
-            return [{ id: 1, name: 'PF1', data: createEmptyActionData() }];
-        }
-    });
+    const [pfTabs, setPfTabs] = useState(() => [{ id: 1, name: 'PF1', data: createEmptyActionData() }]);
 
-    const [activePFId, setActivePFId] = useState(() => {
-        try {
-            const saved = localStorage.getItem('trafficActivePF');
-            return saved ? parseInt(saved) : 1;
-        } catch (e) {
-            return 1;
-        }
-    });
+    const [activePFId, setActivePFId] = useState(1);
 
     // Simulation mode state (not persisted - resets on page load)
     const [simulationEnabled, setSimulationEnabled] = useState(false);
     const [simulationSelectedActions, setSimulationSelectedActions] = useState([]);
 
     // Intersection image state (persisted with project)
-    const [intersectionImage, setIntersectionImage] = useState(() => {
-        try {
-            const saved = localStorage.getItem('trafficIntersectionImage');
-            return saved ? JSON.parse(saved) : null;
-        } catch (e) {
-            return null;
-        }
-    });
-    const [intersectionArrows, setIntersectionArrows] = useState(() => {
-        try {
-            const saved = localStorage.getItem('trafficIntersectionArrows');
-            return saved ? JSON.parse(saved) : [];
-        } catch (e) {
-            return [];
-        }
-    });
+    const [intersectionImage, setIntersectionImage] = useState(null);
+    const [intersectionArrows, setIntersectionArrows] = useState([]);
 
     // Traffic datasets state (HPM, HPS, HC, Estimation, Projection)
-    const [activeTrafficDataset, setActiveTrafficDataset] = useState(() => {
-        try {
-            const saved = localStorage.getItem('trafficActiveDataset');
-            return saved || 'HPM';
-        } catch (e) {
-            return 'HPM';
-        }
-    });
+    const [activeTrafficDataset, setActiveTrafficDataset] = useState('HPM');
 
     // Initialize traffic datasets with empty data for all groups
     const createInitialTrafficDatasets = (groupCount) => {
@@ -773,18 +707,7 @@ export const useTrafficLight = () => {
         return datasets;
     };
 
-    const [trafficDatasets, setTrafficDatasets] = useState(() => {
-        try {
-            const saved = localStorage.getItem('trafficDatasets');
-            if (saved) {
-                return JSON.parse(saved);
-            }
-            // Initialize with 5 groups by default
-            return createInitialTrafficDatasets(5);
-        } catch (e) {
-            return createInitialTrafficDatasets(5);
-        }
-    });
+    const [trafficDatasets, setTrafficDatasets] = useState(() => createInitialTrafficDatasets(5));
 
     // Get current actionData based on active PF
     const actionData = useMemo(() => {

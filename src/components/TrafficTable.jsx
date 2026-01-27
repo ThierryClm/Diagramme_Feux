@@ -12,7 +12,8 @@ const TrafficTable = ({
     setHoveredGroupId,
     trafficDatasetNames,
     setHoveredVUtile,
-    copyTrafficDataset
+    copyTrafficDataset,
+    actionData = []
 }) => {
     const [showPasteDropdown, setShowPasteDropdown] = useState(false);
     const [showAllGroups, setShowAllGroups] = useState(false);
@@ -66,7 +67,25 @@ const TrafficTable = ({
     };
 
     // Calculate Retard = (cycle - vert)² / (2 * cycle * (1 - trafic / (1800 * coef)))
-    const calculateDelay = (greenTime, trafficVol, laneCoef) => {
+    // Si une action "Début de bande passante" a pour actGf1 le groupe, alors :
+    // Retard = max(0, début_de_vert - fin_de_l'action)
+    const calculateDelay = (greenTime, trafficVol, laneCoef, groupId, groupOffset) => {
+        // Vérifier s'il existe une action "Début de bande passante" pour ce groupe
+        const bandeAction = actionData.find(
+            action => action.action === 'Début de bande passante' &&
+                     parseInt(action.actGf1) === groupId &&
+                     action.fin !== '' && action.fin !== null && action.fin !== undefined
+        );
+
+        if (bandeAction) {
+            // Formule spéciale : max(0, début_de_vert - fin_de_l'action)
+            const finValue = parseFloat(bandeAction.fin);
+            if (!isNaN(finValue) && groupOffset !== undefined && groupOffset !== null) {
+                return Math.max(0, Math.round(groupOffset - finValue));
+            }
+        }
+
+        // Formule standard
         if (!greenTime || !trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
         const saturationFlow = 1800 * laneCoef;
         const ratio = trafficVol / saturationFlow;
@@ -80,7 +99,25 @@ const TrafficTable = ({
     };
 
     // Calculate File d'attente = (Math.floor(Trafic × (Cycle - Vert) / 3600 / Coef) + 1) × 6
-    const calculateQueue = (greenTime, trafficVol, laneCoef) => {
+    // Si une action "Début de bande passante" a pour actGf1 le groupe, alors :
+    // File d'attente = max(0, début_de_vert - fin_de_l'action)
+    const calculateQueue = (greenTime, trafficVol, laneCoef, groupId, groupOffset) => {
+        // Vérifier s'il existe une action "Début de bande passante" pour ce groupe
+        const bandeAction = actionData.find(
+            action => action.action === 'Début de bande passante' &&
+                     parseInt(action.actGf1) === groupId &&
+                     action.fin !== '' && action.fin !== null && action.fin !== undefined
+        );
+
+        if (bandeAction) {
+            // Formule spéciale : max(0, début_de_vert - fin_de_l'action)
+            const finValue = parseFloat(bandeAction.fin);
+            if (!isNaN(finValue) && groupOffset !== undefined && groupOffset !== null) {
+                return Math.max(0, Math.round(groupOffset - finValue));
+            }
+        }
+
+        // Formule standard
         if (!greenTime || !trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
         const redTime = cycleLength - greenTime;
         // Formule : (partie entière de (Trafic * (cycle - vert) / 3600 / Coef) + 1) * 6
@@ -240,10 +277,11 @@ const TrafficTable = ({
                                     );
                                 })()}
                                 {/* Retard (calculé) = (cycle - vert)² / (2 * cycle * (1 - trafic / (1800 * coef))) */}
+                                {/* Ou si action "Début de bande passante" avec actGf1 = groupe : max(0, début_vert - fin_action) */}
                                 {(() => {
                                     const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
                                     const capacity = calculateCapacity(g.durations?.green, vUtile);
-                                    const delay = calculateDelay(g.durations?.green, trafficData.trafficVol, g.laneCoef);
+                                    const delay = calculateDelay(g.durations?.green, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
                                     return (
                                         <td
                                             className="col-calculated"
@@ -255,10 +293,11 @@ const TrafficTable = ({
                                     );
                                 })()}
                                 {/* File d'attente (calculé) = (Trafic * (cycle - vert) / (3600 / Coef)) * 6 */}
+                                {/* Ou si action "Début de bande passante" avec actGf1 = groupe : max(0, début_vert - fin_action) */}
                                 {(() => {
                                     const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
                                     const capacity = calculateCapacity(g.durations?.green, vUtile);
-                                    const queue = calculateQueue(g.durations?.green, trafficData.trafficVol, g.laneCoef);
+                                    const queue = calculateQueue(g.durations?.green, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
                                     return (
                                         <td
                                             className="col-calculated"

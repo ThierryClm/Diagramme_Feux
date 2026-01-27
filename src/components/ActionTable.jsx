@@ -96,6 +96,38 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
 
     // Handle action change - clear disabled fields when action changes
     const handleActionChange = useCallback((rowId, newAction, currentRow) => {
+        // Si l'action est supprimée et que la ligne contient des données, proposer de supprimer toute la ligne
+        if (newAction === '' && currentRow?.action) {
+            const hasData = currentRow.gf || currentRow.description || currentRow.deb ||
+                           currentRow.fin || currentRow.abrv || currentRow.micro ||
+                           currentRow.plage1 || currentRow.plage2 || currentRow.actGf1 ||
+                           currentRow.actGf1Gf2 || currentRow.actGf1Gf3 || currentRow.actGf1Gf4;
+
+            if (hasData) {
+                const confirmDelete = window.confirm('Voulez-vous supprimer toute la ligne ?');
+                if (confirmDelete) {
+                    // Effacer tous les champs de la ligne
+                    updateActionRow(rowId, 'action', '');
+                    updateActionRow(rowId, 'gf', '');
+                    updateActionRow(rowId, 'description', '');
+                    updateActionRow(rowId, 'deb', '');
+                    updateActionRow(rowId, 'fin', '');
+                    updateActionRow(rowId, 'abrv', '');
+                    updateActionRow(rowId, 'micro', '');
+                    updateActionRow(rowId, 'plage1', '');
+                    updateActionRow(rowId, 'plage2', '');
+                    updateActionRow(rowId, 'actGf1', '');
+                    updateActionRow(rowId, 'actGf1Gf2', '');
+                    updateActionRow(rowId, 'actGf1Gf3', '');
+                    updateActionRow(rowId, 'actGf1Gf4', '');
+                    return;
+                } else {
+                    // L'utilisateur a annulé, ne rien faire (garder l'action actuelle)
+                    return;
+                }
+            }
+        }
+
         updateActionRow(rowId, 'action', newAction);
 
         // Clear plage fields if they become disabled

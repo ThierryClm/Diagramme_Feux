@@ -45,6 +45,10 @@ const IntersectionImage = ({
         const saved = localStorage.getItem('intersection_showGroupNames');
         return saved !== null ? JSON.parse(saved) : true;
     });
+    const [showArrows, setShowArrows] = useState(() => {
+        const saved = localStorage.getItem('intersection_showArrows');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
     const [applyToAllSameType, setApplyToAllSameType] = useState(false);
 
     // Save display options to localStorage when they change
@@ -55,6 +59,10 @@ const IntersectionImage = ({
     useEffect(() => {
         localStorage.setItem('intersection_showGroupNames', JSON.stringify(showGroupNames));
     }, [showGroupNames]);
+
+    useEffect(() => {
+        localStorage.setItem('intersection_showArrows', JSON.stringify(showArrows));
+    }, [showArrows]);
 
     // Close image menu when clicking outside
     useEffect(() => {
@@ -144,7 +152,7 @@ const IntersectionImage = ({
 
     // Handle click on image to place arrow
     const handleImageClick = (e) => {
-        if (!imageData || isDragging) return;
+        if (!imageData || isDragging || !showArrows) return;
 
         const rect = containerRef.current.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -664,7 +672,7 @@ const IntersectionImage = ({
                 {imageData ? (
                     <>
                         <img src={imageData} alt="Carrefour" className="intersection-img" />
-                        {arrows.map(arrow => {
+                        {showArrows && arrows.map(arrow => {
                             const groupInfo = getGroupInfo(arrow.groupId);
                             const rotation = arrow.rotation || 0;
                             const scale = arrow.scale || 1;
@@ -724,7 +732,7 @@ const IntersectionImage = ({
 
                 {/* Right side: Arrow editor */}
                 <div className="intersection-sidebar">
-                    {selectedArrow ? (
+                    {showArrows && selectedArrow ? (
                         <div className="arrow-editor">
                             <h4>Modifier la flèche</h4>
                             {/* Apply to all same type option */}
@@ -867,12 +875,12 @@ const IntersectionImage = ({
                                 Supprimer
                             </button>
                         </div>
-                    ) : (
+                    ) : showArrows ? (
                         <div className="no-selection-hint">
                             <p>Cliquez sur l'image pour ajouter une flèche</p>
                             <p>Sélectionnez une flèche pour la modifier</p>
                         </div>
-                    )}
+                    ) : null}
 
                     {/* Display options */}
                     <div className="display-options">
@@ -891,6 +899,14 @@ const IntersectionImage = ({
                                 onChange={(e) => setShowGroupNames(e.target.checked)}
                             />
                             <span>Afficher noms des groupes</span>
+                        </label>
+                        <label className="checkbox-option">
+                            <input
+                                type="checkbox"
+                                checked={showArrows}
+                                onChange={(e) => setShowArrows(e.target.checked)}
+                            />
+                            <span>Ajout de flèches</span>
                         </label>
                     </div>
                 </div>
