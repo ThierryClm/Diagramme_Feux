@@ -360,15 +360,30 @@
     font-size: 0.9em;
 }
 
-/* Adaptatif vertical - blue rectangle */
+/* Adaptatif vertical - blue rectangle with transparency */
 .legend-adaptatif {
-    background: rgba(0, 100, 255, 0.4);
-    border: 1px solid rgba(0, 100, 255, 0.6);
+    background: rgba(100, 180, 255, 0.2);
+    border: 2px solid rgba(100, 180, 255, 0.7);
+    border-radius: 4px;
+}
+
+/* Escamotage (group) - hatched blue rectangle with arrows (SVG) */
+.legend-escamotage-group {
+    position: relative;
+    background: transparent;
+    border: none;
+    height: 20px;
+    overflow: visible;
+}
+
+.legend-escamotage-group svg {
+    width: 100%;
+    height: 100%;
 }
 
 /* Escamotage de phase - gray transparent */
 .legend-escamotage {
-    background: rgba(128, 128, 128, 0.3);
+    background: rgba(128, 128, 128, 0.2);
     border: 1px solid rgba(128, 128, 128, 0.4);
 }
 
@@ -385,14 +400,54 @@
     height: 10px;
 }
 
-/* Fermeture anticipée - brace */
+/* Fermeture anticipée - brace with gap and chevron pointing up */
 .legend-fermeture {
     position: relative;
     background: transparent;
-    border: 2px solid #FF8C00;
-    border-top: none;
-    border-radius: 0 0 10px 10px;
+    border: none;
     height: 14px;
+}
+
+/* Left part of brace */
+.legend-fermeture::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 0;
+    width: calc(50% - 6px);
+    height: 4px;
+    border: 3px solid #e53935;
+    border-bottom: none;
+    border-right: none;
+    border-radius: 4px 0 0 0;
+}
+
+/* Right part of brace */
+.legend-fermeture::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 0;
+    width: calc(50% - 6px);
+    height: 4px;
+    border: 3px solid #e53935;
+    border-bottom: none;
+    border-left: none;
+    border-radius: 0 4px 0 0;
+}
+
+/* Chevron pointing up in the center */
+.legend-fermeture .brace-point {
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 5px;
+    height: 5px;
+    border: 3px solid #e53935;
+    border-bottom: none;
+    border-right: none;
+    background: transparent;
 }
 
 /* Signa d'aide à la conduite - orange stripes + blue */
@@ -405,7 +460,7 @@
 
 .legend-signa-orange {
     width: 40px;
-    height: 16px;
+    height: 10px;
     border-radius: 2px;
     background: repeating-linear-gradient(
         90deg,
@@ -418,23 +473,235 @@
 
 .legend-signa-blue {
     width: 36px;
-    height: 16px;
+    height: 10px;
     border-radius: 2px;
     background: linear-gradient(to bottom, #4169E1, #2849C1);
 }
 
-/* Début de bande passante - vertical green line */
+/* Début de bande passante - diagonal dashed green arrow (SVG) */
 .legend-bande-debut {
+    position: relative;
     background: transparent;
-    border-left: 3px solid #00ff00;
-    width: 20px;
+    border: none;
+    height: 20px;
+    overflow: visible;
 }
 
-/* Fin de bande passante - vertical red line */
+.legend-bande-debut svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Fin de bande passante - diagonal dashed red arrow (SVG) */
 .legend-bande-fin {
+    position: relative;
     background: transparent;
-    border-left: 3px solid #ff0000;
-    width: 20px;
+    border: none;
+    height: 20px;
+    overflow: visible;
+}
+
+.legend-bande-fin svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Seconde lucarne - same as normal phase bars with opacity */
+.legend-lucarne {
+    background: linear-gradient(to bottom, #00cc00 40%, #005500 100%);
+    border: 1px solid rgba(0, 180, 0, 0.6);
+    opacity: 0.8;
+    height: 12px;
+}
+
+/* Contrôle de flot - three segments: yellow/gray, orange, red */
+.legend-controle-flot {
+    display: flex;
+    background: transparent;
+    border: none;
+    border-radius: 2px;
+    overflow: hidden;
+    height: 10px;
+}
+
+.legend-cf-intermittent {
+    flex: 1;
+    height: 100%;
+    background: repeating-linear-gradient(
+        90deg,
+        #FFD700,
+        #FFD700 5px,
+        #808080 5px,
+        #808080 10px
+    );
+    box-shadow: 0 0 2px rgba(255, 215, 0, 0.5);
+}
+
+.legend-cf-orange {
+    flex: 0.6;
+    height: 100%;
+    background: linear-gradient(to bottom, #FF8C00, #CC7000);
+}
+
+.legend-cf-red {
+    flex: 0.4;
+    height: 100%;
+    background: linear-gradient(to bottom, #ff0000, #cc0000);
+}
+
+/* Instant Co - vertical orange arrow */
+.legend-instant-co {
+    position: relative;
+    background: transparent;
+    border: none;
+    height: 20px;
+}
+
+.legend-instant-co::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 10px;
+    width: 2px;
+    height: 12px;
+    background: #FF8C00;
+}
+
+.legend-instant-co::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 6px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #FF8C00;
+}
+
+/* Point de repos - vertical red arrow */
+.legend-point-repos {
+    position: relative;
+    background: transparent;
+    border: none;
+    height: 20px;
+}
+
+.legend-point-repos::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 10px;
+    width: 2px;
+    height: 12px;
+    background: #ff0000;
+}
+
+.legend-point-repos::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 6px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #ff0000;
+}
+
+/* Priorité piétons - yellow intermittent stripes */
+.legend-priorite-pietons {
+    background: repeating-linear-gradient(
+        90deg,
+        #FFFF00,
+        #FFFF00 5px,
+        transparent 5px,
+        transparent 10px
+    );
+    border-radius: 2px;
+    box-shadow: 0 0 2px rgba(255, 255, 0, 0.5);
+    height: 10px;
+}
+
+/* Synchro BTS - vertical blue arrow */
+.legend-synchro-bts {
+    position: relative;
+    background: transparent;
+    border: none;
+    height: 20px;
+}
+
+.legend-synchro-bts::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 10px;
+    width: 2px;
+    height: 12px;
+    background: #0000FF;
+}
+
+.legend-synchro-bts::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 6px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #0000FF;
+}
+
+/* Floating legend window styles */
+.floating-legend-window {
+    position: fixed;
+    z-index: 99999;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    min-width: 280px;
+}
+
+.floating-legend-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #3a3a4a;
+    cursor: move;
+    user-select: none;
+}
+
+.floating-legend-header span {
+    color: #eee;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.floating-legend-content {
+    padding: 12px 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.legend-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.legend-section-title {
+    color: #aaa;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 /* Help modal styles */

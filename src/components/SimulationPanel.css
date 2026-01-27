@@ -257,12 +257,11 @@
     font-size: 0.85em;
 }
 
-/* Actions list header */
+/* Actions list header - même style que "Image du carrefour" */
 .simulation-list-header {
-    color: #888;
-    font-size: 0.8em;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: #eee;
+    font-size: 1rem;
+    font-weight: normal;
     margin-bottom: 6px;
     padding-bottom: 4px;
     border-bottom: 1px solid #333;
@@ -301,9 +300,9 @@
 }
 
 .simulation-traffic-header .traffic-title {
-    color: #4ecdc4;
-    font-size: 0.9em;
-    font-weight: bold;
+    color: #eee;
+    font-size: 1rem;
+    font-weight: normal;
 }
 
 .simulation-traffic-header .traffic-dataset {
@@ -316,7 +315,8 @@
 
 .simulation-traffic-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 3px 0;
     font-size: 0.75em;
 }
 
@@ -324,13 +324,13 @@
     text-align: center;
     color: #888;
     font-weight: normal;
-    padding: 4px 2px;
+    padding: 4px 3px;
     border-bottom: 1px solid #444;
 }
 
 .simulation-traffic-table td {
     text-align: center;
-    padding: 4px 2px;
+    padding: 4px 3px;
     color: #ccc;
     border-bottom: 1px solid #333;
 }

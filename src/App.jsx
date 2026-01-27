@@ -151,6 +151,12 @@ function App() {
         }
     });
 
+    // Floating legend state
+    const [showFloatingLegend, setShowFloatingLegend] = useState(false);
+    const [floatingLegendPosition, setFloatingLegendPosition] = useState({ x: 200, y: 150 });
+    const [isLegendDragging, setIsLegendDragging] = useState(false);
+    const legendDragOffset = useRef({ x: 0, y: 0 });
+
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
 
@@ -265,6 +271,39 @@ function App() {
             document.removeEventListener('mouseup', handleMouseUp);
         };
     }, [isFloatingDragging]);
+
+    // Floating legend drag handling
+    const handleLegendMouseDown = useCallback((e) => {
+        if (e.target.classList.contains('floating-close-btn')) return;
+        setIsLegendDragging(true);
+        legendDragOffset.current = {
+            x: e.clientX - floatingLegendPosition.x,
+            y: e.clientY - floatingLegendPosition.y
+        };
+    }, [floatingLegendPosition]);
+
+    useEffect(() => {
+        if (!isLegendDragging) return;
+
+        const handleMouseMove = (e) => {
+            setFloatingLegendPosition({
+                x: e.clientX - legendDragOffset.current.x,
+                y: e.clientY - legendDragOffset.current.y
+            });
+        };
+
+        const handleMouseUp = () => {
+            setIsLegendDragging(false);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isLegendDragging]);
 
     // Resizable horizontal splitter between diagram and action table
     const [diagramHeight, setDiagramHeight] = useState(() => {
@@ -1108,6 +1147,9 @@ function App() {
                 break;
             case 'options':
                 setOptionsModal(true);
+                break;
+            case 'legend':
+                setShowFloatingLegend(true);
                 break;
             case 'help':
                 setHelpModal(true);
@@ -2249,7 +2291,13 @@ function App() {
                             className={`pf-tab simulation-tab ${simulationEnabled && !phasageBulleEnabled ? 'active' : ''}`}
                             onClick={() => {
                                 setPhasageBulleEnabled(false);
-                                setSimulationEnabled(!simulationEnabled);
+                                const newSimState = !simulationEnabled;
+                                setSimulationEnabled(newSimState);
+                                if (newSimState) {
+                                    // Largeur pour le tableau Données Trafic:
+                                    // Grp(28) + Nom(70) + Déb(35) + Fin(35) + V(35) + V.U(35) + Cap.U(40) + Ret(35) + File(35) + spacing(27) + padding(20)
+                                    setSidebarWidth(395);
+                                }
                             }}
                             title="Activer/désactiver le mode simulation"
                         >
@@ -2639,6 +2687,96 @@ function App() {
                             <li><strong>Point de repos :</strong> Point de repos dans le cycle. Si Plage 1/2 non renseignées, s'applique à tous les groupes.</li>
                             <li><strong>Synchro BTS :</strong> Synchronisation avec le système BTS. Si Plage 1/2 non renseignées, s'applique à tous les groupes.</li>
                         </ul>
+
+                        <h5 style={{ marginTop: '20px', marginBottom: '10px', color: '#aaa' }}>Légende des symboles</h5>
+                        <div className="legend-container" style={{ gap: '8px' }}>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-adaptatif"></div>
+                                <span>Adaptatif vertical</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-controle-flot">
+                                    <div className="legend-cf-intermittent"></div>
+                                    <div className="legend-cf-orange"></div>
+                                    <div className="legend-cf-red"></div>
+                                </div>
+                                <span>Contrôle de flot</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-bande-debut">
+                                    <svg viewBox="0 0 80 20" preserveAspectRatio="none">
+                                        <line x1="5" y1="2" x2="58" y2="16" stroke="#00cc00" strokeWidth="0.8" strokeDasharray="4,3" />
+                                        <path d="M58,16 L68,18 L62,10 Z" fill="#00cc00" />
+                                    </svg>
+                                </div>
+                                <span>Début de bande passante</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-escamotage-group">
+                                    <svg viewBox="0 0 80 20" preserveAspectRatio="none">
+                                        <defs>
+                                            <pattern id="help-escam-hatch" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(-45)">
+                                                <line x1="0" y1="0" x2="0" y2="4" stroke="#1565C0" strokeWidth="2" />
+                                            </pattern>
+                                        </defs>
+                                        <rect x="20" y="5" width="40" height="10" fill="url(#help-escam-hatch)" stroke="#1565C0" strokeWidth="0.5" strokeDasharray="2,2" />
+                                        <line x1="5" y1="3" x2="20" y2="10" stroke="#1565C0" strokeWidth="0.8" strokeDasharray="3,2" />
+                                        <line x1="75" y1="3" x2="60" y2="10" stroke="#1565C0" strokeWidth="0.8" strokeDasharray="3,2" />
+                                    </svg>
+                                </div>
+                                <span>Escamotage</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-escamotage"></div>
+                                <span>Escamotage de phase</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-fermeture">
+                                    <span className="brace-point"></span>
+                                </div>
+                                <span>Fermeture anticipée</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-bande-fin">
+                                    <svg viewBox="0 0 80 20" preserveAspectRatio="none">
+                                        <line x1="5" y1="2" x2="58" y2="16" stroke="#00cc00" strokeWidth="0.8" strokeDasharray="4,3" />
+                                        <path d="M58,16 L68,18 L62,10 Z" fill="#00cc00" />
+                                    </svg>
+                                </div>
+                                <span>Fin de bande passante</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-instant-co"></div>
+                                <span>Instant Co</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-ouverture"></div>
+                                <span>Ouverture anticipée</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-point-repos"></div>
+                                <span>Point de repos</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-priorite-pietons"></div>
+                                <span>Priorité piétons</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-lucarne"></div>
+                                <span>Seconde lucarne</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-signa">
+                                    <div className="legend-signa-orange"></div>
+                                    <div className="legend-signa-blue"></div>
+                                </div>
+                                <span>Signal aide conduite</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-synchro-bts"></div>
+                                <span>Synchro BTS</span>
+                            </div>
+                        </div>
                     </section>
 
                     <section className="help-section">
@@ -3582,6 +3720,121 @@ function App() {
                                         </div>
                                     );
                                 })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Floating legend window (non-modal) */}
+            {showFloatingLegend && (
+                <div
+                    className="floating-legend-window"
+                    style={{
+                        left: floatingLegendPosition.x,
+                        top: floatingLegendPosition.y
+                    }}
+                >
+                    <div
+                        className="floating-legend-header"
+                        onMouseDown={handleLegendMouseDown}
+                    >
+                        <span>Légende du diagramme</span>
+                        <button
+                            className="floating-close-btn"
+                            onClick={() => setShowFloatingLegend(false)}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <div className="floating-legend-content">
+                        <div className="legend-section">
+                            <div className="legend-section-title">Actions de micro-régulation</div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-adaptatif"></div>
+                                <span>Adaptatif vertical</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-controle-flot">
+                                    <div className="legend-cf-intermittent"></div>
+                                    <div className="legend-cf-orange"></div>
+                                    <div className="legend-cf-red"></div>
+                                </div>
+                                <span>Contrôle de flot</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-bande-debut">
+                                    <svg viewBox="0 0 80 20" preserveAspectRatio="none">
+                                        <line x1="5" y1="2" x2="58" y2="16" stroke="#00cc00" strokeWidth="0.8" strokeDasharray="4,3" />
+                                        <path d="M58,16 L68,18 L62,10 Z" fill="#00cc00" />
+                                    </svg>
+                                </div>
+                                <span>Début de bande passante</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-escamotage-group">
+                                    <svg viewBox="0 0 80 20" preserveAspectRatio="none">
+                                        <defs>
+                                            <pattern id="legend-escam-hatch" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(-45)">
+                                                <line x1="0" y1="0" x2="0" y2="4" stroke="#1565C0" strokeWidth="2" />
+                                            </pattern>
+                                        </defs>
+                                        <rect x="20" y="5" width="40" height="10" fill="url(#legend-escam-hatch)" stroke="#1565C0" strokeWidth="0.5" strokeDasharray="2,2" />
+                                        <line x1="5" y1="3" x2="20" y2="10" stroke="#1565C0" strokeWidth="0.8" strokeDasharray="3,2" />
+                                        <line x1="75" y1="3" x2="60" y2="10" stroke="#1565C0" strokeWidth="0.8" strokeDasharray="3,2" />
+                                    </svg>
+                                </div>
+                                <span>Escamotage</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-escamotage"></div>
+                                <span>Escamotage de phase</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-fermeture">
+                                    <span className="brace-point"></span>
+                                </div>
+                                <span>Fermeture anticipée</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-bande-fin">
+                                    <svg viewBox="0 0 80 20" preserveAspectRatio="none">
+                                        <line x1="5" y1="2" x2="58" y2="16" stroke="#00cc00" strokeWidth="0.8" strokeDasharray="4,3" />
+                                        <path d="M58,16 L68,18 L62,10 Z" fill="#00cc00" />
+                                    </svg>
+                                </div>
+                                <span>Fin de bande passante</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-instant-co"></div>
+                                <span>Instant Co</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-ouverture"></div>
+                                <span>Ouverture anticipée</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-point-repos"></div>
+                                <span>Point de repos</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-priorite-pietons"></div>
+                                <span>Priorité piétons</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-lucarne"></div>
+                                <span>Seconde lucarne</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-signa">
+                                    <div className="legend-signa-orange"></div>
+                                    <div className="legend-signa-blue"></div>
+                                </div>
+                                <span>Signal aide conduite</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-preview legend-synchro-bts"></div>
+                                <span>Synchro BTS</span>
                             </div>
                         </div>
                     </div>
