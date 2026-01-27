@@ -735,6 +735,36 @@ export const useTrafficLight = () => {
         ));
     }, [activePFId]);
 
+    // Get phasage bulle count for active PF
+    const phasageBulleCount = useMemo(() => {
+        const activePF = pfTabs.find(pf => pf.id === activePFId);
+        return activePF?.phasageBulleCount ?? 4;
+    }, [pfTabs, activePFId]);
+
+    // Get phasage bulle times for active PF
+    const phasageBulleTimes = useMemo(() => {
+        const activePF = pfTabs.find(pf => pf.id === activePFId);
+        return activePF?.phasageBulleTimes || [0, 15, 30, 45, 60, 75];
+    }, [pfTabs, activePFId]);
+
+    // Update phasage bulle count for active PF
+    const setPhasageBulleCount = useCallback((count) => {
+        setPfTabs(prev => prev.map(pf =>
+            pf.id === activePFId
+                ? { ...pf, phasageBulleCount: count }
+                : pf
+        ));
+    }, [activePFId]);
+
+    // Update phasage bulle times for active PF
+    const setPhasageBulleTimes = useCallback((times) => {
+        setPfTabs(prev => prev.map(pf =>
+            pf.id === activePFId
+                ? { ...pf, phasageBulleTimes: times }
+                : pf
+        ));
+    }, [activePFId]);
+
     // Dynamic traffic dataset names based on PF tabs (+ Projection at the end)
     const trafficDatasetNames = useMemo(() => {
         if (pfTabs && pfTabs.length > 0) {
@@ -1604,6 +1634,11 @@ export const useTrafficLight = () => {
         reorderActions,
         microCustomFields,
         updateMicroCustomField,
+        // Phasage bulle (per PF)
+        phasageBulleCount,
+        phasageBulleTimes,
+        setPhasageBulleCount,
+        setPhasageBulleTimes,
         // PF (Plans de Feux) management
         pfTabs,
         activePFId,

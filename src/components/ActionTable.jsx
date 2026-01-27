@@ -75,7 +75,7 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = ['', '', '', ''], updateMicroCustomField }) => {
+const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = ['', '', '', ''], updateMicroCustomField, onResizePanel }) => {
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
 
@@ -85,14 +85,16 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         const defaultHeight = 180;
         if (saved) {
             const parsed = parseInt(saved);
-            // Clamp saved value to valid range (160-400)
-            return Math.max(160, Math.min(400, parsed));
+            // Clamp saved value to valid range (0-400)
+            return Math.max(0, Math.min(400, parsed));
         }
         return defaultHeight;
     });
     const [isResizing, setIsResizing] = useState(false);
+    const [isResizingPanel, setIsResizingPanel] = useState(false);
     const startYRef = useRef(0);
     const startHeightRef = useRef(0);
+    const panelResizeStartY = useRef(0);
 
     // Handle separator resize
     const handleSeparatorMouseDown = useCallback((e) => {
@@ -115,8 +117,8 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         const handleMouseMove = (e) => {
             const deltaY = startYRef.current - e.clientY;
             const newHeight = startHeightRef.current + deltaY;
-            // Clamp between min and max values (160px min to always show all 4 variables, 400px max)
-            const clampedHeight = Math.max(160, Math.min(400, newHeight));
+            // Clamp between min and max values (0px min to hide variables, 400px max)
+            const clampedHeight = Math.max(0, Math.min(400, newHeight));
             setVariablesHeight(clampedHeight);
             currentHeightRef.current = clampedHeight;
         };
@@ -134,6 +136,36 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
             document.removeEventListener('mouseup', handleMouseUp);
         };
     }, [isResizing]);
+
+    // Handle panel resize (bottom separator to expand/shrink entire panel)
+    const handlePanelResizeStart = useCallback((e) => {
+        if (!onResizePanel) return;
+        e.preventDefault();
+        setIsResizingPanel(true);
+        panelResizeStartY.current = e.clientY;
+    }, [onResizePanel]);
+
+    useEffect(() => {
+        if (!isResizingPanel || !onResizePanel) return;
+
+        const handleMouseMove = (e) => {
+            const deltaY = e.clientY - panelResizeStartY.current;
+            panelResizeStartY.current = e.clientY;
+            onResizePanel(deltaY);
+        };
+
+        const handleMouseUp = () => {
+            setIsResizingPanel(false);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isResizingPanel, onResizePanel]);
 
     // Validate group field value (0 to maxGroup, or empty)
     const handleGroupFieldChange = useCallback((rowId, field, value) => {
@@ -482,10 +514,15 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
             <div
                 className={`action-table-separator-horizontal ${isResizing ? 'resizing' : ''}`}
                 onMouseDown={handleSeparatorMouseDown}
+                title="Glissez pour redimensionner la section Variables micro"
             />
 
             {/* Bottom section: Variables micro */}
-            <div className="action-table-bottom-section" style={{ height: `${variablesHeight}px` }}>
+            <div className="action-table-bottom-section" style={{
+                height: variablesHeight > 0 ? `${variablesHeight}px` : '0px',
+                overflow: variablesHeight < 50 ? 'hidden' : 'auto',
+                padding: variablesHeight < 20 ? '0' : undefined
+            }}>
                 <h3>Variables micro</h3>
                 <div className="custom-fields-list">
                     {microCustomFields.map((field, index) => (
@@ -501,6 +538,15 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                     ))}
                 </div>
             </div>
+
+            {/* Bottom resize handle to expand/shrink panel */}
+            {onResizePanel && (
+                <div
+                    className={`action-table-panel-resize ${isResizingPanel ? 'resizing' : ''}`}
+                    onMouseDown={handlePanelResizeStart}
+                    title="Faites glisser pour redimensionner la zone Plan de feu"
+                />
+            )}
         </div>
     );
 };

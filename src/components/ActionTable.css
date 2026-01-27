@@ -21,7 +21,7 @@
     display: flex;
     flex-direction: column;
     flex: 1;
-    min-height: 150px;
+    min-height: 100px;
     overflow: hidden;
 }
 
@@ -323,4 +323,35 @@
 
 .custom-field-input::placeholder {
     color: #666;
+}
+
+/* Bottom panel resize handle */
+.action-table-panel-resize {
+    height: 8px;
+    background: linear-gradient(to bottom, #333 0%, #444 50%, #333 100%);
+    cursor: row-resize;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+    position: relative;
+}
+
+.action-table-panel-resize::after {
+    content: '⋯';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #666;
+    font-size: 12px;
+    letter-spacing: 2px;
+}
+
+.action-table-panel-resize:hover,
+.action-table-panel-resize.resizing {
+    background: linear-gradient(to bottom, #444 0%, #555 50%, #444 100%);
+}
+
+.action-table-panel-resize:hover::after,
+.action-table-panel-resize.resizing::after {
+    color: #999;
 }

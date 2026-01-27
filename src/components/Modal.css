@@ -157,3 +157,17 @@
     align-items: center;
     gap: 8px;
 }
+
+/* Phasage bulle modal - positioned left, no transparency */
+.modal-overlay.modal-phasage-bulle-overlay {
+    background: transparent;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 60px 0 0 20px;
+    pointer-events: none;
+}
+
+.modal-overlay.modal-phasage-bulle-overlay .modal-content {
+    pointer-events: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+}

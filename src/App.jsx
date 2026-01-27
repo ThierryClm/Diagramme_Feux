@@ -50,6 +50,10 @@ function App() {
         reorderActions,
         microCustomFields,
         updateMicroCustomField,
+        phasageBulleCount,
+        phasageBulleTimes,
+        setPhasageBulleCount,
+        setPhasageBulleTimes,
         pfTabs,
         activePFId,
         setActivePFId,
@@ -160,11 +164,9 @@ function App() {
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
 
-    // Phasage bulle state
+    // Phasage bulle state (phasageBulleCount and phasageBulleTimes come from useTrafficLight hook - saved per PF)
     const [phasageBulleEnabled, setPhasageBulleEnabled] = useState(false);
     const [phasageBulleModal, setPhasageBulleModal] = useState(false);
-    const [phasageBulleTimes, setPhasageBulleTimes] = useState([0, 15, 30, 45, 60, 75]);
-    const [phasageBulleCount, setPhasageBulleCount] = useState(4);
     const [phasageBulleVisibleGroups, setPhasageBulleVisibleGroups] = useState(new Set());
     const [phasageBulleVersion, setPhasageBulleVersion] = useState(0);
     const [hoveredPhasageGroupId, setHoveredPhasageGroupId] = useState(null);
@@ -343,6 +345,20 @@ function App() {
     const resetDiagramHeight = useCallback(() => {
         setDiagramHeight(null);
         localStorage.removeItem('diagram_height');
+    }, []);
+
+    // Handle panel resize from ActionTable bottom handle
+    const handleActionPanelResize = useCallback((deltaY) => {
+        if (!diagramAreaRef.current) return;
+        const containerRect = diagramAreaRef.current.getBoundingClientRect();
+        const maxHeight = containerRect.height - 150;
+
+        setDiagramHeight(prev => {
+            // If prev is null, calculate current diagram height
+            const currentHeight = prev !== null ? prev : containerRect.height - 200;
+            const newHeight = currentHeight + deltaY;
+            return Math.min(maxHeight, Math.max(100, newHeight));
+        });
     }, []);
 
     // Add/remove mouse event listeners for diagram resizing
@@ -2023,13 +2039,6 @@ function App() {
                             title="Écart maximum pour afficher les dépendances (secondes)"
                         />
                     )}
-                    <button
-                        className="toggle-btn phasage-btn"
-                        onClick={() => setPhasageBulleModal(true)}
-                        title="Configurer les instants du phasage bulle"
-                    >
-                        ◉ Phasage bulle
-                    </button>
                 </div>
 
                 <div className="status-bar">
@@ -2307,6 +2316,10 @@ function App() {
                             className={`pf-tab phasage-tab ${phasageBulleEnabled ? 'active' : ''}`}
                             onClick={() => {
                                 setSimulationEnabled(false);
+                                if (!phasageBulleEnabled) {
+                                    // Ouvrir la configuration quand on active le phasage bulle
+                                    setPhasageBulleModal(true);
+                                }
                                 setPhasageBulleEnabled(!phasageBulleEnabled);
                             }}
                             title="Afficher le phasage en bulles"
@@ -2454,6 +2467,7 @@ function App() {
                                 setHoveredActionId={setHoveredActionId}
                                 microCustomFields={microCustomFields}
                                 updateMicroCustomField={updateMicroCustomField}
+                                onResizePanel={handleActionPanelResize}
                             />
                         )}
                     </div>
@@ -3260,7 +3274,7 @@ function App() {
             </Modal>
 
             {/* Modal Phasage bulle - Configuration des instants */}
-            <Modal isOpen={phasageBulleModal} onClose={() => setPhasageBulleModal(false)} title="Configuration du phasage bulle">
+            <Modal isOpen={phasageBulleModal} onClose={() => setPhasageBulleModal(false)} title="Configuration du phasage bulle" overlayClassName="modal-phasage-bulle-overlay">
                 <div className="phasage-config">
                     <div className="form-row">
                         <label>
@@ -3278,10 +3292,10 @@ function App() {
                     </div>
                     <div style={{ marginTop: '15px' }}>
                         <p style={{ color: '#aaa', marginBottom: '10px' }}>Instants des phases (en secondes) :</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: '8px' }}>
                             {Array.from({ length: phasageBulleCount }, (_, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    <span style={{ color: '#dc4edc', fontWeight: 'bold', minWidth: '60px' }}>Phase {i + 1}:</span>
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                    <span style={{ color: '#dc4edc', fontWeight: 'bold' }}>P{i + 1}:</span>
                                     <input
                                         type="number"
                                         min="0"
@@ -3292,7 +3306,7 @@ function App() {
                                             newTimes[i] = Math.max(0, Math.min(cycleLength - 1, parseInt(e.target.value) || 0));
                                             setPhasageBulleTimes(newTimes);
                                         }}
-                                        style={{ width: '60px', padding: '5px', textAlign: 'center' }}
+                                        style={{ width: '40px', padding: '3px', textAlign: 'center' }}
                                     />
                                     <span style={{ color: '#888' }}>s</span>
                                 </div>
@@ -3304,8 +3318,11 @@ function App() {
                     </p>
                 </div>
                 <div className="modal-actions">
-                    <button className="modal-btn modal-btn-secondary" onClick={() => setPhasageBulleModal(false)}>
-                        Fermer
+                    <button className="modal-btn modal-btn-secondary" onClick={() => {
+                        setPhasageBulleModal(false);
+                        setPhasageBulleEnabled(false);
+                    }}>
+                        Annuler
                     </button>
                     <button
                         className="modal-btn modal-btn-primary"
@@ -3316,7 +3333,7 @@ function App() {
                             setPhasageBulleVersion(v => v + 1);
                         }}
                     >
-                        Ouvrir Phasage bulle
+                        OK
                     </button>
                 </div>
             </Modal>
