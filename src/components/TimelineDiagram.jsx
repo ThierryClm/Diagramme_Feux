@@ -742,13 +742,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     })}
                 </div>
 
-                <div className="timeline-scroll-area">
+                <div className="timeline-scroll-area" style={{ width: `${totalWidth}px` }}>
                     <div className="timeline-track-container" style={{ width: `${totalWidth}px` }}>
                         {/* Grid lines */}
                         <div className="timeline-grid">
                             {Array.from({ length: TIME_WINDOW + 1 }).map((_, i) => {
                                 let gridClass = 'grid-line grid-1s';
-                                if (i % 10 === 0) gridClass = 'grid-line grid-10s';
+                                if (i === TIME_WINDOW) gridClass = 'grid-line grid-cycle-end';
+                                else if (i % 10 === 0) gridClass = 'grid-line grid-10s';
                                 else if (i % 5 === 0) gridClass = 'grid-line grid-5s';
                                 return (
                                     <div

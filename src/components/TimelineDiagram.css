@@ -176,7 +176,8 @@
 }
 
 .timeline-scroll-area {
-    flex-grow: 1;
+    flex-grow: 0;
+    flex-shrink: 0;
     overflow: visible;
     position: relative;
     background: #242424;
@@ -424,6 +425,11 @@
 
 .grid-10s {
     background: rgba(255, 255, 255, 0.25);
+}
+
+.grid-cycle-end {
+    background: rgba(255, 255, 255, 0.6);
+    width: 2px;
 }
 
 /* Brace marker for Fermeture anticipée - accolade rouge */
@@ -945,13 +951,13 @@
     box-shadow: 0 0 4px #000;
 }
 
-/* Comments column - right side of diagram */
+/* Comments column - right side of diagram, collé au diagramme avec 30px de marge */
 .timeline-comments {
     width: 200px;
     background: #1a1a1a;
     border-left: 1px solid #444;
     flex-shrink: 0;
-    margin-left: 40px;
+    margin-left: 30px;
 }
 
 .comments-header {
