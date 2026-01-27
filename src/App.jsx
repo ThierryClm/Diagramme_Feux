@@ -2401,7 +2401,7 @@ function App() {
                         borderTop: phasageBulleEnabled ? 'none' : 'none',
                         marginTop: phasageBulleEnabled ? 0 : 0,
                         flex: diagramHeight !== null ? '1' : '0 0 auto',
-                        overflow: 'auto'
+                        overflow: (phasageBulleEnabled || simulationEnabled) ? 'auto' : 'hidden'
                     }}>
                         {phasageBulleEnabled ? (
                             <PhasageBulle

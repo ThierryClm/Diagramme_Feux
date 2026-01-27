@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import './ActionTable.css';
 
 // Auto-resize textarea helper
@@ -78,6 +78,62 @@ const isRowFilled = (row) => {
 const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = ['', '', '', ''], updateMicroCustomField }) => {
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
+
+    // Horizontal separator position (height of variables micro section)
+    const [variablesHeight, setVariablesHeight] = useState(() => {
+        const saved = localStorage.getItem('action_table_variables_height');
+        const defaultHeight = 180;
+        if (saved) {
+            const parsed = parseInt(saved);
+            // Clamp saved value to valid range (160-400)
+            return Math.max(160, Math.min(400, parsed));
+        }
+        return defaultHeight;
+    });
+    const [isResizing, setIsResizing] = useState(false);
+    const startYRef = useRef(0);
+    const startHeightRef = useRef(0);
+
+    // Handle separator resize
+    const handleSeparatorMouseDown = useCallback((e) => {
+        e.preventDefault();
+        setIsResizing(true);
+        startYRef.current = e.clientY;
+        startHeightRef.current = variablesHeight;
+    }, [variablesHeight]);
+
+    // Ref to track current height for localStorage save
+    const currentHeightRef = useRef(variablesHeight);
+
+    useEffect(() => {
+        currentHeightRef.current = variablesHeight;
+    }, [variablesHeight]);
+
+    useEffect(() => {
+        if (!isResizing) return;
+
+        const handleMouseMove = (e) => {
+            const deltaY = startYRef.current - e.clientY;
+            const newHeight = startHeightRef.current + deltaY;
+            // Clamp between min and max values (160px min to always show all 4 variables, 400px max)
+            const clampedHeight = Math.max(160, Math.min(400, newHeight));
+            setVariablesHeight(clampedHeight);
+            currentHeightRef.current = clampedHeight;
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            localStorage.setItem('action_table_variables_height', currentHeightRef.current.toString());
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isResizing]);
 
     // Validate group field value (0 to maxGroup, or empty)
     const handleGroupFieldChange = useCallback((rowId, field, value) => {
@@ -213,8 +269,10 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
 
     return (
         <div className="action-table-container">
-            <h3>Conditions de micro-régulation</h3>
-            <div className="action-table-scroll">
+            {/* Top section: Conditions de micro-régulation */}
+            <div className="action-table-top-section">
+                <h3>Conditions de micro-régulation</h3>
+                <div className="action-table-scroll">
                 <table className="action-table">
                     <thead>
                         <tr className="header-group">
@@ -417,11 +475,18 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                         ))}
                     </tbody>
                 </table>
+                </div>
             </div>
 
-            {/* Custom fields for micro variables */}
-            <div className="micro-custom-fields">
-                <h4>Variables micro</h4>
+            {/* Resizable horizontal separator */}
+            <div
+                className={`action-table-separator-horizontal ${isResizing ? 'resizing' : ''}`}
+                onMouseDown={handleSeparatorMouseDown}
+            />
+
+            {/* Bottom section: Variables micro */}
+            <div className="action-table-bottom-section" style={{ height: `${variablesHeight}px` }}>
+                <h3>Variables micro</h3>
                 <div className="custom-fields-list">
                     {microCustomFields.map((field, index) => (
                         <input

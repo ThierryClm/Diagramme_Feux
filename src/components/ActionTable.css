@@ -2,10 +2,12 @@
     background: #1e1e1e;
     border-top: 1px solid #333;
     padding: 1rem;
-    overflow: visible;
+    overflow: hidden;
     margin-top: 1rem;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 .action-table-container h3 {
@@ -14,9 +16,49 @@
     color: #eee;
 }
 
+/* Top section for conditions de micro-régulation */
+.action-table-top-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 150px;
+    overflow: hidden;
+}
+
+/* Bottom section for variables micro */
+.action-table-bottom-section {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 0.5rem;
+}
+
+.action-table-bottom-section h3 {
+    margin: 0 0 0.4rem 0;
+    flex-shrink: 0;
+}
+
+/* Resizable horizontal separator */
+.action-table-separator-horizontal {
+    height: 6px;
+    background: #333;
+    cursor: row-resize;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+}
+
+.action-table-separator-horizontal:hover,
+.action-table-separator-horizontal.resizing {
+    background: #555;
+}
+
 .action-table-scroll {
-    overflow: visible;
-    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    flex: 1;
+    min-height: 0;
     border: 1px solid #333;
 }
 
@@ -254,27 +296,17 @@
 }
 
 /* Custom fields for micro variables */
-.micro-custom-fields {
-    margin-top: 1rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid #444;
-}
-
-.micro-custom-fields h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.85rem;
-    color: #aaa;
-    font-weight: normal;
-}
-
 .custom-fields-list {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+    flex: 1;
+    min-height: 0;
 }
 
 .custom-field-input {
-    width: 60ch;
+    width: 100%;
+    box-sizing: border-box;
     background: #2a2a2a;
     border: 1px solid #444;
     color: #eee;
