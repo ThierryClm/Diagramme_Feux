@@ -71,8 +71,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         // - If only fin is inside → clamp fin to avDeb
         // - If deb OR fin is >= avFin → shift that value left by adaptatif width
         // - Wrap-around bars (deb > fin) are handled naturally: each value is shifted independently
-        if (simulationResult?.timeShifts?.length && actionType !== 'Escamotage de phase' && actionType !== 'Adaptatif vertical') {
+        // - For 'Escamotage de phase' and 'Adaptatif vertical' actions, only apply shifting (not hiding/clamping)
+        if (simulationResult?.timeShifts?.length) {
             const cycle = effectiveCycleLength || cycleLength;
+            const isAvOrEscamotage = actionType === 'Escamotage de phase' || actionType === 'Adaptatif vertical';
 
             simulationResult.timeShifts.forEach(shift => {
                 if (!shift.isPartial && shift.amount > 0) {
@@ -81,21 +83,24 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     const avFin = shift.from;
                     const avWidth = shift.amount;
 
-                    const debInside = adjustedDeb >= avDeb && adjustedDeb < avFin;
-                    const finInside = adjustedFin > avDeb && adjustedFin <= avFin;
+                    // For Adaptatif vertical and Escamotage de phase, skip hiding/clamping
+                    if (!isAvOrEscamotage) {
+                        const debInside = adjustedDeb >= avDeb && adjustedDeb < avFin;
+                        const finInside = adjustedFin > avDeb && adjustedFin <= avFin;
 
-                    if (debInside && finInside) {
-                        // Both deb and fin are inside the adaptatif zone → hide the bar
-                        hidden = true;
-                    } else if (debInside) {
-                        // Only deb is inside → clamp to avDeb
-                        adjustedDeb = avDeb;
-                    } else if (finInside) {
-                        // Only fin is inside → clamp to avDeb
-                        adjustedFin = avDeb;
+                        if (debInside && finInside) {
+                            // Both deb and fin are inside the adaptatif zone → hide the bar
+                            hidden = true;
+                        } else if (debInside) {
+                            // Only deb is inside → clamp to avDeb
+                            adjustedDeb = avDeb;
+                        } else if (finInside) {
+                            // Only fin is inside → clamp to avDeb
+                            adjustedFin = avDeb;
+                        }
                     }
 
-                    // Shift values that are after the adaptatif zone
+                    // Shift values that are after the adaptatif zone (applies to ALL action types)
                     if (adjustedDeb >= avFin) {
                         adjustedDeb -= avWidth;
                     }
@@ -1215,22 +1220,30 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                                                 {/* Fermeture anticipée: brace */}
                                                 {action.action === 'Fermeture anticipée' && (() => {
-                                                    const wrapsAround = deb > fin;
+                                                    // Use group's actual positions (from simulation) instead of shifted action values
+                                                    // This ensures the brace follows the group's green bar, not independent shifting
+                                                    const braceStart = offset; // Group's simulated start (green bar start)
+                                                    const braceEnd = endValue; // Group's simulated end (green bar end)
+                                                    const braceDuration = braceEnd >= braceStart
+                                                        ? braceEnd - braceStart
+                                                        : (effectiveCycleLength - braceStart + braceEnd);
+                                                    const braceLeftPos = braceStart * pixelsPerSecond;
+                                                    const braceWidth = braceDuration * pixelsPerSecond;
+
+                                                    const wrapsAround = braceStart > braceEnd;
                                                     if (wrapsAround) {
-                                                        const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
-                                                        const secondPartWidth = fin * pixelsPerSecond;
                                                         return (
                                                             <React.Fragment>
                                                                 <div
                                                                     className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
-                                                                    style={{ left: `${leftPos}px`, width: `${firstPartWidth}px` }}
+                                                                    style={{ left: `${braceLeftPos}px`, width: `${firstPartWidth}px` }}
                                                                     onMouseEnter={() => setHoveredActionId(action.id)}
                                                                     onMouseLeave={() => setHoveredActionId(null)}
                                                                 >
                                                                     <span className="brace-point"></span>
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-start"
-                                                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
                                                                         title="Glisser pour modifier le début"
                                                                     />
                                                                 </div>
@@ -1243,7 +1256,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <span className="brace-point"></span>
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-end"
-                                                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                                        onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
                                                                         title="Glisser pour modifier la fin"
                                                                     />
                                                                 </div>
@@ -1253,19 +1266,19 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     return (
                                                         <div
                                                             className={`brace-marker ${dragState?.actionId === action.id ? 'dragging' : ''} ${isHighlighted ? 'highlighted' : ''}`}
-                                                            style={{ left: `${leftPos}px`, width: `${greenWidth}px` }}
+                                                            style={{ left: `${braceLeftPos}px`, width: `${braceWidth}px` }}
                                                             onMouseEnter={() => setHoveredActionId(action.id)}
                                                             onMouseLeave={() => setHoveredActionId(null)}
                                                         >
                                                             <span className="brace-point"></span>
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-start"
-                                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
+                                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
                                                                 title="Glisser pour modifier le début"
                                                             />
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-end"
-                                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
+                                                                onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
                                                                 title="Glisser pour modifier la fin"
                                                             />
                                                         </div>
@@ -1526,10 +1539,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 const sourceY = getGroupRowY(sourceGf);
                                 const targetY = getGroupRowY(targetGf);
                                 if (sourceY === null || targetY === null) return null;
-                                // Apply time shifts (from Adaptatif vertical) to source position in simulation mode
-                                const shiftedPos = getShiftedActionPosition(fin, fin, sourceGf, 'Fermeture anticipée');
-                                const shiftedFin = shiftedPos.deb;
-                                const sourceX = shiftedFin * pixelsPerSecond;
+                                // Use the group's actual end position (already accounts for simulation)
+                                // This ensures the arrow follows the group's green bar end, not just the action's fin value
+                                const sourceX = sourceEnd * pixelsPerSecond;
                                 const targetX = targetPos * pixelsPerSecond;
                                 const cycleEndX = effectiveCycleLength * pixelsPerSecond;
 
@@ -2113,13 +2125,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                         {/* Point de repos arrows - vertical red arrows */}
                         {pointReposActions.map((action, idx) => {
-                            const deb = parseInt(action.deb) || 0;
+                            const rawDeb = parseInt(action.deb) || 0;
                             const plage1 = parseInt(action.plage1) || 0;
                             const plage2 = parseInt(action.plage2) || 0;
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
 
                             if (plage1 < 1 || plage2 < 1 || plage1 > groups.length || plage2 > groups.length) return null;
+
+                            // Apply time shifts in simulation mode
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawDeb, null, 'Point de repos');
+                            if (shiftedPos.hidden) return null;
+                            const deb = shiftedPos.deb;
 
                             // X position at deb
                             const xPos = deb * pixelsPerSecond;
@@ -2210,13 +2227,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                         {/* Synchro BTS arrows - vertical blue arrows */}
                         {synchroBtsActions.map((action, idx) => {
-                            const deb = parseInt(action.deb) || 0;
+                            const rawDeb = parseInt(action.deb) || 0;
                             const plage1 = parseInt(action.plage1) || 0;
                             const plage2 = parseInt(action.plage2) || 0;
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
 
                             if (plage1 < 1 || plage2 < 1 || plage1 > groups.length || plage2 > groups.length) return null;
+
+                            // Apply time shifts in simulation mode
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawDeb, null, 'Synchro BTS');
+                            if (shiftedPos.hidden) return null;
+                            const deb = shiftedPos.deb;
 
                             // X position at deb
                             const xPos = deb * pixelsPerSecond;
@@ -2307,13 +2329,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                         {/* Instant Co arrows - vertical orange arrows */}
                         {instantCoActions.map((action, idx) => {
-                            const deb = parseInt(action.deb) || 0;
+                            const rawDeb = parseInt(action.deb) || 0;
                             const plage1 = parseInt(action.plage1) || 0;
                             const plage2 = parseInt(action.plage2) || 0;
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
 
                             if (plage1 < 1 || plage2 < 1 || plage1 > groups.length || plage2 > groups.length) return null;
+
+                            // Apply time shifts in simulation mode
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawDeb, null, 'Instant Co');
+                            if (shiftedPos.hidden) return null;
+                            const deb = shiftedPos.deb;
 
                             // X position at deb
                             const xPos = deb * pixelsPerSecond;
@@ -2872,8 +2899,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {/* Début de bande passante arrows - dashed green diagonal arrows */}
                         {debutBandeActions.map((action, idx) => {
                             const gf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
-                            const deb = parseInt(action.deb) || 0;
-                            const fin = parseInt(action.fin) || 0;
+                            const rawDeb = parseInt(action.deb) || 0;
+                            const rawFin = parseInt(action.fin) || 0;
                             const actGf1 = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
@@ -2882,6 +2909,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const startGroupIndex = groups.findIndex(g => g.id === gf);
                             const endGroupIndex = groups.findIndex(g => g.id === actGf1);
                             if (startGroupIndex === -1 || endGroupIndex === -1) return null;
+
+                            // Apply time shifts in simulation mode
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawFin, gf, 'Début de bande passante');
+                            if (shiftedPos.hidden) return null;
+                            const deb = shiftedPos.deb;
+                            const fin = shiftedPos.fin;
 
                             // Calculate positions
                             const startX = deb * pixelsPerSecond;
@@ -2999,8 +3032,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {/* Fin de bande passante arrows - dashed red diagonal arrows */}
                         {finBandeActions.map((action, idx) => {
                             const gf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
-                            const deb = parseInt(action.deb) || 0;
-                            const fin = parseInt(action.fin) || 0;
+                            const rawDeb = parseInt(action.deb) || 0;
+                            const rawFin = parseInt(action.fin) || 0;
                             const actGf1 = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
@@ -3009,6 +3042,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const startGroupIndex = groups.findIndex(g => g.id === gf);
                             const endGroupIndex = groups.findIndex(g => g.id === actGf1);
                             if (startGroupIndex === -1 || endGroupIndex === -1) return null;
+
+                            // Apply time shifts in simulation mode
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawFin, gf, 'Fin de bande passante');
+                            if (shiftedPos.hidden) return null;
+                            const deb = shiftedPos.deb;
+                            const fin = shiftedPos.fin;
 
                             // Calculate positions (same as début: from gf at deb to actGf1 at fin)
                             const startX = deb * pixelsPerSecond;
