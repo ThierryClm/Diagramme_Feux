@@ -672,7 +672,7 @@ const IntersectionImage = ({
                 {imageData ? (
                     <>
                         <img src={imageData} alt="Carrefour" className="intersection-img" />
-                        {showArrows && arrows.map(arrow => {
+                        {arrows.map(arrow => {
                             const groupInfo = getGroupInfo(arrow.groupId);
                             const rotation = arrow.rotation || 0;
                             const scale = arrow.scale || 1;
@@ -732,7 +732,7 @@ const IntersectionImage = ({
 
                 {/* Right side: Arrow editor */}
                 <div className="intersection-sidebar">
-                    {showArrows && selectedArrow ? (
+                    {selectedArrow ? (
                         <div className="arrow-editor">
                             <h4>Modifier la flèche</h4>
                             {/* Apply to all same type option */}
