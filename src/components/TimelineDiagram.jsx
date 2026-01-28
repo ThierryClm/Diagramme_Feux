@@ -1220,9 +1220,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                                                 {/* Fermeture anticipée: brace */}
                                                 {action.action === 'Fermeture anticipée' && (() => {
-                                                    // Use group's actual positions (from simulation) instead of shifted action values
-                                                    // This ensures the brace follows the group's green bar, not independent shifting
-                                                    const braceStart = offset; // Group's simulated start (green bar start)
+                                                    // braceStart uses the action's deb value (shifted by simulation)
+                                                    // braceEnd uses the group's actual end position so the brace follows the green bar end
+                                                    const braceStart = deb; // Action's shifted deb value
                                                     const braceEnd = endValue; // Group's simulated end (green bar end)
                                                     const braceDuration = braceEnd >= braceStart
                                                         ? braceEnd - braceStart
@@ -1232,6 +1232,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                                                     const wrapsAround = braceStart > braceEnd;
                                                     if (wrapsAround) {
+                                                        const firstPartWidth = (effectiveCycleLength - braceStart) * pixelsPerSecond;
+                                                        const secondPartWidth = braceEnd * pixelsPerSecond;
                                                         return (
                                                             <React.Fragment>
                                                                 <div
