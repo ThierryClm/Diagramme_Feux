@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import './components/GreenWaveViewer.css';
 
 const GreenWavePage = () => {
@@ -15,6 +15,68 @@ const GreenWavePage = () => {
     const [showSpeedLines, setShowSpeedLines] = useState(true); // Affichage des lignes directrices
     // Parameters per PF (indexed by PF name): { pfName: { speedUp, speedDown, offsetUp, offsetDown } }
     const [pfParams, setPfParams] = useState({});
+
+    // Référence pour le dernier répertoire utilisé
+    const lastGreenWaveDirectoryRef = useRef(null);
+
+    // Fonctions IndexedDB pour sauvegarder/restaurer les handles de répertoire
+    const openIndexedDB = useCallback(() => {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('DiagrammeFeux_FileHandles', 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('handles')) {
+                    db.createObjectStore('handles');
+                }
+            };
+        });
+    }, []);
+
+    const saveDirectoryHandle = useCallback(async (key, handle) => {
+        try {
+            const db = await openIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['handles'], 'readwrite');
+                const store = transaction.objectStore('handles');
+                const request = store.put(handle, key);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        } catch (e) {
+            console.error('Erreur sauvegarde handle:', e);
+        }
+    }, [openIndexedDB]);
+
+    const loadDirectoryHandle = useCallback(async (key) => {
+        try {
+            const db = await openIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['handles'], 'readonly');
+                const store = transaction.objectStore('handles');
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (e) {
+            console.error('Erreur chargement handle:', e);
+            return null;
+        }
+    }, [openIndexedDB]);
+
+    // Charger le dernier répertoire au démarrage
+    useEffect(() => {
+        const loadHandle = async () => {
+            try {
+                const greenWaveHandle = await loadDirectoryHandle('lastGreenWaveDirectory');
+                if (greenWaveHandle) lastGreenWaveDirectoryRef.current = greenWaveHandle;
+            } catch (e) {
+                console.error('Erreur chargement handle:', e);
+            }
+        };
+        loadHandle();
+    }, [loadDirectoryHandle]);
 
     // Get current PF name from first intersection
     const getCurrentPfName = useCallback(() => {
@@ -132,12 +194,42 @@ const GreenWavePage = () => {
                 }]
             };
 
+            // Utiliser le dernier répertoire si disponible
+            if (lastGreenWaveDirectoryRef.current) {
+                options.startIn = lastGreenWaveDirectoryRef.current;
+            }
+
             const fileHandle = await window.showSaveFilePicker(options);
 
             // Write the file
+            const jsonContent = JSON.stringify(greenWaveData, null, 2);
             const writable = await fileHandle.createWritable();
-            await writable.write(JSON.stringify(greenWaveData, null, 2));
+            await writable.write(jsonContent);
             await writable.close();
+
+            // Vérifier que le fichier n'est pas vide après sauvegarde
+            try {
+                const savedFile = await fileHandle.getFile();
+                const savedContent = await savedFile.text();
+                if (!savedContent || savedContent.trim() === '') {
+                    alert('Attention: Le fichier semble vide après la sauvegarde.\n\n' +
+                          'Veuillez réessayer la sauvegarde.');
+                    return;
+                }
+            } catch (verifyError) {
+                console.warn('Impossible de vérifier le fichier sauvegardé:', verifyError);
+            }
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastGreenWaveDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastGreenWaveDirectory', dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
 
             // Update name from filename if not set
             const savedName = fileHandle.name.replace(/\.json$/i, '');

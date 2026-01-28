@@ -237,3 +237,14 @@
     background: #4ecdc4;
     color: #1e1e1e;
 }
+
+/* Highlighted row when hovering diagram group */
+.traffic-table tbody tr.row-highlighted {
+    background: rgba(78, 205, 196, 0.35) !important;
+    outline: 2px solid #4ecdc4;
+    outline-offset: -2px;
+}
+
+.traffic-table tbody tr.row-highlighted td {
+    background: transparent !important;
+}

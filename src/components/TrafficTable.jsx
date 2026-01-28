@@ -10,6 +10,7 @@ const TrafficTable = ({
     getTrafficData,
     updateGroupParams,
     setHoveredGroupId,
+    hoveredGroupId,
     trafficDatasetNames,
     setHoveredVUtile,
     copyTrafficDataset,
@@ -138,7 +139,7 @@ const TrafficTable = ({
     return (
         <div className="traffic-table-container">
             <div className="traffic-header">
-                <h3>Données Trafic</h3>
+                <h3>Données Trafic {hoveredGroupId !== null && <span style={{color: '#4ecdc4', fontSize: '0.8em'}}> [Grp {hoveredGroupId}]</span>}</h3>
                 <label className="traffic-all-groups-checkbox">
                     <input
                         type="checkbox"
@@ -205,6 +206,7 @@ const TrafficTable = ({
                         return (
                             <tr
                                 key={g.id}
+                                className={hoveredGroupId === g.id ? 'row-highlighted' : ''}
                                 onMouseEnter={() => setHoveredGroupId && setHoveredGroupId(g.id)}
                                 onMouseLeave={() => setHoveredGroupId && setHoveredGroupId(null)}
                             >

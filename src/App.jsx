@@ -488,6 +488,7 @@ function App() {
     const lastSaveDirectoryRef = useRef(null);
     const lastImportDirectoryRef = useRef(null);
     const lastImageDirectoryRef = useRef(null);
+    const lastGreenWaveDirectoryRef = useRef(null);
 
     // Liste des 5 derniers répertoires par type (pour affichage dans les menus)
     const [recentOpenDirs, setRecentOpenDirs] = useState(() => {
@@ -508,6 +509,11 @@ function App() {
     const [recentSaveDirs, setRecentSaveDirs] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem('recentSaveDirs') || '[]');
+        } catch { return []; }
+    });
+    const [recentGreenWaveDirs, setRecentGreenWaveDirs] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('recentGreenWaveDirs') || '[]');
         } catch { return []; }
     });
 
@@ -538,8 +544,11 @@ function App() {
             case 'save':
                 updateList(recentSaveDirs, setRecentSaveDirs, 'recentSaveDirs');
                 break;
+            case 'greenwave':
+                updateList(recentGreenWaveDirs, setRecentGreenWaveDirs, 'recentGreenWaveDirs');
+                break;
         }
-    }, [recentOpenDirs, recentImportDirs, recentImageDirs, recentSaveDirs]);
+    }, [recentOpenDirs, recentImportDirs, recentImageDirs, recentSaveDirs, recentGreenWaveDirs]);
 
     // Fonctions pour sauvegarder/restaurer les handles de répertoire via IndexedDB
     const openIndexedDB = useCallback(() => {
@@ -595,10 +604,12 @@ function App() {
                 const saveHandle = await loadDirectoryHandle('lastSaveDirectory');
                 const importHandle = await loadDirectoryHandle('lastImportDirectory');
                 const imageHandle = await loadDirectoryHandle('lastImageDirectory');
+                const greenWaveHandle = await loadDirectoryHandle('lastGreenWaveDirectory');
                 if (openHandle) lastOpenDirectoryRef.current = openHandle;
                 if (saveHandle) lastSaveDirectoryRef.current = saveHandle;
                 if (importHandle) lastImportDirectoryRef.current = importHandle;
                 if (imageHandle) lastImageDirectoryRef.current = imageHandle;
+                if (greenWaveHandle) lastGreenWaveDirectoryRef.current = greenWaveHandle;
             } catch (e) {
                 console.error('Erreur chargement handles:', e);
             }
@@ -839,7 +850,15 @@ function App() {
                 diagramHeight: diagramHeight,
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
-                floatingPosition: floatingPosition
+                floatingPosition: floatingPosition,
+                // Noms des répertoires utilisés
+                directoryNames: {
+                    open: lastOpenDirectoryRef.current?.name || null,
+                    save: lastSaveDirectoryRef.current?.name || null,
+                    import: lastImportDirectoryRef.current?.name || null,
+                    image: lastImageDirectoryRef.current?.name || null,
+                    greenWave: lastGreenWaveDirectoryRef.current?.name || null
+                }
             };
 
             // Écrire le fichier
@@ -935,7 +954,15 @@ function App() {
                 diagramHeight: diagramHeight,
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
-                floatingPosition: floatingPosition
+                floatingPosition: floatingPosition,
+                // Noms des répertoires utilisés
+                directoryNames: {
+                    open: lastOpenDirectoryRef.current?.name || null,
+                    save: lastSaveDirectoryRef.current?.name || null,
+                    import: lastImportDirectoryRef.current?.name || null,
+                    image: lastImageDirectoryRef.current?.name || null,
+                    greenWave: lastGreenWaveDirectoryRef.current?.name || null
+                }
             };
 
             // Écrire le fichier
@@ -2306,6 +2333,7 @@ function App() {
                                     getTrafficData={getTrafficData}
                                     updateGroupParams={updateGroupParams}
                                     setHoveredGroupId={setHoveredArrowGroupId}
+                                    hoveredGroupId={hoveredArrowGroupId}
                                     trafficDatasetNames={trafficDatasetNames}
                                     setHoveredVUtile={setHoveredVUtile}
                                     copyTrafficDataset={copyTrafficDataset}
