@@ -62,21 +62,66 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     const getShiftedActionPosition = (deb, fin, groupId = null, actionType = null) => {
         let hidden = false;
         let totalShift = 0;
+        let adjustedDeb = deb;
+        let adjustedFin = fin;
 
-        // Check if action falls within any removed period
-        // NOTE: 'Escamotage de phase' is NOT hidden by removed periods - it's reduced in width instead
-        if (simulationResult?.removedPeriods?.length && actionType !== 'Escamotage de phase') {
+        // For full Adaptatif vertical (applies to all groups), apply special logic:
+        // - If BOTH deb and fin are inside [avDeb, avFin] → hidden = true
+        // - If only deb is inside → clamp deb to avDeb
+        // - If only fin is inside → clamp fin to avDeb
+        // - If deb OR fin is >= avFin → shift that value left by adaptatif width
+        // - Wrap-around bars (deb > fin) are handled naturally: each value is shifted independently
+        if (simulationResult?.timeShifts?.length && actionType !== 'Escamotage de phase' && actionType !== 'Adaptatif vertical') {
+            const cycle = effectiveCycleLength || cycleLength;
+
+            simulationResult.timeShifts.forEach(shift => {
+                if (!shift.isPartial && shift.amount > 0) {
+                    // Full Adaptatif vertical (no plage1/plage2)
+                    const avDeb = shift.from - shift.amount;
+                    const avFin = shift.from;
+                    const avWidth = shift.amount;
+
+                    const debInside = adjustedDeb >= avDeb && adjustedDeb < avFin;
+                    const finInside = adjustedFin > avDeb && adjustedFin <= avFin;
+
+                    if (debInside && finInside) {
+                        // Both deb and fin are inside the adaptatif zone → hide the bar
+                        hidden = true;
+                    } else if (debInside) {
+                        // Only deb is inside → clamp to avDeb
+                        adjustedDeb = avDeb;
+                    } else if (finInside) {
+                        // Only fin is inside → clamp to avDeb
+                        adjustedFin = avDeb;
+                    }
+
+                    // Shift values that are after the adaptatif zone
+                    if (adjustedDeb >= avFin) {
+                        adjustedDeb -= avWidth;
+                    }
+                    if (adjustedFin >= avFin) {
+                        adjustedFin -= avWidth;
+                    }
+
+                }
+            });
+        }
+
+        // Check if action falls within any removed period (for Escamotage de phase)
+        // NOTE: 'Escamotage de phase' and 'Adaptatif vertical' are NOT hidden by removed periods
+        if (simulationResult?.removedPeriods?.length && actionType !== 'Escamotage de phase' && actionType !== 'Adaptatif vertical') {
             for (const period of simulationResult.removedPeriods) {
+                // Only check for Escamotage de phase removed periods (not Adaptatif vertical which is handled above)
                 // Action is hidden if it's entirely within or overlaps the removed period
-                if (deb >= period.deb && deb < period.fin) {
+                if (adjustedDeb >= period.deb && adjustedDeb < period.fin) {
                     hidden = true;
                     break;
                 }
-                if (fin > period.deb && fin <= period.fin) {
+                if (adjustedFin > period.deb && adjustedFin <= period.fin) {
                     hidden = true;
                     break;
                 }
-                if (deb <= period.deb && fin >= period.fin) {
+                if (adjustedDeb <= period.deb && adjustedFin >= period.fin) {
                     hidden = true;
                     break;
                 }
@@ -89,6 +134,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         // This avoids double-counting when both mechanisms would apply the same shift.
         // NOTE: "Seconde lucarne" actions are NOT shifted by group glissement (from Fermeture anticipée),
         //       but SHOULD be shifted by Escamotage de phase timeShifts.
+        // NOTE: For full Adaptatif vertical, shifts are already applied above, so skip here
         if (groupId && simulationResult && actionType !== 'Seconde lucarne') {
             const groupShift = getGroupShift(groupId);
             if (groupShift > 0) {
@@ -100,10 +146,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             // For actions without a groupId, OR for "Seconde lucarne" (which has groupId but
             // should NOT use getGroupShift), use timeShifts directly for Escamotage de phase shifts
             simulationResult.timeShifts.forEach(shift => {
-                if (deb >= shift.from) {
+                if (adjustedDeb >= shift.from) {
                     if (!shift.isPartial) {
-                        // Full shift (Escamotage de phase)
-                        totalShift += shift.amount;
+                        // Full shift (Escamotage de phase) - but NOT Adaptatif vertical (handled above)
+                        // Check if this is an Escamotage de phase shift vs Adaptatif vertical
+                        // Adaptatif vertical shifts have amount > 0 and are already handled above
+                        // This section is for Escamotage de phase only
                     } else if (groupId) {
                         // Partial shift (Adaptatif vertical) - check if group is in plage range
                         const gId = parseInt(groupId);
@@ -119,10 +167,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             });
         }
 
-        // Apply shift with wrap-around handling
+        // Apply remaining shift with wrap-around handling (for group shifts and partial Adaptatif vertical)
         const cycle = effectiveCycleLength || cycleLength;
-        const shiftedDeb = ((deb - totalShift) % cycle + cycle) % cycle;
-        const shiftedFin = ((fin - totalShift) % cycle + cycle) % cycle;
+        const shiftedDeb = ((adjustedDeb - totalShift) % cycle + cycle) % cycle;
+        const shiftedFin = ((adjustedFin - totalShift) % cycle + cycle) % cycle;
 
         return { deb: shiftedDeb, fin: shiftedFin, hidden };
     };

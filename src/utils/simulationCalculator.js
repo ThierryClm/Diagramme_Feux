@@ -134,6 +134,18 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
                         // Will be shifted later
                     }
                 }
+
+                // Case 4: Green bar wraps around the cycle and its wrap portion [0, wrapEnd] overlaps [deb, fin]
+                if (greenEnd > simulatedCycleLength) {
+                    const wrapEnd = greenEnd - simulatedCycleLength;
+                    if (wrapEnd > deb) {
+                        const overlapEnd = Math.min(wrapEnd, fin);
+                        const wrapCutAmount = overlapEnd - deb;
+                        if (wrapCutAmount > 0) {
+                            g.simulatedGreen = Math.max(0, g.simulatedGreen - wrapCutAmount);
+                        }
+                    }
+                }
             }
         });
 
@@ -254,7 +266,7 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         // Include plage range so actions can check if they should be shifted
         removedPeriods.push({ deb, fin });
         timeShifts.push({
-            from: deb,
+            from: fin,
             amount: shiftAmount,
             plage1: plage1,
             plage2: plage2,
@@ -298,6 +310,18 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
                     // Case 3: Green bar starts at or after fin - shift left by full amount (partial mode)
                     else if (offset >= fin && hasPlageRange) {
                         g.simulatedOffset = Math.max(0, g.simulatedOffset - shiftAmount);
+                    }
+
+                    // Case 4: Green bar wraps around the cycle and its wrap portion [0, wrapEnd] overlaps [deb, fin]
+                    if (greenEnd > simulatedCycleLength) {
+                        const wrapEnd = greenEnd - simulatedCycleLength;
+                        if (wrapEnd > deb) {
+                            const overlapEnd = Math.min(wrapEnd, fin);
+                            const wrapCutAmount = overlapEnd - deb;
+                            if (wrapCutAmount > 0) {
+                                g.simulatedGreen = Math.max(0, g.simulatedGreen - wrapCutAmount);
+                            }
+                        }
                     }
                 }
             }
