@@ -2600,6 +2600,7 @@ function App() {
                                 setHoveredArrowGroupId={setHoveredArrowGroupId}
                                 actionData={actionData}
                                 selectedActions={simulationSelectedActions}
+                                conflictMatrix={conflictMatrix}
                                 lastImageDirectoryRef={lastImageDirectoryRef}
                                 saveDirectoryHandle={saveDirectoryHandle}
                                 recentImageDirs={recentImageDirs}

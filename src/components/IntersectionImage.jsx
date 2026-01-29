@@ -20,6 +20,8 @@ const IntersectionImage = ({
     // Action data for special actions simulation
     actionData = [],
     selectedActions = [],
+    // Conflict matrix for escamotage cut zones
+    conflictMatrix = [],
     // File System Access API for remembering directory
     lastImageDirectoryRef,
     saveDirectoryHandle,
@@ -484,6 +486,61 @@ const IntersectionImage = ({
             }
         }
 
+        // Check for "Escamotage" action where this group is the TARGET (actGf1)
+        // When escamotage is active (checked), the target group bar is cut
+        const escamotageAction = actionData.find(action =>
+            action.action === 'Escamotage' &&
+            action.gf &&
+            action.actGf1 &&
+            parseInt(action.actGf1.toString().replace(/[Gg]/g, '').trim()) === groupId &&
+            selectedActions.includes(action.id)
+        );
+
+        if (escamotageAction) {
+            // Get source group info
+            const sourceGfId = parseInt(escamotageAction.gf.toString().replace(/[Gg]/g, '').trim()) || 0;
+            const sourceGroup = groups.find(g => g.id === sourceGfId);
+
+            if (sourceGroup && conflictMatrix && conflictMatrix.length > 0) {
+                // Get intergreen times from conflict matrix
+                const intergreenSourceToTarget = conflictMatrix[sourceGfId - 1]?.[groupId - 1] || 0;
+                const intergreenTargetToSource = conflictMatrix[groupId - 1]?.[sourceGfId - 1] || 0;
+
+                // Source group times
+                const sourceStart = sourceGroup.offset % effectiveCycleLength;
+                const sourceEndRaw = sourceStart + (sourceGroup.durations?.green || 0);
+                const sourceEnd = sourceEndRaw === effectiveCycleLength ? effectiveCycleLength : (sourceEndRaw % effectiveCycleLength);
+
+                // Calculate cut zone boundaries
+                const cutStart = ((sourceStart - intergreenTargetToSource) % effectiveCycleLength + effectiveCycleLength) % effectiveCycleLength;
+                const cutEndRaw = sourceEnd + intergreenSourceToTarget;
+                const cutEnd = cutEndRaw === effectiveCycleLength ? effectiveCycleLength : (cutEndRaw % effectiveCycleLength);
+
+                // Check if current time is in cut zone
+                let isInCutZone = false;
+                if (cutStart <= cutEnd) {
+                    isInCutZone = normalizedTime >= cutStart && normalizedTime < cutEnd;
+                } else {
+                    // Wrap-around case
+                    isInCutZone = normalizedTime >= cutStart || normalizedTime < cutEnd;
+                }
+
+                if (isInCutZone) {
+                    // Calculate time elapsed in cut zone
+                    const timeInCut = cutStart <= normalizedTime
+                        ? normalizedTime - cutStart
+                        : (effectiveCycleLength - cutStart + normalizedTime);
+
+                    // Return orange for first orangeDuration seconds, then red
+                    if (timeInCut < orangeDuration) {
+                        return 'rgb(255, 255, 0)'; // Orange/Yellow
+                    } else {
+                        return 'rgb(255, 0, 0)'; // Red
+                    }
+                }
+            }
+        }
+
         // Calculate phase boundaries
         const greenStart = offset;
         const greenEnd = (offset + greenDuration) % effectiveCycleLength;
@@ -516,7 +573,7 @@ const IntersectionImage = ({
         } else {
             return 'rgb(255, 0, 0)'; // Red
         }
-    }, [groups, simulationResult, cycleLength, actionData, selectedActions, isTimeInRange]);
+    }, [groups, simulationResult, cycleLength, actionData, selectedActions, isTimeInRange, conflictMatrix]);
 
     // Animation loop
     useEffect(() => {

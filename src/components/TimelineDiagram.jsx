@@ -1826,9 +1826,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             const leftPos = deb * pixelsPerSecond;
 
-                            // Cover all rows, starting just below ruler (28px above rows) and 19px below
-                            const topPos = RULER_HEIGHT - 28;
-                            const height = 28 + (groups.length * ROW_TOTAL_HEIGHT) + 19;
+                            // Cover all rows, starting just below ruler (12px above rows) and 22px below
+                            const topPos = RULER_HEIGHT - 12;
+                            const height = 12 + (groups.length * ROW_TOTAL_HEIGHT) + 22;
 
                             // Check if overlay wraps around cycle
                             const wrapsAround = deb > fin;
@@ -1965,7 +1965,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             // Calculate exact bar bottom position and align rectangle there
                             const rowTopY = RULER_HEIGHT + 1 + (targetGroupIndex * ROW_TOTAL_HEIGHT);
                             const barBottomY = rowTopY + ROW_HEIGHT - 7; // Exact bottom of bar
-                            const rectY = barBottomY - rectHeight + 5; // Rectangle bottom aligned to bar bottom +5px offset
+                            const rectY = barBottomY - rectHeight + 1; // Rectangle bottom aligned to bar bottom +1px offset (moved up 4px)
 
                             // Arrow target Y points to bottom of rectangle
                             const targetY = rectY + rectHeight;
@@ -2027,9 +2027,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         width={rectWidth}
                                         height={rectHeight}
                                         fill={`url(#escam-hatch-${idx})`}
-                                        stroke="#87CEEB"
-                                        strokeWidth="0.5"
-                                        strokeDasharray="2,2"
+                                        stroke="#006400"
+                                        strokeWidth="1"
                                     />
                                     {/* Arrow 1: From source start to (source start - intergreen target→source) */}
                                     <line
