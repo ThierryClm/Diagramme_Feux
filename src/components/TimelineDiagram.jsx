@@ -1345,7 +1345,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     // Use the pre-calculated fermetureStartPos (same as abbreviation)
                                                     // This ensures brace and abbreviation are always at the same position
                                                     const braceStart = fermetureStartPos;
-                                                    const braceEnd = endValue; // Group's simulated end (green bar end)
+                                                    const braceEnd = fin; // Use action's fin value (supports Seconde lucarne)
                                                     // Validate: brace should have positive duration
                                                     // If braceEnd == braceStart, skip rendering
                                                     const normalDuration = braceEnd >= braceStart
