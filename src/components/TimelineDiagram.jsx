@@ -175,7 +175,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         // Apply remaining shift with wrap-around handling (for group shifts and partial Adaptatif vertical)
         const cycle = effectiveCycleLength || cycleLength;
         const shiftedDeb = ((adjustedDeb - totalShift) % cycle + cycle) % cycle;
-        const shiftedFin = ((adjustedFin - totalShift) % cycle + cycle) % cycle;
+
+        // If original fin equals cycle, don't apply modulo (keep at cycle position)
+        const finAfterShift = adjustedFin - totalShift;
+        const shiftedFin = (fin === cycle)
+            ? finAfterShift
+            : ((finAfterShift % cycle + cycle) % cycle);
 
         return { deb: shiftedDeb, fin: shiftedFin, hidden };
     };
@@ -487,6 +492,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         (!simulationFilter || !simulationFilter.has(action.id))
     );
 
+    // Get SELECTED "Escamotage" actions (for cutting target group bar when checked)
+    const selectedEscamotageGroup = simulationFilter ? actionData.filter(action =>
+        action.action === 'Escamotage' && action.gf && action.actGf1 &&
+        simulationFilter.has(action.id)
+    ) : [];
+
     // Get all "Signal aide conduite" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const signaActions = actionData.filter(action => {
@@ -515,13 +526,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     });
 
     // Get all "Point de repos" actions
-    // In simulation mode: show overlay ONLY when action is CHECKED (normal logic - hidden by default)
+    // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     // If plage1 is not set, default to 1 (first group)
     // If plage2 is not set, default to groups.length (total number of groups)
     const pointReposActions = actionData.filter(action => {
         if (action.action !== 'Point de repos') return false;
         if (action.deb === '' || action.deb === undefined) return false;
-        if (simulationFilter && !simulationFilter.has(action.id)) return false;
+        if (simulationFilter && simulationFilter.has(action.id)) return false;
         return true;
     }).map(action => ({
         ...action,
@@ -681,7 +692,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         }
 
         const cycle = simulationResult ? effectiveCycleLength : cycleLength;
-        return (startPos + greenDuration) % cycle;
+        const endPos = startPos + greenDuration;
+        // If end position equals cycle exactly, keep it at cycle instead of wrapping to 0
+        return endPos === cycle ? cycle : (endPos % cycle);
     };
 
     // Helper to check if a group wraps around the cycle (green crosses cycle boundary)
@@ -845,7 +858,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {/* Rows */}
                         {groups.map((group) => {
                             const groupActions = getActionsForGroup(group.id);
-                            const isConflict = conflicts && conflicts.some(c => c.from === group.id || c.to === group.id);
+                            // Filter out conflicts that are managed by a SELECTED Escamotage action
+                            const isConflict = conflicts && conflicts.some(c => {
+                                if (c.from !== group.id && c.to !== group.id) return false;
+                                // Check if this conflict is inhibited by a selected Escamotage action
+                                const isInhibitedByEscamotage = selectedEscamotageGroup.some(action => {
+                                    const sourceGfId = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                                    const targetGfId = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                                    return (sourceGfId === c.from && targetGfId === c.to) ||
+                                           (sourceGfId === c.to && targetGfId === c.from);
+                                });
+                                return !isInhibitedByEscamotage;
+                            });
                             const orangeDuration = group.durations.orange || 3;
 
                             // Get simulated group data if in simulation mode
@@ -1117,6 +1141,75 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             />
                                         );
                                     })}
+
+                                    {/* Green cuts from SELECTED Escamotage (group-specific) actions */}
+                                    {selectedEscamotageGroup
+                                        .filter(action => {
+                                            const targetGfId = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                                            return targetGfId === group.id;
+                                        })
+                                        .map((action, idx) => {
+                                            const sourceGfId = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                                            const targetGfId = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                                            if (sourceGfId === 0 || targetGfId === 0) return null;
+
+                                            const sourceGroup = groups.find(g => g.id === sourceGfId);
+                                            if (!sourceGroup) return null;
+
+                                            // Get intergreen times from conflict matrix
+                                            const intergreenSourceToTarget = conflictMatrix[sourceGfId - 1]?.[targetGfId - 1] || 0;
+                                            const intergreenTargetToSource = conflictMatrix[targetGfId - 1]?.[sourceGfId - 1] || 0;
+
+                                            // Source group times
+                                            const currentCycleLen = effectiveCycleLength || cycleLength;
+                                            const sourceStart = sourceGroup.offset % currentCycleLen;
+                                            const sourceEndRaw = sourceStart + sourceGroup.durations.green;
+                                            const sourceEnd = sourceEndRaw === currentCycleLen ? currentCycleLen : (sourceEndRaw % currentCycleLen);
+
+                                            // Calculate arrow target positions (cut boundaries)
+                                            // Arrow 1: target = sourceStart - intergreenTargetToSource
+                                            const cutStart = ((sourceStart - intergreenTargetToSource) % currentCycleLen + currentCycleLen) % currentCycleLen;
+                                            // Arrow 2: target = sourceEnd + intergreenSourceToTarget
+                                            const cutEndRaw = sourceEnd + intergreenSourceToTarget;
+                                            const cutEnd = cutEndRaw === currentCycleLen ? currentCycleLen : (cutEndRaw % currentCycleLen);
+
+                                            const wrapsAround = cutStart > cutEnd;
+
+                                            if (wrapsAround) {
+                                                const firstPartWidth = (currentCycleLen - cutStart) * pixelsPerSecond;
+                                                const secondPartWidth = cutEnd * pixelsPerSecond;
+                                                return (
+                                                    <React.Fragment key={`escam-group-cut-${idx}`}>
+                                                        <div
+                                                            className="green-cut-overlay"
+                                                            style={{
+                                                                left: `${cutStart * pixelsPerSecond}px`,
+                                                                width: `${firstPartWidth}px`
+                                                            }}
+                                                        />
+                                                        <div
+                                                            className="green-cut-overlay"
+                                                            style={{
+                                                                left: '0px',
+                                                                width: `${secondPartWidth}px`
+                                                            }}
+                                                        />
+                                                    </React.Fragment>
+                                                );
+                                            }
+
+                                            const cutWidth = (cutEnd - cutStart) * pixelsPerSecond;
+                                            return (
+                                                <div
+                                                    key={`escam-group-cut-${idx}`}
+                                                    className="green-cut-overlay"
+                                                    style={{
+                                                        left: `${cutStart * pixelsPerSecond}px`,
+                                                        width: `${cutWidth}px`
+                                                    }}
+                                                />
+                                            );
+                                        })}
 
                                     {/* Action-based overlays */}
                                     {groupActions.map((action, idx) => {
@@ -1733,9 +1826,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             const leftPos = deb * pixelsPerSecond;
 
-                            // Cover all rows, starting just below ruler (12px above rows) and 22px below
-                            const topPos = RULER_HEIGHT - 12;
-                            const height = 12 + (groups.length * ROW_TOTAL_HEIGHT) + 22;
+                            // Cover all rows, starting just below ruler (28px above rows) and 19px below
+                            const topPos = RULER_HEIGHT - 28;
+                            const height = 28 + (groups.length * ROW_TOTAL_HEIGHT) + 19;
 
                             // Check if overlay wraps around cycle
                             const wrapsAround = deb > fin;
@@ -1842,7 +1935,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             // Source group times
                             const sourceStart = sourceGroup.offset % cycleLength;
-                            const sourceEnd = (sourceStart + sourceGroup.durations.green) % cycleLength;
+                            const sourceEndRaw = sourceStart + sourceGroup.durations.green;
+                            // If end equals cycle, keep it at cycle instead of wrapping to 0
+                            const sourceEnd = sourceEndRaw === cycleLength ? cycleLength : (sourceEndRaw % cycleLength);
 
                             // Find actual group indices in the array
                             const sourceGroupIndex = groups.findIndex(g => g.id === sourceGfId);
@@ -1858,7 +1953,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             // Arrow 2: From end of source GF to (source end + intergreen source→target)
                             const arrow2SourceX = sourceEnd * pixelsPerSecond;
-                            const arrow2TargetX = ((sourceEnd + intergreenSourceToTarget) % cycleLength) * pixelsPerSecond;
+                            const arrow2TargetRaw = sourceEnd + intergreenSourceToTarget;
+                            // If arrow end equals cycle, keep it at cycle instead of wrapping to 0
+                            const arrow2TargetX = (arrow2TargetRaw === cycleLength ? cycleLength : (arrow2TargetRaw % cycleLength)) * pixelsPerSecond;
 
                             // Rectangle between arrow endpoints on target row (lower half of bar)
                             const rectX = Math.min(arrow1TargetX, arrow2TargetX);
@@ -1911,7 +2008,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             refY="3"
                                             orient="auto"
                                         >
-                                            <polygon points="0 0, 8 3, 0 6" fill="#1565C0" />
+                                            <polygon points="0 0, 8 3, 0 6" fill="#87CEEB" />
                                         </marker>
                                         <pattern
                                             id={`escam-hatch-${idx}`}
@@ -1920,7 +2017,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             height="6"
                                             patternTransform="rotate(-45)"
                                         >
-                                            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(21,101,192,0.9)" strokeWidth="3" />
+                                            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(135,206,235,0.9)" strokeWidth="3" />
                                         </pattern>
                                     </defs>
                                     {/* Hatched rectangle between arrow endpoints */}
@@ -1930,7 +2027,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         width={rectWidth}
                                         height={rectHeight}
                                         fill={`url(#escam-hatch-${idx})`}
-                                        stroke="#1565C0"
+                                        stroke="#87CEEB"
                                         strokeWidth="0.5"
                                         strokeDasharray="2,2"
                                     />
@@ -1940,7 +2037,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         y1={sourceY}
                                         x2={arrow1TargetX}
                                         y2={targetY}
-                                        stroke="#1565C0"
+                                        stroke="#87CEEB"
                                         strokeWidth="1"
                                         strokeDasharray="4,2"
                                         markerEnd={`url(#escam-arrowhead-${idx})`}
@@ -1951,7 +2048,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         y1={sourceY}
                                         x2={arrow2TargetX}
                                         y2={targetY}
-                                        stroke="#1565C0"
+                                        stroke="#87CEEB"
                                         strokeWidth="1"
                                         strokeDasharray="4,2"
                                         markerEnd={`url(#escam-arrowhead-${idx})`}

@@ -90,6 +90,34 @@ function App() {
         setDependencyGap
     } = useTrafficLight();
 
+    // Filter conflicts to exclude those managed by SELECTED Escamotage actions (in simulation mode)
+    const filteredConflicts = useMemo(() => {
+        if (!simulationEnabled || !simulationSelectedActions || simulationSelectedActions.length === 0) {
+            return conflicts;
+        }
+
+        // Get selected Escamotage actions
+        const selectedEscamotageGroup = actionData.filter(action =>
+            action.action === 'Escamotage' && action.gf && action.actGf1 &&
+            simulationSelectedActions.includes(action.id)
+        );
+
+        if (selectedEscamotageGroup.length === 0) {
+            return conflicts;
+        }
+
+        // Filter out conflicts that are managed by selected Escamotage actions
+        return conflicts.filter(c => {
+            const isInhibitedByEscamotage = selectedEscamotageGroup.some(action => {
+                const sourceGfId = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                const targetGfId = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                return (sourceGfId === c.from && targetGfId === c.to) ||
+                       (sourceGfId === c.to && targetGfId === c.from);
+            });
+            return !isInhibitedByEscamotage;
+        });
+    }, [conflicts, simulationEnabled, simulationSelectedActions, actionData]);
+
     // Authentification
     const {
         currentUser,
@@ -2162,9 +2190,9 @@ function App() {
                 </div>
 
                 <div className="status-bar">
-                    {conflicts.length > 0 ? (
+                    {filteredConflicts.length > 0 ? (
                         <div className="status-error">
-                            {conflicts.length} CONFLITS !
+                            {filteredConflicts.length} CONFLITS !
                         </div>
                     ) : (
                         <div
@@ -2359,11 +2387,11 @@ function App() {
                                 />
                             )}
 
-                            {conflicts.length > 0 && (
+                            {filteredConflicts.length > 0 && (
                                 <div className="conflict-list">
                                     <h4>Conflits:</h4>
                                     <ul>
-                                        {conflicts.map((c, i) => (
+                                        {filteredConflicts.map((c, i) => (
                                             <li key={i}>
                                                 {c.type === 'intergreen' ? (
                                                     <>GF{c.from} → GF{c.to} : Dégagement insuffisant ({c.actual.toFixed(1)}s / {c.required}s requis)</>
@@ -2495,7 +2523,7 @@ function App() {
                                 getGroupState={getGroupState}
                                 onGroupClick={(g) => setSelectedGroupId(g.id)}
                                 pixelsPerSecond={pixelsPerSecond}
-                                conflicts={conflicts}
+                                conflicts={filteredConflicts}
                                 conflictMatrix={conflictMatrix}
                                 updateGroupParams={updateGroupParams}
                                 cycleLength={cycleLength}

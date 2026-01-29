@@ -23,8 +23,7 @@ const SimulationPanel = ({
         'Fin de bande passante',
         'Priorité piétons',
         'Signa d\'aide à la conduite',
-        'Synchro BTS',
-        'Point de repos'
+        'Synchro BTS'
     ];
     const activeActions = actionData.filter(a =>
         a.action && a.action !== '' && !excludedActions.includes(a.action)
@@ -43,7 +42,31 @@ const SimulationPanel = ({
         );
     }, [groups, actionData, selectedActions, cycleLength, conflictMatrix]);
 
-    const { simulatedGroups, simulatedCycleLength, conflicts } = simulationResult;
+    const { simulatedGroups, simulatedCycleLength, conflicts: rawConflicts } = simulationResult;
+
+    // Filter conflicts to exclude those managed by SELECTED Escamotage actions
+    const conflicts = useMemo(() => {
+        // Get selected Escamotage actions
+        const selectedEscamotageGroup = actionData.filter(action =>
+            action.action === 'Escamotage' && action.gf && action.actGf1 &&
+            selectedActions.includes(action.id)
+        );
+
+        if (selectedEscamotageGroup.length === 0) {
+            return rawConflicts;
+        }
+
+        // Filter out conflicts that are managed by selected Escamotage actions
+        return rawConflicts.filter(c => {
+            const isInhibitedByEscamotage = selectedEscamotageGroup.some(action => {
+                const sourceGfId = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                const targetGfId = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                return (sourceGfId === c.from && targetGfId === c.to) ||
+                       (sourceGfId === c.to && targetGfId === c.from);
+            });
+            return !isInhibitedByEscamotage;
+        });
+    }, [rawConflicts, actionData, selectedActions]);
 
     // Calculate V.Utile = trafic / (1800 * coef / cycle)
     const calculateVUtile = (trafficVol, laneCoef) => {
