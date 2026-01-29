@@ -658,25 +658,28 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     };
 
     // Helper to get group end position (end of green bar on screen)
-    // Uses simulated offset when in simulation mode
+    // Uses simulated offset and green duration when in simulation mode
     const getGroupEndPos = (groupId) => {
         const group = groups.find(g => g.id === parseInt(groupId));
         if (!group) return null;
 
         let startPos;
-        // In simulation mode, use simulated offset if available
+        let greenDuration;
+        // In simulation mode, use simulated offset and green duration if available
         if (simulationResult) {
             const simGroup = simulationResult.simulatedGroups.find(g => g.id === parseInt(groupId));
             if (simGroup) {
                 startPos = simGroup.simulatedOffset % effectiveCycleLength;
+                greenDuration = simGroup.simulatedGreen !== undefined ? simGroup.simulatedGreen : (group.durations?.green || 0);
             } else {
                 startPos = group.offset % cycleLength;
+                greenDuration = group.durations?.green || 0;
             }
         } else {
             startPos = group.offset % cycleLength;
+            greenDuration = group.durations?.green || 0;
         }
 
-        const greenDuration = group.durations?.green || 0;
         const cycle = simulationResult ? effectiveCycleLength : cycleLength;
         return (startPos + greenDuration) % cycle;
     };
@@ -687,18 +690,21 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         if (!group) return false;
 
         let startPos;
+        let greenDuration;
         if (simulationResult) {
             const simGroup = simulationResult.simulatedGroups.find(g => g.id === parseInt(groupId));
             if (simGroup) {
                 startPos = simGroup.simulatedOffset % effectiveCycleLength;
+                greenDuration = simGroup.simulatedGreen !== undefined ? simGroup.simulatedGreen : (group.durations?.green || 0);
             } else {
                 startPos = group.offset % cycleLength;
+                greenDuration = group.durations?.green || 0;
             }
         } else {
             startPos = group.offset % cycleLength;
+            greenDuration = group.durations?.green || 0;
         }
 
-        const greenDuration = group.durations?.green || 0;
         const cycle = simulationResult ? effectiveCycleLength : cycleLength;
         return (startPos + greenDuration) > cycle;
     };
@@ -1134,6 +1140,25 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const abrv = action.abrv || '';
                                         const isHighlighted = hoveredActionId === action.id;
 
+                                        // For Fermeture anticipée: calculate brace start position
+                                        // Rule: if calculated position > original fin, move the brace; otherwise keep original
+                                        let fermetureStartPos = deb; // Default to shifted deb
+                                        if (action.action === 'Fermeture anticipée' && simGroup) {
+                                            const originalGreenEnd = group.offset + group.durations.green;
+                                            const simulatedGreenEnd = simGroup.simulatedOffset + simGroup.simulatedGreen;
+                                            if (originalGreenEnd === simulatedGreenEnd) {
+                                                // Green end didn't change - use original deb position
+                                                fermetureStartPos = origDeb;
+                                            } else {
+                                                // Green end changed - shift deb by the same amount
+                                                const endShift = simulatedGreenEnd - originalGreenEnd;
+                                                const calculatedPos = ((origDeb + endShift) % effectiveCycleLength + effectiveCycleLength) % effectiveCycleLength;
+                                                // If calculated position > original fin, move the brace; otherwise keep original
+                                                fermetureStartPos = calculatedPos > origFin ? calculatedPos : origDeb;
+                                            }
+                                        }
+                                        const fermetureLeftPos = fermetureStartPos * pixelsPerSecond;
+
                                         return (
                                             <React.Fragment key={`action-${idx}`}>
                                                 {/* Abrv label on the bar (not for Ouverture anticipée, Escamotage de phase, Adaptatif vertical which have their own labels) */}
@@ -1141,7 +1166,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     <div
                                                         className="bar-label"
                                                         style={{
-                                                            left: `${leftPos + 2}px`,
+                                                            left: `${(action.action === 'Fermeture anticipée' ? fermetureLeftPos : leftPos) + 2}px`,
                                                             width: `${greenWidth - 4}px`
                                                         }}
                                                     >
@@ -1220,13 +1245,24 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                                                 {/* Fermeture anticipée: brace */}
                                                 {action.action === 'Fermeture anticipée' && (() => {
-                                                    // braceStart uses the action's deb value (shifted by simulation)
-                                                    // braceEnd uses the group's actual end position so the brace follows the green bar end
-                                                    const braceStart = deb; // Action's shifted deb value
+                                                    // Don't render brace if the group is escamoted or has no green
+                                                    if (isEscamoted || greenDuration <= 0) {
+                                                        return null;
+                                                    }
+                                                    // Use the pre-calculated fermetureStartPos (same as abbreviation)
+                                                    // This ensures brace and abbreviation are always at the same position
+                                                    const braceStart = fermetureStartPos;
                                                     const braceEnd = endValue; // Group's simulated end (green bar end)
-                                                    const braceDuration = braceEnd >= braceStart
+                                                    // Validate: brace should have positive duration
+                                                    // If braceEnd == braceStart, skip rendering
+                                                    const normalDuration = braceEnd >= braceStart
                                                         ? braceEnd - braceStart
                                                         : (effectiveCycleLength - braceStart + braceEnd);
+                                                    // Skip if duration is 0 or spans almost the entire cycle (which indicates an error)
+                                                    if (normalDuration <= 0 || normalDuration >= effectiveCycleLength - 1) {
+                                                        return null;
+                                                    }
+                                                    const braceDuration = normalDuration;
                                                     const braceLeftPos = braceStart * pixelsPerSecond;
                                                     const braceWidth = braceDuration * pixelsPerSecond;
 
@@ -1504,6 +1540,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 const sourceGroup = groups.find(g => g.id === sourceGf);
                                 const targetGroup = groups.find(g => g.id === parseInt(targetGf));
                                 if (!sourceGroup || !targetGroup) return null;
+
+                                // Skip if source group is escamoted or has no green duration
+                                const sourceSimGroup = getSimulatedGroup(sourceGf);
+                                if (sourceSimGroup?.isEscamoted || (sourceSimGroup?.simulatedGreen !== undefined && sourceSimGroup.simulatedGreen <= 0)) {
+                                    return null;
+                                }
 
                                 const sourceStart = getGroupStartPos(sourceGf);
                                 const sourceEnd = getGroupEndPos(sourceGf);
