@@ -248,3 +248,10 @@
 .traffic-table tbody tr.row-highlighted td {
     background: transparent !important;
 }
+
+/* Inhibited row when group has selected simulation action */
+/* Only gray out calculated columns, not the group ID and name */
+.traffic-table tbody tr.row-inhibited td.col-calculated {
+    opacity: 0.5;
+    color: #666;
+}

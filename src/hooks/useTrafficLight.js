@@ -1599,6 +1599,57 @@ export const useTrafficLight = () => {
         setCycleLength(prev => prev + duration);
     }, [saveToHistory]);
 
+    // Reduce time at a given position for a given duration
+    const reduceTime = useCallback((startSecond, duration) => {
+        saveToHistory();
+        const endSecond = startSecond + duration;
+        setGroups(currentGroups => {
+            return currentGroups.map(g => {
+                const offset = g.offset;
+                // If group starts at or after the end of reduced zone, shift it backward
+                if (offset >= endSecond) {
+                    return {
+                        ...g,
+                        offset: offset - duration
+                    };
+                }
+                // If group starts within the reduced zone, clamp to startSecond
+                if (offset > startSecond && offset < endSecond) {
+                    return {
+                        ...g,
+                        offset: startSecond
+                    };
+                }
+                return g;
+            });
+        });
+        // Also shift action data Déb/Fin
+        setActionData(currentData => {
+            return currentData.map(row => {
+                const newRow = { ...row };
+                if (newRow.deb !== '' && newRow.deb !== undefined) {
+                    const deb = parseInt(newRow.deb);
+                    if (deb >= endSecond) {
+                        newRow.deb = (deb - duration).toString();
+                    } else if (deb > startSecond && deb < endSecond) {
+                        newRow.deb = startSecond.toString();
+                    }
+                }
+                if (newRow.fin !== '' && newRow.fin !== undefined) {
+                    const fin = parseInt(newRow.fin);
+                    if (fin >= endSecond) {
+                        newRow.fin = (fin - duration).toString();
+                    } else if (fin > startSecond && fin < endSecond) {
+                        newRow.fin = startSecond.toString();
+                    }
+                }
+                return newRow;
+            });
+        });
+        // Decrease cycle length
+        setCycleLength(prev => Math.max(1, prev - duration));
+    }, [saveToHistory]);
+
     return {
         intersectionName,
         setIntersectionName,
@@ -1658,6 +1709,7 @@ export const useTrafficLight = () => {
         // Diagram operations
         slideAllGroups,
         insertTime,
+        reduceTime,
         // Simulation mode
         simulationEnabled,
         setSimulationEnabled,

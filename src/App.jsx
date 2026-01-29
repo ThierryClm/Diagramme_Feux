@@ -69,6 +69,7 @@ function App() {
         endDrag,
         slideAllGroups,
         insertTime,
+        reduceTime,
         simulationEnabled,
         setSimulationEnabled,
         simulationSelectedActions,
@@ -440,12 +441,15 @@ function App() {
     const [openModal, setOpenModal] = useState(false);
     const [slideModal, setSlideModal] = useState(false);
     const [insertModal, setInsertModal] = useState(false);
+    const [reduceModal, setReduceModal] = useState(false);
     const [optionsModal, setOptionsModal] = useState(false);
     const [helpModal, setHelpModal] = useState(false);
     const [importModal, setImportModal] = useState(false);
     const [slideValue, setSlideValue] = useState(0);
     const [insertStart, setInsertStart] = useState(0);
     const [insertDuration, setInsertDuration] = useState(5);
+    const [reduceStart, setReduceStart] = useState(0);
+    const [reduceDuration, setReduceDuration] = useState(5);
     const [selectedProject, setSelectedProject] = useState(null);
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
@@ -1248,6 +1252,11 @@ function App() {
                 setInsertDuration(5);
                 setInsertModal(true);
                 break;
+            case 'reduce':
+                setReduceStart(0);
+                setReduceDuration(5);
+                setReduceModal(true);
+                break;
             case 'options':
                 setOptionsModal(true);
                 break;
@@ -1488,6 +1497,14 @@ function App() {
             insertTime(insertStart, insertDuration);
         }
         setInsertModal(false);
+    };
+
+    // Handle reduce confirmation
+    const handleReduce = () => {
+        if (reduceDuration > 0 && reduceStart + reduceDuration <= cycleLength) {
+            reduceTime(reduceStart, reduceDuration);
+        }
+        setReduceModal(false);
     };
 
     // Handle file selection for import
@@ -2338,6 +2355,7 @@ function App() {
                                     setHoveredVUtile={setHoveredVUtile}
                                     copyTrafficDataset={copyTrafficDataset}
                                     actionData={actionData}
+                                    simulationSelectedActions={simulationSelectedActions}
                                 />
                             )}
 
@@ -2688,6 +2706,46 @@ function App() {
                     </button>
                     <button className="modal-btn modal-btn-primary" onClick={handleInsert}>
                         Insérer
+                    </button>
+                </div>
+            </Modal>
+
+            {/* Modal Réduire */}
+            <Modal isOpen={reduceModal} onClose={() => setReduceModal(false)} title="Réduire une plage">
+                <div className="form-row">
+                    <label>
+                        À partir de la seconde :
+                        <input
+                            type="number"
+                            min="0"
+                            max={cycleLength - 1}
+                            value={reduceStart}
+                            onChange={(e) => setReduceStart(parseInt(e.target.value) || 0)}
+                        />
+                    </label>
+                </div>
+                <div className="form-row">
+                    <label>
+                        Durée à supprimer (secondes) :
+                        <input
+                            type="number"
+                            min="1"
+                            max={cycleLength - reduceStart}
+                            value={reduceDuration}
+                            onChange={(e) => setReduceDuration(parseInt(e.target.value) || 1)}
+                        />
+                    </label>
+                </div>
+                <p style={{ color: '#888', fontSize: '0.85em', marginTop: '8px' }}>
+                    Tous les groupes commençant après la seconde {reduceStart + reduceDuration} seront décalés de -{reduceDuration}s.<br />
+                    La durée du cycle passera de {cycleLength}s à {Math.max(1, cycleLength - reduceDuration)}s.
+                </p>
+                <div className="modal-actions">
+                    <button className="modal-btn modal-btn-secondary" onClick={() => setReduceModal(false)}>
+                        Annuler
+                    </button>
+                    <button className="modal-btn modal-btn-primary" onClick={handleReduce}>
+                        Réduire
                     </button>
                 </div>
             </Modal>

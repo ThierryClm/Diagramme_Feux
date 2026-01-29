@@ -373,3 +373,13 @@
     color: #000;
     background-color: #ff6b6b;
 }
+
+/* Inhibited row when group has selected simulation action */
+/* Only gray out calculated columns (V.U, Cap.U, Ret., File), not the group ID/name */
+.simulation-traffic-table tr.row-inhibited td.col-vutile,
+.simulation-traffic-table tr.row-inhibited td.col-capacity,
+.simulation-traffic-table tr.row-inhibited td.col-delay,
+.simulation-traffic-table tr.row-inhibited td.col-queue {
+    opacity: 0.5;
+    color: #666;
+}

@@ -14,10 +14,31 @@ const TrafficTable = ({
     trafficDatasetNames,
     setHoveredVUtile,
     copyTrafficDataset,
-    actionData = []
+    actionData = [],
+    simulationSelectedActions = []
 }) => {
     const [showPasteDropdown, setShowPasteDropdown] = useState(false);
     const [showAllGroups, setShowAllGroups] = useState(false);
+
+    // Determine which groups are inhibited by selected simulation actions
+    // (Escamotage de phase, Fermeture anticipée, Adaptatif vertical)
+    const inhibitedGroups = useMemo(() => {
+        const inhibited = new Set();
+        const inhibitActions = ['Escamotage de phase', 'Fermeture anticipée', 'Adaptatif vertical'];
+
+        actionData.forEach(action => {
+            if (simulationSelectedActions.includes(action.id) &&
+                inhibitActions.includes(action.action) &&
+                action.gf) {
+                const gfId = parseInt(action.gf.toString().replace(/[Gg]/g, '').trim());
+                if (gfId > 0) {
+                    inhibited.add(gfId);
+                }
+            }
+        });
+
+        return inhibited;
+    }, [actionData, simulationSelectedActions]);
 
     // Update traffic volume (per dataset)
     const handleTrafficChange = (id, value) => {
@@ -203,10 +224,12 @@ const TrafficTable = ({
                 <tbody>
                     {vlGroups.map(g => {
                         const trafficData = getTrafficData(g.id);
+                        // Check if this group is inhibited by a selected simulation action
+                        const isInhibited = inhibitedGroups.has(g.id);
                         return (
                             <tr
                                 key={g.id}
-                                className={hoveredGroupId === g.id ? 'row-highlighted' : ''}
+                                className={`${hoveredGroupId === g.id ? 'row-highlighted' : ''} ${isInhibited ? 'row-inhibited' : ''}`}
                                 onMouseEnter={() => setHoveredGroupId && setHoveredGroupId(g.id)}
                                 onMouseLeave={() => setHoveredGroupId && setHoveredGroupId(null)}
                             >
@@ -215,8 +238,8 @@ const TrafficTable = ({
 
                                 {/* Coef Voie (shared across all datasets) */}
                                 {(() => {
-                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
                                     return (
                                         <td
                                             onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
@@ -234,8 +257,8 @@ const TrafficTable = ({
                                 })()}
                                 {/* Trafic (per dataset) */}
                                 {(() => {
-                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
                                     return (
                                         <td
                                             onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
@@ -252,8 +275,8 @@ const TrafficTable = ({
                                 })()}
                                 {/* Vert Utile (calculé) */}
                                 {(() => {
-                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
                                     return (
                                         <td
                                             className="col-calculated col-vutile"
@@ -266,8 +289,8 @@ const TrafficTable = ({
                                 })()}
                                 {/* Capacité Utilisée (calculée: V.Utile / temps vert * 100) */}
                                 {(() => {
-                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
+                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
                                     return (
                                         <td
                                             className={`col-calculated ${getCapacityColorClass(capacity.value)}`}
@@ -281,9 +304,9 @@ const TrafficTable = ({
                                 {/* Retard (calculé) = (cycle - vert)² / (2 * cycle * (1 - trafic / (1800 * coef))) */}
                                 {/* Ou si action "Début de bande passante" avec actGf1 = groupe : max(0, début_vert - fin_action) */}
                                 {(() => {
-                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
-                                    const delay = calculateDelay(g.durations?.green, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
+                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
+                                    const delay = isInhibited ? null : calculateDelay(g.durations?.green, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
                                     return (
                                         <td
                                             className="col-calculated"
@@ -297,9 +320,9 @@ const TrafficTable = ({
                                 {/* File d'attente (calculé) = (Trafic * (cycle - vert) / (3600 / Coef)) * 6 */}
                                 {/* Ou si action "Début de bande passante" avec actGf1 = groupe : max(0, début_vert - fin_action) */}
                                 {(() => {
-                                    const vUtile = calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = calculateCapacity(g.durations?.green, vUtile);
-                                    const queue = calculateQueue(g.durations?.green, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
+                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
+                                    const queue = isInhibited ? null : calculateQueue(g.durations?.green, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
                                     return (
                                         <td
                                             className="col-calculated"
