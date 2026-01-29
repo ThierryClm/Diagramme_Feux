@@ -500,7 +500,7 @@
     position: absolute;
     background: rgba(128, 128, 128, 0.2);
     border: 1px solid rgba(128, 128, 128, 0.4);
-    z-index: 15;
+    z-index: 21;
     pointer-events: none;
 }
 

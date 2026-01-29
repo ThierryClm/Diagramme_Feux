@@ -1136,8 +1136,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                                         return (
                                             <React.Fragment key={`action-${idx}`}>
-                                                {/* Abrv label on the bar (not for Ouverture anticipée which has its own label) */}
-                                                {abrv && action.action !== 'Ouverture anticipée' && (
+                                                {/* Abrv label on the bar (not for Ouverture anticipée, Escamotage de phase, Adaptatif vertical which have their own labels) */}
+                                                {abrv && action.action !== 'Ouverture anticipée' && action.action !== 'Escamotage de phase' && action.action !== 'Adaptatif vertical' && (
                                                     <div
                                                         className="bar-label"
                                                         style={{
@@ -1378,11 +1378,11 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 const startGroup = Math.min(plage1, plage2) - 1;
                                 const endGroup = Math.max(plage1, plage2) - 1;
                                 topPos = RULER_HEIGHT + 1 + (startGroup * ROW_TOTAL_HEIGHT);
-                                height = (endGroup - startGroup + 1) * ROW_TOTAL_HEIGHT;
+                                height = (endGroup - startGroup + 1) * ROW_TOTAL_HEIGHT + 8;
                             } else {
                                 // No plage values - full height
                                 topPos = RULER_HEIGHT + 1;
-                                height = groups.length * ROW_TOTAL_HEIGHT;
+                                height = groups.length * ROW_TOTAL_HEIGHT + 8;
                             }
 
                             // Check if overlay wraps around cycle
@@ -1691,9 +1691,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             const leftPos = deb * pixelsPerSecond;
 
-                            // Cover all rows, starting just below ruler (8px above rows) and 30px below
-                            const topPos = RULER_HEIGHT - 8;
-                            const height = 8 + (groups.length * ROW_TOTAL_HEIGHT) + 30;
+                            // Cover all rows, starting just below ruler (12px above rows) and 22px below
+                            const topPos = RULER_HEIGHT - 12;
+                            const height = 12 + (groups.length * ROW_TOTAL_HEIGHT) + 22;
 
                             // Check if overlay wraps around cycle
                             const wrapsAround = deb > fin;
