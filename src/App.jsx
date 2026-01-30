@@ -3027,7 +3027,26 @@ function App() {
                             <li><strong>Dupliquer :</strong> Crée un nouvel onglet PF avec une copie du diagramme actuel</li>
                             <li><strong>Glisser :</strong> Décale tous les groupes d'un nombre de secondes donné</li>
                             <li><strong>Insérer :</strong> Insère du temps dans le cycle à une position donnée</li>
+                            <li><strong>Réduire :</strong> Réduit la plage de temps dans le cycle à une position donnée</li>
+                            <li><strong>Déplacer un groupe :</strong> Déplace un groupe vers le haut ou le bas. <em>Cette action synchronise automatiquement les données (diagramme, matrice, actions) dans tous les plans de feux.</em></li>
                             <li><strong>Options :</strong> Affiche la légende visuelle des actions</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Image du carrefour</h4>
+                        <p>L'image du carrefour affiche les flèches des groupes de feux avec un code couleur dynamique :</p>
+                        <ul>
+                            <li><strong>Survol du diagramme :</strong> En survolant le diagramme, les flèches changent de couleur selon la phase à l'instant survolé :
+                                <ul>
+                                    <li><span style={{color: '#00cc00'}}>Vert</span> : Phase verte normale</li>
+                                    <li><span style={{color: '#00aa00'}}>Vert foncé</span> : Seconde lucarne active</li>
+                                    <li><span style={{color: '#ff9900'}}>Orange</span> : Phase orange/jaune</li>
+                                    <li><span style={{color: '#cc0000'}}>Rouge</span> : Phase rouge</li>
+                                </ul>
+                            </li>
+                            <li><strong>Mode simulation :</strong> Les flèches suivent le temps de la simulation en cours</li>
+                            <li><strong>Escamotage :</strong> Quand un escamotage est actif, la flèche du groupe cible passe à l'orange puis au rouge pendant la zone de coupure</li>
                         </ul>
                     </section>
 
@@ -3088,6 +3107,15 @@ function App() {
                             <li><strong>Répertoires récents :</strong> Les menus "Ouvrir", "Importer Excel" et "Charger image" proposent les 5 derniers répertoires utilisés</li>
                             <li><strong>Sauvegarde complète :</strong> Chaque plan de feux (PF) conserve sa propre matrice de dégagement et ses données de diagramme</li>
                         </ul>
+                        <h5 style={{ marginTop: '15px', marginBottom: '10px', color: '#aaa' }}>Sécurité de la sauvegarde</h5>
+                        <p>L'application inclut des protections contre la perte de données :</p>
+                        <ul>
+                            <li><strong>Validation des données :</strong> La sauvegarde est refusée si les groupes, plans de feux ou matrice de conflits sont vides</li>
+                            <li><strong>Détection de corruption :</strong> Alerte si les données à sauvegarder semblent anormalement petites</li>
+                            <li><strong>Backup automatique :</strong> Une copie de secours est créée avant d'écraser une sauvegarde existante</li>
+                            <li><strong>Confirmation de sécurité :</strong> Demande de confirmation si la nouvelle sauvegarde est significativement plus petite que l'ancienne</li>
+                            <li><strong>Gestion des erreurs :</strong> Messages d'erreur explicites en cas de problème (espace insuffisant, données invalides)</li>
+                        </ul>
                     </section>
 
                     <section className="help-section">
@@ -3130,11 +3158,6 @@ function App() {
                         <p><strong>Synchronisation automatique :</strong> Quand vous changez d'onglet PF (PF1, PF2...), le jeu de données trafic "Associé à" se synchronise automatiquement avec l'onglet actif si un dataset du même nom existe.</p>
                         <p><strong>Groupes :</strong> Tous les groupes de 1 au nombre total (cellule H2) sont importés, y compris les groupes vides (sans nom ni configuration).</p>
                     </section>
-                </div>
-                <div className="modal-actions" style={{ marginTop: '20px' }}>
-                    <button className="modal-btn modal-btn-primary" onClick={() => setHelpModal(false)}>
-                        Fermer
-                    </button>
                 </div>
             </Modal>
 
