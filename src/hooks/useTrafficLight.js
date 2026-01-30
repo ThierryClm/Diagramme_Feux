@@ -3,6 +3,25 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 const DEFAULT_CYCLE = 100;
 const MAX_HISTORY_SIZE = 50;
 
+// Safe localStorage helper to prevent QuotaExceededError crashes
+const safeLocalStorage = {
+    setItem: (key, value) => {
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (e) {
+            if (e.name === 'QuotaExceededError') {
+                console.warn(`localStorage quota exceeded for key: ${key}`);
+                // Don't crash the app, just skip the save
+                return false;
+            }
+            throw e;
+        }
+    },
+    getItem: (key) => localStorage.getItem(key),
+    removeItem: (key) => localStorage.removeItem(key)
+};
+
 // Traffic dataset types
 export const TRAFFIC_DATASETS = ['HPM', 'HPS', 'HC', 'Estimation', 'Projection'];
 
@@ -55,11 +74,11 @@ export const useTrafficLight = () => {
 
     // Auto-save Effect
     useEffect(() => {
-        localStorage.setItem('trafficGroups', JSON.stringify(groups));
-        localStorage.setItem('trafficMatrix', JSON.stringify(conflictMatrix));
-        localStorage.setItem('trafficName', intersectionName);
-        localStorage.setItem('trafficCycle', cycleLength.toString());
-        localStorage.setItem('trafficDependencyGap', dependencyGap.toString());
+        safeLocalStorage.setItem('trafficGroups', JSON.stringify(groups));
+        safeLocalStorage.setItem('trafficMatrix', JSON.stringify(conflictMatrix));
+        safeLocalStorage.setItem('trafficName', intersectionName);
+        safeLocalStorage.setItem('trafficCycle', cycleLength.toString());
+        safeLocalStorage.setItem('trafficDependencyGap', dependencyGap.toString());
     }, [groups, conflictMatrix, intersectionName, cycleLength, dependencyGap]);
 
     const setGroupCountInternal = (count) => {
@@ -516,24 +535,145 @@ export const useTrafficLight = () => {
 
             // Batch updates - use project name as intersection name
             setIntersectionName(name);
-            if (data.groups) setGroups(data.groups);
+
+            // Migrate and validate groups structure for old projects
+            if (data.groups) {
+                const migratedGroups = data.groups.map((g, index) => {
+                    // Ensure all required fields exist with proper defaults
+                    const id = g.id !== undefined ? g.id : index + 1;
+
+                    // Handle old duration formats
+                    let durations = g.durations;
+                    if (!durations || typeof durations !== 'object') {
+                        // Old format might have green/orange/red directly on group
+                        durations = {
+                            green: g.green !== undefined ? g.green : (g.greenDuration !== undefined ? g.greenDuration : 10),
+                            orange: g.orange !== undefined ? g.orange : 3,
+                            red: g.red !== undefined ? g.red : 0
+                        };
+                    }
+                    // Validate duration values
+                    durations = {
+                        green: !isNaN(durations.green) ? durations.green : 10,
+                        orange: !isNaN(durations.orange) ? durations.orange : 3,
+                        red: !isNaN(durations.red) ? durations.red : 0
+                    };
+
+                    return {
+                        id,
+                        name: g.name || `Groupe ${id}`,
+                        type: g.type || 'VL',
+                        minGreen: g.minGreen !== undefined && !isNaN(g.minGreen) ? g.minGreen : 6,
+                        durations,
+                        offset: g.offset !== undefined && !isNaN(g.offset) ? g.offset : 0,
+                        da: g.da || '',
+                        comment: g.comment || '',
+                        commentColor: g.commentColor || '',
+                        // Traffic Engineering Props
+                        trafficStream: g.trafficStream || '',
+                        laneCoef: g.laneCoef !== undefined ? g.laneCoef : 1,
+                        trafficVol: g.trafficVol !== undefined ? g.trafficVol : 0,
+                        effectiveGreen: g.effectiveGreen !== undefined ? g.effectiveGreen : 0,
+                        usedCapacity: g.usedCapacity !== undefined ? g.usedCapacity : 0,
+                        delay: g.delay !== undefined ? g.delay : 0,
+                        queueLength: g.queueLength !== undefined ? g.queueLength : 0
+                    };
+                });
+                setGroups(migratedGroups);
+            }
+
             if (data.cycleLength) setCycleLength(data.cycleLength);
-            if (data.conflictMatrix) {
-                // Clean 0 values and values outside 3-20 range
-                const cleanedMatrix = data.conflictMatrix.map(row => row.map(val => {
-                    if (val === 0 || val === '0') return '';
-                    if (typeof val === 'number' && (val < 3 || val > 20)) return '';
-                    return val;
-                }));
+
+            // Ensure conflict matrix matches group count
+            const groupCount = data.groups ? data.groups.length : 0;
+            if (data.conflictMatrix && groupCount > 0) {
+                // Clean 0 values and values outside 3-20 range, and resize to match group count
+                const cleanedMatrix = Array.from({ length: groupCount }, (_, r) => {
+                    return Array.from({ length: groupCount }, (_, c) => {
+                        const val = data.conflictMatrix[r]?.[c];
+                        if (val === undefined || val === null || val === 0 || val === '0') return '';
+                        if (typeof val === 'number' && (val < 3 || val > 20)) return '';
+                        return val;
+                    });
+                });
                 setConflictMatrix(cleanedMatrix);
+            } else if (groupCount > 0) {
+                // No matrix in data, create empty one
+                setConflictMatrix(Array.from({ length: groupCount }, () => new Array(groupCount).fill('')));
             }
             // Load action table data (pfTabs)
             if (data.pfTabs) {
-                setPfTabs(data.pfTabs);
+                // Migrate and validate pfTabs structure
+                const groupCount = data.groups ? data.groups.length : 0;
+                const migratedPfTabs = data.pfTabs.map(pf => {
+                    const migrated = { ...pf };
+
+                    // Ensure data array exists
+                    if (!migrated.data) {
+                        migrated.data = [];
+                    }
+
+                    // Ensure diagram array exists with valid data
+                    if (!migrated.diagram || !Array.isArray(migrated.diagram) || migrated.diagram.length === 0) {
+                        // Initialize diagram from groups if available
+                        if (data.groups) {
+                            migrated.diagram = data.groups.map(g => ({
+                                groupId: g.id,
+                                offset: g.offset !== undefined && !isNaN(g.offset) ? g.offset : 0,
+                                greenDuration: g.durations?.green !== undefined && !isNaN(g.durations.green) ? g.durations.green : 10,
+                                da: g.da || '',
+                                comment: g.comment || '',
+                                commentColor: g.commentColor || '#000000'
+                            }));
+                        } else {
+                            migrated.diagram = [];
+                        }
+                    } else {
+                        // Validate existing diagram entries
+                        migrated.diagram = migrated.diagram.map(d => ({
+                            ...d,
+                            offset: d.offset !== undefined && !isNaN(d.offset) ? d.offset : 0,
+                            greenDuration: d.greenDuration !== undefined && !isNaN(d.greenDuration) ? d.greenDuration : 10
+                        }));
+                    }
+
+                    // Ensure conflictMatrix exists with proper size
+                    if (!migrated.conflictMatrix || !Array.isArray(migrated.conflictMatrix) || migrated.conflictMatrix.length === 0) {
+                        // Initialize from main conflict matrix or create empty
+                        if (data.conflictMatrix && data.conflictMatrix.length > 0) {
+                            migrated.conflictMatrix = data.conflictMatrix.map(row => [...row]);
+                        } else if (groupCount > 0) {
+                            migrated.conflictMatrix = Array.from({ length: groupCount }, () =>
+                                new Array(groupCount).fill('')
+                            );
+                        }
+                    }
+
+                    return migrated;
+                });
+                setPfTabs(migratedPfTabs);
                 if (data.activePFId) setActivePFId(data.activePFId);
             } else if (data.actionData) {
                 // Handle old format for backward compatibility
-                setPfTabs([{ id: 1, name: 'PF1', data: data.actionData }]);
+                const groupCount = data.groups ? data.groups.length : 0;
+                const initialDiagram = data.groups ? data.groups.map(g => ({
+                    groupId: g.id,
+                    offset: g.offset !== undefined && !isNaN(g.offset) ? g.offset : 0,
+                    greenDuration: g.durations?.green !== undefined && !isNaN(g.durations.green) ? g.durations.green : 10,
+                    da: g.da || '',
+                    comment: g.comment || '',
+                    commentColor: g.commentColor || '#000000'
+                })) : [];
+                const initialMatrix = data.conflictMatrix && data.conflictMatrix.length > 0
+                    ? data.conflictMatrix.map(row => [...row])
+                    : (groupCount > 0 ? Array.from({ length: groupCount }, () => new Array(groupCount).fill('')) : []);
+                setPfTabs([{
+                    id: 1,
+                    name: 'PF1',
+                    data: data.actionData,
+                    diagram: initialDiagram,
+                    conflictMatrix: initialMatrix
+                }]);
                 setActivePFId(1);
             }
 
@@ -570,7 +710,10 @@ export const useTrafficLight = () => {
         }
     };
 
-    // Update project order - move project to top
+    // Maximum number of projects to keep in localStorage cache
+    const MAX_CACHED_PROJECTS = 5;
+
+    // Update project order - move project to top and limit to MAX_CACHED_PROJECTS
     const updateProjectOrder = (name) => {
         try {
             const orderRaw = localStorage.getItem('traffic_project_order');
@@ -579,7 +722,16 @@ export const useTrafficLight = () => {
             order = order.filter(n => n !== name);
             // Add to top
             order.unshift(name);
-            localStorage.setItem('traffic_project_order', JSON.stringify(order));
+
+            // Remove old projects beyond the limit (keep last backup)
+            while (order.length > MAX_CACHED_PROJECTS) {
+                const oldProjectName = order.pop();
+                // Delete the old project from localStorage (but keep its backup if exists)
+                localStorage.removeItem(`traffic_project_${oldProjectName}`);
+                console.log(`Cache nettoyé: projet "${oldProjectName}" supprimé`);
+            }
+
+            safeLocalStorage.setItem('traffic_project_order', JSON.stringify(order));
         } catch (e) {
             console.error("Update order failed", e);
         }
@@ -589,12 +741,13 @@ export const useTrafficLight = () => {
         const saves = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key.startsWith('traffic_project_')) {
+            // Only include main project files (exclude backups)
+            if (key.startsWith('traffic_project_') && !key.endsWith('_backup')) {
                 saves.push(key.replace('traffic_project_', ''));
             }
         }
 
-        // Sort by order (most recently loaded first)
+        // Sort by order (most recently loaded first) and limit to MAX_CACHED_PROJECTS
         try {
             const orderRaw = localStorage.getItem('traffic_project_order');
             if (orderRaw) {
@@ -613,7 +766,8 @@ export const useTrafficLight = () => {
             console.error("Sort order failed", e);
         }
 
-        return saves;
+        // Limit to MAX_CACHED_PROJECTS
+        return saves.slice(0, MAX_CACHED_PROJECTS);
     };
 
     // Get project data without applying to state (for green wave)
@@ -1224,8 +1378,8 @@ export const useTrafficLight = () => {
 
     // Save pfTabs to localStorage
     useEffect(() => {
-        localStorage.setItem('trafficPfTabs', JSON.stringify(pfTabs));
-        localStorage.setItem('trafficActivePF', activePFId.toString());
+        safeLocalStorage.setItem('trafficPfTabs', JSON.stringify(pfTabs));
+        safeLocalStorage.setItem('trafficActivePF', activePFId.toString());
     }, [pfTabs, activePFId]);
 
     // Flag to prevent sync during initial load
@@ -1394,21 +1548,68 @@ export const useTrafficLight = () => {
     // Save intersection image to localStorage
     useEffect(() => {
         if (intersectionImage) {
-            localStorage.setItem('trafficIntersectionImage', JSON.stringify(intersectionImage));
+            safeLocalStorage.setItem('trafficIntersectionImage', JSON.stringify(intersectionImage));
         } else {
-            localStorage.removeItem('trafficIntersectionImage');
+            safeLocalStorage.removeItem('trafficIntersectionImage');
         }
     }, [intersectionImage]);
 
     useEffect(() => {
-        localStorage.setItem('trafficIntersectionArrows', JSON.stringify(intersectionArrows));
+        safeLocalStorage.setItem('trafficIntersectionArrows', JSON.stringify(intersectionArrows));
     }, [intersectionArrows]);
 
     // Save traffic datasets to localStorage
     useEffect(() => {
-        localStorage.setItem('trafficDatasets', JSON.stringify(trafficDatasets));
-        localStorage.setItem('trafficActiveDataset', activeTrafficDataset);
+        safeLocalStorage.setItem('trafficDatasets', JSON.stringify(trafficDatasets));
+        safeLocalStorage.setItem('trafficActiveDataset', activeTrafficDataset);
     }, [trafficDatasets, activeTrafficDataset]);
+
+    // Auto-save current project to cache (debounced)
+    const autoSaveTimerRef = useRef(null);
+    useEffect(() => {
+        // Skip during initial load
+        if (isInitialLoadRef.current) return;
+
+        // Skip if no project name
+        if (!intersectionName || intersectionName === 'Nouveau Carrefour') return;
+
+        // Debounce: save after 2 seconds of inactivity
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+        }
+
+        autoSaveTimerRef.current = setTimeout(() => {
+            try {
+                const projectData = {
+                    groups,
+                    cycleLength,
+                    conflictMatrix,
+                    pfTabs,
+                    activePFId,
+                    intersectionImage,
+                    intersectionArrows,
+                    trafficDatasets,
+                    activeTrafficDataset,
+                    dependencyGap
+                };
+                const jsonData = JSON.stringify(projectData);
+
+                // Save project
+                safeLocalStorage.setItem(`traffic_project_${intersectionName}`, jsonData);
+
+                // Update order and clean up old projects
+                updateProjectOrder(intersectionName);
+            } catch (e) {
+                console.warn('Auto-save failed:', e);
+            }
+        }, 2000);
+
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+            }
+        };
+    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap, intersectionName]);
 
     // Update traffic data for a specific group in the active dataset
     const updateTrafficData = useCallback((groupId, field, value) => {

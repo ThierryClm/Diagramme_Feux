@@ -5,32 +5,16 @@
     color: white;
 }
 
-.save-section {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 1rem;
+.project-manager h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
 }
 
-.save-section input {
-    flex: 1;
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #444;
-    background: #333;
-    color: white;
-}
-
-.btn-save {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-save:hover {
-    background: #45a049;
+.cache-info {
+    font-size: 0.85em;
+    color: #888;
+    margin: 0 0 1rem 0;
+    font-style: italic;
 }
 
 .pm-message {
@@ -67,6 +51,11 @@
 
 .files-list li:hover {
     background: #3a3a3a;
+}
+
+.files-list li.current {
+    background: #2a4a2a;
+    border-left: 3px solid #4CAF50;
 }
 
 .project-name {

@@ -149,12 +149,12 @@ const MenuBar = ({
                 }] : [{ label: 'Ouvrir...', action: 'open' }]),
                 { label: 'Ouvrir depuis le local storage...', action: 'openLocalStorage' },
                 ...(recentSaveDirs.length > 0 ? [{
-                    label: 'Enregistrer...',
+                    label: 'Sauvegarder...',
                     type: 'submenu',
                     submenuId: 'saveRecent',
                     submenu: recentSaveDirsSubmenu,
                     disabled: !hasPermission('canSave')
-                }] : [{ label: 'Enregistrer', action: 'save', disabled: !hasPermission('canSave') }]),
+                }] : [{ label: 'Sauvegarder', action: 'save', disabled: !hasPermission('canSave') }]),
                 { type: 'separator' },
                 ...(recentImportDirs.length > 0 ? [{
                     label: 'Importer Excel...',
@@ -163,7 +163,6 @@ const MenuBar = ({
                     submenu: recentImportDirsSubmenu,
                     disabled: !hasPermission('canImportExcel')
                 }] : [{ label: 'Importer Excel...', action: 'import', disabled: !hasPermission('canImportExcel') }]),
-                { label: 'Exporter...', action: 'export' },
                 { type: 'separator' },
                 { label: 'Imprimer la matrice...', action: 'printMatrix' },
                 { label: 'Imprimer le formulaire...', action: 'printForm' },

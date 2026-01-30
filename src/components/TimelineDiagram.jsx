@@ -487,8 +487,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     // Get all "Escamotage" actions (linked to specific group via actGf1)
     // No deb/fin required - arrows are calculated from group times and intergreen
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
+    // Note: actGf1 is optional - if not set, rectangle is shown on source group without arrows
     const escamotageGroupActions = actionData.filter(action =>
-        action.action === 'Escamotage' && action.gf && action.actGf1 &&
+        action.action === 'Escamotage' && action.gf &&
         (!simulationFilter || !simulationFilter.has(action.id))
     );
 
@@ -1921,17 +1922,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const sourceGfId = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
                             const targetGfId = parseInt(action.actGf1?.toString().replace(/[Gg]/g, '').trim()) || 0;
                             const isHighlighted = hoveredActionId === action.id;
+                            const hasTarget = targetGfId > 0 && targetGfId <= groups.length;
 
-                            if (sourceGfId === 0 || targetGfId === 0) return null;
-                            if (sourceGfId > groups.length || targetGfId > groups.length) return null;
+                            if (sourceGfId === 0) return null;
+                            if (sourceGfId > groups.length) return null;
 
                             const sourceGroup = groups.find(g => g.id === sourceGfId);
-                            const targetGroup = groups.find(g => g.id === targetGfId);
-                            if (!sourceGroup || !targetGroup) return null;
+                            if (!sourceGroup) return null;
 
-                            // Get intergreen times from conflict matrix
-                            const intergreenSourceToTarget = conflictMatrix[sourceGfId - 1]?.[targetGfId - 1] || 0;
-                            const intergreenTargetToSource = conflictMatrix[targetGfId - 1]?.[sourceGfId - 1] || 0;
+                            const targetGroup = hasTarget ? groups.find(g => g.id === targetGfId) : null;
+
+                            // Find actual group indices in the array
+                            const sourceGroupIndex = groups.findIndex(g => g.id === sourceGfId);
+                            const targetGroupIndex = hasTarget ? groups.findIndex(g => g.id === targetGfId) : sourceGroupIndex;
+                            if (sourceGroupIndex === -1) return null;
 
                             // Source group times
                             const sourceStart = sourceGroup.offset % cycleLength;
@@ -1939,36 +1943,49 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             // If end equals cycle, keep it at cycle instead of wrapping to 0
                             const sourceEnd = sourceEndRaw === cycleLength ? cycleLength : (sourceEndRaw % cycleLength);
 
-                            // Find actual group indices in the array
-                            const sourceGroupIndex = groups.findIndex(g => g.id === sourceGfId);
-                            const targetGroupIndex = groups.findIndex(g => g.id === targetGfId);
-                            if (sourceGroupIndex === -1 || targetGroupIndex === -1) return null;
-
-                            // Y positions (center of each row)
-                            const sourceY = RULER_HEIGHT + 1 + (sourceGroupIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
-
-                            // Arrow 1: From start of source GF to (source start - intergreen target→source)
-                            const arrow1SourceX = sourceStart * pixelsPerSecond;
-                            const arrow1TargetX = ((sourceStart - intergreenTargetToSource + cycleLength) % cycleLength) * pixelsPerSecond;
-
-                            // Arrow 2: From end of source GF to (source end + intergreen source→target)
-                            const arrow2SourceX = sourceEnd * pixelsPerSecond;
-                            const arrow2TargetRaw = sourceEnd + intergreenSourceToTarget;
-                            // If arrow end equals cycle, keep it at cycle instead of wrapping to 0
-                            const arrow2TargetX = (arrow2TargetRaw === cycleLength ? cycleLength : (arrow2TargetRaw % cycleLength)) * pixelsPerSecond;
-
-                            // Rectangle between arrow endpoints on target row (lower half of bar)
-                            const rectX = Math.min(arrow1TargetX, arrow2TargetX);
-                            const rectWidth = Math.abs(arrow2TargetX - arrow1TargetX);
+                            // Calculate rectangle position based on whether target is defined
+                            let rectX, rectWidth, arrow1SourceX, arrow1TargetX, arrow2SourceX, arrow2TargetX, sourceY, targetY;
                             const barHeight = ROW_HEIGHT - 14; // Bar has top:7px and bottom:7px (16px)
                             const rectHeight = barHeight / 2; // Half the bar height (8px)
+
+                            if (hasTarget && targetGroup) {
+                                // Get intergreen times from conflict matrix
+                                const intergreenSourceToTarget = conflictMatrix[sourceGfId - 1]?.[targetGfId - 1] || 0;
+                                const intergreenTargetToSource = conflictMatrix[targetGfId - 1]?.[sourceGfId - 1] || 0;
+
+                                // Y positions (center of each row)
+                                sourceY = RULER_HEIGHT + 1 + (sourceGroupIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
+
+                                // Arrow 1: From start of source GF to (source start - intergreen target→source)
+                                arrow1SourceX = sourceStart * pixelsPerSecond;
+                                arrow1TargetX = ((sourceStart - intergreenTargetToSource + cycleLength) % cycleLength) * pixelsPerSecond;
+
+                                // Arrow 2: From end of source GF to (source end + intergreen source→target)
+                                arrow2SourceX = sourceEnd * pixelsPerSecond;
+                                const arrow2TargetRaw = sourceEnd + intergreenSourceToTarget;
+                                // If arrow end equals cycle, keep it at cycle instead of wrapping to 0
+                                arrow2TargetX = (arrow2TargetRaw === cycleLength ? cycleLength : (arrow2TargetRaw % cycleLength)) * pixelsPerSecond;
+
+                                // Rectangle between arrow endpoints on target row (lower half of bar)
+                                rectX = Math.min(arrow1TargetX, arrow2TargetX);
+                                rectWidth = Math.abs(arrow2TargetX - arrow1TargetX);
+
+                                // Calculate exact bar bottom position and align rectangle there
+                                const rowTopY = RULER_HEIGHT + 1 + (targetGroupIndex * ROW_TOTAL_HEIGHT);
+                                const barBottomY = rowTopY + ROW_HEIGHT - 7; // Exact bottom of bar
+                                targetY = barBottomY - rectHeight + 1 + rectHeight; // Arrow target Y points to bottom of rectangle
+                            } else {
+                                // No target defined - show rectangle on source group based on its green phase
+                                rectX = sourceStart * pixelsPerSecond;
+                                rectWidth = (sourceEnd - sourceStart) * pixelsPerSecond;
+                                if (rectWidth < 0) rectWidth += cycleLength * pixelsPerSecond; // Handle wrap-around
+                            }
+
                             // Calculate exact bar bottom position and align rectangle there
-                            const rowTopY = RULER_HEIGHT + 1 + (targetGroupIndex * ROW_TOTAL_HEIGHT);
+                            const displayGroupIndex = hasTarget ? targetGroupIndex : sourceGroupIndex;
+                            const rowTopY = RULER_HEIGHT + 1 + (displayGroupIndex * ROW_TOTAL_HEIGHT);
                             const barBottomY = rowTopY + ROW_HEIGHT - 7; // Exact bottom of bar
                             const rectY = barBottomY - rectHeight + 1; // Rectangle bottom aligned to bar bottom +1px offset (moved up 4px)
-
-                            // Arrow target Y points to bottom of rectangle
-                            const targetY = rectY + rectHeight;
 
                             return (
                                 <React.Fragment key={`escamotage-group-${idx}`}>
@@ -2030,28 +2047,33 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         stroke="#006400"
                                         strokeWidth="1"
                                     />
-                                    {/* Arrow 1: From source start to (source start - intergreen target→source) */}
-                                    <line
-                                        x1={arrow1SourceX}
-                                        y1={sourceY}
-                                        x2={arrow1TargetX}
-                                        y2={targetY}
-                                        stroke="#87CEEB"
-                                        strokeWidth="1"
-                                        strokeDasharray="4,2"
-                                        markerEnd={`url(#escam-arrowhead-${idx})`}
-                                    />
-                                    {/* Arrow 2: From source end to (source end + intergreen source→target) */}
-                                    <line
-                                        x1={arrow2SourceX}
-                                        y1={sourceY}
-                                        x2={arrow2TargetX}
-                                        y2={targetY}
-                                        stroke="#87CEEB"
-                                        strokeWidth="1"
-                                        strokeDasharray="4,2"
-                                        markerEnd={`url(#escam-arrowhead-${idx})`}
-                                    />
+                                    {/* Arrows only when target group is defined */}
+                                    {hasTarget && (
+                                        <>
+                                            {/* Arrow 1: From source start to (source start - intergreen target→source) */}
+                                            <line
+                                                x1={arrow1SourceX}
+                                                y1={sourceY}
+                                                x2={arrow1TargetX}
+                                                y2={targetY}
+                                                stroke="#87CEEB"
+                                                strokeWidth="1"
+                                                strokeDasharray="4,2"
+                                                markerEnd={`url(#escam-arrowhead-${idx})`}
+                                            />
+                                            {/* Arrow 2: From source end to (source end + intergreen source→target) */}
+                                            <line
+                                                x1={arrow2SourceX}
+                                                y1={sourceY}
+                                                x2={arrow2TargetX}
+                                                y2={targetY}
+                                                stroke="#87CEEB"
+                                                strokeWidth="1"
+                                                strokeDasharray="4,2"
+                                                markerEnd={`url(#escam-arrowhead-${idx})`}
+                                            />
+                                        </>
+                                    )}
                                     </svg>
                                 </React.Fragment>
                             );
