@@ -441,12 +441,15 @@ const IntersectionImage = ({
         const normalizedTime = time % effectiveCycleLength;
 
         // Check for "Seconde lucarne" action for this group
+        // In normal mode (hovering): always show secondes lucarnes
+        // In simulation mode: only show if action is selected
+        const isSimulationMode = selectedActions && selectedActions.length > 0;
         const secondeLucarneAction = actionData.find(action =>
             action.action === 'Seconde lucarne' &&
             action.gf === String(groupId) &&
             action.deb !== '' &&
             action.fin !== '' &&
-            selectedActions.includes(action.id)
+            (!isSimulationMode || selectedActions.includes(action.id))
         );
 
         // Check for "Priorité piétons" action for this group

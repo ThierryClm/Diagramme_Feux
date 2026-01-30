@@ -1025,7 +1025,25 @@ export const useTrafficLight = () => {
 
     // Save project - defined after all state declarations to capture current values
     const saveProject = useCallback((name) => {
-        if (!name) return;
+        if (!name) return false;
+
+        // Validate data before saving to prevent empty saves
+        if (!groups || groups.length === 0) {
+            console.error("Save aborted: groups is empty or undefined");
+            alert("Erreur: Impossible de sauvegarder - les groupes sont vides");
+            return false;
+        }
+        if (!pfTabs || pfTabs.length === 0) {
+            console.error("Save aborted: pfTabs is empty or undefined");
+            alert("Erreur: Impossible de sauvegarder - les plans de feux sont vides");
+            return false;
+        }
+        if (!conflictMatrix || conflictMatrix.length === 0) {
+            console.error("Save aborted: conflictMatrix is empty or undefined");
+            alert("Erreur: Impossible de sauvegarder - la matrice de conflits est vide");
+            return false;
+        }
+
         const projectData = {
             intersectionName,
             groups,
@@ -1040,11 +1058,44 @@ export const useTrafficLight = () => {
             dependencyGap
             // Note: simulation state is NOT saved with project (per user request)
         };
+
+        // Check if resulting JSON is valid and not too small (likely corrupted)
+        const jsonData = JSON.stringify(projectData);
+        if (jsonData.length < 100) {
+            console.error("Save aborted: data appears corrupted (too small)", jsonData.length);
+            alert("Erreur: Impossible de sauvegarder - les données semblent corrompues");
+            return false;
+        }
+
         try {
-            localStorage.setItem(`traffic_project_${name}`, JSON.stringify(projectData));
+            // Create backup of existing save before overwriting
+            const existingSave = localStorage.getItem(`traffic_project_${name}`);
+            if (existingSave && existingSave.length > jsonData.length * 0.5) {
+                // Existing save is significantly larger - warn user
+                const existingSize = existingSave.length;
+                const newSize = jsonData.length;
+                if (newSize < existingSize * 0.3) {
+                    // New save is less than 30% of old save - likely data loss
+                    const confirm = window.confirm(
+                        `Attention: La nouvelle sauvegarde (${newSize} car.) est beaucoup plus petite que l'ancienne (${existingSize} car.).\n\nCela pourrait indiquer une perte de données.\n\nVoulez-vous quand même sauvegarder?`
+                    );
+                    if (!confirm) {
+                        return false;
+                    }
+                }
+                // Keep a backup
+                localStorage.setItem(`traffic_project_${name}_backup`, existingSave);
+            }
+
+            localStorage.setItem(`traffic_project_${name}`, jsonData);
             return true;
         } catch (e) {
             console.error("Save failed", e);
+            if (e.name === 'QuotaExceededError') {
+                alert("Erreur: Espace de stockage insuffisant. Supprimez d'anciens projets.");
+            } else {
+                alert("Erreur lors de la sauvegarde: " + e.message);
+            }
             return false;
         }
     }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap]);
