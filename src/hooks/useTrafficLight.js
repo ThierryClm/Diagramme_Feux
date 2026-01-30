@@ -194,6 +194,79 @@ export const useTrafficLight = () => {
                 return newRow;
             });
         });
+
+        // 4. Swap diagram data in ALL PF tabs (not just the active one)
+        setPfTabs(currentTabs => {
+            return currentTabs.map(pf => {
+                const newPf = { ...pf };
+
+                // Swap diagram data if it exists
+                if (newPf.diagram && newPf.diagram.length > 0) {
+                    const newDiagram = [...newPf.diagram];
+                    const entryA = newDiagram.find(d => d.groupId === gfA);
+                    const entryB = newDiagram.find(d => d.groupId === gfB);
+
+                    if (entryA && entryB) {
+                        // Swap all properties except groupId
+                        const tempOffset = entryA.offset;
+                        const tempGreenDuration = entryA.greenDuration;
+                        const tempDa = entryA.da;
+                        const tempComment = entryA.comment;
+                        const tempCommentColor = entryA.commentColor;
+
+                        entryA.offset = entryB.offset;
+                        entryA.greenDuration = entryB.greenDuration;
+                        entryA.da = entryB.da;
+                        entryA.comment = entryB.comment;
+                        entryA.commentColor = entryB.commentColor;
+
+                        entryB.offset = tempOffset;
+                        entryB.greenDuration = tempGreenDuration;
+                        entryB.da = tempDa;
+                        entryB.comment = tempComment;
+                        entryB.commentColor = tempCommentColor;
+                    }
+                    newPf.diagram = newDiagram;
+                }
+
+                // Swap conflict matrix in PF if it exists
+                if (newPf.conflictMatrix && newPf.conflictMatrix.length > 0) {
+                    const newMatrix = newPf.conflictMatrix.map(row => [...row]);
+
+                    // Swap Rows
+                    const tempRow = newMatrix[index];
+                    newMatrix[index] = newMatrix[targetIndex];
+                    newMatrix[targetIndex] = tempRow;
+
+                    // Swap Cols
+                    for (let r = 0; r < newMatrix.length; r++) {
+                        const row = newMatrix[r];
+                        const tempVal = row[index];
+                        row[index] = row[targetIndex];
+                        row[targetIndex] = tempVal;
+                    }
+                    newPf.conflictMatrix = newMatrix;
+                }
+
+                // Swap GF references in action data if it exists
+                if (newPf.data && newPf.data.length > 0) {
+                    newPf.data = newPf.data.map(row => {
+                        const newRow = { ...row };
+                        gfFields.forEach(field => {
+                            const val = parseInt(newRow[field]);
+                            if (val === gfA) {
+                                newRow[field] = gfB.toString();
+                            } else if (val === gfB) {
+                                newRow[field] = gfA.toString();
+                            }
+                        });
+                        return newRow;
+                    });
+                }
+
+                return newPf;
+            });
+        });
     };
 
     // Move a group to a new position (after another group)
@@ -281,6 +354,55 @@ export const useTrafficLight = () => {
                     }
                 });
                 return newRow;
+            });
+        });
+
+        // 4. Update ALL PF tabs with reordered data
+        const size = groups.length;
+        setPfTabs(currentTabs => {
+            return currentTabs.map(pf => {
+                const newPf = { ...pf };
+
+                // Reorder diagram data if it exists
+                if (newPf.diagram && newPf.diagram.length > 0) {
+                    newPf.diagram = newPf.diagram.map(entry => ({
+                        ...entry,
+                        groupId: oldToNew[entry.groupId] || entry.groupId
+                    }));
+                }
+
+                // Reorder conflict matrix in PF if it exists
+                if (newPf.conflictMatrix && newPf.conflictMatrix.length > 0) {
+                    const pfSize = newPf.conflictMatrix.length;
+                    const newMatrix = Array(pfSize).fill(null).map(() => Array(pfSize).fill(''));
+
+                    for (let oldRow = 0; oldRow < pfSize; oldRow++) {
+                        for (let oldCol = 0; oldCol < pfSize; oldCol++) {
+                            const newRow = oldToNew[oldRow + 1] - 1;
+                            const newCol = oldToNew[oldCol + 1] - 1;
+                            if (newRow >= 0 && newRow < pfSize && newCol >= 0 && newCol < pfSize) {
+                                newMatrix[newRow][newCol] = newPf.conflictMatrix[oldRow][oldCol];
+                            }
+                        }
+                    }
+                    newPf.conflictMatrix = newMatrix;
+                }
+
+                // Update GF references in action data if it exists
+                if (newPf.data && newPf.data.length > 0) {
+                    newPf.data = newPf.data.map(row => {
+                        const newRow = { ...row };
+                        gfFields.forEach(field => {
+                            const val = parseInt(newRow[field]);
+                            if (!isNaN(val) && val > 0 && val <= size) {
+                                newRow[field] = oldToNew[val].toString();
+                            }
+                        });
+                        return newRow;
+                    });
+                }
+
+                return newPf;
             });
         });
     };
