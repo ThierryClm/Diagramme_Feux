@@ -1163,15 +1163,22 @@ export const useTrafficLight = () => {
                 const newGroups = prevGroups.map(group => {
                     const diagramEntry = activePF.diagram.find(d => d.groupId === group.id);
                     if (diagramEntry) {
+                        // Safely get values with fallbacks to prevent undefined
+                        const newOffset = diagramEntry.offset !== undefined && !isNaN(diagramEntry.offset)
+                            ? diagramEntry.offset
+                            : group.offset;
+                        const newGreenDuration = diagramEntry.greenDuration !== undefined && !isNaN(diagramEntry.greenDuration)
+                            ? diagramEntry.greenDuration
+                            : group.durations.green;
                         return {
                             ...group,
-                            offset: diagramEntry.offset,
-                            da: diagramEntry.da,
+                            offset: newOffset,
+                            da: diagramEntry.da !== undefined ? diagramEntry.da : group.da,
                             comment: diagramEntry.comment !== undefined ? diagramEntry.comment : group.comment,
                             commentColor: diagramEntry.commentColor !== undefined ? diagramEntry.commentColor : group.commentColor,
                             durations: {
                                 ...group.durations,
-                                green: diagramEntry.greenDuration
+                                green: newGreenDuration
                             }
                         };
                     }
@@ -1184,13 +1191,29 @@ export const useTrafficLight = () => {
                 setCycleLength(activePF.cycleLength);
             }
             // Also update conflict matrix if the PF has a specific one
+            // Resize matrix to match current group count to prevent errors
             if (activePF.conflictMatrix && activePF.conflictMatrix.length > 0) {
-                const cleanedMatrix = activePF.conflictMatrix.map(row => row.map(val => {
-                    if (val === 0 || val === '0') return '';
-                    if (typeof val === 'number' && (val < 3 || val > 20)) return '';
-                    return val;
-                }));
-                setConflictMatrix(cleanedMatrix);
+                setConflictMatrix(prevMatrix => {
+                    const currentSize = prevMatrix.length;
+                    const pfMatrixSize = activePF.conflictMatrix.length;
+
+                    // Create a new matrix with the current size
+                    const resizedMatrix = Array.from({ length: currentSize }, (_, r) => {
+                        const row = new Array(currentSize).fill('');
+                        for (let c = 0; c < currentSize; c++) {
+                            // Copy values from PF matrix if they exist
+                            if (r < pfMatrixSize && c < pfMatrixSize && activePF.conflictMatrix[r]) {
+                                let val = activePF.conflictMatrix[r][c];
+                                // Clean the value
+                                if (val === 0 || val === '0') val = '';
+                                else if (typeof val === 'number' && (val < 3 || val > 20)) val = '';
+                                row[c] = val !== undefined ? val : '';
+                            }
+                        }
+                        return row;
+                    });
+                    return resizedMatrix;
+                });
             }
         }
     }, [activePFId, pfTabs]);
