@@ -3896,15 +3896,41 @@ function App() {
                                         const orangeDuration = group.durations?.orange || 0;
                                         const cycle = cycleLength || 100;
 
-                                        // Normalize time relative to group offset
-                                        let relativeTime = (activeTime - offset + cycle) % cycle;
+                                        // Check for "Seconde lucarne" action for this group
+                                        const secondeLucarneAction = actionData.find(action =>
+                                            action.action === 'Seconde lucarne' &&
+                                            action.gf === String(arrow.groupId) &&
+                                            action.deb !== '' &&
+                                            action.fin !== ''
+                                        );
 
-                                        if (relativeTime < greenDuration) {
-                                            arrowColor = '#00cc00'; // Green phase
-                                        } else if (relativeTime < greenDuration + orangeDuration) {
-                                            arrowColor = '#ff9900'; // Orange phase
+                                        // Check if time is in seconde lucarne period
+                                        let isInSecondeLucarne = false;
+                                        if (secondeLucarneAction) {
+                                            const slDeb = parseInt(secondeLucarneAction.deb) || 0;
+                                            const slFin = parseInt(secondeLucarneAction.fin) || 0;
+                                            const normalizedTime = activeTime % cycle;
+                                            if (slDeb <= slFin) {
+                                                isInSecondeLucarne = normalizedTime >= slDeb && normalizedTime < slFin;
+                                            } else {
+                                                // Wrap-around case
+                                                isInSecondeLucarne = normalizedTime >= slDeb || normalizedTime < slFin;
+                                            }
+                                        }
+
+                                        if (isInSecondeLucarne) {
+                                            arrowColor = '#00aa00'; // Dark green for Seconde lucarne
                                         } else {
-                                            arrowColor = '#cc0000'; // Red phase
+                                            // Normalize time relative to group offset
+                                            let relativeTime = (activeTime - offset + cycle) % cycle;
+
+                                            if (relativeTime < greenDuration) {
+                                                arrowColor = '#00cc00'; // Green phase
+                                            } else if (relativeTime < greenDuration + orangeDuration) {
+                                                arrowColor = '#ff9900'; // Orange phase
+                                            } else {
+                                                arrowColor = '#cc0000'; // Red phase
+                                            }
                                         }
                                     }
 
