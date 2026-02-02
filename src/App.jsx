@@ -213,10 +213,21 @@ function App() {
     const [isResizing, setIsResizing] = useState(false);
     const splitViewRef = useRef(null);
 
+    // Sidebar visibility toggle
+    const [sidebarVisible, setSidebarVisible] = useState(() => {
+        const saved = localStorage.getItem('sidebar_visible');
+        return saved !== null ? saved === 'true' : true;
+    });
+
     // Save sidebar width to localStorage
     useEffect(() => {
         localStorage.setItem('sidebar_width', sidebarWidth.toString());
     }, [sidebarWidth]);
+
+    // Save sidebar visibility to localStorage
+    useEffect(() => {
+        localStorage.setItem('sidebar_visible', sidebarVisible.toString());
+    }, [sidebarVisible]);
 
     // Save floating image state to localStorage
     useEffect(() => {
@@ -2149,6 +2160,14 @@ function App() {
                         />
                         {pixelsPerSecond}px/s
                     </label>
+                    <button
+                        className={`toggle-btn ${!sidebarVisible ? 'active' : ''}`}
+                        onClick={() => setSidebarVisible(!sidebarVisible)}
+                        title={sidebarVisible ? "Masquer le panneau de configuration" : "Afficher le panneau de configuration"}
+                        style={{ marginLeft: '1rem' }}
+                    >
+                        {sidebarVisible ? '◀ Paramètre' : '▶ Paramètre'}
+                    </button>
                 </div>
 
                 <div className="header-actions">
@@ -2230,7 +2249,12 @@ function App() {
             </header>
 
             <main className="split-view" ref={splitViewRef}>
-                <aside className="sidebar" style={{ width: `${sidebarWidth}px` }}>
+                <aside className="sidebar" style={{
+                    width: sidebarVisible ? `${sidebarWidth}px` : '0px',
+                    minWidth: sidebarVisible ? '300px' : '0px',
+                    padding: sidebarVisible ? '1rem' : '0',
+                    overflow: 'hidden'
+                }}>
                     {phasageBulleEnabled ? (
                         <div className="phasage-bulle-sidebar">
                             <div className="sidebar-header">
@@ -2410,10 +2434,12 @@ function App() {
                 </aside>
 
                 {/* Resizable divider */}
-                <div
-                    className={`resize-divider ${isResizing ? 'resizing' : ''}`}
-                    onMouseDown={handleResizeStart}
-                />
+                {sidebarVisible && (
+                    <div
+                        className={`resize-divider ${isResizing ? 'resizing' : ''}`}
+                        onMouseDown={handleResizeStart}
+                    />
+                )}
 
                 <section className="diagram-area" ref={diagramAreaRef} style={{ display: 'flex', flexDirection: 'column' }}>
                     {/* PF Tabs */}
