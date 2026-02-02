@@ -61,6 +61,8 @@ function App() {
         deletePF,
         renamePF,
         setPFColor,
+        updatePFRemarques,
+        currentRemarques,
         undo,
         redo,
         canUndo,
@@ -2544,6 +2546,8 @@ function App() {
                                 setHoveredDiagramTime={setHoveredDiagramTime}
                                 hoveredVUtile={hoveredVUtile}
                                 planName={simulationEnabled ? (pfTabs.find(pf => pf.id === activePFId)?.name || '') : ''}
+                                remarques={currentRemarques}
+                                updateRemarques={updatePFRemarques}
                             />
                         </div>
                     )}

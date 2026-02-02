@@ -1023,3 +1023,49 @@
 .input-comment.comment-red {
     color: #F44336;
 }
+
+/* Remarques column */
+.timeline-remarques {
+    width: 280px;
+    background: #1a1a1a;
+    border-left: 1px solid #444;
+    flex-shrink: 0;
+    margin-left: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.remarques-header {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #222;
+    border-bottom: 1px solid #444;
+    font-size: 0.75em;
+    color: #888;
+}
+
+.input-remarques {
+    flex: 1;
+    background: #333;
+    border: 1px solid #444;
+    color: white;
+    padding: 8px;
+    font-size: 0.75em;
+    font-family: inherit;
+    resize: none;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.input-remarques:focus {
+    background: #444;
+    outline: none;
+    border-color: #666;
+}
+
+.input-remarques::placeholder {
+    color: #666;
+}

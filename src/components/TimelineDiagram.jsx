@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '' }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -3795,6 +3795,30 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         </div>
                     ))}
                 </div>
+
+                {/* Remarques column - not printable */}
+                {(() => {
+                    // Calculate max characters based on available height
+                    // Each group row is 30px, font line is ~17px, ~35 chars per line
+                    const linesAvailable = Math.max(1, Math.floor((groups.length * 30 - 16) / 17));
+                    const charsPerLine = 35;
+                    const calculatedMaxLength = linesAvailable * charsPerLine;
+                    return (
+                        <div className="timeline-remarques no-print">
+                            <div className="remarques-header">
+                                <span>Remarques</span>
+                            </div>
+                            <textarea
+                                className="input-remarques"
+                                value={remarques}
+                                onChange={(e) => updateRemarques && updateRemarques(e.target.value.slice(0, calculatedMaxLength))}
+                                placeholder="Remarques générales..."
+                                maxLength={calculatedMaxLength}
+                                title={`Remarques générales (${charsPerLine} car. x ${linesAvailable} lignes max)`}
+                            />
+                        </div>
+                    );
+                })()}
             </div>
         </div>
     );

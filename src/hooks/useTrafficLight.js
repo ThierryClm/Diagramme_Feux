@@ -649,6 +649,11 @@ export const useTrafficLight = () => {
                         }
                     }
 
+                    // Ensure remarques field exists
+                    if (migrated.remarques === undefined) {
+                        migrated.remarques = '';
+                    }
+
                     return migrated;
                 });
                 setPfTabs(migratedPfTabs);
@@ -672,7 +677,8 @@ export const useTrafficLight = () => {
                     name: 'PF1',
                     data: data.actionData,
                     diagram: initialDiagram,
-                    conflictMatrix: initialMatrix
+                    conflictMatrix: initialMatrix,
+                    remarques: ''
                 }]);
                 setActivePFId(1);
             }
@@ -711,7 +717,7 @@ export const useTrafficLight = () => {
     };
 
     // Maximum number of projects to keep in localStorage cache
-    const MAX_CACHED_PROJECTS = 5;
+    const MAX_CACHED_PROJECTS = 3;
 
     // Update project order - move project to top and limit to MAX_CACHED_PROJECTS
     const updateProjectOrder = (name) => {
@@ -956,7 +962,7 @@ export const useTrafficLight = () => {
     const createEmptyActionData = () => Array.from({ length: 30 }, (_, i) => createEmptyActionRow(i + 1));
 
     // Multiple PF (Plans de Feux) support
-    const [pfTabs, setPfTabs] = useState(() => [{ id: 1, name: 'PF1', data: createEmptyActionData() }]);
+    const [pfTabs, setPfTabs] = useState(() => [{ id: 1, name: 'PF1', data: createEmptyActionData(), remarques: '' }]);
 
     const [activePFId, setActivePFId] = useState(1);
 
@@ -1247,10 +1253,12 @@ export const useTrafficLight = () => {
         const nextId = Math.max(...pfTabs.map(pf => pf.id)) + 1;
         const newName = `PF${nextId}`;
         const currentData = JSON.parse(JSON.stringify(actionData));
-        setPfTabs(prev => [...prev, { id: nextId, name: newName, data: currentData }]);
+        const currentPF = pfTabs.find(pf => pf.id === activePFId);
+        const currentRemarques = currentPF?.remarques || '';
+        setPfTabs(prev => [...prev, { id: nextId, name: newName, data: currentData, remarques: currentRemarques }]);
         setActivePFId(nextId);
         return nextId;
-    }, [pfTabs, actionData]);
+    }, [pfTabs, actionData, activePFId]);
 
     // Delete a PF (cannot delete if only one remains)
     const deletePF = useCallback((pfId) => {
@@ -1276,6 +1284,13 @@ export const useTrafficLight = () => {
             pf.id === pfId ? { ...pf, color: color } : pf
         ));
     }, []);
+
+    // Update remarques for active PF
+    const updatePFRemarques = useCallback((remarques) => {
+        setPfTabs(prev => prev.map(pf =>
+            pf.id === activePFId ? { ...pf, remarques: remarques } : pf
+        ));
+    }, [activePFId]);
 
     // Simulation functions
     const toggleSimulationAction = useCallback((actionId) => {
@@ -2095,6 +2110,8 @@ export const useTrafficLight = () => {
         deletePF,
         renamePF,
         setPFColor,
+        updatePFRemarques,
+        currentRemarques: pfTabs.find(pf => pf.id === activePFId)?.remarques || '',
         // Undo/Redo
         undo,
         redo,
