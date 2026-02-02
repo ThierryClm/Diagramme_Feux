@@ -723,6 +723,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         return (startPos + greenDuration) > cycle;
     };
 
+    // Determine if horizontal scroll is needed based on cycle length and remarques
+    const hasRemarques = remarques && remarques.trim() !== '';
+    const needsHorizontalScroll = (cycleLength > 75 && hasRemarques) ||
+                                   (cycleLength > 100 && !hasRemarques);
+
+    // Calculate minimum content width for scrollable area: diagram + comments(300) + remarques(290 - always visible)
+    const scrollableContentWidth = totalWidth + 300 + 290;
+
     return (
         <div className={`timeline-container ${dragState ? 'dragging' : ''}`} ref={containerRef}>
             <h3 className="diagram-title">
@@ -814,6 +822,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         );
                     })}
                 </div>
+
+                {/* Scrollable content area (diagram + comments + remarques) */}
+                <div
+                    className="timeline-scrollable-wrapper"
+                    style={needsHorizontalScroll ? {
+                        overflowX: 'scroll',
+                        flex: 1,
+                        paddingBottom: '50px'
+                    } : { flex: 1 }}
+                >
+                    <div style={needsHorizontalScroll ? { display: 'flex', minWidth: `${scrollableContentWidth}px` } : { display: 'flex' }}>
 
                 <div className="timeline-scroll-area" style={{ width: `${totalWidth}px` }}>
                     <div className="timeline-track-container" style={{ width: `${totalWidth}px` }}>
@@ -3819,6 +3838,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         </div>
                     );
                 })()}
+
+                    </div>
+                </div>
             </div>
         </div>
     );
