@@ -124,8 +124,8 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                                 onChange={(e) => setSelectedProject(e.target.value)}
                             >
                                 <option value="">-- Sélectionner un projet --</option>
-                                {availableProjects.map(name => (
-                                    <option key={name} value={name}>{name}</option>
+                                {availableProjects.map(project => (
+                                    <option key={project.name} value={project.name}>{project.name}</option>
                                 ))}
                             </select>
                             <button

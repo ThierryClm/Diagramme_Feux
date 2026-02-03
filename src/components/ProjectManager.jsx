@@ -37,6 +37,24 @@ const ProjectManager = ({
         }
     };
 
+    const formatDate = (isoString) => {
+        if (!isoString) return '-';
+        const date = new Date(isoString);
+        return date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    const formatSize = (bytes) => {
+        if (!bytes) return '-';
+        const kb = bytes / 1024;
+        return `${kb.toFixed(1)} Ko`;
+    };
+
     return (
         <div className="project-manager">
             <h3>Projets Récents</h3>
@@ -52,12 +70,17 @@ const ProjectManager = ({
                     <p className="no-saves">Aucun projet récent</p>
                 ) : (
                     <ul>
-                        {savedProjects.map(name => (
-                            <li key={name} className={name === currentName ? 'current' : ''}>
-                                <span className="project-name">{name}</span>
+                        {savedProjects.map(project => (
+                            <li key={project.name} className={project.name === currentName ? 'current' : ''}>
+                                <div className="project-info">
+                                    <span className="project-name">{project.name}</span>
+                                    <span className="project-details">
+                                        {formatDate(project.savedAt)} - {formatSize(project.size)}
+                                    </span>
+                                </div>
                                 <div className="actions">
-                                    <button onClick={() => handleLoad(name)} className="btn-load">Charger</button>
-                                    <button onClick={() => handleDelete(name)} className="btn-del">X</button>
+                                    <button onClick={() => handleLoad(project.name)} className="btn-load">Charger</button>
+                                    <button onClick={() => handleDelete(project.name)} className="btn-del">X</button>
                                 </div>
                             </li>
                         ))}

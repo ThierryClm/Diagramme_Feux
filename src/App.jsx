@@ -2661,22 +2661,39 @@ function App() {
                     <>
                         <div className="project-list-container">
                             <ul className="project-list">
-                                {getAllSaves().map((projectName) => (
-                                    <li
-                                        key={projectName}
-                                        className={selectedProject === projectName ? 'selected' : ''}
-                                        onClick={() => setSelectedProject(projectName)}
-                                        onDoubleClick={() => {
-                                            setSelectedProject(projectName);
-                                            loadProject(projectName);
-                                            setOpenModal(false);
-                                            setSelectedProject(null);
-                                        }}
-                                    >
-                                        <span className="project-icon"></span>
-                                        <span className="project-name">{projectName}</span>
-                                    </li>
-                                ))}
+                                {getAllSaves().map((project) => {
+                                    const formatDate = (isoString) => {
+                                        if (!isoString) return '-';
+                                        const date = new Date(isoString);
+                                        return date.toLocaleDateString('fr-FR', {
+                                            day: '2-digit', month: '2-digit', year: 'numeric',
+                                            hour: '2-digit', minute: '2-digit'
+                                        });
+                                    };
+                                    const formatSize = (bytes) => {
+                                        if (!bytes) return '-';
+                                        return `${(bytes / 1024).toFixed(1)} Ko`;
+                                    };
+                                    return (
+                                        <li
+                                            key={project.name}
+                                            className={selectedProject === project.name ? 'selected' : ''}
+                                            onClick={() => setSelectedProject(project.name)}
+                                            onDoubleClick={() => {
+                                                setSelectedProject(project.name);
+                                                loadProject(project.name);
+                                                setOpenModal(false);
+                                                setSelectedProject(null);
+                                            }}
+                                        >
+                                            <span className="project-icon"></span>
+                                            <div className="project-info-modal">
+                                                <span className="project-name">{project.name}</span>
+                                                <span className="project-details-modal">{formatDate(project.savedAt)} - {formatSize(project.size)}</span>
+                                            </div>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                         <div className="modal-actions">

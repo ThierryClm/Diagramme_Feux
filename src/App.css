@@ -961,6 +961,22 @@
     font-weight: 500;
 }
 
+.project-info-modal {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 2px;
+}
+
+.project-details-modal {
+    font-size: 0.75em;
+    color: #888;
+}
+
+.project-list li.selected .project-details-modal {
+    color: #aaa;
+}
+
 .no-projects {
     color: #888;
     text-align: center;

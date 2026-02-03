@@ -527,10 +527,19 @@ export const useTrafficLight = () => {
 
     // Save/Load Logic - saveProject is defined later after all state declarations
 
+    // Flag to prevent auto-save during project loading
+    const isLoadingProjectRef = useRef(false);
+
     const loadProject = (name) => {
+        // Set flag to prevent auto-save during loading
+        isLoadingProjectRef.current = true;
+
         try {
             const raw = localStorage.getItem(`traffic_project_${name}`);
-            if (!raw) return false;
+            if (!raw) {
+                isLoadingProjectRef.current = false;
+                return false;
+            }
             const data = JSON.parse(raw);
 
             // Batch updates - use project name as intersection name
@@ -709,9 +718,15 @@ export const useTrafficLight = () => {
             // Move project to top of the order list
             updateProjectOrder(name);
 
+            // Reset loading flag after a delay to let React batch updates settle
+            setTimeout(() => {
+                isLoadingProjectRef.current = false;
+            }, 3000);
+
             return true;
         } catch (e) {
             console.error("Load failed", e);
+            isLoadingProjectRef.current = false;
             return false;
         }
     };
@@ -745,22 +760,42 @@ export const useTrafficLight = () => {
 
     const getAllSaves = () => {
         const saves = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            // Only include main project files (exclude backups)
-            if (key.startsWith('traffic_project_') && !key.endsWith('_backup')) {
-                saves.push(key.replace('traffic_project_', ''));
-            }
-        }
-
-        // Sort by order (most recently loaded first) and limit to MAX_CACHED_PROJECTS
         try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                // Skip null/undefined keys
+                if (!key) continue;
+                // Only include main project files (exclude backups and order file)
+                if (key.startsWith('traffic_project_') && !key.endsWith('_backup') && key !== 'traffic_project_order') {
+                    const name = key.replace('traffic_project_', '');
+                    // Skip empty names
+                    if (!name) continue;
+
+                    const raw = localStorage.getItem(key);
+                    let savedAt = null;
+                    let size = 0;
+
+                    if (raw) {
+                        size = raw.length;
+                        try {
+                            const data = JSON.parse(raw);
+                            savedAt = data.savedAt || null;
+                        } catch (e) {
+                            // Ignore parse errors
+                        }
+                    }
+
+                    saves.push({ name, savedAt, size });
+                }
+            }
+
+            // Sort by order (most recently loaded first) and limit to MAX_CACHED_PROJECTS
             const orderRaw = localStorage.getItem('traffic_project_order');
             if (orderRaw) {
                 const order = JSON.parse(orderRaw);
                 saves.sort((a, b) => {
-                    const indexA = order.indexOf(a);
-                    const indexB = order.indexOf(b);
+                    const indexA = order.indexOf(a.name);
+                    const indexB = order.indexOf(b.name);
                     // Projects not in order list go to the end
                     if (indexA === -1 && indexB === -1) return 0;
                     if (indexA === -1) return 1;
@@ -769,7 +804,7 @@ export const useTrafficLight = () => {
                 });
             }
         } catch (e) {
-            console.error("Sort order failed", e);
+            console.error("getAllSaves failed", e);
         }
 
         // Limit to MAX_CACHED_PROJECTS
@@ -1582,8 +1617,8 @@ export const useTrafficLight = () => {
     // Auto-save current project to cache (debounced)
     const autoSaveTimerRef = useRef(null);
     useEffect(() => {
-        // Skip during initial load
-        if (isInitialLoadRef.current) return;
+        // Skip during initial load or project loading
+        if (isInitialLoadRef.current || isLoadingProjectRef.current) return;
 
         // Skip if no project name
         if (!intersectionName || intersectionName === 'Nouveau Carrefour') return;
@@ -1605,7 +1640,8 @@ export const useTrafficLight = () => {
                     intersectionArrows,
                     trafficDatasets,
                     activeTrafficDataset,
-                    dependencyGap
+                    dependencyGap,
+                    savedAt: new Date().toISOString()
                 };
                 const jsonData = JSON.stringify(projectData);
 

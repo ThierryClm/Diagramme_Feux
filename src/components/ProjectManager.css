@@ -58,8 +58,24 @@
     border-left: 3px solid #4CAF50;
 }
 
+.project-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
 .project-name {
     font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.project-details {
+    font-size: 0.75em;
+    color: #888;
 }
 
 .actions {
