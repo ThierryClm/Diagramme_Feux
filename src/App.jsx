@@ -896,13 +896,13 @@ function App() {
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
                 floatingPosition: floatingPosition,
-                // Noms des répertoires utilisés
+                // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
-                    open: lastOpenDirectoryRef.current?.name || null,
-                    save: lastSaveDirectoryRef.current?.name || null,
-                    import: lastImportDirectoryRef.current?.name || null,
-                    image: lastImageDirectoryRef.current?.name || null,
-                    greenWave: lastGreenWaveDirectoryRef.current?.name || null
+                    open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
+                    save: lastSaveDirectoryRef.current?.name || recentSaveDirs[0]?.name || null,
+                    import: lastImportDirectoryRef.current?.name || recentImportDirs[0]?.name || null,
+                    image: lastImageDirectoryRef.current?.name || recentImageDirs[0]?.name || null,
+                    greenWave: lastGreenWaveDirectoryRef.current?.name || recentGreenWaveDirs[0]?.name || null
                 }
             };
 
@@ -954,7 +954,7 @@ function App() {
                 alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
             }
         }
-    }, [intersectionName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle, addRecentDirectory]);
+    }, [intersectionName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle, addRecentDirectory, recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]);
 
     // Enregistrer un fichier dans un répertoire récent
     const handleSaveFileToRecentDir = useCallback(async (dirIndex) => {
@@ -1000,13 +1000,13 @@ function App() {
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
                 floatingPosition: floatingPosition,
-                // Noms des répertoires utilisés
+                // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
-                    open: lastOpenDirectoryRef.current?.name || null,
-                    save: lastSaveDirectoryRef.current?.name || null,
-                    import: lastImportDirectoryRef.current?.name || null,
-                    image: lastImageDirectoryRef.current?.name || null,
-                    greenWave: lastGreenWaveDirectoryRef.current?.name || null
+                    open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
+                    save: lastSaveDirectoryRef.current?.name || recentSaveDirs[0]?.name || null,
+                    import: lastImportDirectoryRef.current?.name || recentImportDirs[0]?.name || null,
+                    image: lastImageDirectoryRef.current?.name || recentImageDirs[0]?.name || null,
+                    greenWave: lastGreenWaveDirectoryRef.current?.name || recentGreenWaveDirs[0]?.name || null
                 }
             };
 
@@ -1057,7 +1057,7 @@ function App() {
                 alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
             }
         }
-    }, [recentSaveDirs, intersectionName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject]);
+    }, [recentSaveDirs, intersectionName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject, recentOpenDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]);
 
     // Get all saved green waves (sorted by most recent first)
     const getSavedGreenWaves = () => {
@@ -2427,6 +2427,31 @@ function App() {
                                             </li>
                                         ))}
                                     </ul>
+                                </div>
+                            )}
+
+                            {/* Répertoires mémorisés */}
+                            {(recentOpenDirs.length > 0 || recentSaveDirs.length > 0) && (
+                                <div className="directories-info">
+                                    <h4>Répertoires mémorisés</h4>
+                                    {recentOpenDirs.length > 0 && (
+                                        <div className="dir-row">
+                                            <span className="dir-label">Ouvrir:</span>
+                                            <span className="dir-value" title={recentOpenDirs[0].name}>{recentOpenDirs[0].name}</span>
+                                        </div>
+                                    )}
+                                    {recentSaveDirs.length > 0 && (
+                                        <div className="dir-row">
+                                            <span className="dir-label">Enregistrer:</span>
+                                            <span className="dir-value" title={recentSaveDirs[0].name}>{recentSaveDirs[0].name}</span>
+                                        </div>
+                                    )}
+                                    {recentImportDirs.length > 0 && (
+                                        <div className="dir-row">
+                                            <span className="dir-label">Importer:</span>
+                                            <span className="dir-value" title={recentImportDirs[0].name}>{recentImportDirs[0].name}</span>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </>

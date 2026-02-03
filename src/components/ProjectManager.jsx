@@ -5,7 +5,9 @@ const ProjectManager = ({
     loadProject,
     getAllSaves,
     deleteSave,
-    currentName
+    currentName,
+    recentOpenDirs = [],
+    recentSaveDirs = []
 }) => {
     const [savedProjects, setSavedProjects] = useState([]);
     const [message, setMessage] = useState('');
@@ -87,6 +89,29 @@ const ProjectManager = ({
                     </ul>
                 )}
             </div>
+
+            {/* Répertoires mémorisés */}
+            {(recentOpenDirs.length > 0 || recentSaveDirs.length > 0) && (
+                <div className="directories-section">
+                    <h4>Répertoires mémorisés</h4>
+                    {recentOpenDirs.length > 0 && (
+                        <div className="directory-item">
+                            <span className="dir-label">Ouvrir:</span>
+                            <span className="dir-name" title={recentOpenDirs[0].name}>
+                                {recentOpenDirs[0].name}
+                            </span>
+                        </div>
+                    )}
+                    {recentSaveDirs.length > 0 && (
+                        <div className="directory-item">
+                            <span className="dir-label">Enregistrer:</span>
+                            <span className="dir-name" title={recentSaveDirs[0].name}>
+                                {recentSaveDirs[0].name}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

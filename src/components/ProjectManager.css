@@ -116,3 +116,36 @@
     font-style: italic;
     text-align: center;
 }
+
+/* Section répertoires mémorisés */
+.directories-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #444;
+}
+
+.directories-section h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9em;
+    color: #aaa;
+}
+
+.directory-item {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.8em;
+}
+
+.dir-label {
+    color: #888;
+    min-width: 75px;
+}
+
+.dir-name {
+    color: #4CAF50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}

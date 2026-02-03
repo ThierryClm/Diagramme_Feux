@@ -120,8 +120,8 @@
 
 /* Sidebar for arrow editor */
 .intersection-sidebar {
-    width: 220px;
-    min-width: 220px;
+    width: 370px;
+    min-width: 370px;
     flex-shrink: 0;
 }
 
@@ -217,18 +217,18 @@
 
 /* Arrow editor panel */
 .arrow-editor {
-    padding: 10px;
+    padding: 12px 14px;
     background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 4px;
+    border: 2px solid #4ecdc4;
+    border-radius: 6px;
 }
 
 .arrow-editor h4 {
-    margin: 0 0 10px 0;
-    font-size: 0.9em;
+    margin: 0 0 12px 0;
+    font-size: 0.95em;
     color: #4ecdc4;
     border-bottom: 1px solid #444;
-    padding-bottom: 6px;
+    padding-bottom: 8px;
 }
 
 /* Apply to all same type option */
@@ -422,6 +422,37 @@
 .scale-unit {
     color: #888;
     font-size: 0.9em;
+}
+
+/* Slider +/- buttons */
+.slider-btn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid #555;
+    border-radius: 3px;
+    background: #333;
+    color: #fff;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.slider-btn:hover {
+    background: #444;
+    border-color: #666;
+}
+
+.slider-btn.minus {
+    color: #f44336;
+}
+
+.slider-btn.plus {
+    color: #4CAF50;
 }
 
 /* Length controls (for Piéton/Cycle arrows) */

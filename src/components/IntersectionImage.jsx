@@ -824,6 +824,14 @@ const IntersectionImage = ({
                             <div className="editor-row">
                                 <label>Rotation:</label>
                                 <div className="rotation-controls">
+                                    <button
+                                        className="slider-btn minus"
+                                        onClick={() => {
+                                            const current = arrows.find(a => a.id === selectedArrow)?.rotation || 0;
+                                            setArrowRotation(selectedArrow, (current - 1 + 360) % 360);
+                                        }}
+                                        title="-1°"
+                                    >−</button>
                                     <input
                                         type="range"
                                         min="0"
@@ -832,6 +840,14 @@ const IntersectionImage = ({
                                         onChange={(e) => setArrowRotation(selectedArrow, e.target.value)}
                                         className="rotation-slider"
                                     />
+                                    <button
+                                        className="slider-btn plus"
+                                        onClick={() => {
+                                            const current = arrows.find(a => a.id === selectedArrow)?.rotation || 0;
+                                            setArrowRotation(selectedArrow, (current + 1) % 360);
+                                        }}
+                                        title="+1°"
+                                    >+</button>
                                     <input
                                         type="number"
                                         min="0"
@@ -846,6 +862,14 @@ const IntersectionImage = ({
                             <div className="editor-row">
                                 <label>Zoom:</label>
                                 <div className="scale-controls">
+                                    <button
+                                        className="slider-btn minus"
+                                        onClick={() => {
+                                            const current = arrows.find(a => a.id === selectedArrow)?.scale || 1;
+                                            setArrowScale(selectedArrow, Math.max(0.5, current - 0.1).toFixed(1));
+                                        }}
+                                        title="-0.1"
+                                    >−</button>
                                     <input
                                         type="range"
                                         min="0.5"
@@ -855,6 +879,14 @@ const IntersectionImage = ({
                                         onChange={(e) => setArrowScale(selectedArrow, e.target.value)}
                                         className="scale-slider"
                                     />
+                                    <button
+                                        className="slider-btn plus"
+                                        onClick={() => {
+                                            const current = arrows.find(a => a.id === selectedArrow)?.scale || 1;
+                                            setArrowScale(selectedArrow, Math.min(3, current + 0.1).toFixed(1));
+                                        }}
+                                        title="+0.1"
+                                    >+</button>
                                     <input
                                         type="number"
                                         min="0.5"

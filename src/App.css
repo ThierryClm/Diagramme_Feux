@@ -292,6 +292,41 @@
     font-size: 0.85em;
 }
 
+/* Répertoires mémorisés dans la sidebar */
+.directories-info {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid #4CAF50;
+    border-radius: 4px;
+}
+
+.directories-info h4 {
+    margin: 0 0 0.5rem 0;
+    color: #4CAF50;
+    font-size: 0.9em;
+}
+
+.dir-row {
+    display: flex;
+    gap: 8px;
+    padding: 3px 0;
+    font-size: 0.8em;
+}
+
+.dir-label {
+    color: #888;
+    min-width: 75px;
+    flex-shrink: 0;
+}
+
+.dir-value {
+    color: #4CAF50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .sidebar-tabs {
     display: flex;
     border-bottom: 1px solid #333;
