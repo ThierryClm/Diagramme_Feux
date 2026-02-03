@@ -1069,28 +1069,3 @@
 .input-remarques::placeholder {
     color: #666;
 }
-
-/* Scrollable wrapper for diagram content */
-.timeline-scrollable-wrapper {
-    display: flex;
-}
-
-.timeline-scrollable-wrapper::-webkit-scrollbar {
-    height: 16px;
-    background: #1a1a1a;
-}
-
-.timeline-scrollable-wrapper::-webkit-scrollbar-track {
-    background: #2a2a2a;
-    border-radius: 8px;
-}
-
-.timeline-scrollable-wrapper::-webkit-scrollbar-thumb {
-    background: #666;
-    border-radius: 8px;
-    border: 3px solid #2a2a2a;
-}
-
-.timeline-scrollable-wrapper::-webkit-scrollbar-thumb:hover {
-    background: #888;
-}

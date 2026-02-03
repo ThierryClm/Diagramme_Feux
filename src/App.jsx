@@ -2127,7 +2127,7 @@ function App() {
                         placeholder="Nom du Carrefour"
                     />
                     <label>
-                        Groupes:
+                        GFx
                         <input
                             type="number"
                             min="1" max="32"
@@ -2153,10 +2153,10 @@ function App() {
                         Zoom:
                         <input
                             type="range"
-                            min="3" max="50"
+                            min="4" max="20"
                             value={pixelsPerSecond}
                             onChange={(e) => setPixelsPerSecond(parseInt(e.target.value))}
-                            style={{ verticalAlign: 'middle', margin: '0 5px' }}
+                            style={{ verticalAlign: 'middle', margin: '0 5px', width: '55px' }}
                         />
                         {pixelsPerSecond}px/s
                     </label>
