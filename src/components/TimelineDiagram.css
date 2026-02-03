@@ -1004,6 +1004,11 @@
     border-radius: 3px;
     font-size: 0.65em;
     box-sizing: border-box;
+    height: 20px;
+    line-height: 16px;
+    overflow: hidden;
+    white-space: nowrap;
+    cursor: text;
 }
 
 .input-comment:focus {
@@ -1012,16 +1017,9 @@
     border-color: #666;
 }
 
-.input-comment::placeholder {
+.input-comment:empty::before {
+    content: '';
     color: #666;
-}
-
-.input-comment.comment-green {
-    color: #4CAF50;
-}
-
-.input-comment.comment-red {
-    color: #F44336;
 }
 
 /* Remarques column */
@@ -1055,9 +1053,11 @@
     padding: 8px;
     font-size: 0.75em;
     font-family: inherit;
-    resize: none;
     box-sizing: border-box;
     overflow: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    cursor: text;
 }
 
 .input-remarques:focus {
@@ -1066,6 +1066,45 @@
     border-color: #666;
 }
 
-.input-remarques::placeholder {
+.input-remarques:empty::before {
+    content: "Remarques générales...";
     color: #666;
+}
+
+/* Custom tooltips with 20 second delay for comment and remarques fields */
+.input-comment[data-tooltip],
+.input-remarques[data-tooltip] {
+    position: relative;
+}
+
+.input-comment[data-tooltip]::after,
+.input-remarques[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    transition-delay: 0s;
+    pointer-events: none;
+    border: 1px solid #555;
+    max-width: 300px;
+    white-space: normal;
+    text-align: center;
+}
+
+.input-comment[data-tooltip]:hover::after,
+.input-remarques[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 20s;
 }

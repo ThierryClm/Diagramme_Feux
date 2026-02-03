@@ -187,7 +187,23 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
     // Handlers (Duplicated from GroupTable logic, could be extracted to hook)
     const handleStartChange = (id, value) => {
-        updateGroupParams(id, { offset: parseInt(value) || 0 });
+        // When changing Deb, keep Fin fixed and update duration
+        const group = groups.find(g => g.id === id);
+        if (!group) return;
+
+        const newStart = parseInt(value) || 0;
+        const oldStart = group.offset % cycleLength;
+        const oldDuration = group.durations.green;
+        const oldEnd = (oldStart + oldDuration) % cycleLength;
+
+        // Calculate new duration to keep Fin fixed
+        let newDuration = oldEnd - newStart;
+        if (newDuration <= 0) newDuration += cycleLength;
+
+        updateGroupParams(id, {
+            offset: newStart,
+            durations: { green: Math.max(1, newDuration) }
+        });
     };
 
     const handleDurationChange = (id, value) => {
@@ -3774,23 +3790,51 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     {/* Comment input for each group */}
                     {groups.map(g => (
                         <div key={g.id} className="comment-row">
-                            <input
-                                type="text"
-                                className={`input-comment ${g.commentColor === 'green' ? 'comment-green' : g.commentColor === 'red' ? 'comment-red' : ''}`}
-                                value={g.comment || ''}
-                                onChange={(e) => updateGroupParams(g.id, { comment: e.target.value.slice(0, 50) })}
-                                onKeyDown={(e) => {
-                                    if (e.key === '+') {
-                                        e.preventDefault();
-                                        updateGroupParams(g.id, { commentColor: g.commentColor === 'green' ? '' : 'green' });
-                                    } else if (e.key === '-') {
-                                        e.preventDefault();
-                                        updateGroupParams(g.id, { commentColor: g.commentColor === 'red' ? '' : 'red' });
+                            <div
+                                className="input-comment"
+                                contentEditable
+                                suppressContentEditableWarning
+                                dangerouslySetInnerHTML={{ __html: g.comment || '' }}
+                                onBlur={(e) => {
+                                    const html = e.currentTarget.innerHTML;
+                                    // Extract text to check length
+                                    const text = e.currentTarget.textContent || '';
+                                    if (text.length <= 50) {
+                                        updateGroupParams(g.id, { comment: html });
+                                    } else {
+                                        // Truncate and save
+                                        e.currentTarget.textContent = text.slice(0, 50);
+                                        updateGroupParams(g.id, { comment: e.currentTarget.innerHTML });
                                     }
                                 }}
-                                placeholder=""
-                                maxLength={50}
-                                title="Commentaire (50 caractères max) - Appuyez sur + pour vert, - pour rouge"
+                                onKeyDown={(e) => {
+                                    if (e.key === '+' || e.key === '-') {
+                                        e.preventDefault();
+                                        const color = e.key === '+' ? '#4CAF50' : '#F44336';
+                                        const selection = window.getSelection();
+
+                                        if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
+                                            // Has selection - wrap selection in colored span
+                                            const range = selection.getRangeAt(0);
+                                            const selectedText = range.toString();
+                                            if (selectedText) {
+                                                const span = document.createElement('span');
+                                                span.style.color = color;
+                                                range.surroundContents(span);
+                                                // Save updated HTML
+                                                updateGroupParams(g.id, { comment: e.currentTarget.innerHTML });
+                                            }
+                                        } else {
+                                            // No selection - color entire content
+                                            const content = e.currentTarget.textContent || '';
+                                            if (content) {
+                                                e.currentTarget.innerHTML = `<span style="color: ${color}">${content}</span>`;
+                                                updateGroupParams(g.id, { comment: e.currentTarget.innerHTML });
+                                            }
+                                        }
+                                    }
+                                }}
+                                data-tooltip="Commentaire (50 caractères max) - Sélectionnez du texte puis + pour vert, - pour rouge"
                             />
                         </div>
                     ))}
@@ -3807,14 +3851,57 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         <div className="timeline-remarques no-print">
                             <div className="remarques-header">
                                 <span>Remarques</span>
+                                <span className="comment-color-btn comment-color-plus" title="Couleur verte (+)">+</span>
+                                <span className="comment-color-btn comment-color-minus" title="Couleur rouge (-)">−</span>
                             </div>
-                            <textarea
+                            <div
                                 className="input-remarques"
-                                value={remarques}
-                                onChange={(e) => updateRemarques && updateRemarques(e.target.value.slice(0, calculatedMaxLength))}
-                                placeholder="Remarques générales..."
-                                maxLength={calculatedMaxLength}
-                                title={`Remarques générales (${charsPerLine} car. x ${linesAvailable} lignes max)`}
+                                contentEditable
+                                suppressContentEditableWarning
+                                dangerouslySetInnerHTML={{ __html: remarques || '' }}
+                                onBlur={(e) => {
+                                    const html = e.currentTarget.innerHTML;
+                                    const text = e.currentTarget.textContent || '';
+                                    if (text.length <= calculatedMaxLength) {
+                                        updateRemarques && updateRemarques(html);
+                                    } else {
+                                        // Truncate text but keep HTML
+                                        e.currentTarget.textContent = text.slice(0, calculatedMaxLength);
+                                        updateRemarques && updateRemarques(e.currentTarget.innerHTML);
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === '+' || e.key === '-') {
+                                        const selection = window.getSelection();
+                                        // Only color if there is a selection
+                                        if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
+                                            e.preventDefault();
+                                            const color = e.key === '+' ? '#4CAF50' : '#F44336';
+                                            const range = selection.getRangeAt(0);
+                                            const selectedText = range.toString();
+                                            if (selectedText) {
+                                                // Check if selection is inside a colored span
+                                                const parentSpan = range.commonAncestorContainer.parentElement;
+                                                const isColored = parentSpan && parentSpan.tagName === 'SPAN' && parentSpan.style.color;
+
+                                                if (isColored) {
+                                                    // Toggle back to white
+                                                    const span = document.createElement('span');
+                                                    span.style.color = 'white';
+                                                    range.surroundContents(span);
+                                                } else {
+                                                    // Apply color
+                                                    const span = document.createElement('span');
+                                                    span.style.color = color;
+                                                    range.surroundContents(span);
+                                                }
+                                                updateRemarques && updateRemarques(e.currentTarget.innerHTML);
+                                            }
+                                        }
+                                        // If no selection, let the character be typed normally
+                                    }
+                                }}
+                                data-tooltip={`Remarques générales (${charsPerLine} car. x ${linesAvailable} lignes max) - Sélectionnez du texte puis + pour vert, - pour rouge`}
                             />
                         </div>
                     );
