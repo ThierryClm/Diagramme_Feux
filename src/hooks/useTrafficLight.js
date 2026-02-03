@@ -34,6 +34,7 @@ export const useTrafficLight = () => {
     const [intersectionName, setIntersectionName] = useState("Nouveau Carrefour");
     const [cycleLength, setCycleLength] = useState(DEFAULT_CYCLE);
     const [dependencyGap, setDependencyGap] = useState(20);
+    const [externalLinks, setExternalLinks] = useState([]);
     const [globalTime, setGlobalTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
 
@@ -732,7 +733,7 @@ export const useTrafficLight = () => {
     };
 
     // Maximum number of projects to keep in localStorage cache
-    const MAX_CACHED_PROJECTS = 3;
+    const MAX_CACHED_PROJECTS = 5;
 
     // Update project order - move project to top and limit to MAX_CACHED_PROJECTS
     const updateProjectOrder = (name) => {
@@ -905,6 +906,13 @@ export const useTrafficLight = () => {
                 setDependencyGap(state.dependencyGap);
             }
 
+            // Load external links
+            if (state.externalLinks && Array.isArray(state.externalLinks)) {
+                setExternalLinks(state.externalLinks);
+            } else {
+                setExternalLinks([]);
+            }
+
             return true;
         } catch (e) {
             console.error("Load full state failed", e);
@@ -945,6 +953,9 @@ export const useTrafficLight = () => {
         // Reset dependency gap
         setDependencyGap(20);
 
+        // Reset external links
+        setExternalLinks([]);
+
         // Reset simulation state
         setSimulationEnabled(false);
         setSimulationSelectedActions([]);
@@ -968,7 +979,8 @@ export const useTrafficLight = () => {
         intersectionArrows,
         trafficDatasets,
         activeTrafficDataset,
-        dependencyGap
+        dependencyGap,
+        externalLinks
         // Note: simulation state is NOT included (per user request)
     });
 
@@ -1381,7 +1393,8 @@ export const useTrafficLight = () => {
             intersectionArrows,
             trafficDatasets,
             activeTrafficDataset,
-            dependencyGap
+            dependencyGap,
+            externalLinks
             // Note: simulation state is NOT saved with project (per user request)
         };
 
@@ -1418,13 +1431,35 @@ export const useTrafficLight = () => {
         } catch (e) {
             console.error("Save failed", e);
             if (e.name === 'QuotaExceededError') {
-                alert("Erreur: Espace de stockage insuffisant. Supprimez d'anciens projets.");
+                // Automatically delete the oldest project and retry
+                try {
+                    const orderRaw = localStorage.getItem('traffic_project_order');
+                    if (orderRaw) {
+                        const order = JSON.parse(orderRaw);
+                        // Find the oldest project (last in the list) that is not the current one
+                        const oldestProject = order.filter(n => n !== name).pop();
+                        if (oldestProject) {
+                            localStorage.removeItem(`traffic_project_${oldestProject}`);
+                            localStorage.removeItem(`traffic_project_${oldestProject}_backup`);
+                            // Update order
+                            const newOrder = order.filter(n => n !== oldestProject);
+                            localStorage.setItem('traffic_project_order', JSON.stringify(newOrder));
+                            console.log(`Espace insuffisant: projet "${oldestProject}" supprimé automatiquement`);
+                            // Retry save
+                            localStorage.setItem(`traffic_project_${name}`, jsonData);
+                            return true;
+                        }
+                    }
+                } catch (retryError) {
+                    console.error("Retry save failed", retryError);
+                }
+                alert("Erreur: Espace de stockage insuffisant même après nettoyage.");
             } else {
                 alert("Erreur lors de la sauvegarde: " + e.message);
             }
             return false;
         }
-    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap]);
+    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap, externalLinks]);
 
     // Save pfTabs to localStorage
     useEffect(() => {
@@ -2107,6 +2142,8 @@ export const useTrafficLight = () => {
         setCycleLength: setCycleLengthWithHistory,
         dependencyGap,
         setDependencyGap,
+        externalLinks,
+        setExternalLinks,
         conflictMatrix,
         setMatrixValue: setMatrixValueWithHistory,
         conflicts,

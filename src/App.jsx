@@ -15,6 +15,7 @@ import SimulationPanel from './components/SimulationPanel';
 import PhasageBulle from './components/PhasageBulle';
 import LoginModal from './components/LoginModal';
 import UserManagerModal from './components/UserManagerModal';
+import ExternalLinksModal from './components/ExternalLinksModal';
 import { calculateSimulatedDiagram } from './utils/simulationCalculator';
 import { importExcelFile } from './utils/excelImporter';
 
@@ -89,7 +90,9 @@ function App() {
         trafficDatasetNames,
         copyTrafficDataset,
         dependencyGap,
-        setDependencyGap
+        setDependencyGap,
+        externalLinks,
+        setExternalLinks
     } = useTrafficLight();
 
     // Filter conflicts to exclude those managed by SELECTED Escamotage actions (in simulation mode)
@@ -527,6 +530,7 @@ function App() {
     const [importHTMModal, setImportHTMModal] = useState(false);
     const [htmFile, setHtmFile] = useState(null);
     const [htmImportError, setHtmImportError] = useState('');
+    const [showExternalLinksModal, setShowExternalLinksModal] = useState(false);
 
     // File System Access API - mémoriser les derniers répertoires utilisés
     const lastOpenDirectoryRef = useRef(null);
@@ -1325,6 +1329,9 @@ function App() {
                 break;
             case 'credit':
                 alert('Diagramme de Feux\n\nDéveloppé avec React + Vite\n2024');
+                break;
+            case 'externalLinks':
+                setShowExternalLinksModal(true);
                 break;
             // Green wave actions
             case 'createGreenWave':
@@ -3843,6 +3850,14 @@ function App() {
                 resetPassword={resetPassword}
                 exportUsersToFile={exportUsersToFile}
                 importUsersFromFile={importUsersFromFile}
+            />
+
+            {/* External Links Modal */}
+            <ExternalLinksModal
+                isOpen={showExternalLinksModal}
+                onClose={() => setShowExternalLinksModal(false)}
+                links={externalLinks}
+                onLinksChange={setExternalLinks}
             />
 
             {/* Floating image modal (persists across tab changes) */}

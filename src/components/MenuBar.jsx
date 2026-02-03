@@ -163,6 +163,7 @@ const MenuBar = ({
                     submenu: recentImportDirsSubmenu,
                     disabled: !hasPermission('canImportExcel')
                 }] : [{ label: 'Importer Excel...', action: 'import', disabled: !hasPermission('canImportExcel') }]),
+                { label: 'Liens externes...', action: 'externalLinks' },
                 { type: 'separator' },
                 { label: 'Imprimer la matrice...', action: 'printMatrix' },
                 { label: 'Imprimer le formulaire...', action: 'printForm' },

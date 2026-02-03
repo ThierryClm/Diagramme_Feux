@@ -1,0 +1,262 @@
+.external-links-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.external-links-modal {
+    background: #2c2c2c;
+    border-radius: 8px;
+    min-width: 500px;
+    max-width: 700px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.external-links-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #444;
+}
+
+.external-links-header h2 {
+    margin: 0;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.external-links-header .close-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.external-links-header .close-btn:hover {
+    color: white;
+}
+
+.external-links-content {
+    padding: 1rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Links list */
+.links-list {
+    margin-bottom: 1.5rem;
+}
+
+.no-links {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    padding: 1rem;
+}
+
+.link-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: #3a3a3a;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.link-item:hover {
+    background: #454545;
+}
+
+.link-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.link-name {
+    color: white;
+    font-weight: 500;
+}
+
+.link-path {
+    color: #888;
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.link-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.link-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 1rem;
+}
+
+.btn-edit {
+    color: #64b5f6;
+}
+
+.btn-edit:hover {
+    background: rgba(100, 181, 246, 0.2);
+}
+
+.btn-delete {
+    color: #ef5350;
+}
+
+.btn-delete:hover {
+    background: rgba(239, 83, 80, 0.2);
+}
+
+/* Add/Edit form */
+.link-form {
+    background: #353535;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.link-form h4 {
+    margin: 0 0 1rem 0;
+    color: white;
+    font-size: 0.95rem;
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.form-row label {
+    color: #aaa;
+    min-width: 70px;
+    font-size: 0.9em;
+}
+
+.form-row input {
+    flex: 1;
+    padding: 0.5rem;
+    background: #2c2c2c;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.9em;
+}
+
+.form-row input:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+.path-input-group {
+    display: flex;
+    flex: 1;
+    gap: 0.5rem;
+}
+
+.path-input-group input {
+    flex: 1;
+}
+
+.btn-browse {
+    background: #555;
+    color: white;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.btn-browse:hover {
+    background: #666;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.btn-add, .btn-save {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.btn-add:hover, .btn-save:hover {
+    background: #45a049;
+}
+
+.btn-cancel {
+    background: #666;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.btn-cancel:hover {
+    background: #777;
+}
+
+/* Footer */
+.external-links-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.external-links-footer .hint {
+    color: #888;
+    font-size: 0.85em;
+    margin: 0;
+}
+
+.external-links-footer .btn-close {
+    background: #555;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.external-links-footer .btn-close:hover {
+    background: #666;
+}
