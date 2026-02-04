@@ -814,7 +814,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 <input
                                     type="number"
                                     className="input-time-sm"
-                                    value={duration === 0 ? '' : duration}
+                                    value={hasValue && duration > 0 ? duration : ''}
                                     readOnly
                                     onClick={(e) => e.stopPropagation()}
                                     title="Durée (calculée automatiquement)"

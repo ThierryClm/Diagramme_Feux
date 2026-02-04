@@ -62,7 +62,7 @@ const ProjectManager = ({
             <h3>Projets Récents</h3>
 
             <p className="cache-info">
-                Cache local (3 derniers projets travaillés)
+                Cache local (5 derniers projets travaillés)
             </p>
 
             {message && <div className="pm-message">{message}</div>}
