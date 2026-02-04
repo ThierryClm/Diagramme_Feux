@@ -808,8 +808,8 @@ export const useTrafficLight = () => {
             console.error("getAllSaves failed", e);
         }
 
-        // Limit to MAX_CACHED_PROJECTS
-        return saves.slice(0, MAX_CACHED_PROJECTS);
+        // Return all available projects (no limit for display)
+        return saves;
     };
 
     // Get project data without applying to state (for green wave)
