@@ -3756,20 +3756,39 @@ function App() {
                                     </div>
                                 )}
 
-                                {printType === 'diagram' && (
-                                    <div className="print-preview-diagram print-preview-landscape">
+                                {printType === 'diagram' && (() => {
+                                    // A4 paysage avec marges 5mm: ~287mm x 200mm
+                                    // Largeur imprimable: ~1050px à 96dpi, ~790px à 72dpi (Edge)
+                                    // Sidebar timeline: 325px (ne pas modifier pour garder l'alignement des barres)
+                                    // Sans les colonnes commentaires/remarques: sidebar effective ~200px
+                                    const printSidebarWidth = 200; // sidebar sans commentaires/remarques
+                                    const printTotalWidth = 750; // largeur disponible conservatrice
+                                    const printTimelineWidth = printTotalWidth - printSidebarWidth; // ~550px
+
+                                    // Calcul pixelsPerSecond pour que le timeline tienne dans la largeur
+                                    const optimalPPS = Math.max(2, Math.floor(printTimelineWidth / cycleLength));
+
+                                    // Calculer le scale si nécessaire
+                                    const actualWidth = printSidebarWidth + (cycleLength * optimalPPS);
+                                    const printScale = actualWidth > printTotalWidth ? printTotalWidth / actualWidth : 1;
+
+                                    return (
+                                    <div className="print-preview-diagram print-preview-landscape" style={{
+                                        transform: printScale < 1 ? `scale(${printScale.toFixed(3)})` : 'none',
+                                        transformOrigin: 'top left'
+                                    }}>
                                         {/* En-tête du diagramme */}
                                         <div className="print-diagram-header">
                                             <h3>Diagramme {intersectionName || 'Sans titre'} - {pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}</h3>
                                         </div>
 
-                                        {/* Diagramme réel - A4 paysage: optimisé sur 800px */}
+                                        {/* Diagramme réel - A4 paysage optimisé */}
                                         <div className="print-diagram-content">
                                             <TimelineDiagram
                                                 groups={groups}
                                                 globalTime={0}
                                                 onGroupClick={() => {}}
-                                                pixelsPerSecond={Math.max(2, Math.min(10, Math.floor(800 / cycleLength)))}
+                                                pixelsPerSecond={optimalPPS}
                                                 conflicts={[]}
                                                 conflictMatrix={conflictMatrix}
                                                 updateGroupParams={() => {}}
@@ -3783,6 +3802,7 @@ function App() {
                                                 hoveredActionId={null}
                                                 setHoveredActionId={() => {}}
                                                 planName={pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}
+                                                isPrintMode={true}
                                             />
                                         </div>
 
@@ -3852,7 +3872,8 @@ function App() {
                                             <span className="print-footer-date">{new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                     </div>
-                                )}
+                                    );
+                                })()}
                             </div>
                         </div>
                         <div className="modal-footer">

@@ -1274,6 +1274,13 @@
     min-height: 200px;
 }
 
+/* Masquer les commentaires et remarques dans l'aperçu d'impression */
+.print-diagram-content .timeline-comments,
+.print-diagram-content .timeline-remarques,
+.print-diagram-content .no-print {
+    display: none !important;
+}
+
 /* Assurer que le layout est bien collé */
 .print-diagram-content .timeline-layout {
     display: flex !important;
@@ -1543,11 +1550,13 @@
 .print-preview-modal-large:has(.print-preview-landscape) {
     max-width: 95%;
     width: 1100px;
+    max-height: 95vh;
 }
 
 .print-preview-page:has(.print-preview-landscape) {
     min-width: 950px;
     max-width: none;
+    max-height: none;
 }
 
 /* Print Media Queries */
@@ -1555,6 +1564,16 @@
     @page {
         size: A4 portrait;
         margin: 10mm;
+    }
+
+    /* Règle spécifique pour le diagramme en paysage avec marges minimales */
+    body.print-diagram {
+        page: diagram-page;
+    }
+
+    @page diagram-page {
+        size: A4 landscape;
+        margin: 5mm;
     }
 
     /* Hide everything by default */
@@ -1772,7 +1791,8 @@
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
-        width: 100% !important;
+        width: auto !important;
+        min-width: 100% !important;
         height: auto !important;
         max-height: none !important;
         background: white !important;
@@ -1789,7 +1809,8 @@
         border: none !important;
         max-width: none !important;
         max-height: none !important;
-        width: 100% !important;
+        width: auto !important;
+        min-width: 100% !important;
         height: auto !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -1815,6 +1836,8 @@
         background: white !important;
         overflow: visible !important;
         max-height: none !important;
+        max-width: none !important;
+        width: auto !important;
         height: auto !important;
     }
 
@@ -1823,6 +1846,7 @@
         border: none !important;
         padding: 0 !important; /* Marges à zéro */
         margin: 0 !important;
+        width: auto !important;
         max-width: none !important;
         max-height: none !important;
         min-width: auto !important;
@@ -1832,19 +1856,21 @@
     }
 
     body.print-diagram .print-preview-diagram {
-        width: 100% !important;
+        width: auto !important;
+        max-width: none !important;
         height: auto !important;
         max-height: none !important;
         background: white !important;
         overflow: visible !important;
         margin-left: 0 !important;
         padding-left: 0 !important;
-        /* Mise à l'échelle pour tenir dans la page A4 paysage */
-        transform: scale(0.85);
+        /* Le scale est géré par le style inline - ne pas écraser */
         transform-origin: top left;
     }
 
     body.print-diagram .print-diagram-content {
+        width: auto !important;
+        max-width: none !important;
         background: white !important;
         overflow: visible !important;
         margin-left: 0 !important;
@@ -1926,43 +1952,75 @@
         color: black !important;
     }
 
-    /* Grille visible */
+    /* FORCER l'impression des couleurs d'arrière-plan pour tout le diagramme */
+    body.print-diagram .print-diagram-content,
+    body.print-diagram .print-diagram-content * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* Grille visible avec couleurs forcées */
     body.print-diagram .grid-line {
-        background: rgba(0, 0, 0, 0.1) !important;
+        background-color: rgba(0, 0, 0, 0.15) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     body.print-diagram .grid-5s {
-        background: rgba(0, 0, 0, 0.2) !important;
+        background-color: rgba(0, 0, 0, 0.25) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     body.print-diagram .grid-10s {
-        background: rgba(0, 0, 0, 0.35) !important;
+        background-color: rgba(0, 0, 0, 0.4) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body.print-diagram .grid-cycle-end {
+        background-color: rgba(0, 0, 0, 0.6) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     /* IMPORTANT: Préserver les couleurs des barres de phase */
+    body.print-diagram .phase-bar {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+
     body.print-diagram .phase-bar.green {
-        background: linear-gradient(to bottom, #00FF00, #00CC00) !important;
+        background: #00CC00 !important;
+        background-color: #00CC00 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
     }
 
     body.print-diagram .phase-bar.green-dark {
-        background: linear-gradient(to bottom, #008800, #006600) !important;
+        background: #006600 !important;
+        background-color: #006600 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
     }
 
     body.print-diagram .phase-bar.orange {
-        background: linear-gradient(to bottom, #FFFF00, #CCCC00) !important;
+        background: #CCCC00 !important;
+        background-color: #CCCC00 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
     }
 
     body.print-diagram .phase-bar.red {
-        background: linear-gradient(to bottom, #FF0000, #CC0000) !important;
+        background: #CC0000 !important;
+        background-color: #CC0000 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
@@ -2019,42 +2077,125 @@
         background-color: #fff !important;
     }
 
-    /* Mise à l'échelle du diagramme pour tenir dans la page A4 paysage */
+    /* Diagramme : pas de limite de taille pour afficher tout le contenu */
     body.print-diagram .print-preview-diagram {
         transform-origin: top left;
-        max-height: 180mm !important; /* Hauteur A4 paysage - marges - en-tête/pied */
+        max-height: none !important;
+        max-width: none !important;
+        width: auto !important;
+        height: auto !important;
+        overflow: visible !important;
     }
 
     body.print-diagram .print-diagram-content {
-        width: 100% !important;
-        max-width: 257mm !important; /* Largeur A4 paysage - marges */
+        width: auto !important;
+        max-width: none !important;
         overflow: visible !important;
+        height: auto !important;
+        display: block !important;
     }
 
     body.print-diagram .print-diagram-content .timeline-container {
         transform-origin: top left;
-        width: 100% !important;
+        width: auto !important;
+        max-width: none !important;
+        overflow: visible !important;
     }
 
     body.print-diagram .print-diagram-content .timeline-layout {
-        width: 100% !important;
+        width: auto !important;
+        max-width: none !important;
+        overflow: visible !important;
     }
 
+    /* IMPORTANT: Ne pas écraser les styles inline de largeur (width en pixels) */
     body.print-diagram .print-diagram-content .timeline-scroll-area {
         overflow: visible !important;
-        width: auto !important;
-        flex: 1 !important;
+        max-width: none !important;
+        flex: none !important;
+        flex-shrink: 0 !important;
     }
 
     body.print-diagram .print-diagram-content .timeline-track-container {
-        width: 100% !important;
+        max-width: none !important;
+        overflow: visible !important;
+        flex-shrink: 0 !important;
     }
 
-    /* Tableau des actions - saut de page si nécessaire */
+    body.print-diagram .print-diagram-content .timeline-grid {
+        max-width: none !important;
+        overflow: visible !important;
+    }
+
+    body.print-diagram .print-diagram-content .timeline-row-track {
+        overflow: visible !important;
+        position: relative !important;
+        height: 30px !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* MASQUER COMPLETEMENT les colonnes commentaires et remarques */
+    body.print-diagram .timeline-comments,
+    body.print-diagram .timeline-remarques,
+    body.print-diagram .no-print,
+    body.print-diagram .print-diagram-content .timeline-comments,
+    body.print-diagram .print-diagram-content .timeline-remarques {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        max-width: 0 !important;
+        max-height: 0 !important;
+        overflow: hidden !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
+    }
+
+    /* NE PAS modifier la largeur de la sidebar - les barres sont positionnées par rapport à elle */
+    /* Juste réduire légèrement les polices */
+    body.print-diagram .label-id {
+        font-size: 0.75rem !important;
+    }
+
+    body.print-diagram .label-name {
+        font-size: 0.7rem !important;
+    }
+
+    body.print-diagram .input-time-sm {
+        font-size: 0.65rem !important;
+    }
+
+    /* Le diagramme doit utiliser sa largeur intrinsèque, pas être contraint */
+    body.print-diagram .print-diagram-content {
+        display: block !important;
+        overflow: visible !important;
+    }
+
+    body.print-diagram .timeline-container {
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: visible !important;
+    }
+
+    body.print-diagram .timeline-layout {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        overflow: visible !important;
+    }
+
+    /* Tableau des actions - bloc séparé avec sa propre largeur */
     body.print-diagram .print-actions-section {
-        margin-top: 10px !important;
+        margin-top: 15px !important;
         page-break-before: auto;
         page-break-inside: avoid;
+        display: block !important;
+        width: auto !important;
+        max-width: 100% !important;
+        clear: both !important;
     }
 
     body.print-diagram .print-actions-section h4 {
@@ -2075,26 +2216,48 @@
     body.print-diagram .print-diagram-footer {
         page-break-before: avoid;
     }
-}
 
-/* Format A4 paysage spécifique pour le diagramme */
-@page {
-    size: A4 portrait;
-    margin: 10mm;
-}
+    /* Empêcher le débordement du diagramme sur plusieurs pages */
+    body.print-diagram .print-diagram-content {
+        page-break-inside: avoid !important;
+        overflow: hidden !important;
+        position: relative !important;
+    }
 
-@media print {
-    body.print-diagram {
-        size: A4 landscape;
-        margin: 0 !important;
-        padding: 0 !important;
+    body.print-diagram .timeline-container {
+        page-break-inside: avoid !important;
+        overflow: hidden !important;
+        position: relative !important;
+    }
+
+    body.print-diagram .timeline-layout {
+        overflow: hidden !important;
+        position: relative !important;
+    }
+
+    body.print-diagram .timeline-scroll-area {
+        overflow: hidden !important;
+        position: relative !important;
+    }
+
+    body.print-diagram .timeline-track-container {
+        overflow: hidden !important;
+        position: relative !important;
+    }
+
+    body.print-diagram .print-preview-diagram {
+        page-break-inside: avoid !important;
+        overflow: hidden !important;
+        position: relative !important;
+    }
+
+    /* Empêcher tout débordement vertical */
+    body.print-diagram .print-preview-page {
+        overflow: hidden !important;
     }
 }
 
-@page diagram-landscape {
-    size: A4 landscape;
-    margin: 0; /* Marges à zéro */
-}
+/* Les règles @page pour le diagramme sont définies dans le bloc @media print principal */
 
 /* Phasage bulle sidebar styles */
 .phasage-bulle-sidebar {
