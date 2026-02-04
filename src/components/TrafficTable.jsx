@@ -74,6 +74,36 @@ const TrafficTable = ({
         updateGroupParams(id, { [field]: value });
     };
 
+    // Calculate total green time for a group (main green + seconde lucarne durations)
+    const getTotalGreenTime = (groupId, mainGreenTime) => {
+        if (!mainGreenTime) return 0;
+
+        // Find all "Seconde lucarne" actions for this group
+        const lucarneActions = actionData.filter(
+            action => action.action === 'Seconde lucarne' &&
+                     parseInt(action.gf) === groupId &&
+                     action.deb !== '' && action.deb !== null &&
+                     action.fin !== '' && action.fin !== null
+        );
+
+        // Sum up lucarne durations
+        let lucarneDuration = 0;
+        lucarneActions.forEach(lucarne => {
+            const deb = parseFloat(lucarne.deb);
+            const fin = parseFloat(lucarne.fin);
+            if (!isNaN(deb) && !isNaN(fin)) {
+                // Handle wrap-around (fin < deb means it crosses cycle boundary)
+                let duration = fin - deb;
+                if (duration < 0) {
+                    duration += cycleLength;
+                }
+                lucarneDuration += duration;
+            }
+        });
+
+        return mainGreenTime + lucarneDuration;
+    };
+
     // Calculate V.Utile = trafic / (1800 * coef / cycle)
     const calculateVUtile = (trafficVol, laneCoef) => {
         if (!trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
@@ -238,8 +268,9 @@ const TrafficTable = ({
 
                                 {/* Coef Voie (shared across all datasets) */}
                                 {(() => {
+                                    const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
                                     const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
                                     return (
                                         <td
                                             onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
@@ -257,8 +288,9 @@ const TrafficTable = ({
                                 })()}
                                 {/* Trafic (per dataset) */}
                                 {(() => {
+                                    const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
                                     const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
                                     return (
                                         <td
                                             onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
@@ -275,8 +307,9 @@ const TrafficTable = ({
                                 })()}
                                 {/* Vert Utile (calculé) */}
                                 {(() => {
+                                    const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
                                     const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
                                     return (
                                         <td
                                             className="col-calculated col-vutile"
@@ -289,8 +322,9 @@ const TrafficTable = ({
                                 })()}
                                 {/* Capacité Utilisée (calculée: V.Utile / temps vert * 100) */}
                                 {(() => {
+                                    const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
                                     const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
                                     return (
                                         <td
                                             className={`col-calculated ${getCapacityColorClass(capacity.value)}`}
@@ -304,9 +338,10 @@ const TrafficTable = ({
                                 {/* Retard (calculé) = (cycle - vert)² / (2 * cycle * (1 - trafic / (1800 * coef))) */}
                                 {/* Ou si action "Début de bande passante" avec actGf1 = groupe : max(0, début_vert - fin_action) */}
                                 {(() => {
+                                    const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
                                     const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
-                                    const delay = isInhibited ? null : calculateDelay(g.durations?.green, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
+                                    const delay = isInhibited ? null : calculateDelay(totalGreen, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
                                     return (
                                         <td
                                             className="col-calculated"
@@ -320,9 +355,10 @@ const TrafficTable = ({
                                 {/* File d'attente (calculé) = (Trafic * (cycle - vert) / (3600 / Coef)) * 6 */}
                                 {/* Ou si action "Début de bande passante" avec actGf1 = groupe : max(0, début_vert - fin_action) */}
                                 {(() => {
+                                    const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
                                     const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
-                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(g.durations?.green, vUtile);
-                                    const queue = isInhibited ? null : calculateQueue(g.durations?.green, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
+                                    const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
+                                    const queue = isInhibited ? null : calculateQueue(totalGreen, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
                                     return (
                                         <td
                                             className="col-calculated"

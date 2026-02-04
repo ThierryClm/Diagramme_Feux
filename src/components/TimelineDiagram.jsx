@@ -3825,10 +3825,23 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 updateGroupParams(g.id, { comment: e.currentTarget.innerHTML });
                                             }
                                         } else {
-                                            // No selection - color entire content
+                                            // No selection - color entire content or toggle back to white
                                             const content = e.currentTarget.textContent || '';
                                             if (content) {
-                                                e.currentTarget.innerHTML = `<span style="color: ${color}">${content}</span>`;
+                                                // Check if content is already entirely wrapped in a colored span
+                                                const firstChild = e.currentTarget.firstChild;
+                                                const isEntirelyColored = firstChild &&
+                                                    firstChild.nodeType === 1 &&
+                                                    firstChild.tagName === 'SPAN' &&
+                                                    firstChild.style.color &&
+                                                    e.currentTarget.childNodes.length === 1;
+
+                                                if (isEntirelyColored) {
+                                                    // Toggle back to white (remove color)
+                                                    e.currentTarget.innerHTML = content;
+                                                } else {
+                                                    e.currentTarget.innerHTML = `<span style="color: ${color}">${content}</span>`;
+                                                }
                                                 updateGroupParams(g.id, { comment: e.currentTarget.innerHTML });
                                             }
                                         }
