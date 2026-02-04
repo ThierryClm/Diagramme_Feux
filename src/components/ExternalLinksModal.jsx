@@ -150,6 +150,17 @@ const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
                                     </div>
                                     <div className="link-actions">
                                         <button
+                                            className="btn-copy"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigator.clipboard.writeText(link.path);
+                                                alert('Chemin copié dans le presse-papiers');
+                                            }}
+                                            title="Copier le chemin"
+                                        >
+                                            📋
+                                        </button>
+                                        <button
                                             className="btn-edit"
                                             onClick={(e) => { e.stopPropagation(); handleEditLink(link); }}
                                             title="Modifier"

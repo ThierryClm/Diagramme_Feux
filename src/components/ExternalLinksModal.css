@@ -14,12 +14,13 @@
 .external-links-modal {
     background: #2c2c2c;
     border-radius: 8px;
-    min-width: 500px;
-    max-width: 700px;
+    min-width: 700px;
+    max-width: 900px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    font-size: 0.85em;
 }
 
 .external-links-header {
@@ -119,6 +120,14 @@
     font-size: 1rem;
 }
 
+.btn-copy {
+    color: #81c784;
+}
+
+.btn-copy:hover {
+    background: rgba(129, 199, 132, 0.2);
+}
+
 .btn-edit {
     color: #64b5f6;
 }
@@ -162,12 +171,12 @@
 
 .form-row input {
     flex: 1;
-    padding: 0.5rem;
+    padding: 0.4rem;
     background: #2c2c2c;
     border: 1px solid #555;
     border-radius: 4px;
     color: white;
-    font-size: 0.9em;
+    font-size: 0.8em;
 }
 
 .form-row input:focus {

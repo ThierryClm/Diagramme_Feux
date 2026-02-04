@@ -154,6 +154,7 @@ function App() {
     const [isPlayingSimulation, setIsPlayingSimulation] = useState(false);
     const [simulationCurrentTime, setSimulationCurrentTime] = useState(0);
     const [hoveredArrowGroupId, setHoveredArrowGroupId] = useState(null);
+    const [hoveredConflict, setHoveredConflict] = useState(null); // {from, to} for conflict hover
     const [hoveredDiagramTime, setHoveredDiagramTime] = useState(null); // Time position when hovering diagram
 
     // Floating image state (persists across tab changes and page reloads)
@@ -896,6 +897,7 @@ function App() {
                 intersectionArrows: fullState.intersectionArrows,
                 trafficDatasets: fullState.trafficDatasets,
                 activeTrafficDataset: fullState.activeTrafficDataset,
+                externalLinks: fullState.externalLinks,
                 diagramHeight: diagramHeight,
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
@@ -1000,6 +1002,7 @@ function App() {
                 intersectionArrows: fullState.intersectionArrows,
                 trafficDatasets: fullState.trafficDatasets,
                 activeTrafficDataset: fullState.activeTrafficDataset,
+                externalLinks: fullState.externalLinks,
                 diagramHeight: diagramHeight,
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
@@ -2425,7 +2428,12 @@ function App() {
                                     <h4>Conflits:</h4>
                                     <ul>
                                         {filteredConflicts.map((c, i) => (
-                                            <li key={i}>
+                                            <li
+                                                key={i}
+                                                onMouseEnter={() => setHoveredConflict({ from: c.from, to: c.to })}
+                                                onMouseLeave={() => setHoveredConflict(null)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
                                                 {c.type === 'intergreen' ? (
                                                     <>GF{c.from} → GF{c.to} : Dégagement insuffisant ({c.actual.toFixed(1)}s / {c.required}s requis)</>
                                                 ) : (
@@ -2600,6 +2608,7 @@ function App() {
                                 simulationCurrentTime={simulationEnabled ? simulationCurrentTime : null}
                                 isPlayingSimulation={simulationEnabled && isPlayingSimulation}
                                 hoveredArrowGroupId={hoveredArrowGroupId}
+                                hoveredConflict={hoveredConflict}
                                 setHoveredGroupId={setHoveredArrowGroupId}
                                 setHoveredDiagramTime={setHoveredDiagramTime}
                                 hoveredVUtile={hoveredVUtile}
@@ -3138,15 +3147,27 @@ function App() {
                     </section>
 
                     <section className="help-section">
+                        <h4>Commentaires et Remarques</h4>
+                        <p>Les champs Commentaire (par groupe) et Remarques (par plan de feu) permettent d'ajouter des annotations :</p>
+                        <ul>
+                            <li><strong>Coloration du texte :</strong> Sélectionnez du texte puis appuyez sur <span style={{color: '#4CAF50'}}>+</span> (vert) ou <span style={{color: '#F44336'}}>−</span> (rouge)</li>
+                            <li><strong>Coloration de toute la ligne :</strong> Sans sélection, + ou − colore tout le contenu</li>
+                            <li><strong>Basculer en blanc :</strong> Si une ligne entière est déjà colorée, appuyez à nouveau sur + ou − pour supprimer la couleur</li>
+                            <li><strong>Infobulle :</strong> L'infobulle s'affiche après 20 secondes de survol</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
                         <h4>Données Trafic</h4>
                         <p>L'onglet Trafic permet de saisir les données de trafic par groupe :</p>
                         <ul>
                             <li><strong>Coef :</strong> Coefficient de voie correspondant aux courants de circulation du groupe de feu (partagé entre tous les jeux de données)</li>
                             <li><strong>Trafic :</strong> Volume de trafic (véh/h) - spécifique à chaque jeu de données</li>
                             <li><strong>V.Utile :</strong> Durée de vert nécessaire pour passer le trafic. Formule = Trafic / (1800 × Coef / Cycle)</li>
-                            <li><strong>Cap.U :</strong> Capacité utilisée pour passer le trafic affecté au groupe de feu. Formule = (V.Utile / Vert) × 100%</li>
-                            <li><strong>Retard :</strong> Temps d'attente théorique moyen en pied de feu hors saturation. Formule = (Cycle - Vert)² / (2 × Cycle × (1 - Trafic / (1800 × Coef))). <em>Si une action "Début de bande passante" cible ce groupe (Action GF), alors Retard = max(0, Début de vert - Fin de l'action).</em></li>
-                            <li><strong>File d'attente :</strong> File d'attente théorique maximale hors saturation. Formule = (partie entière de (Trafic × (Cycle - Vert) / 3600 / Coef) + 1) × 6 mètres. <em>Si une action "Début de bande passante" cible ce groupe (Action GF), alors File d'attente = max(0, Début de vert - Fin de l'action).</em></li>
+                            <li><strong>Cap.U :</strong> Capacité utilisée pour passer le trafic affecté au groupe de feu. Formule = (V.Utile / Vert total) × 100%</li>
+                            <li><strong>Retard :</strong> Temps d'attente théorique moyen en pied de feu hors saturation. Formule = (Cycle - Vert total)² / (2 × Cycle × (1 - Trafic / (1800 × Coef))). <em>Si une action "Début de bande passante" cible ce groupe (Action GF), alors Retard = max(0, Début de vert - Fin de l'action).</em></li>
+                            <li><strong>File d'attente :</strong> File d'attente théorique maximale hors saturation. Formule = (partie entière de (Trafic × (Cycle - Vert total) / 3600 / Coef) + 1) × 6 mètres. <em>Si une action "Début de bande passante" cible ce groupe (Action GF), alors File d'attente = max(0, Début de vert - Fin de l'action).</em></li>
+                            <li><strong>Vert total :</strong> Les calculs de Cap.U, Retard et File d'attente prennent en compte le temps de vert principal + la durée des secondes lucarnes du groupe.</li>
                         </ul>
                         <p><strong>Surbrillance interactive :</strong> Le survol des champs Coef, Trafic, V.Utile, Cap.U, Retard ou File d'attente met en surbrillance la barre correspondante dans le diagramme.</p>
                         <p><strong>Jeux de données :</strong> La listbox "Associé à" permet de basculer entre plusieurs jeux de données trafic (HPM, HPS, etc.). Chaque jeu de données conserve ses propres valeurs de trafic.</p>
@@ -3195,6 +3216,24 @@ function App() {
                             <li><strong>Confirmation de sécurité :</strong> Demande de confirmation si la nouvelle sauvegarde est significativement plus petite que l'ancienne</li>
                             <li><strong>Gestion des erreurs :</strong> Messages d'erreur explicites en cas de problème (espace insuffisant, données invalides)</li>
                         </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Liens externes</h4>
+                        <p>Menu Fichier → Liens externes permet de créer des raccourcis vers des fichiers ou URLs associés au projet :</p>
+                        <ul>
+                            <li><strong>Ajouter un lien :</strong> Renseignez un nom et un chemin (fichier local ou URL)</li>
+                            <li><strong>Format du chemin :</strong>
+                                <ul>
+                                    <li>URL : <code>https://exemple.com</code></li>
+                                    <li>Fichier local : <code>C:\Documents\plan.pdf</code></li>
+                                </ul>
+                            </li>
+                            <li><strong>Ouvrir un lien :</strong> Double-cliquez sur le lien pour l'ouvrir</li>
+                            <li><strong>Fichiers PDF :</strong> S'ouvrent directement dans le navigateur (lecteur intégré)</li>
+                            <li><strong>Sauvegarde :</strong> Les liens sont sauvegardés avec chaque projet (pas globalement)</li>
+                        </ul>
+                        <p><em>Note : Pour des raisons de sécurité, le navigateur ne peut pas lancer d'applications externes (Word, Excel). Ces fichiers seront proposés en téléchargement.</em></p>
                     </section>
 
                     <section className="help-section">

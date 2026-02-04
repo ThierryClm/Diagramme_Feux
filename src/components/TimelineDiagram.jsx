@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -3378,8 +3378,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const toId = toGroup.id;
                                         if (fromId === toId) return null;
 
-                                        // Filter: only show arrows for hovered group (source or target)
-                                        if (hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+                                        // Check if this arrow matches the hovered conflict
+                                        const showForConflict = hoveredConflict &&
+                                            ((fromId === hoveredConflict.from && toId === hoveredConflict.to) ||
+                                             (fromId === hoveredConflict.to && toId === hoveredConflict.from));
+
+                                        // Filter: show arrows for hovered group OR hovered conflict
+                                        if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+                                        // If hoveredConflict is active but doesn't match this pair, hide the arrow
+                                        if (hoveredConflict && !showForConflict) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
@@ -3459,8 +3466,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const toId = toGroup.id;
                                         if (fromId === toId) return null;
 
-                                        // Filter: only show arrows for hovered group (source or target)
-                                        if (hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+                                        // Check if this arrow matches the hovered conflict
+                                        const showForConflict = hoveredConflict &&
+                                            ((fromId === hoveredConflict.from && toId === hoveredConflict.to) ||
+                                             (fromId === hoveredConflict.to && toId === hoveredConflict.from));
+
+                                        // Filter: show arrows for hovered group OR hovered conflict
+                                        if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+                                        // If hoveredConflict is active but doesn't match this pair, hide the arrow
+                                        if (hoveredConflict && !showForConflict) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
@@ -3540,8 +3554,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (fromId === toId) return null;
                                         if (fromLIdx === toLIdx) return null;
 
-                                        // Filter: only show arrows for hovered group (source or target)
-                                        if (hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+                                        // Check if this arrow matches the hovered conflict
+                                        const showForConflict = hoveredConflict &&
+                                            ((fromId === hoveredConflict.from && toId === hoveredConflict.to) ||
+                                             (fromId === hoveredConflict.to && toId === hoveredConflict.from));
+
+                                        // Filter: show arrows for hovered group OR hovered conflict
+                                        if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+                                        // If hoveredConflict is active but doesn't match this pair, hide the arrow
+                                        if (hoveredConflict && !showForConflict) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
@@ -3621,8 +3642,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const toId = parseInt(toLucarne.gf);
                                         if (fromId === toId) return null;
 
-                                        // Filter: only show arrows for hovered group (source or target)
-                                        if (hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+                                        // Check if this arrow matches the hovered conflict
+                                        const showForConflict = hoveredConflict &&
+                                            ((fromId === hoveredConflict.from && toId === hoveredConflict.to) ||
+                                             (fromId === hoveredConflict.to && toId === hoveredConflict.from));
+
+                                        // Filter: show arrows for hovered group OR hovered conflict
+                                        if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+                                        // If hoveredConflict is active but doesn't match this pair, hide the arrow
+                                        if (hoveredConflict && !showForConflict) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
@@ -3705,8 +3733,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (fromId === toId) return null;
                                         if (fromLIdx === toLIdx) return null;
 
-                                        // Filter: only show arrows for hovered group (source or target)
-                                        if (hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+                                        // Check if this arrow matches the hovered conflict
+                                        const showForConflict = hoveredConflict &&
+                                            ((fromId === hoveredConflict.from && toId === hoveredConflict.to) ||
+                                             (fromId === hoveredConflict.to && toId === hoveredConflict.from));
+
+                                        // Filter: show arrows for hovered group OR hovered conflict
+                                        if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
+                                        // If hoveredConflict is active but doesn't match this pair, hide the arrow
+                                        if (hoveredConflict && !showForConflict) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
