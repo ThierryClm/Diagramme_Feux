@@ -2083,47 +2083,51 @@ export const useTrafficLight = () => {
     }, [saveToHistory]);
 
     // Reduce time at a given position for a given duration
+    // Décale toutes les valeurs (groupes et actions) > startSecond de -duration
     const reduceTime = useCallback((startSecond, duration) => {
         saveToHistory();
-        const endSecond = startSecond + duration;
+        // Décaler les offsets et/ou durées des groupes
         setGroups(currentGroups => {
             return currentGroups.map(g => {
                 const offset = g.offset;
-                // If group starts at or after the end of reduced zone, shift it backward
-                if (offset >= endSecond) {
+                const greenDuration = g.durations?.green || 0;
+                const endOfGreen = offset + greenDuration;
+
+                // Si le début (offset) est > startSecond, décaler l'offset
+                if (offset > startSecond) {
                     return {
                         ...g,
-                        offset: offset - duration
+                        offset: Math.max(0, offset - duration)
                     };
                 }
-                // If group starts within the reduced zone, clamp to startSecond
-                if (offset > startSecond && offset < endSecond) {
+                // Si le début <= startSecond mais la fin > startSecond, réduire la durée green
+                else if (endOfGreen > startSecond) {
+                    const newGreenDuration = Math.max(0, greenDuration - duration);
                     return {
                         ...g,
-                        offset: startSecond
+                        durations: {
+                            ...g.durations,
+                            green: newGreenDuration
+                        }
                     };
                 }
                 return g;
             });
         });
-        // Also shift action data Déb/Fin
+        // Also shift action data Déb/Fin - décaler toutes les valeurs > startSecond
         setActionData(currentData => {
             return currentData.map(row => {
                 const newRow = { ...row };
                 if (newRow.deb !== '' && newRow.deb !== undefined) {
                     const deb = parseInt(newRow.deb);
-                    if (deb >= endSecond) {
-                        newRow.deb = (deb - duration).toString();
-                    } else if (deb > startSecond && deb < endSecond) {
-                        newRow.deb = startSecond.toString();
+                    if (deb > startSecond) {
+                        newRow.deb = Math.max(0, deb - duration).toString();
                     }
                 }
                 if (newRow.fin !== '' && newRow.fin !== undefined) {
                     const fin = parseInt(newRow.fin);
-                    if (fin >= endSecond) {
-                        newRow.fin = (fin - duration).toString();
-                    } else if (fin > startSecond && fin < endSecond) {
-                        newRow.fin = startSecond.toString();
+                    if (fin > startSecond) {
+                        newRow.fin = Math.max(0, fin - duration).toString();
                     }
                 }
                 return newRow;

@@ -502,6 +502,7 @@
     border: 1px solid rgba(128, 128, 128, 0.4);
     z-index: 21;
     pointer-events: none;
+    box-sizing: border-box; /* Inclure la bordure dans la largeur */
 }
 
 /* Adaptatif vertical overlay - above escamotage for dragging */
@@ -512,6 +513,7 @@
     border-radius: 4px;
     z-index: 18;
     pointer-events: none;
+    box-sizing: border-box; /* Inclure la bordure dans la largeur */
 }
 
 .escamotage-label {
