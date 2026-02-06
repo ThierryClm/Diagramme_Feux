@@ -365,7 +365,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                         <tr>
                             <th>/</th>
                             <th className="col-name-header">Nom</th>
-                            {indices.map(i => <th key={i}>{i}</th>)}
+                            {indices.map(i => <th key={i} className="col-index-header">{i}</th>)}
                         </tr>
                     </thead>
                     <tbody>

@@ -88,6 +88,11 @@
     font-size: 0.75em;
 }
 
+.col-index-header {
+    text-align: right;
+    padding-right: 4px;
+}
+
 .row-name {
     position: sticky;
     left: 24px;

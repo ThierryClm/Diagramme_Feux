@@ -63,6 +63,7 @@ function App() {
         renamePF,
         setPFColor,
         updatePFRemarques,
+        reorderPF,
         currentRemarques,
         undo,
         redo,
@@ -532,6 +533,9 @@ function App() {
     const [htmFile, setHtmFile] = useState(null);
     const [htmImportError, setHtmImportError] = useState('');
     const [showExternalLinksModal, setShowExternalLinksModal] = useState(false);
+
+    // Drag & drop state for PF tabs
+    const [draggedTabIndex, setDraggedTabIndex] = useState(null);
 
     // File System Access API - mémoriser les derniers répertoires utilisés
     const lastOpenDirectoryRef = useRef(null);
@@ -1341,11 +1345,11 @@ function App() {
                 setCreateGreenWaveModal(true);
                 break;
             case 'openGreenWave':
+                handleOpenGreenWaveFromFile();
+                break;
+            case 'openGreenWaveFromLocalStorage':
                 setOpenGreenWaveModal(true);
                 setSelectedGreenWave(null);
-                break;
-            case 'openGreenWaveFromFile':
-                handleOpenGreenWaveFromFile();
                 break;
             case 'closeGreenWave':
                 setGreenWaveViewer(false);
@@ -1406,7 +1410,7 @@ function App() {
         sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(intersections));
 
         // Open new tab with green wave page
-        window.open(`${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
+        window.open(`${window.location.origin}/?greenwave&id=${greenWaveId}`, '_blank');
 
         setCreateGreenWaveModal(false);
     };
@@ -1441,7 +1445,7 @@ function App() {
                     }));
 
                     // Open new tab with green wave page
-                    window.open(`${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
+                    window.open(`${window.location.origin}/?greenwave&id=${greenWaveId}`, '_blank');
 
                     setOpenGreenWaveModal(false);
                     setSelectedGreenWave(null);
@@ -1513,7 +1517,7 @@ function App() {
                 }));
 
                 // Open new tab with green wave page
-                window.open(`${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
+                window.open(`${window.location.origin}/?greenwave&id=${greenWaveId}`, '_blank');
             } else {
                 alert('Le fichier ne contient pas de données d\'onde verte valides.');
             }
@@ -2484,15 +2488,34 @@ function App() {
                 <section className="diagram-area" ref={diagramAreaRef} style={{ display: 'flex', flexDirection: 'column' }}>
                     {/* PF Tabs */}
                     <div className="pf-tabs-bar">
-                        {pfTabs.map((pf) => (
+                        {pfTabs.map((pf, index) => (
                             <div
                                 key={pf.id}
-                                className={`pf-tab ${activePFId === pf.id && !simulationEnabled && !phasageBulleEnabled ? 'active' : ''}`}
+                                className={`pf-tab ${activePFId === pf.id && !simulationEnabled && !phasageBulleEnabled ? 'active' : ''} ${draggedTabIndex === index ? 'dragging' : ''}`}
                                 style={pf.color ? {
                                     borderTopColor: pf.color,
                                     borderTopWidth: '3px',
                                     borderTopStyle: 'solid'
                                 } : {}}
+                                draggable="true"
+                                onDragStart={(e) => {
+                                    setDraggedTabIndex(index);
+                                    e.dataTransfer.effectAllowed = 'move';
+                                }}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = 'move';
+                                }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    if (draggedTabIndex !== null && draggedTabIndex !== index) {
+                                        reorderPF(draggedTabIndex, index);
+                                    }
+                                    setDraggedTabIndex(null);
+                                }}
+                                onDragEnd={() => {
+                                    setDraggedTabIndex(null);
+                                }}
                                 onClick={() => {
                                     setSimulationEnabled(false);
                                     setPhasageBulleEnabled(false);
@@ -2509,7 +2532,7 @@ function App() {
                                         renamePF(pf.id, newName.trim());
                                     }
                                 }}
-                                title="Double-cliquez pour renommer"
+                                title="Glissez pour réordonner, double-cliquez pour renommer"
                             >
                                 <span className="pf-tab-name">{pf.name}</span>
                             </div>

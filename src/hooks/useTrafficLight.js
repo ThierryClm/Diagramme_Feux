@@ -22,6 +22,80 @@ const safeLocalStorage = {
     removeItem: (key) => localStorage.removeItem(key)
 };
 
+// Calculate total localStorage usage in bytes
+const getLocalStorageUsage = () => {
+    let total = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const value = localStorage.getItem(key);
+        // Each character is 2 bytes in JavaScript (UTF-16)
+        total += (key.length + value.length) * 2;
+    }
+    return total;
+};
+
+// Free up approximately 1MB of space by removing oldest projects
+const freeUpLocalStorage = (targetBytes = 1000000) => {
+    let freedBytes = 0;
+    const orderRaw = localStorage.getItem('traffic_project_order');
+    if (!orderRaw) return freedBytes;
+
+    try {
+        const order = JSON.parse(orderRaw);
+        const projectsToRemove = [];
+
+        // Start from the end (oldest projects)
+        for (let i = order.length - 1; i >= 0 && freedBytes < targetBytes; i--) {
+            const projectName = order[i];
+            const projectKey = `traffic_project_${projectName}`;
+            const backupKey = `traffic_project_${projectName}_backup`;
+
+            const projectData = localStorage.getItem(projectKey);
+            const backupData = localStorage.getItem(backupKey);
+
+            if (projectData) {
+                freedBytes += (projectKey.length + projectData.length) * 2;
+                projectsToRemove.push(projectName);
+            }
+            if (backupData) {
+                freedBytes += (backupKey.length + backupData.length) * 2;
+            }
+        }
+
+        // Remove the projects
+        for (const projectName of projectsToRemove) {
+            localStorage.removeItem(`traffic_project_${projectName}`);
+            localStorage.removeItem(`traffic_project_${projectName}_backup`);
+            console.log(`Espace libéré: projet "${projectName}" supprimé`);
+        }
+
+        // Update the order
+        if (projectsToRemove.length > 0) {
+            const newOrder = order.filter(n => !projectsToRemove.includes(n));
+            localStorage.setItem('traffic_project_order', JSON.stringify(newOrder));
+        }
+
+        return freedBytes;
+    } catch (e) {
+        console.error('Error freeing localStorage:', e);
+        return 0;
+    }
+};
+
+// Check and free space if localStorage is nearly full (> 4.5MB of ~5MB limit)
+const ensureLocalStorageSpace = () => {
+    const usage = getLocalStorageUsage();
+    const threshold = 4.5 * 1024 * 1024; // 4.5 MB
+
+    if (usage > threshold) {
+        console.log(`localStorage presque plein (${(usage / 1024 / 1024).toFixed(2)} MB), libération de 1 MB...`);
+        const freed = freeUpLocalStorage(1000000);
+        console.log(`Espace libéré: ${(freed / 1024).toFixed(0)} KB`);
+        return freed > 0;
+    }
+    return true;
+};
+
 // Traffic dataset types
 export const TRAFFIC_DATASETS = ['HPM', 'HPS', 'HC', 'Estimation', 'Projection'];
 
@@ -1339,6 +1413,17 @@ export const useTrafficLight = () => {
         ));
     }, [activePFId]);
 
+    // Reorder PF tabs (drag & drop)
+    const reorderPF = useCallback((fromIndex, toIndex) => {
+        if (fromIndex === toIndex) return;
+        setPfTabs(prev => {
+            const newTabs = [...prev];
+            const [movedTab] = newTabs.splice(fromIndex, 1);
+            newTabs.splice(toIndex, 0, movedTab);
+            return newTabs;
+        });
+    }, []);
+
     // Simulation functions
     const toggleSimulationAction = useCallback((actionId) => {
         setSimulationSelectedActions(prev => {
@@ -1405,6 +1490,9 @@ export const useTrafficLight = () => {
             alert("Erreur: Impossible de sauvegarder - les données semblent corrompues");
             return false;
         }
+
+        // Vérifier et libérer de l'espace si localStorage est presque plein
+        ensureLocalStorageSpace();
 
         try {
             // Create backup of existing save before overwriting
@@ -2188,6 +2276,7 @@ export const useTrafficLight = () => {
         renamePF,
         setPFColor,
         updatePFRemarques,
+        reorderPF,
         currentRemarques: pfTabs.find(pf => pf.id === activePFId)?.remarques || '',
         // Undo/Redo
         undo,

@@ -822,6 +822,19 @@
     font-weight: bold;
 }
 
+.pf-tab.dragging {
+    opacity: 0.5;
+    border: 2px dashed #007acc;
+}
+
+.pf-tab[draggable="true"] {
+    cursor: grab;
+}
+
+.pf-tab[draggable="true"]:active {
+    cursor: grabbing;
+}
+
 .pf-tab-name {
     white-space: nowrap;
 }
