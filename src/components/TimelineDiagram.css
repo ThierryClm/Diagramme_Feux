@@ -95,7 +95,15 @@
     box-sizing: border-box;
 }
 
+.label-name-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
 .label-name {
+    position: relative;
     width: 160px;
     flex-shrink: 0;
     font-size: 0.75em;
@@ -104,8 +112,34 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     box-sizing: border-box;
-    padding: 2px 4px;
+    padding: 2px 14px 2px 4px;
     border-radius: 3px;
+}
+
+.phase-flag-indicator {
+    position: absolute;
+    right: 1px;
+    top: 0;
+    color: #fff;
+    font-size: 0.85em;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.phase-flag-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #eee;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .input-time-sm {

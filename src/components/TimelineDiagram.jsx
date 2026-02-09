@@ -16,6 +16,35 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             setHoveredGroupIdProp(id);
         }
     }, [setHoveredGroupIdProp]);
+    // Phase flag tooltip (aiguillage/escamotage)
+    const [phaseFlagTooltipId, setPhaseFlagTooltipId] = useState(null);
+    const phaseFlagTimerRef = useRef(null);
+
+    const handleNameMouseEnter = useCallback((groupId) => {
+        phaseFlagTimerRef.current = setTimeout(() => {
+            setPhaseFlagTooltipId(groupId);
+        }, 5000);
+    }, []);
+
+    const handleNameMouseLeave = useCallback(() => {
+        if (phaseFlagTimerRef.current) {
+            clearTimeout(phaseFlagTimerRef.current);
+            phaseFlagTimerRef.current = null;
+        }
+        setPhaseFlagTooltipId(null);
+    }, []);
+
+    // Handle Alt+A / Alt+E to toggle phaseFlag
+    const handlePhaseFlagKeyDown = useCallback((e, groupId, currentFlag) => {
+        if (e.altKey && (e.key === 'a' || e.key === 'A')) {
+            e.preventDefault();
+            updateGroupParams(groupId, { phaseFlag: currentFlag === 'a' ? '' : 'a' });
+        } else if (e.altKey && (e.key === 'e' || e.key === 'E')) {
+            e.preventDefault();
+            updateGroupParams(groupId, { phaseFlag: currentFlag === 'e' ? '' : 'e' });
+        }
+    }, [updateGroupParams]);
+
     // dragState = { groupId, type: 'start' | 'end', initialMouseX, initialValue }
     // OR dragState = { actionId, field: 'deb' | 'fin', initialMouseX, initialValue }
     // Use simulated cycle length when in simulation mode
@@ -764,20 +793,42 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         const hasValue = start > 0 || end > 0;
 
                         return (
-                            <div key={g.id} className="row-label-container" onClick={() => onGroupClick(g)}>
+                            <div
+                                key={g.id}
+                                className="row-label-container"
+                                tabIndex={0}
+                                onClick={() => onGroupClick(g)}
+                                onKeyDown={(e) => handlePhaseFlagKeyDown(e, g.id, g.phaseFlag)}
+                            >
                                 <span className="label-id">{g.id}</span>
-                                <span
-                                    className="label-name"
-                                    title={g.name}
-                                    style={{
-                                        backgroundColor:
-                                            (g.type === 'VL' || g.type === 'V') ? 'rgba(100, 180, 255, 0.25)' :
-                                            (g.type === 'TC' || g.type === 'B') ? 'rgba(148, 0, 211, 0.1)' :
-                                            (g.type === 'Piéton' || g.type === 'P') ? 'rgba(0, 255, 0, 0.1)' :
-                                            (g.type === 'Cycliste' || g.type === 'CY') ? 'rgba(255, 255, 0, 0.1)' :
-                                            'transparent'
-                                    }}
-                                >{g.name || '-'}</span>
+                                <div
+                                    className="label-name-wrapper"
+                                    onMouseEnter={() => handleNameMouseEnter(g.id)}
+                                    onMouseLeave={handleNameMouseLeave}
+                                >
+                                    <span
+                                        className="label-name"
+                                        title={g.name}
+                                        style={{
+                                            backgroundColor:
+                                                (g.type === 'VL' || g.type === 'V') ? 'rgba(100, 180, 255, 0.25)' :
+                                                (g.type === 'TC' || g.type === 'B') ? 'rgba(148, 0, 211, 0.1)' :
+                                                (g.type === 'Piéton' || g.type === 'P') ? 'rgba(0, 255, 0, 0.1)' :
+                                                (g.type === 'Cycliste' || g.type === 'CY') ? 'rgba(255, 255, 0, 0.1)' :
+                                                'transparent'
+                                        }}
+                                    >
+                                        {g.name || '-'}
+                                        {g.phaseFlag && (
+                                            <span className="phase-flag-indicator">{g.phaseFlag}</span>
+                                        )}
+                                    </span>
+                                    {phaseFlagTooltipId === g.id && (
+                                        <div className="phase-flag-tooltip">
+                                            Alt+A : aiguillage, Alt+E : escamotage
+                                        </div>
+                                    )}
+                                </div>
                                 {(g.type === 'V' || g.type === 'B') ? (
                                     <input
                                         type="text"
@@ -885,7 +936,11 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     return (sourceGfId === c.from && targetGfId === c.to) ||
                                            (sourceGfId === c.to && targetGfId === c.from);
                                 });
-                                return !isInhibitedByEscamotage;
+                                if (isInhibitedByEscamotage) return false;
+                                // Check if first group has a phaseFlag (aiguillage/escamotage)
+                                const fromGrp = groups.find(g => g.id === c.from);
+                                if (fromGrp?.phaseFlag) return false;
+                                return true;
                             });
                             const orangeDuration = group.durations.orange || 3;
 
@@ -3388,6 +3443,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         // If hoveredConflict is active but doesn't match this pair, hide the arrow
                                         if (hoveredConflict && !showForConflict) return null;
 
+                                        // Hide arrows when first group has phaseFlag (aiguillage/escamotage)
+                                        const fromGrp = groups.find(g => g.id === fromId);
+                                        if (fromGrp?.phaseFlag) return null;
+
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
 
@@ -3475,6 +3534,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
                                         // If hoveredConflict is active but doesn't match this pair, hide the arrow
                                         if (hoveredConflict && !showForConflict) return null;
+
+                                        // Hide arrows when first group has phaseFlag (aiguillage/escamotage)
+                                        const fromGrp = groups.find(g => g.id === fromId);
+                                        if (fromGrp?.phaseFlag) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
@@ -3564,6 +3627,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         // If hoveredConflict is active but doesn't match this pair, hide the arrow
                                         if (hoveredConflict && !showForConflict) return null;
 
+                                        // Hide arrows when first group has phaseFlag (aiguillage/escamotage)
+                                        const fromGrp = groups.find(g => g.id === fromId);
+                                        if (fromGrp?.phaseFlag) return null;
+
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
 
@@ -3651,6 +3718,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
                                         // If hoveredConflict is active but doesn't match this pair, hide the arrow
                                         if (hoveredConflict && !showForConflict) return null;
+
+                                        // Hide arrows when first group has phaseFlag (aiguillage/escamotage)
+                                        const fromGrp = groups.find(g => g.id === fromId);
+                                        if (fromGrp?.phaseFlag) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
@@ -3742,6 +3813,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
                                         // If hoveredConflict is active but doesn't match this pair, hide the arrow
                                         if (hoveredConflict && !showForConflict) return null;
+
+                                        // Hide arrows when first group has phaseFlag (aiguillage/escamotage)
+                                        const fromGrp = groups.find(g => g.id === fromId);
+                                        if (fromGrp?.phaseFlag) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;

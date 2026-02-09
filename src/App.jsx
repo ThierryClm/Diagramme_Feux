@@ -124,6 +124,21 @@ function App() {
         });
     }, [conflicts, simulationEnabled, simulationSelectedActions, actionData]);
 
+    // Further filter: separate conflicts involving groups with phaseFlag (aiguillage/escamotage)
+    const activeConflicts = useMemo(() => {
+        return filteredConflicts.filter(c => {
+            const fromGroup = groups.find(g => g.id === c.from);
+            const toGroup = groups.find(g => g.id === c.to);
+            return !fromGroup?.phaseFlag;
+        });
+    }, [filteredConflicts, groups]);
+
+    // Check if a conflict's first group has phaseFlag (for grayed display)
+    const isConflictGrayed = useCallback((c) => {
+        const fromGroup = groups.find(g => g.id === c.from);
+        return !!fromGroup?.phaseFlag;
+    }, [groups]);
+
     // Authentification
     const {
         currentUser,
@@ -2225,9 +2240,9 @@ function App() {
                 </div>
 
                 <div className="status-bar">
-                    {filteredConflicts.length > 0 ? (
+                    {activeConflicts.length > 0 ? (
                         <div className="status-error">
-                            {filteredConflicts.length} CONFLITS !
+                            {activeConflicts.length} CONFLITS !
                         </div>
                     ) : (
                         <div
@@ -2431,20 +2446,27 @@ function App() {
                                 <div className="conflict-list">
                                     <h4>Conflits:</h4>
                                     <ul>
-                                        {filteredConflicts.map((c, i) => (
-                                            <li
-                                                key={i}
-                                                onMouseEnter={() => setHoveredConflict({ from: c.from, to: c.to })}
-                                                onMouseLeave={() => setHoveredConflict(null)}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                {c.type === 'intergreen' ? (
-                                                    <>GF{c.from} → GF{c.to} : Dégagement insuffisant ({c.actual.toFixed(1)}s / {c.required}s requis)</>
-                                                ) : (
-                                                    <>GF{c.from} ↔ GF{c.to} : {c.message}</>
-                                                )}
-                                            </li>
-                                        ))}
+                                        {filteredConflicts.map((c, i) => {
+                                            const grayed = isConflictGrayed(c);
+                                            const fromGroup = groups.find(g => g.id === c.from);
+                                            const toGroup = groups.find(g => g.id === c.to);
+                                            const flagLabel = fromGroup?.phaseFlag;
+                                            return (
+                                                <li
+                                                    key={i}
+                                                    onMouseEnter={() => setHoveredConflict({ from: c.from, to: c.to })}
+                                                    onMouseLeave={() => setHoveredConflict(null)}
+                                                    style={{ cursor: 'pointer', opacity: grayed ? 0.4 : 1 }}
+                                                >
+                                                    {c.type === 'intergreen' ? (
+                                                        <>GF{c.from} → GF{c.to} : Dégagement insuffisant ({c.actual.toFixed(1)}s / {c.required}s requis)</>
+                                                    ) : (
+                                                        <>GF{c.from} ↔ GF{c.to} : {c.message}</>
+                                                    )}
+                                                    {grayed && <span style={{ marginLeft: 6, fontSize: '0.85em', color: '#888' }}>({flagLabel === 'a' ? 'aiguillage' : 'escamotage'})</span>}
+                                                </li>
+                                            );
+                                        })}
                                     </ul>
                                 </div>
                             )}
@@ -2982,6 +3004,7 @@ function App() {
                             <li><strong>Déb (Début de vert) :</strong> Position de départ du vert dans le cycle (en secondes depuis le début du cycle)</li>
                             <li><strong>Fin (Fin de vert) :</strong> Position de fin du vert dans le cycle (en secondes depuis le début du cycle)</li>
                             <li><strong>V (Vert) :</strong> Durée du feu vert, calculée automatiquement comme la différence entre Fin et Déb</li>
+                            <li><strong>Indicateur aiguillage/escamotage :</strong> Cliquez sur un nom de groupe puis utilisez <em>Alt+A</em> (aiguillage) ou <em>Alt+E</em> (escamotage) pour marquer le groupe. Un petit "a" ou "e" apparaît à côté du nom. Les conflits impliquant ce groupe sont alors grisés et non comptabilisés, ce qui peut permettre de valider le plan de feux.</li>
                         </ul>
                     </section>
 
