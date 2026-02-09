@@ -2046,10 +2046,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 const barBottomY = rowTopY + ROW_HEIGHT - 7; // Exact bottom of bar
                                 targetY = barBottomY - rectHeight + 1 + rectHeight; // Arrow target Y points to bottom of rectangle
                             } else {
-                                // No target defined - show rectangle on source group based on its green phase
-                                rectX = sourceStart * pixelsPerSecond;
-                                rectWidth = (sourceEnd - sourceStart) * pixelsPerSecond;
-                                if (rectWidth < 0) rectWidth += cycleLength * pixelsPerSecond; // Handle wrap-around
+                                // No target defined - show rectangle on source group
+                                // If deb/fin are specified, use them (e.g. for seconde lucarne); otherwise use green phase
+                                const actionDeb = action.deb !== '' ? parseInt(action.deb) : null;
+                                const actionFin = action.fin !== '' ? parseInt(action.fin) : null;
+                                if (actionDeb !== null && actionFin !== null && !isNaN(actionDeb) && !isNaN(actionFin)) {
+                                    rectX = actionDeb * pixelsPerSecond;
+                                    rectWidth = (actionFin > actionDeb ? actionFin - actionDeb : (cycleLength - actionDeb + actionFin)) * pixelsPerSecond;
+                                } else {
+                                    rectX = sourceStart * pixelsPerSecond;
+                                    rectWidth = (sourceEnd - sourceStart) * pixelsPerSecond;
+                                    if (rectWidth < 0) rectWidth += cycleLength * pixelsPerSecond; // Handle wrap-around
+                                }
                             }
 
                             // Calculate exact bar bottom position and align rectangle there

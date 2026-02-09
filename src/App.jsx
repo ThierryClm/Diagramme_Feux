@@ -3004,7 +3004,7 @@ function App() {
                             <li><strong>Déb (Début de vert) :</strong> Position de départ du vert dans le cycle (en secondes depuis le début du cycle)</li>
                             <li><strong>Fin (Fin de vert) :</strong> Position de fin du vert dans le cycle (en secondes depuis le début du cycle)</li>
                             <li><strong>V (Vert) :</strong> Durée du feu vert, calculée automatiquement comme la différence entre Fin et Déb</li>
-                            <li><strong>Indicateur aiguillage/escamotage :</strong> Cliquez sur un nom de groupe puis utilisez <em>Alt+A</em> (aiguillage) ou <em>Alt+E</em> (escamotage) pour marquer le groupe. Un petit "a" ou "e" apparaît à côté du nom. Les conflits impliquant ce groupe sont alors grisés et non comptabilisés, ce qui peut permettre de valider le plan de feux.</li>
+                            <li><strong>Indicateur aiguillage/escamotage :</strong> Cliquez sur un nom de groupe puis utilisez <em>Alt+A</em> (aiguillage) ou <em>Alt+E</em> (escamotage) pour marquer le groupe. Un petit "a" ou "e" apparaît à côté du nom. Les conflits où ce groupe est en première position (GFx dans "GFx ↔ GFy") sont alors grisés et non comptabilisés, ce qui peut permettre de valider le plan de feux.</li>
                         </ul>
                     </section>
 
@@ -3016,7 +3016,7 @@ function App() {
                             <li><strong>Contrôle de flot :</strong> Contrôle du flux de trafic. Affiche une barre intermittente jaune/gris de DEB à (DEB + Vert minimum), puis orange pour la durée de jaune, puis rouge jusqu'à FIN.</li>
                             <li><strong>Seconde lucarne :</strong> Deuxième phase de vert (vert foncé + orange). Crée une barre supplémentaire sur la ligne du groupe.</li>
                             <li><strong>Escamotage de phase :</strong> Phase pouvant être supprimée (rectangle gris transparent sur toute la hauteur).</li>
-                            <li><strong>Escamotage :</strong> Escamotage lié à un groupe spécifique. Définissez GF (source) et Action GF 1 (cible) pour afficher les flèches de dépendance.</li>
+                            <li><strong>Escamotage :</strong> Escamotage lié à un groupe spécifique. Définissez GF (source) et Action GF 1 (cible) pour afficher les flèches de dépendance. Si les valeurs Déb et Fin sont renseignées, le rectangle hachuré est positionné sur cette plage au lieu de la phase verte par défaut du groupe, ce qui permet de cibler une seconde lucarne.</li>
                             <li><strong>Ouverture anticipée :</strong> Anticipation du passage au vert (barre hachurée verte).</li>
                             <li><strong>Fermeture anticipée :</strong> Anticipation du passage au rouge (accolade orange sous la barre).</li>
                             <li><strong>Signal aide conduite :</strong> Signal d'information conducteur (orange clignotant + bleu fixe).</li>

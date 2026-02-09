@@ -40,12 +40,21 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
     );
 
     // Process unselected Escamotage first - hide the source group (GF)
+    // If deb/fin are specified, only hide the [deb, fin] range (greenCut) instead of the entire group
     unselectedEscamotageActions.forEach(action => {
         const gfId = parseInt(action.gf);
         const groupIndex = simulatedGroups.findIndex(g => g.id === gfId);
         if (groupIndex !== -1) {
-            simulatedGroups[groupIndex].isEscamoted = true;
-            simulatedGroups[groupIndex].simulatedGreen = 0;
+            const deb = action.deb !== '' ? parseInt(action.deb) : null;
+            const fin = action.fin !== '' ? parseInt(action.fin) : null;
+            if (deb !== null && fin !== null && !isNaN(deb) && !isNaN(fin)) {
+                // deb/fin définis → escamotage partiel sur la plage [deb, fin]
+                simulatedGroups[groupIndex].greenCuts.push({ deb, fin });
+            } else {
+                // Pas de deb/fin → masquer le groupe entièrement
+                simulatedGroups[groupIndex].isEscamoted = true;
+                simulatedGroups[groupIndex].simulatedGreen = 0;
+            }
         }
     });
 
