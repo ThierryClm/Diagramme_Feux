@@ -3185,7 +3185,7 @@ function App() {
                         <p>L'onglet Trafic permet de saisir les données de trafic par groupe :</p>
                         <ul>
                             <li><strong>Coef :</strong> Coefficient de voie correspondant aux courants de circulation du groupe de feu (partagé entre tous les jeux de données)</li>
-                            <li><strong>Trafic :</strong> Volume de trafic (véh/h) - spécifique à chaque jeu de données</li>
+                            <li><strong>Trafic :</strong> Volume de trafic (véh/h) - spécifique à chaque jeu de données. Appuyez sur la touche <em>c</em> pour indiquer un trafic coordonné : un petit "c" apparaît à côté de la valeur et les colonnes Retard et File d'attente sont mises à 0. Appuyez à nouveau sur <em>c</em> pour retirer la coordination.</li>
                             <li><strong>V.Utile :</strong> Durée de vert nécessaire pour passer le trafic. Formule = Trafic / (1800 × Coef / Cycle)</li>
                             <li><strong>Cap.U :</strong> Capacité utilisée pour passer le trafic affecté au groupe de feu. Formule = (V.Utile / Vert total) × 100%</li>
                             <li><strong>Retard :</strong> Temps d'attente théorique moyen en pied de feu hors saturation. Formule = (Cycle - Vert total)² / (2 × Cycle × (1 - Trafic / (1800 × Coef))). <em>Si une action "Début de bande passante" cible ce groupe (Action GF), alors Retard = max(0, Début de vert - Fin de l'action).</em></li>

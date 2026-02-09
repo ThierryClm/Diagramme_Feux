@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import './TrafficTable.css';
 
 const TrafficTable = ({
@@ -19,6 +19,22 @@ const TrafficTable = ({
 }) => {
     const [showPasteDropdown, setShowPasteDropdown] = useState(false);
     const [showAllGroups, setShowAllGroups] = useState(false);
+    const [tooltipGroupId, setTooltipGroupId] = useState(null);
+    const tooltipTimerRef = useRef(null);
+
+    const handleTrafficMouseEnter = useCallback((groupId) => {
+        tooltipTimerRef.current = setTimeout(() => {
+            setTooltipGroupId(groupId);
+        }, 5000);
+    }, []);
+
+    const handleTrafficMouseLeave = useCallback(() => {
+        if (tooltipTimerRef.current) {
+            clearTimeout(tooltipTimerRef.current);
+            tooltipTimerRef.current = null;
+        }
+        setTooltipGroupId(null);
+    }, []);
 
     // Determine which groups are inhibited by selected simulation actions
     // (Escamotage de phase, Fermeture anticipée, Adaptatif vertical)
@@ -40,9 +56,44 @@ const TrafficTable = ({
         return inhibited;
     }, [actionData, simulationSelectedActions]);
 
+    // Parse trafficVol: extract numeric value (ignoring trailing 'c')
+    const parseTrafficVol = (val) => {
+        if (!val) return 0;
+        const str = String(val).replace(/c$/i, '');
+        return parseInt(str) || 0;
+    };
+
+    // Check if trafficVol is coordinated (ends with 'c')
+    const isCoordinated = (val) => {
+        return String(val || '').endsWith('c');
+    };
+
     // Update traffic volume (per dataset)
     const handleTrafficChange = (id, value) => {
-        updateTrafficData(id, 'trafficVol', value);
+        // Allow only digits and optional trailing 'c'
+        const cleaned = String(value).replace(/[^0-9c]/gi, '');
+        // Keep only one 'c' at the end
+        const numPart = cleaned.replace(/c/gi, '');
+        const hasC = /c/i.test(cleaned);
+        const finalValue = numPart ? (hasC ? numPart + 'c' : (parseInt(numPart) || 0)) : (hasC ? 'c' : 0);
+        updateTrafficData(id, 'trafficVol', finalValue);
+    };
+
+    // Handle keydown on traffic input: toggle 'c' suffix
+    const handleTrafficKeyDown = (e, id, currentVal) => {
+        if (e.key === 'c' || e.key === 'C') {
+            e.preventDefault();
+            const str = String(currentVal || '');
+            if (str.endsWith('c')) {
+                // Remove 'c'
+                const numPart = str.replace(/c$/, '');
+                updateTrafficData(id, 'trafficVol', parseInt(numPart) || 0);
+            } else {
+                // Add 'c'
+                const numPart = str.replace(/[^0-9]/g, '');
+                updateTrafficData(id, 'trafficVol', numPart ? numPart + 'c' : 'c');
+            }
+        }
     };
 
     // Filter groups based on showAllGroups checkbox
@@ -269,7 +320,8 @@ const TrafficTable = ({
                                 {/* Coef Voie (shared across all datasets) */}
                                 {(() => {
                                     const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
-                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const numericVol = parseTrafficVol(trafficData.trafficVol);
+                                    const vUtile = isInhibited ? null : calculateVUtile(numericVol, g.laneCoef);
                                     const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
                                     return (
                                         <td
@@ -289,26 +341,48 @@ const TrafficTable = ({
                                 {/* Trafic (per dataset) */}
                                 {(() => {
                                     const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
-                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const numericVol = parseTrafficVol(trafficData.trafficVol);
+                                    const vUtile = isInhibited ? null : calculateVUtile(numericVol, g.laneCoef);
                                     const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
                                     return (
                                         <td
                                             onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
                                             onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
                                         >
-                                            <input
-                                                type="number"
-                                                className="input-trafic-num"
-                                                value={trafficData.trafficVol || ''}
-                                                onChange={(e) => handleTrafficChange(g.id, parseInt(e.target.value) || 0)}
-                                            />
+                                            <div
+                                                className="trafic-input-wrapper"
+                                                onMouseEnter={() => handleTrafficMouseEnter(g.id)}
+                                                onMouseLeave={handleTrafficMouseLeave}
+                                            >
+                                                <input
+                                                    type="text"
+                                                    className="input-trafic-num"
+                                                    value={numericVol || ''}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        const coordinated = isCoordinated(trafficData.trafficVol);
+                                                        const num = parseInt(val) || 0;
+                                                        handleTrafficChange(g.id, coordinated ? num + 'c' : num);
+                                                    }}
+                                                    onKeyDown={(e) => handleTrafficKeyDown(e, g.id, trafficData.trafficVol)}
+                                                />
+                                                {isCoordinated(trafficData.trafficVol) && (
+                                                    <span className="trafic-coordinated-c">c</span>
+                                                )}
+                                                {tooltipGroupId === g.id && (
+                                                    <div className="trafic-custom-tooltip">
+                                                        Appuyez sur 'c' pour indiquer un trafic coordonné
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
                                     );
                                 })()}
                                 {/* Vert Utile (calculé) */}
                                 {(() => {
                                     const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
-                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const numericVol = parseTrafficVol(trafficData.trafficVol);
+                                    const vUtile = isInhibited ? null : calculateVUtile(numericVol, g.laneCoef);
                                     const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
                                     return (
                                         <td
@@ -323,7 +397,8 @@ const TrafficTable = ({
                                 {/* Capacité Utilisée (calculée: V.Utile / temps vert * 100) */}
                                 {(() => {
                                     const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
-                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const numericVol = parseTrafficVol(trafficData.trafficVol);
+                                    const vUtile = isInhibited ? null : calculateVUtile(numericVol, g.laneCoef);
                                     const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
                                     return (
                                         <td
@@ -337,11 +412,14 @@ const TrafficTable = ({
                                 })()}
                                 {/* Retard (calculé) = (cycle - vert)² / (2 * cycle * (1 - trafic / (1800 * coef))) */}
                                 {/* Ou si action "Début de bande passante" avec actGf1 = groupe : max(0, début_vert - fin_action) */}
+                                {/* Si trafic coordonné (suffixe 'c'), retard = 0 */}
                                 {(() => {
                                     const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
-                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const numericVol = parseTrafficVol(trafficData.trafficVol);
+                                    const coordinated = isCoordinated(trafficData.trafficVol);
+                                    const vUtile = isInhibited ? null : calculateVUtile(numericVol, g.laneCoef);
                                     const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
-                                    const delay = isInhibited ? null : calculateDelay(totalGreen, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
+                                    const delay = isInhibited ? null : (coordinated && numericVol ? 0 : calculateDelay(totalGreen, numericVol, g.laneCoef, g.id, g.offset));
                                     return (
                                         <td
                                             className="col-calculated"
@@ -354,11 +432,14 @@ const TrafficTable = ({
                                 })()}
                                 {/* File d'attente (calculé) = (Trafic * (cycle - vert) / (3600 / Coef)) * 6 */}
                                 {/* Ou si action "Début de bande passante" avec actGf1 = groupe : max(0, début_vert - fin_action) */}
+                                {/* Si trafic coordonné (suffixe 'c'), file d'attente = 0 */}
                                 {(() => {
                                     const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
-                                    const vUtile = isInhibited ? null : calculateVUtile(trafficData.trafficVol, g.laneCoef);
+                                    const numericVol = parseTrafficVol(trafficData.trafficVol);
+                                    const coordinated = isCoordinated(trafficData.trafficVol);
+                                    const vUtile = isInhibited ? null : calculateVUtile(numericVol, g.laneCoef);
                                     const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(totalGreen, vUtile);
-                                    const queue = isInhibited ? null : calculateQueue(totalGreen, trafficData.trafficVol, g.laneCoef, g.id, g.offset);
+                                    const queue = isInhibited ? null : (coordinated && numericVol ? 0 : calculateQueue(totalGreen, numericVol, g.laneCoef, g.id, g.offset));
                                     return (
                                         <td
                                             className="col-calculated"

@@ -162,6 +162,35 @@
     text-align: center !important;
 }
 
+.trafic-input-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.trafic-coordinated-c {
+    color: #fff;
+    font-size: 0.8em;
+    pointer-events: none;
+    margin-left: 0;
+}
+
+.trafic-custom-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #eee;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
 .traffic-table .col-calculated {
     text-align: center;
     color: #8cf;
