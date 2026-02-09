@@ -3451,10 +3451,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         // If hoveredConflict is active but doesn't match this pair, hide the arrow
                                         if (hoveredConflict && !showForConflict) return null;
 
-                                        // Hide arrows when first group has phaseFlag (aiguillage/escamotage)
-                                        const fromGrp = groups.find(g => g.id === fromId);
-                                        if (fromGrp?.phaseFlag) return null;
-
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
 
@@ -3542,10 +3538,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
                                         // If hoveredConflict is active but doesn't match this pair, hide the arrow
                                         if (hoveredConflict && !showForConflict) return null;
-
-                                        // Hide arrows when first group has phaseFlag (aiguillage/escamotage)
-                                        const fromGrp = groups.find(g => g.id === fromId);
-                                        if (fromGrp?.phaseFlag) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
@@ -3635,10 +3627,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         // If hoveredConflict is active but doesn't match this pair, hide the arrow
                                         if (hoveredConflict && !showForConflict) return null;
 
-                                        // Hide arrows when first group has phaseFlag (aiguillage/escamotage)
-                                        const fromGrp = groups.find(g => g.id === fromId);
-                                        if (fromGrp?.phaseFlag) return null;
-
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
 
@@ -3726,10 +3714,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
                                         // If hoveredConflict is active but doesn't match this pair, hide the arrow
                                         if (hoveredConflict && !showForConflict) return null;
-
-                                        // Hide arrows when first group has phaseFlag (aiguillage/escamotage)
-                                        const fromGrp = groups.find(g => g.id === fromId);
-                                        if (fromGrp?.phaseFlag) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
@@ -3821,10 +3805,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
                                         // If hoveredConflict is active but doesn't match this pair, hide the arrow
                                         if (hoveredConflict && !showForConflict) return null;
-
-                                        // Hide arrows when first group has phaseFlag (aiguillage/escamotage)
-                                        const fromGrp = groups.find(g => g.id === fromId);
-                                        if (fromGrp?.phaseFlag) return null;
 
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
