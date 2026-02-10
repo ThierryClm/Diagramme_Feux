@@ -92,6 +92,8 @@ function App() {
         copyTrafficDataset,
         dependencyGap,
         setDependencyGap,
+        biCarrefourSeparator,
+        setBiCarrefourSeparator,
         externalLinks,
         setExternalLinks
     } = useTrafficLight();
@@ -529,6 +531,10 @@ function App() {
     const [printPreviewModal, setPrintPreviewModal] = useState(false);
     const [printType, setPrintType] = useState(null); // 'matrix', 'form', 'diagram'
     const [currentProjectPath, setCurrentProjectPath] = useState(''); // Chemin du projet courant
+
+    // Bi-carrefour modal states
+    const [biCarrefourModal, setBiCarrefourModal] = useState(false);
+    const [biCarrefourGroupId, setBiCarrefourGroupId] = useState('');
 
     // Move group modal states
     const [moveGroupModal, setMoveGroupModal] = useState(false);
@@ -1309,6 +1315,17 @@ function App() {
                 } else {
                     alert('Il faut au moins 2 groupes pour effectuer un déplacement.');
                 }
+                break;
+            case 'biCarrefour':
+                if (groups.length > 1) {
+                    setBiCarrefourGroupId(groups[0]?.id?.toString() || '');
+                    setBiCarrefourModal(true);
+                } else {
+                    alert('Il faut au moins 2 groupes pour intégrer un bi-carrefour.');
+                }
+                break;
+            case 'uniCarrefour':
+                setBiCarrefourSeparator(null);
                 break;
             case 'slide':
                 setSlideValue(0);
@@ -2145,6 +2162,7 @@ function App() {
                     currentUser={currentUser}
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
+                    biCarrefourSeparator={biCarrefourSeparator}
                 />
             <header className="app-header">
                 <div className="header-inputs">
@@ -2406,6 +2424,7 @@ function App() {
                                             actionData={actionData}
                                             activePFId={activePFId}
                                             pfTabs={pfTabs}
+                                            biCarrefourSeparator={biCarrefourSeparator}
                                         />
                                     </div>
                                 </>
@@ -2420,6 +2439,7 @@ function App() {
                                     actionData={actionData}
                                     activePFId={activePFId}
                                     pfTabs={pfTabs}
+                                    biCarrefourSeparator={biCarrefourSeparator}
                                 />
                             )}
 
@@ -2660,6 +2680,7 @@ function App() {
                                 planName={simulationEnabled ? (pfTabs.find(pf => pf.id === activePFId)?.name || '') : ''}
                                 remarques={currentRemarques}
                                 updateRemarques={updatePFRemarques}
+                                biCarrefourSeparator={biCarrefourSeparator}
                             />
                         </div>
                     )}
@@ -3164,6 +3185,7 @@ function App() {
                             <li><strong>Insérer :</strong> Insère du temps dans le cycle à une position donnée</li>
                             <li><strong>Réduire :</strong> Réduit la plage de temps dans le cycle à une position donnée</li>
                             <li><strong>Déplacer un groupe :</strong> Déplace un groupe vers le haut ou le bas. <em>Cette action synchronise automatiquement les données (diagramme, matrice, actions) dans tous les plans de feux.</em></li>
+                            <li><strong>Intégrer un bi-Carrefour :</strong> Permet de séparer visuellement le carrefour en deux zones en désignant un groupe de feu de séparation. Une ligne blanche horizontale et verticale apparaît dans la matrice des temps interverts (onglet Configuration et onglet Matrice), ainsi qu'une ligne blanche de séparation dans le diagramme du plan de feu. Le menu bascule ensuite en « Rétablir en uni-carrefour » pour supprimer la séparation. Cette option est sauvegardée avec le projet.</li>
                             <li><strong>Options :</strong> Affiche la légende visuelle des actions</li>
                         </ul>
                     </section>
@@ -3730,6 +3752,43 @@ function App() {
                         }}
                     >
                         Déplacer
+                    </button>
+                </div>
+            </Modal>
+
+            {/* Modal Bi-Carrefour */}
+            <Modal isOpen={biCarrefourModal} onClose={() => setBiCarrefourModal(false)} title="Intégrer un bi-Carrefour">
+                <div className="form-row">
+                    <label>
+                        Caler l'intégration après le groupe de feu :
+                        <select
+                            value={biCarrefourGroupId}
+                            onChange={(e) => setBiCarrefourGroupId(e.target.value)}
+                            style={{ marginLeft: '10px', padding: '5px' }}
+                        >
+                            {groups.slice(0, -1).map((g) => (
+                                <option key={g.id} value={g.id}>
+                                    {g.name || `Groupe ${g.id}`}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
+                <p style={{ color: '#888', fontSize: '0.85em', marginTop: '15px' }}>
+                    Une ligne blanche de séparation sera affichée dans la matrice et le diagramme après le groupe choisi.
+                </p>
+                <div className="modal-actions">
+                    <button className="modal-btn modal-btn-secondary" onClick={() => setBiCarrefourModal(false)}>
+                        Annuler
+                    </button>
+                    <button
+                        className="modal-btn modal-btn-primary"
+                        onClick={() => {
+                            setBiCarrefourSeparator(parseInt(biCarrefourGroupId));
+                            setBiCarrefourModal(false);
+                        }}
+                    >
+                        OK
                     </button>
                 </div>
             </Modal>

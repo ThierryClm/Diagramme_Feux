@@ -108,6 +108,7 @@ export const useTrafficLight = () => {
     const [intersectionName, setIntersectionName] = useState("Nouveau Carrefour");
     const [cycleLength, setCycleLength] = useState(DEFAULT_CYCLE);
     const [dependencyGap, setDependencyGap] = useState(20);
+    const [biCarrefourSeparator, setBiCarrefourSeparator] = useState(null);
     const [externalLinks, setExternalLinks] = useState([]);
     const [globalTime, setGlobalTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -786,6 +787,7 @@ export const useTrafficLight = () => {
 
             // Load dependency gap (default to 20 if not present)
             setDependencyGap(data.dependencyGap !== undefined ? data.dependencyGap : 20);
+            setBiCarrefourSeparator(data.biCarrefourSeparator !== undefined ? data.biCarrefourSeparator : null);
 
             // Reset simulation state when loading a project
             setSimulationEnabled(false);
@@ -981,6 +983,9 @@ export const useTrafficLight = () => {
                 setDependencyGap(state.dependencyGap);
             }
 
+            // Load bi-carrefour separator (always reset to null if not present)
+            setBiCarrefourSeparator(state.biCarrefourSeparator !== undefined ? state.biCarrefourSeparator : null);
+
             // Load external links
             if (state.externalLinks && Array.isArray(state.externalLinks)) {
                 setExternalLinks(state.externalLinks);
@@ -1028,6 +1033,9 @@ export const useTrafficLight = () => {
         // Reset dependency gap
         setDependencyGap(20);
 
+        // Reset bi-carrefour
+        setBiCarrefourSeparator(null);
+
         // Reset external links
         setExternalLinks([]);
 
@@ -1055,6 +1063,7 @@ export const useTrafficLight = () => {
         trafficDatasets,
         activeTrafficDataset,
         dependencyGap,
+        biCarrefourSeparator,
         externalLinks
         // Note: simulation state is NOT included (per user request)
     });
@@ -1480,6 +1489,7 @@ export const useTrafficLight = () => {
             trafficDatasets,
             activeTrafficDataset,
             dependencyGap,
+            biCarrefourSeparator,
             externalLinks
             // Note: simulation state is NOT saved with project (per user request)
         };
@@ -1548,7 +1558,7 @@ export const useTrafficLight = () => {
             }
             return false;
         }
-    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap, externalLinks]);
+    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, externalLinks]);
 
     // Save pfTabs to localStorage
     useEffect(() => {
@@ -1765,6 +1775,7 @@ export const useTrafficLight = () => {
                     trafficDatasets,
                     activeTrafficDataset,
                     dependencyGap,
+                    biCarrefourSeparator,
                     savedAt: new Date().toISOString()
                 };
                 const jsonData = JSON.stringify(projectData);
@@ -1784,7 +1795,7 @@ export const useTrafficLight = () => {
                 clearTimeout(autoSaveTimerRef.current);
             }
         };
-    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap, intersectionName]);
+    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, intersectionName]);
 
     // Update traffic data for a specific group in the active dataset
     const updateTrafficData = useCallback((groupId, field, value) => {
@@ -2235,6 +2246,8 @@ export const useTrafficLight = () => {
         setCycleLength: setCycleLengthWithHistory,
         dependencyGap,
         setDependencyGap,
+        biCarrefourSeparator,
+        setBiCarrefourSeparator,
         externalLinks,
         setExternalLinks,
         conflictMatrix,

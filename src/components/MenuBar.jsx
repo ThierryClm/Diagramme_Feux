@@ -12,7 +12,8 @@ const MenuBar = ({
     recentSaveDirs = [],
     currentUser = null,
     hasPermission = () => true,
-    onManageUsers
+    onManageUsers,
+    biCarrefourSeparator = null
 }) => {
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -178,6 +179,9 @@ const MenuBar = ({
                 { label: 'Dupliquer le diagramme', action: 'duplicate', disabled: !hasPermission('canDuplicate') },
                 { label: 'Supprimer le diagramme actif', action: 'deleteActiveDiagram', disabled: !hasPermission('canModifyDiagram') },
                 { label: 'Déplacer un groupe de feu...', action: 'moveGroup', disabled: !hasPermission('canModifyDiagram') },
+                biCarrefourSeparator
+                    ? { label: 'Rétablir en uni-carrefour', action: 'uniCarrefour', disabled: !hasPermission('canModifyDiagram') }
+                    : { label: 'Intégrer un bi-Carrefour...', action: 'biCarrefour', disabled: !hasPermission('canModifyDiagram') },
                 { type: 'separator' },
                 { label: 'Glisser...', action: 'slide', disabled: !hasPermission('canModifyDiagram') },
                 { label: 'Inserer...', action: 'insert', disabled: !hasPermission('canModifyDiagram') },

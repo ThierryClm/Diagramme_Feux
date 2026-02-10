@@ -54,7 +54,10 @@ const MatrixInput = ({ value, onChange, className }) => {
     );
 };
 
-const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs }) => {
+const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator }) => {
+
+    // Bi-carrefour separator index
+    const separatorIdx = biCarrefourSeparator != null ? groups.findIndex(g => g.id === biCarrefourSeparator) : -1;
 
     // Get the reference matrix from PF1 for comparison
     const pf1Matrix = pfTabs?.find(pf => pf.id === 1)?.conflictMatrix || null;
@@ -365,14 +368,14 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                         <tr>
                             <th>/</th>
                             <th className="col-name-header">Nom</th>
-                            {indices.map(i => <th key={i} className="col-index-header">{i}</th>)}
+                            {indices.map(i => <th key={i} className="col-index-header" style={separatorIdx >= 0 && (i - 1) === separatorIdx ? { borderRight: '1px solid white' } : undefined}>{i}</th>)}
                         </tr>
                     </thead>
                     <tbody>
                         {conflictMatrix.map((row, fromIdx) => (
                             <tr key={fromIdx}>
-                                <td className="row-header">{fromIdx + 1}</td>
-                                <td className="row-name">
+                                <td className="row-header" style={separatorIdx >= 0 && fromIdx === separatorIdx ? { borderBottom: '1px solid white' } : undefined}>{fromIdx + 1}</td>
+                                <td className="row-name" style={separatorIdx >= 0 && fromIdx === separatorIdx ? { borderBottom: '1px solid white' } : undefined}>
                                     {groups && groups[fromIdx] ? groups[fromIdx].name : '-'}
                                 </td>
                                 {row.map((val, toIdx) => {
@@ -396,8 +399,12 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                                         inputClass += ' matrix-compare-lower';
                                     }
 
+                                    const biStyle = {};
+                                    if (separatorIdx >= 0 && fromIdx === separatorIdx) biStyle.borderBottom = '1px solid white';
+                                    if (separatorIdx >= 0 && toIdx === separatorIdx) biStyle.borderRight = '1px solid white';
+
                                     return (
-                                        <td key={toIdx} className={fromIdx === toIdx ? 'diagonal-cell' : cellClass}>
+                                        <td key={toIdx} className={fromIdx === toIdx ? 'diagonal-cell' : cellClass} style={Object.keys(biStyle).length > 0 ? biStyle : undefined}>
                                             {fromIdx === toIdx ? (
                                                 <span className="diagonal">-</span>
                                             ) : (
