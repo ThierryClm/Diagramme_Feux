@@ -423,19 +423,30 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                                     />
                                 </td>
                                 <td>
-                                    <textarea
-                                        ref={(el) => {
-                                            textareaRefs.current[row.id] = el;
-                                            autoResizeTextarea(el);
-                                        }}
-                                        className="input-micro"
-                                        value={row.micro || ''}
-                                        onChange={(e) => {
-                                            updateActionRow(row.id, 'micro', e.target.value);
-                                            autoResizeTextarea(e.target);
-                                        }}
-                                        rows={1}
-                                    />
+                                    <div className="micro-highlight-container">
+                                        <div className="micro-highlight-backdrop" aria-hidden="true">
+                                            {(row.micro || '').split(/(\b\w*(?:DA|TPPh|AVert|TMAB)\w*\b|[{}\[\]()]|\b(?:et|ou)\b)/g).map((part, i) =>
+                                                /DA|TPPh|AVert|TMAB/.test(part)
+                                                    ? <span key={i} className="micro-keyword">{part}</span>
+                                                    : /^[{}\[\]()]$/.test(part) || /^(et|ou)$/.test(part)
+                                                        ? <span key={i} className="micro-bold">{part}</span>
+                                                        : part
+                                            )}
+                                        </div>
+                                        <textarea
+                                            ref={(el) => {
+                                                textareaRefs.current[row.id] = el;
+                                                autoResizeTextarea(el);
+                                            }}
+                                            className="input-micro micro-has-backdrop"
+                                            value={row.micro || ''}
+                                            onChange={(e) => {
+                                                updateActionRow(row.id, 'micro', e.target.value);
+                                                autoResizeTextarea(e.target);
+                                            }}
+                                            rows={1}
+                                        />
+                                    </div>
                                 </td>
                                 <td>
                                     <input

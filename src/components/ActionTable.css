@@ -217,6 +217,43 @@
     font-size: 1.5em;
 }
 
+.micro-highlight-container {
+    position: relative;
+    display: inline-block;
+    width: 420px !important;
+}
+
+.micro-highlight-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    padding: 1px 3px;
+    font-size: 1.5em;
+    line-height: 1.2;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: hidden;
+    color: #eee;
+    font-family: monospace;
+    border: 1px solid transparent;
+}
+
+.micro-highlight-backdrop .micro-keyword {
+    color: rgb(180, 100, 255);
+}
+
+.micro-highlight-backdrop .micro-bold {
+    font-weight: bold;
+}
+
+.input-micro.micro-has-backdrop {
+    color: transparent;
+    caret-color: #eee;
+}
+
 .input-small {
     width: 14px !important;
 }
