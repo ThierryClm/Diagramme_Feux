@@ -70,7 +70,6 @@
 .col-label.col-time {
     width: 26px;
     flex-shrink: 0;
-    color: white;
     position: relative;
     left: -10px;
 }
@@ -78,7 +77,6 @@
 .col-label.col-da {
     width: 20px;
     flex-shrink: 0;
-    color: white;
     position: relative;
     left: -10px;
 }
@@ -126,7 +124,7 @@
     right: 1px;
     top: 0;
     color: #fff;
-    font-size: 0.85em;
+    font-size: 0.70em;
     line-height: 1;
     pointer-events: none;
 }
@@ -140,7 +138,7 @@
     color: #eee;
     padding: 6px 10px;
     border-radius: 4px;
-    font-size: 0.85em;
+    font-size: 0.70em;
     white-space: nowrap;
     z-index: 100;
     pointer-events: none;
@@ -1043,7 +1041,7 @@
     color: white;
     padding: 2px 4px;
     border-radius: 3px;
-    font-size: 0.65em;
+    font-size: 0.70em;
     box-sizing: border-box;
     height: 20px;
     line-height: 16px;
@@ -1092,7 +1090,7 @@
     border: 1px solid #444;
     color: white;
     padding: 8px;
-    font-size: 0.75em;
+    font-size: 0.70em;
     font-family: inherit;
     box-sizing: border-box;
     overflow: hidden;

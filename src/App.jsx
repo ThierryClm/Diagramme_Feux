@@ -2554,7 +2554,7 @@ function App() {
                                         renamePF(pf.id, newName.trim());
                                     }
                                 }}
-                                title="Glissez pour réordonner, double-cliquez pour renommer"
+                                data-pf-tooltip="Glissez pour réordonner, double-cliquez pour renommer"
                             >
                                 <span className="pf-tab-name">{pf.name}</span>
                             </div>
