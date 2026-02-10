@@ -2957,6 +2957,7 @@ function App() {
             {/* Modal Aide en ligne */}
             <Modal isOpen={helpModal} onClose={() => setHelpModal(false)} title="Aide - Diagramme de Feux" className="modal-wide">
                 <div className="help-content">
+                    <h3 style={{ color: '#4ecdc4', borderBottom: '1px solid #4ecdc4', paddingBottom: '8px', marginBottom: '16px' }}>Chapitre 1 — Boite à outils d'optimisation des diagrammes de feu</h3>
                     <section className="help-section">
                         <h4>Présentation</h4>
                         <p>Application de conception de diagrammes de feux de signalisation pour carrefours à feux.</p>
@@ -3321,6 +3322,88 @@ function App() {
                         </ul>
                         <p><strong>Synchronisation automatique :</strong> Quand vous changez d'onglet PF (PF1, PF2...), le jeu de données trafic "Associé à" se synchronise automatiquement avec l'onglet actif si un dataset du même nom existe.</p>
                         <p><strong>Groupes :</strong> Tous les groupes de 1 au nombre total (cellule H2) sont importés, y compris les groupes vides (sans nom ni configuration).</p>
+                    </section>
+
+                    <h3 style={{ color: '#4ecdc4', borderBottom: '1px solid #4ecdc4', paddingBottom: '8px', marginTop: '32px', marginBottom: '16px' }}>Chapitre 2 — Onde verte</h3>
+
+                    <section className="help-section">
+                        <h4>Présentation</h4>
+                        <p>L'onde verte permet de coordonner les feux de signalisation le long d'un axe routier afin d'offrir aux usagers une progression fluide sans arrêt aux feux successifs. L'outil exploite directement les plans de feux des carrefours sauvegardés pour construire un diagramme espace-temps interactif.</p>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Création d'une onde verte</h4>
+                        <ul>
+                            <li><strong>Menu Fichier → Onde verte :</strong> Ouvre l'assistant de création</li>
+                            <li><strong>Ajout de carrefours :</strong> Sélectionnez des projets sauvegardés et ajoutez-les à la liste (minimum 2 carrefours requis)</li>
+                            <li><strong>Plan de feu :</strong> Pour chaque carrefour, choisissez le plan de feu (PF) à utiliser</li>
+                            <li><strong>Groupes de feux :</strong> Assignez un groupe pour le sens montant (GF montant) et un pour le sens descendant (GF descendant)</li>
+                            <li><strong>Distances :</strong> Renseignez la distance en mètres pour chaque sens. La distance du sens descendant est pré-remplie automatiquement (distance montant + 20 m)</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Interaction avec les plans de feux</h4>
+                        <p>L'onde verte est directement liée aux données des carrefours :</p>
+                        <ul>
+                            <li><strong>Chargement des données :</strong> Les groupes, durées de vert, offsets et durées de cycle sont automatiquement extraits du plan de feu sélectionné pour chaque carrefour</li>
+                            <li><strong>Changement de PF individuel :</strong> Dans le tableau des données saisies, modifiez le PF d'un carrefour pour voir instantanément l'effet sur le diagramme</li>
+                            <li><strong>Changement de PF global :</strong> Le sélecteur en haut de page permet de basculer tous les carrefours sur un même plan de feu simultanément. Les paramètres (vitesses, offsets) sont sauvegardés et restaurés automatiquement pour chaque PF</li>
+                            <li><strong>Synchronisation :</strong> Le bouton "Synchroniser" recharge les données de tous les carrefours depuis les projets sauvegardés, intégrant ainsi les modifications apportées aux diagrammes de feux</li>
+                            <li><strong>Détection des conflits de cycle :</strong> Si un carrefour a un cycle différent des autres, sa ligne est surlignée en rouge dans le tableau</li>
+                            <li><strong>Actions prises en compte :</strong> Les secondes lucarnes et ouvertures anticipées définies dans les conditions de micro-régulation sont affichées sur le diagramme de l'onde verte</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Diagramme espace-temps</h4>
+                        <p>Le diagramme représente les phases de vert de chaque carrefour en fonction du temps (axe horizontal) et de la distance (axe vertical) :</p>
+                        <ul>
+                            <li><strong>Barres vertes :</strong> Phases de vert du groupe montant, positionnées à la distance du GF montant</li>
+                            <li><strong>Barres orange :</strong> Phases de vert du groupe descendant, positionnées à la distance du GF descendant</li>
+                            <li><strong>Lignes de vitesse (tirets) :</strong> Représentent la progression des véhicules :
+                                <ul>
+                                    <li><span style={{color: '#4CAF50'}}>Vert</span> : Sens montant (bas vers haut)</li>
+                                    <li><span style={{color: '#FF9800'}}>Orange</span> : Sens descendant (haut vers bas)</li>
+                                </ul>
+                            </li>
+                            <li><strong>Bandes passantes :</strong> Zones colorées semi-transparentes montrant la fenêtre temporelle où les véhicules peuvent traverser tous les carrefours sans s'arrêter. La largeur en secondes est affichée dans la légende</li>
+                            <li><strong>Affichage multi-cycles :</strong> Choisissez d'afficher 2 ou 3 cycles pour une meilleure visibilité de la coordination</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Contrôles interactifs</h4>
+                        <ul>
+                            <li><strong>Vitesses :</strong> Ajustez les vitesses montante et descendante (10 à 130 km/h) pour modifier l'inclinaison des lignes de vitesse et le calcul des bandes passantes</li>
+                            <li><strong>Glisser les lignes de vitesse :</strong> Cliquez et glissez horizontalement une ligne de vitesse pour ajuster l'offset en secondes. L'épaisseur de la ligne augmente pendant le glissement</li>
+                            <li><strong>Zoom X :</strong> Curseur de 3 à 20 pixels/seconde pour ajuster l'échelle temporelle</li>
+                            <li><strong>Zoom Y :</strong> Curseur de 0.5 à 3 pixels/mètre pour ajuster l'échelle des distances</li>
+                            <li><strong>Lignes de vitesse :</strong> Case à cocher pour afficher ou masquer les lignes guides</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Tableau des données saisies</h4>
+                        <ul>
+                            <li><strong>Ordre :</strong> Réorganisez les carrefours avec les boutons ↑ et ↓</li>
+                            <li><strong>Carrefour :</strong> Nom du projet (lecture seule)</li>
+                            <li><strong>PF :</strong> Sélection individuelle du plan de feu</li>
+                            <li><strong>Cycle :</strong> Durée du cycle (surligné en rouge si différent du cycle de référence)</li>
+                            <li><strong>GF Montant / Descendant :</strong> Sélection du groupe de feux et de la distance pour chaque sens</li>
+                            <li><strong>Ajouter :</strong> Le bouton "+" permet d'ajouter de nouveaux carrefours à la liste</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Sauvegarde et impression</h4>
+                        <ul>
+                            <li><strong>Enregistrer :</strong> Sauvegarde dans le navigateur (localStorage) avec un nom personnalisable</li>
+                            <li><strong>Enregistrer sur réseau :</strong> Exporte un fichier JSON via le gestionnaire de fichiers du système</li>
+                            <li><strong>Ouvrir :</strong> Chargez une onde verte précédemment sauvegardée ou un fichier JSON depuis le réseau</li>
+                            <li><strong>Imprimer :</strong> Génère une version imprimable du diagramme en format paysage avec légende, paramètres et horodatage</li>
+                            <li><strong>Paramètres par PF :</strong> Les vitesses, offsets et options d'affichage sont sauvegardés séparément pour chaque plan de feu, permettant de comparer facilement différents scénarios</li>
+                        </ul>
                     </section>
                 </div>
             </Modal>
