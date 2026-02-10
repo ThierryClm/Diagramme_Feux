@@ -507,6 +507,7 @@ function App() {
     const [reduceModal, setReduceModal] = useState(false);
     const [optionsModal, setOptionsModal] = useState(false);
     const [helpModal, setHelpModal] = useState(false);
+    const helpZoneRef = useRef(null);
     const [importModal, setImportModal] = useState(false);
     const [slideValue, setSlideValue] = useState(0);
     const [insertStart, setInsertStart] = useState(0);
@@ -2040,6 +2041,16 @@ function App() {
             } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
                 e.preventDefault();
                 redo();
+            } else if (e.key === 'F1') {
+                e.preventDefault();
+                setHelpModal(true);
+                const zone = helpZoneRef.current;
+                if (zone) {
+                    setTimeout(() => {
+                        const el = document.getElementById(`help-${zone}`);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                }
             }
         };
 
@@ -2164,7 +2175,7 @@ function App() {
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
                 />
-            <header className="app-header">
+            <header className="app-header" onMouseEnter={() => { helpZoneRef.current = 'interface'; }}>
                 <div className="header-inputs">
                     <input
                         className="input-name"
@@ -2410,12 +2421,14 @@ function App() {
 
                             {activeTab === 'config' && (
                                 <>
+                                    <div onMouseEnter={() => { helpZoneRef.current = 'config-groupes'; }}>
                                     <GroupTable
                                         groups={groups}
                                         updateGroupParams={updateGroupParams}
                                         cycleLength={cycleLength}
                                     />
-                                    <div style={{ marginTop: '2rem' }}>
+                                    </div>
+                                    <div style={{ marginTop: '2rem' }} onMouseEnter={() => { helpZoneRef.current = 'matrice'; }}>
                                         <IntergreenMatrix
                                             conflictMatrix={conflictMatrix}
                                             setMatrixValue={setMatrixValue}
@@ -2431,6 +2444,7 @@ function App() {
                             )}
 
                             {activeTab === 'matrix' && (
+                                <div onMouseEnter={() => { helpZoneRef.current = 'matrice'; }}>
                                 <IntergreenMatrix
                                     conflictMatrix={conflictMatrix}
                                     setMatrixValue={setMatrixValue}
@@ -2441,9 +2455,11 @@ function App() {
                                     pfTabs={pfTabs}
                                     biCarrefourSeparator={biCarrefourSeparator}
                                 />
+                                </div>
                             )}
 
                             {activeTab === 'traffic' && (
+                                <div onMouseEnter={() => { helpZoneRef.current = 'trafic'; }}>
                                 <TrafficTable
                                     groups={groups}
                                     cycleLength={cycleLength}
@@ -2460,6 +2476,7 @@ function App() {
                                     actionData={actionData}
                                     simulationSelectedActions={simulationSelectedActions}
                                 />
+                                </div>
                             )}
 
                             {filteredConflicts.length > 0 && (
@@ -2641,6 +2658,7 @@ function App() {
                     {!phasageBulleEnabled && (
                         <div
                             className="diagram-panel"
+                            onMouseEnter={() => { helpZoneRef.current = 'diagramme'; }}
                             style={{
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -2697,7 +2715,7 @@ function App() {
                         </div>
                     )}
 
-                    <div className="action-panel" style={{
+                    <div className="action-panel" onMouseEnter={() => { helpZoneRef.current = 'actions'; }} style={{
                         borderTop: phasageBulleEnabled ? 'none' : 'none',
                         marginTop: phasageBulleEnabled ? 0 : 0,
                         flex: diagramHeight !== null ? '1' : '0 0 auto',
@@ -2984,7 +3002,7 @@ function App() {
                         <p>Application de conception de diagrammes de feux de signalisation pour carrefours à feux.</p>
                     </section>
 
-                    <section className="help-section">
+                    <section id="help-interface" className="help-section">
                         <h4>Interface principale</h4>
                         <ul>
                             <li><strong>En-tête :</strong> Nom du carrefour, nombre de groupes, durée du cycle, zoom</li>
@@ -2996,7 +3014,7 @@ function App() {
                         </ul>
                     </section>
 
-                    <section className="help-section">
+                    <section id="help-config-groupes" className="help-section">
                         <h4>Configuration des groupes</h4>
                         <ul>
                             <li><strong>Type :</strong> Catégorie d'usager du groupe de feux
@@ -3013,13 +3031,13 @@ function App() {
                         </ul>
                     </section>
 
-                    <section className="help-section">
+                    <section id="help-matrice" className="help-section">
                         <h4>Matrice des temps interverts</h4>
                         <p>Définit les temps de dégagement (intervert) entre groupes conflictuels.
                         Valeurs acceptées : 3 à 20 secondes.</p>
                     </section>
 
-                    <section className="help-section">
+                    <section id="help-diagramme" className="help-section">
                         <h4>Diagramme</h4>
                         <ul>
                             <li><strong>DA (Délai d'approche) :</strong> Temps nécessaire pour qu'un véhicule atteigne la ligne de feu depuis le détecteur d'approche</li>
@@ -3140,7 +3158,7 @@ function App() {
                         </div>
                     </section>
 
-                    <section className="help-section">
+                    <section id="help-actions" className="help-section">
                         <h4>Colonnes du tableau des actions</h4>
                         <ul>
                             <li><strong>GF :</strong> Groupe fonctionnel concerné par l'action</li>
@@ -3212,6 +3230,7 @@ function App() {
                         <ul>
                             <li><strong>Ctrl+Z :</strong> Annuler la dernière action</li>
                             <li><strong>Ctrl+Y :</strong> Refaire la dernière action annulée</li>
+                            <li><strong>F1 :</strong> Aide en ligne contextuelle (pointe sur la section correspondant à la zone survolée)</li>
                         </ul>
                     </section>
 
@@ -3226,7 +3245,7 @@ function App() {
                         </ul>
                     </section>
 
-                    <section className="help-section">
+                    <section id="help-trafic" className="help-section">
                         <h4>Données Trafic</h4>
                         <p>L'onglet Trafic permet de saisir les données de trafic par groupe :</p>
                         <ul>
