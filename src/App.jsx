@@ -913,17 +913,7 @@ function App() {
             // Préparer les données du projet
             const fullState = getFullState();
             const projectData = {
-                intersectionName: fullState.intersectionName,
-                groups: fullState.groups,
-                cycleLength: fullState.cycleLength,
-                conflictMatrix: fullState.conflictMatrix,
-                pfTabs: fullState.pfTabs,
-                activePFId: fullState.activePFId,
-                intersectionImage: fullState.intersectionImage,
-                intersectionArrows: fullState.intersectionArrows,
-                trafficDatasets: fullState.trafficDatasets,
-                activeTrafficDataset: fullState.activeTrafficDataset,
-                externalLinks: fullState.externalLinks,
+                ...fullState,
                 diagramHeight: diagramHeight,
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
@@ -1018,17 +1008,7 @@ function App() {
             // Préparer les données du projet
             const fullState = getFullState();
             const projectData = {
-                intersectionName: fullState.intersectionName,
-                groups: fullState.groups,
-                cycleLength: fullState.cycleLength,
-                conflictMatrix: fullState.conflictMatrix,
-                pfTabs: fullState.pfTabs,
-                activePFId: fullState.activePFId,
-                intersectionImage: fullState.intersectionImage,
-                intersectionArrows: fullState.intersectionArrows,
-                trafficDatasets: fullState.trafficDatasets,
-                activeTrafficDataset: fullState.activeTrafficDataset,
-                externalLinks: fullState.externalLinks,
+                ...fullState,
                 diagramHeight: diagramHeight,
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
