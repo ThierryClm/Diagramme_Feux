@@ -70,12 +70,17 @@
 .col-label.col-time {
     width: 26px;
     flex-shrink: 0;
+    color: white;
+    position: relative;
+    left: -10px;
 }
 
 .col-label.col-da {
     width: 20px;
     flex-shrink: 0;
-    margin-left: -15px;
+    color: white;
+    position: relative;
+    left: -10px;
 }
 
 .row-label-container {
