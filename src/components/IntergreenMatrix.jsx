@@ -368,14 +368,14 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                         <tr>
                             <th>/</th>
                             <th className="col-name-header">Nom</th>
-                            {indices.map(i => <th key={i} className="col-index-header" style={separatorIdx >= 0 && (i - 1) === separatorIdx ? { borderRight: '1px solid white' } : undefined}>{i}</th>)}
+                            {indices.map(i => <th key={i} className={`col-index-header${separatorIdx >= 0 && (i - 1) === separatorIdx ? ' matrix-bi-sep-right' : ''}`}>{i}</th>)}
                         </tr>
                     </thead>
                     <tbody>
                         {conflictMatrix.map((row, fromIdx) => (
                             <tr key={fromIdx}>
-                                <td className="row-header" style={separatorIdx >= 0 && fromIdx === separatorIdx ? { borderBottom: '1px solid white' } : undefined}>{fromIdx + 1}</td>
-                                <td className="row-name" style={separatorIdx >= 0 && fromIdx === separatorIdx ? { borderBottom: '1px solid white' } : undefined}>
+                                <td className={`row-header${separatorIdx >= 0 && fromIdx === separatorIdx ? ' matrix-bi-sep-bottom' : ''}`}>{fromIdx + 1}</td>
+                                <td className={`row-name${separatorIdx >= 0 && fromIdx === separatorIdx ? ' matrix-bi-sep-bottom' : ''}`}>
                                     {groups && groups[fromIdx] ? groups[fromIdx].name : '-'}
                                 </td>
                                 {row.map((val, toIdx) => {
@@ -399,12 +399,12 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                                         inputClass += ' matrix-compare-lower';
                                     }
 
-                                    const biStyle = {};
-                                    if (separatorIdx >= 0 && fromIdx === separatorIdx) biStyle.borderBottom = '1px solid white';
-                                    if (separatorIdx >= 0 && toIdx === separatorIdx) biStyle.borderRight = '1px solid white';
+                                    let biClass = '';
+                                    if (separatorIdx >= 0 && fromIdx === separatorIdx) biClass += ' matrix-bi-sep-bottom';
+                                    if (separatorIdx >= 0 && toIdx === separatorIdx) biClass += ' matrix-bi-sep-right';
 
                                     return (
-                                        <td key={toIdx} className={fromIdx === toIdx ? 'diagonal-cell' : cellClass} style={Object.keys(biStyle).length > 0 ? biStyle : undefined}>
+                                        <td key={toIdx} className={(fromIdx === toIdx ? 'diagonal-cell' : cellClass) + biClass}>
                                             {fromIdx === toIdx ? (
                                                 <span className="diagonal">-</span>
                                             ) : (

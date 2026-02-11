@@ -30,6 +30,622 @@ body {
     background-color: #242424;
 }
 
+/* Light mode overrides */
+body.light-mode {
+    background-color: #ffffff;
+    color: #222;
+}
+
+/* Header */
+body.light-mode .app-header {
+    background: #e0e0e0;
+    border-bottom: 1px solid #bbb;
+}
+
+body.light-mode .app-header input,
+body.light-mode .app-header select {
+    background: #fff;
+    color: #222;
+    border-color: #999;
+}
+
+body.light-mode .app-header button {
+    color: #222;
+}
+
+body.light-mode .undo-btn,
+body.light-mode .toggle-btn {
+    background: #d0d0d0;
+    border-color: #999;
+    color: #222;
+}
+
+body.light-mode .undo-btn:hover,
+body.light-mode .toggle-btn:hover {
+    background: #bbb;
+}
+
+body.light-mode .toggle-btn.active {
+    background-color: rgba(46, 204, 113, 0.3);
+}
+
+body.light-mode .logout-btn {
+    background: #d0d0d0;
+    border-color: #999;
+    color: #222;
+}
+
+body.light-mode .logout-btn:hover {
+    background: #bbb;
+    color: #000;
+}
+
+/* Sidebar */
+body.light-mode .sidebar {
+    background: #f0f0f0;
+    border-right: 1px solid #ccc;
+}
+
+body.light-mode .sidebar input,
+body.light-mode .sidebar select,
+body.light-mode .sidebar textarea {
+    background: #fff;
+    color: #222;
+    border-color: #999;
+}
+
+body.light-mode .sidebar label,
+body.light-mode .sidebar span,
+body.light-mode .sidebar th,
+body.light-mode .sidebar td,
+body.light-mode .sidebar h3,
+body.light-mode .sidebar h4,
+body.light-mode .sidebar p {
+    color: #222;
+}
+
+body.light-mode .tab-btn {
+    background: #ddd;
+    color: #222;
+}
+
+body.light-mode .tab-btn.active {
+    background: #fff;
+    color: #000;
+}
+
+body.light-mode .tab-btn:hover {
+    background: #ccc;
+}
+
+/* GroupTable (Configuration) */
+body.light-mode .group-table-container {
+    background: #f5f5f5;
+}
+
+body.light-mode .group-table-title {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .group-table th {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .group-table td {
+    color: #222;
+}
+
+body.light-mode .group-table input,
+body.light-mode .group-table select {
+    background: #fff;
+    color: #222;
+    border-color: #999;
+}
+
+body.light-mode .input-readonly {
+    background: #eee !important;
+}
+
+body.light-mode .btn-move {
+    background: #d0d0d0;
+    color: #222;
+}
+
+body.light-mode .btn-move:hover {
+    background: #bbb;
+}
+
+/* IntergreenMatrix (Matrice temps interverts) */
+body.light-mode .matrix-container-inline {
+    background: #f5f5f5;
+}
+
+body.light-mode .matrix-grid th {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .row-header {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .row-name {
+    background: #f5f5f5;
+    color: #222;
+}
+
+body.light-mode .diagonal-cell {
+    background: #ddd;
+}
+
+/* Matrice: valeurs en noir sur fond blanc, fond transparent pour laisser voir les bordures */
+body.light-mode .sidebar .matrix-grid input {
+    color: #222;
+    background: transparent !important;
+}
+
+body.light-mode .sidebar .matrix-grid input:focus {
+    background: #e8e8e8 !important;
+}
+
+body.light-mode .matrix-grid th,
+body.light-mode .matrix-grid td {
+    border: 1px solid #999 !important;
+}
+
+body.light-mode .row-name {
+    border-right: 1px solid #999 !important;
+}
+
+body.light-mode .row-header {
+    border-right: 1px solid #999 !important;
+}
+
+/* Bi-carrefour separator: black in light mode */
+body.light-mode .matrix-bi-sep-bottom {
+    border-bottom-color: black !important;
+}
+
+body.light-mode .matrix-bi-sep-right {
+    border-right-color: black !important;
+}
+
+/* TrafficTable (Trafic) */
+body.light-mode .traffic-table-container {
+    background: #f5f5f5;
+}
+
+body.light-mode .traffic-table th {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .traffic-table input,
+body.light-mode .traffic-table select {
+    background: #fff;
+    color: #222;
+    border-color: #999;
+}
+
+/* Préserver les couleurs spécifiques du trafic */
+body.light-mode .sidebar .traffic-table .col-calculated {
+    color: #8cf;
+}
+
+body.light-mode .sidebar .traffic-table .capacity-green {
+    color: #4caf50;
+}
+
+body.light-mode .sidebar .traffic-table .capacity-orange {
+    color: #ff9800;
+}
+
+body.light-mode .sidebar .traffic-table .capacity-red {
+    color: #f44336;
+}
+
+body.light-mode .sidebar .traffic-table .capacity-black {
+    color: #000;
+}
+
+body.light-mode .traffic-dataset-label,
+body.light-mode .traffic-dataset-selector {
+    background: #d0d0d0;
+    color: #222;
+    border-color: #999;
+}
+
+body.light-mode .paste-dropdown {
+    background: #e0e0e0;
+    color: #222;
+    border-color: #999;
+}
+
+/* Diagram area */
+body.light-mode .diagram-area {
+    background: #ffffff;
+}
+
+body.light-mode .diagram-panel {
+    background: #ffffff;
+}
+
+/* TimelineDiagram */
+body.light-mode .diagram-title {
+    background: #e8e8e8;
+    color: #222;
+}
+
+body.light-mode .timeline-sidebar {
+    background: #f0f0f0;
+}
+
+body.light-mode .sidebar-header-row {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .timeline-sidebar td {
+    color: #222;
+}
+
+body.light-mode .input-time-sm {
+    background: #fff;
+    color: #222;
+    border-color: #999;
+}
+
+body.light-mode .input-da {
+    background: #fff;
+    border-color: #999;
+}
+
+/* Diagram sidebar: Grp number and Nom fields */
+body.light-mode .row-label-container {
+    color: #222;
+}
+
+body.light-mode .label-id {
+    background: #fff;
+    color: #222;
+    border-radius: 3px;
+}
+
+body.light-mode .label-name {
+    background: #fff;
+    color: #222;
+    border-radius: 3px;
+}
+
+body.light-mode .col-label {
+    color: #555;
+}
+
+body.light-mode .timeline-scroll-area {
+    background: #fafafa;
+}
+
+body.light-mode .timeline-ruler {
+    background: #e8e8e8;
+    color: #222;
+}
+
+body.light-mode .timeline-comments {
+    background: #f0f0f0;
+}
+
+body.light-mode .comments-header {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .input-comment {
+    background: #fff;
+    color: #222;
+    border-color: #999;
+}
+
+body.light-mode .timeline-remarques {
+    background: #f0f0f0;
+}
+
+body.light-mode .remarques-header {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .input-remarques {
+    background: #fff;
+    color: #222;
+    border-color: #999;
+}
+
+/* ActionTable (Table d'actions) */
+body.light-mode .action-table-container {
+    background: #f5f5f5;
+}
+
+body.light-mode .action-panel {
+    background: #f5f5f5;
+}
+
+/* Titres: Conditions de micro-régulation, Variables micro */
+body.light-mode .action-table-container h3 {
+    color: #222;
+}
+
+body.light-mode .action-table th {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .action-table thead tr.header-group th {
+    background: #e8e8e8;
+    color: #222;
+}
+
+body.light-mode .action-table td {
+    color: #222;
+}
+
+body.light-mode .action-table input,
+body.light-mode .action-table select {
+    background: #fff;
+    color: #222;
+    border-color: #999;
+}
+
+body.light-mode .action-table select option {
+    background: #fff;
+    color: #222;
+}
+
+body.light-mode .action-table td:has(input:disabled),
+body.light-mode .action-table input.input-disabled {
+    background: #eee;
+}
+
+body.light-mode .custom-field-input {
+    background: #eee;
+    color: #222;
+}
+
+body.light-mode .action-table-panel-resize {
+    background: #ccc;
+}
+
+/* Micro-régulation action text: black on white, keep violet keywords */
+body.light-mode .micro-highlight-backdrop {
+    color: #222;
+}
+
+body.light-mode .input-micro.micro-has-backdrop {
+    caret-color: #222;
+}
+
+body.light-mode .action-table input:focus,
+body.light-mode .action-table select:focus,
+body.light-mode .action-table textarea:focus {
+    background: #eee;
+}
+
+body.light-mode .action-table td {
+    border-color: #bbb;
+}
+
+/* Modal */
+body.light-mode .modal-content {
+    background: #f5f5f5;
+    color: #222;
+}
+
+body.light-mode .modal-header {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .modal-body {
+    color: #222;
+}
+
+body.light-mode .modal-body input,
+body.light-mode .modal-body select {
+    background: #fff;
+    color: #222;
+    border-color: #999;
+}
+
+body.light-mode .modal-btn-secondary {
+    background: #d0d0d0;
+    color: #222;
+}
+
+/* PF tabs bar */
+body.light-mode .pf-tabs-bar {
+    background: #e0e0e0;
+}
+
+body.light-mode .pf-tab {
+    background: #d0d0d0;
+    color: #222;
+}
+
+body.light-mode .pf-tab.active {
+    background: #fff;
+    color: #000;
+}
+
+/* ProjectManager */
+body.light-mode .project-manager {
+    background: #f0f0f0;
+    color: #222;
+}
+
+body.light-mode .project-manager button {
+    color: #222;
+}
+
+body.light-mode .files-list li:hover {
+    background: #ddd;
+}
+
+/* Floating legend */
+body.light-mode .floating-legend-window {
+    background: #f0f0f0;
+    color: #222;
+}
+
+body.light-mode .floating-legend-header {
+    background: #e0e0e0;
+    color: #222;
+}
+
+/* Phasage */
+body.light-mode .phasage-group-item {
+    background: #eee;
+    color: #222;
+}
+
+body.light-mode .phasage-group-courant {
+    background: #ddd;
+    color: #222;
+}
+
+/* SimulationPanel / Micro-régulation */
+body.light-mode .simulation-panel {
+    background: #f5f5f5;
+    color: #222;
+}
+
+body.light-mode .simulation-panel input,
+body.light-mode .simulation-panel select {
+    background: #fff;
+    color: #222;
+    border-color: #999;
+}
+
+body.light-mode .simulation-panel th,
+body.light-mode .simulation-panel td {
+    color: #222;
+}
+
+body.light-mode .simulation-panel button {
+    color: #222;
+}
+
+body.light-mode .simulation-item {
+    background: #fff;
+    border-color: #ccc;
+}
+
+body.light-mode .simulation-item:hover {
+    background: #eee;
+    border-color: #999;
+}
+
+body.light-mode .simulation-item.checked {
+    background: #e8f5f4;
+}
+
+body.light-mode .sim-action-type {
+    color: #222;
+}
+
+body.light-mode .sim-row-num {
+    color: #666;
+}
+
+body.light-mode .sim-time {
+    color: #555;
+}
+
+body.light-mode .sim-desc {
+    color: #666;
+}
+
+body.light-mode .simulation-info {
+    background: #eee;
+    border-color: #ccc;
+}
+
+body.light-mode .sim-info-label {
+    color: #555;
+}
+
+body.light-mode .simulation-list-header {
+    color: #222;
+}
+
+body.light-mode .sim-btn {
+    background: #ddd;
+    border-color: #999;
+    color: #222;
+}
+
+body.light-mode .sim-btn:hover {
+    background: #ccc;
+}
+
+body.light-mode .simulation-traffic-table td {
+    color: #222;
+}
+
+body.light-mode .simulation-traffic-header .traffic-title {
+    color: #222;
+}
+
+/* Timeline grid lines (secondes) */
+body.light-mode .grid-1s {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light-mode .grid-5s {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+body.light-mode .grid-10s {
+    background: rgba(0, 0, 0, 0.30);
+}
+
+body.light-mode .ruler-tick {
+    color: #444;
+}
+
+/* Timeline row and column separators */
+body.light-mode .row-label-container {
+    border-bottom-color: #ccc;
+}
+
+body.light-mode .diagram-title {
+    border-bottom-color: #bbb;
+}
+
+body.light-mode .timeline-ruler {
+    border-bottom-color: #bbb;
+}
+
+body.light-mode .timeline-row-track {
+    background: #fafafa;
+    border-bottom-color: #ccc;
+}
+
+body.light-mode .comment-row {
+    border-bottom-color: #ccc;
+}
+
+/* Cycle end line */
+body.light-mode .grid-cycle-end {
+    background: black;
+}
+
+/* Green cut overlay */
+body.light-mode .green-cut-overlay {
+    background: #e8e8e8;
+}
+
 h1 {
     font-size: 2.2em;
     line-height: 1.1;

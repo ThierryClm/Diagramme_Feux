@@ -509,6 +509,7 @@ function App() {
     const [helpModal, setHelpModal] = useState(false);
     const helpZoneRef = useRef(null);
     const [importModal, setImportModal] = useState(false);
+    const [darkMode, setDarkMode] = useState(true);
     const [slideValue, setSlideValue] = useState(0);
     const [slideFromGroup, setSlideFromGroup] = useState(1);
     const [slideToGroup, setSlideToGroup] = useState(1);
@@ -2042,6 +2043,11 @@ function App() {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [undo, redo]);
 
+    // Apply dark/light mode to body
+    useEffect(() => {
+        document.body.classList.toggle('light-mode', !darkMode);
+    }, [darkMode]);
+
     // Render arrow SVG for floating image
     const renderFloatingArrowSVG = (courant, color, arrowLength = 1, turnLength = 1) => {
         const strokeWidth = 3;
@@ -2213,6 +2219,13 @@ function App() {
                 </div>
 
                 <div className="header-actions">
+                    <button
+                        className={`toggle-btn ${!darkMode ? 'active' : ''}`}
+                        onClick={() => setDarkMode(!darkMode)}
+                        title="Basculer fond noir / blanc"
+                    >
+                        N/B
+                    </button>
                     <button
                         className="undo-btn"
                         onClick={undo}
