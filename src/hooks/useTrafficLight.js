@@ -673,13 +673,18 @@ export const useTrafficLight = () => {
             // Ensure conflict matrix matches group count
             const groupCount = data.groups ? data.groups.length : 0;
             if (data.conflictMatrix && groupCount > 0) {
-                // Clean 0 values and values outside 3-20 range, and resize to match group count
+                // Clean values outside valid range, resize to match group count
+                // Minimum is 0 for Piéton/Cycliste from-group, 3 for others
+                const loadedGroups = data.groups || [];
                 const cleanedMatrix = Array.from({ length: groupCount }, (_, r) => {
                     return Array.from({ length: groupCount }, (_, c) => {
                         const val = data.conflictMatrix[r]?.[c];
-                        if (val === undefined || val === null || val === 0 || val === '0') return '';
-                        if (typeof val === 'number' && (val < 3 || val > 20)) return '';
-                        return val;
+                        if (val === undefined || val === null) return '';
+                        const fromGroup = loadedGroups[r];
+                        const minVal = (fromGroup && (fromGroup.type === 'Piéton' || fromGroup.type === 'P' || fromGroup.type === 'Cycliste' || fromGroup.type === 'CY')) ? 0 : 3;
+                        const numericVal = typeof val === 'number' ? val : parseInt(val);
+                        if (isNaN(numericVal) || numericVal < minVal || numericVal > 20) return '';
+                        return numericVal;
                     });
                 });
                 setConflictMatrix(cleanedMatrix);
@@ -920,10 +925,15 @@ export const useTrafficLight = () => {
 
             // Mettre à jour la matrice de conflits
             if (state.conflictMatrix && Array.isArray(state.conflictMatrix)) {
-                const cleanedMatrix = state.conflictMatrix.map(row => row.map(val => {
-                    if (val === 0 || val === '0') return '';
-                    if (typeof val === 'number' && (val < 3 || val > 20)) return '';
-                    return val;
+                // Minimum is 0 for Piéton/Cycliste from-group, 3 for others
+                const loadedGroups = state.groups || [];
+                const cleanedMatrix = state.conflictMatrix.map((row, r) => row.map(val => {
+                    if (val === undefined || val === null) return '';
+                    const fromGroup = loadedGroups[r];
+                    const minVal = (fromGroup && (fromGroup.type === 'Piéton' || fromGroup.type === 'P' || fromGroup.type === 'Cycliste' || fromGroup.type === 'CY')) ? 0 : 3;
+                    const numericVal = typeof val === 'number' ? val : parseInt(val);
+                    if (isNaN(numericVal) || numericVal < minVal || numericVal > 20) return '';
+                    return numericVal;
                 }));
                 setConflictMatrix(cleanedMatrix);
             } else {
@@ -1715,9 +1725,14 @@ export const useTrafficLight = () => {
                             // Copy values from PF matrix if they exist
                             if (r < pfMatrixSize && c < pfMatrixSize && activePF.conflictMatrix[r]) {
                                 let val = activePF.conflictMatrix[r][c];
-                                // Clean the value
-                                if (val === 0 || val === '0') val = '';
-                                else if (typeof val === 'number' && (val < 3 || val > 20)) val = '';
+                                // Minimum is 0 for Piéton/Cycliste from-group, 3 for others
+                                const fromGroup = groups[r];
+                                const minVal = (fromGroup && (fromGroup.type === 'Piéton' || fromGroup.type === 'P' || fromGroup.type === 'Cycliste' || fromGroup.type === 'CY')) ? 0 : 3;
+                                // Clean the value: keep values in [minVal, 20] range
+                                if (val !== '' && val !== undefined) {
+                                    const numericVal = typeof val === 'number' ? val : parseInt(val);
+                                    if (isNaN(numericVal) || numericVal < minVal || numericVal > 20) val = '';
+                                }
                                 row[c] = val !== undefined ? val : '';
                             }
                         }
