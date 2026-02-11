@@ -144,6 +144,12 @@ body.light-mode .group-table select {
     border-color: #999;
 }
 
+body.light-mode .input-name-cell,
+body.light-mode .input-mini,
+body.light-mode .input-yellow {
+    color: #000 !important;
+}
+
 body.light-mode .input-readonly {
     background: #eee !important;
 }
@@ -174,7 +180,7 @@ body.light-mode .row-header {
 
 body.light-mode .row-name {
     background: #f5f5f5;
-    color: #222;
+    color: #000;
 }
 
 body.light-mode .diagonal-cell {
@@ -309,15 +315,11 @@ body.light-mode .row-label-container {
 }
 
 body.light-mode .label-id {
-    background: #fff;
-    color: #222;
-    border-radius: 3px;
+    color: #000;
 }
 
 body.light-mode .label-name {
-    background: #fff;
-    color: #222;
-    border-radius: 3px;
+    color: #000;
 }
 
 body.light-mode .col-label {

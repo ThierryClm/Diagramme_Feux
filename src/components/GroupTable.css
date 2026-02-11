@@ -84,7 +84,7 @@ select.input-courant {
 .input-mini,
 .input-yellow {
     width: 32px !important;
-    color: #bbb !important;
+    color: #fff !important;
 }
 
 .input-timing {
@@ -109,7 +109,7 @@ select.input-courant {
     width: 160px !important;
     text-align: left !important;
     font-size: 0.8em;
-    color: #aaa !important;
+    color: #fff !important;
 }
 
 .btn-move {
