@@ -510,6 +510,8 @@ function App() {
     const helpZoneRef = useRef(null);
     const [importModal, setImportModal] = useState(false);
     const [slideValue, setSlideValue] = useState(0);
+    const [slideFromGroup, setSlideFromGroup] = useState(1);
+    const [slideToGroup, setSlideToGroup] = useState(1);
     const [insertStart, setInsertStart] = useState(0);
     const [insertDuration, setInsertDuration] = useState(5);
     const [reduceStart, setReduceStart] = useState(0);
@@ -1310,6 +1312,8 @@ function App() {
                 break;
             case 'slide':
                 setSlideValue(0);
+                setSlideFromGroup(groups[0]?.id || 1);
+                setSlideToGroup(groups[groups.length - 1]?.id || 1);
                 setSlideModal(true);
                 break;
             case 'insert':
@@ -1554,7 +1558,7 @@ function App() {
     // Handle slide confirmation
     const handleSlide = () => {
         if (slideValue !== 0) {
-            slideAllGroups(slideValue);
+            slideAllGroups(slideValue, slideFromGroup, slideToGroup);
         }
         setSlideModal(false);
     };
@@ -2828,6 +2832,38 @@ function App() {
 
             {/* Modal Glisser */}
             <Modal isOpen={slideModal} onClose={() => setSlideModal(false)} title="Glisser le diagramme">
+                <div className="form-row">
+                    <label>
+                        Du groupe :
+                        <select
+                            value={slideFromGroup}
+                            onChange={(e) => setSlideFromGroup(parseInt(e.target.value))}
+                            style={{ marginLeft: '10px', padding: '5px' }}
+                        >
+                            {groups.map((g) => (
+                                <option key={g.id} value={g.id}>
+                                    {g.name || `Groupe ${g.id}`}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
+                <div className="form-row">
+                    <label>
+                        Au groupe :
+                        <select
+                            value={slideToGroup}
+                            onChange={(e) => setSlideToGroup(parseInt(e.target.value))}
+                            style={{ marginLeft: '10px', padding: '5px' }}
+                        >
+                            {groups.map((g) => (
+                                <option key={g.id} value={g.id}>
+                                    {g.name || `Groupe ${g.id}`}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
                 <div className="form-row">
                     <label>
                         Décalage (secondes) :

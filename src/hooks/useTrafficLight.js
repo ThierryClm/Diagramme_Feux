@@ -2101,11 +2101,13 @@ export const useTrafficLight = () => {
                     next[fromId - 1][toId - 1] = '';
                 } else {
                     const parsedValue = parseInt(value);
-                    // Only allow values between 3 and 20
-                    if (!isNaN(parsedValue) && parsedValue >= 3 && parsedValue <= 20) {
+                    // Minimum is 0 for Piéton/Cycliste from-group, 3 for others
+                    const fromGroup = groups[fromId - 1];
+                    const minValue = (fromGroup && (fromGroup.type === 'Piéton' || fromGroup.type === 'P' || fromGroup.type === 'Cycliste' || fromGroup.type === 'CY')) ? 0 : 3;
+                    if (!isNaN(parsedValue) && parsedValue >= minValue && parsedValue <= 20) {
                         next[fromId - 1][toId - 1] = parsedValue;
-                    } else if (!isNaN(parsedValue) && parsedValue < 3) {
-                        // If value is less than 3, set to empty
+                    } else if (!isNaN(parsedValue) && parsedValue < minValue) {
+                        // If value is less than minimum, set to empty
                         next[fromId - 1][toId - 1] = '';
                     } else if (!isNaN(parsedValue) && parsedValue > 20) {
                         // If value is greater than 20, cap at 20
@@ -2115,20 +2117,34 @@ export const useTrafficLight = () => {
             }
             return next;
         });
-    }, [saveToHistory]);
+    }, [saveToHistory, groups]);
 
     // Slide all groups by a given offset
-    const slideAllGroups = useCallback((delta) => {
+    const slideAllGroups = useCallback((delta, fromGroupId = null, toGroupId = null) => {
         saveToHistory();
         setGroups(currentGroups => {
-            return currentGroups.map(g => ({
-                ...g,
-                offset: ((g.offset + delta) % cycleLength + cycleLength) % cycleLength
-            }));
+            const fromIdx = fromGroupId != null ? currentGroups.findIndex(g => g.id === fromGroupId) : 0;
+            const toIdx = toGroupId != null ? currentGroups.findIndex(g => g.id === toGroupId) : currentGroups.length - 1;
+
+            return currentGroups.map((g, idx) => {
+                if (idx >= fromIdx && idx <= toIdx) {
+                    return {
+                        ...g,
+                        offset: ((g.offset + delta) % cycleLength + cycleLength) % cycleLength
+                    };
+                }
+                return g;
+            });
         });
-        // Also slide action data Déb/Fin
+        // Also slide action data Déb/Fin for groups in range
         setActionData(currentData => {
+            const fromIdx = fromGroupId != null ? groups.findIndex(g => g.id === fromGroupId) : 0;
+            const toIdx = toGroupId != null ? groups.findIndex(g => g.id === toGroupId) : groups.length - 1;
+
             return currentData.map(row => {
+                const gf = parseInt(row.gf);
+                if (isNaN(gf) || gf < fromIdx + 1 || gf > toIdx + 1) return row;
+
                 const newRow = { ...row };
                 if (newRow.deb !== '' && newRow.deb !== undefined) {
                     const newDeb = ((parseInt(newRow.deb) + delta) % cycleLength + cycleLength) % cycleLength;
@@ -2141,7 +2157,7 @@ export const useTrafficLight = () => {
                 return newRow;
             });
         });
-    }, [saveToHistory, cycleLength]);
+    }, [saveToHistory, cycleLength, groups]);
 
     // Insert time at a given position for a given duration
     const insertTime = useCallback((startSecond, duration) => {
