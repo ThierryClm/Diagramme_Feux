@@ -166,12 +166,16 @@ const IntersectionImage = ({
         );
 
         if (groupsWithoutArrows.length > 0) {
+            const group = groupsWithoutArrows[0];
+            const courant = group.courant || '';
             const newArrow = {
                 id: Date.now(),
-                groupId: groupsWithoutArrows[0].id,
+                groupId: group.id,
                 x,
                 y,
-                rotation: 0 // Rotation in degrees (0 = up)
+                rotation: 0, // Rotation in degrees (0 = up)
+                ...(courant === 'TàD' || courant === 'TàG' ? { turnLength: 0.5 } : {}),
+                ...(courant === 'Piéton' || courant === 'Cycle' ? { length: 2 } : {})
             };
             onArrowsChange([...arrows, newArrow]);
             setSelectedArrow(newArrow.id);
@@ -434,8 +438,9 @@ const IntersectionImage = ({
 
         const effectiveCycleLength = simulationResult?.cycleLength || cycleLength;
         const offset = simulationResult ? (group.simulatedOffset ?? group.offset) : group.offset;
-        const greenDuration = group.durations?.green || 0;
+        const greenDuration = simulationResult ? (group.simulatedGreen ?? group.durations?.green ?? 0) : (group.durations?.green || 0);
         const orangeDuration = group.durations?.orange || 0;
+        const greenCuts = simulationResult ? (group.greenCuts || []) : [];
 
         // Normalize time within cycle
         const normalizedTime = time % effectiveCycleLength;
@@ -500,18 +505,20 @@ const IntersectionImage = ({
         );
 
         if (escamotageAction) {
-            // Get source group info
+            // Get source group info - use simulated data if available
             const sourceGfId = parseInt(escamotageAction.gf.toString().replace(/[Gg]/g, '').trim()) || 0;
-            const sourceGroup = groups.find(g => g.id === sourceGfId);
+            const sourceGroup = groupsData.find(g => g.id === sourceGfId);
 
             if (sourceGroup && conflictMatrix && conflictMatrix.length > 0) {
                 // Get intergreen times from conflict matrix
                 const intergreenSourceToTarget = conflictMatrix[sourceGfId - 1]?.[groupId - 1] || 0;
                 const intergreenTargetToSource = conflictMatrix[groupId - 1]?.[sourceGfId - 1] || 0;
 
-                // Source group times
-                const sourceStart = sourceGroup.offset % effectiveCycleLength;
-                const sourceEndRaw = sourceStart + (sourceGroup.durations?.green || 0);
+                // Source group times - use simulated values if available
+                const sourceOffset = simulationResult ? (sourceGroup.simulatedOffset ?? sourceGroup.offset) : sourceGroup.offset;
+                const sourceGreen = simulationResult ? (sourceGroup.simulatedGreen ?? sourceGroup.durations?.green ?? 0) : (sourceGroup.durations?.green || 0);
+                const sourceStart = sourceOffset % effectiveCycleLength;
+                const sourceEndRaw = sourceStart + sourceGreen;
                 const sourceEnd = sourceEndRaw === effectiveCycleLength ? effectiveCycleLength : (sourceEndRaw % effectiveCycleLength);
 
                 // Calculate cut zone boundaries
@@ -556,6 +563,31 @@ const IntersectionImage = ({
         } else if (greenDuration > 0) {
             // Wrap-around case
             isGreen = normalizedTime >= greenStart || normalizedTime < greenEnd;
+        }
+
+        // If in green phase, check greenCuts (from simulation Escamotage actions)
+        if (isGreen && greenCuts.length > 0) {
+            for (const cut of greenCuts) {
+                const cutDeb = Number(cut.deb);
+                const cutFin = Number(cut.fin);
+                if (cutDeb <= cutFin) {
+                    if (normalizedTime >= cutDeb && normalizedTime < cutFin) {
+                        isGreen = false;
+                        break;
+                    }
+                } else {
+                    // Wrap-around cut
+                    if (normalizedTime >= cutDeb || normalizedTime < cutFin) {
+                        isGreen = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Check if group is escamoted (removed entirely by simulation)
+        if (simulationResult && group.isEscamoted) {
+            return 'rgb(255, 0, 0)'; // Always red
         }
 
         // Check if time is in orange phase
