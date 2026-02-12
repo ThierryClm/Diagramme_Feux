@@ -137,6 +137,20 @@ function parseSheetManually(sheet, sheetName, result) {
 }
 
 /**
+ * Detect column offset for a sheet: if the data range starts at column A,
+ * all column indices need +1 since the code assumes data starts at column B.
+ * @param {Object} sheet - The worksheet object
+ * @returns {number} - 0 if data starts at B, 1 if data starts at A
+ */
+function getColOffset(sheet) {
+    const ref = sheet ? sheet['!ref'] : '';
+    if (ref && /^A\d/.test(ref)) {
+        return 1;
+    }
+    return 0;
+}
+
+/**
  * Convert column name (A, B, ..., Z, AA, AB, ...) to 0-based index
  */
 function colNameToIndex(colName) {
@@ -296,28 +310,29 @@ export async function importExcelFile(file) {
                         }
 
                         const normalizedSheetName = sheetName.toLowerCase().trim();
+                        const sheetColOffset = getColOffset(sheet);
 
-                        console.log(`Processing sheet ${sheetIndex}: "${sheetName}" (normalized: "${normalizedSheetName}")`);
+                        console.log(`Processing sheet ${sheetIndex}: "${sheetName}" (normalized: "${normalizedSheetName}", colOffset: ${sheetColOffset})`);
 
                         // Parse "Formulaire" sheet for groups configuration
                         if (normalizedSheetName.includes('formulaire')) {
                             console.log('Found Formulaire sheet, parsing groups...');
-                            parseGroupsSheet(sheetData, result, sheetName);
+                            parseGroupsSheet(sheetData, result, sheetName, sheetColOffset);
                         }
                         // Parse Traffic sheet if found (check before PF sheets to ensure it's detected)
                         else if (normalizedSheetName.includes('trafic') || normalizedSheetName.includes('traffic')) {
                             console.log('Found Trafic sheet, parsing traffic data...');
-                            parseTrafficSheet(sheetData, result);
+                            parseTrafficSheet(sheetData, result, sheetColOffset);
                         }
                         // Parse 6th sheet (index 5) for conflict matrix, diagram data, and action table (PF1)
                         else if (sheetIndex === 5) {
-                            parseMatrixSheet(sheetData, result, sheet, sheetName);
+                            parseMatrixSheet(sheetData, result, sheet, sheetName, sheetColOffset);
                         }
                         // Parse sheets after index 5 as additional PF tabs (PF2, PF3, ...)
                         else if (sheetIndex > 5) {
                             const pfNumber = sheetIndex - 4; // index 6 = PF2, index 7 = PF3, etc.
                             console.log(`Parsing additional PF sheet: PF${pfNumber} from sheet ${sheetIndex}`);
-                            parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet);
+                            parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet, sheetColOffset);
                         }
                     } catch (parseErr) {
                         console.error(`Error processing sheet "${sheetName}":`, parseErr);
@@ -478,8 +493,9 @@ function normalizeCourant(courantValue) {
  *   - Column F (idx 4): Jaune/Orange
  * Note: Cycle duration is read from PF sheets (AL3), not from Formulaire
  */
-function parseGroupsSheet(sheetData, result) {
-    console.log('parseGroupsSheet called, sheetData length:', sheetData.length);
+function parseGroupsSheet(sheetData, result, sheetName, colOffset) {
+    colOffset = colOffset || 0;
+    console.log('parseGroupsSheet called, sheetData length:', sheetData.length, 'colOffset:', colOffset);
     console.log('First few rows:', sheetData.slice(0, 10));
 
     if (sheetData.length < 6) {
@@ -487,13 +503,13 @@ function parseGroupsSheet(sheetData, result) {
         return;
     }
 
-    // Column indices (0-based, with column A hidden)
-    const COL_GF = 0;      // B → index 0
-    const COL_NAME = 1;    // C → index 1
-    const COL_TYPE = 2;    // D → index 2
-    const COL_MINGREEN = 3; // E → index 3
-    const COL_ORANGE = 4;  // F → index 4
-    const COL_H = 6;       // H → index 6 (for group count in H2)
+    // Column indices (0-based, adjusted for column A presence)
+    const COL_GF = 0 + colOffset;      // B
+    const COL_NAME = 1 + colOffset;    // C
+    const COL_TYPE = 2 + colOffset;    // D
+    const COL_MINGREEN = 3 + colOffset; // E
+    const COL_ORANGE = 4 + colOffset;  // F
+    const COL_H = 6 + colOffset;       // H (for group count in H2)
 
     // Extract number of groups from H2 (row 1, column H = index 6)
     let expectedGroupCount = null;
@@ -636,8 +652,9 @@ function parseGroupsSheet(sheetData, result) {
  *   - AK6, AK8, AK10... = Déb (début de phase verte)
  *   - AL6, AL8, AL10... = Fin (fin de phase verte)
  */
-function parseMatrixSheet(sheetData, result, sheet, sheetName) {
+function parseMatrixSheet(sheetData, result, sheet, sheetName, colOffset) {
     if (sheetData.length < 6) return;
+    colOffset = colOffset || 0;
 
     // Get tab color from Excel sheet properties
     let tabColor = null;
@@ -652,13 +669,13 @@ function parseMatrixSheet(sheetData, result, sheet, sheetName) {
     }
     console.log(`Sheet "${sheetName}" tab color:`, tabColor);
 
-    console.log('parseMatrixSheet called, sheetData length:', sheetData.length);
+    console.log('parseMatrixSheet called, sheetData length:', sheetData.length, 'colOffset:', colOffset);
     console.log('Number of groups:', result.groups.length);
 
-    // Column indices for sheetData array (Excel col - 2)
-    const COL_DA = 34;   // AJ (Excel col 36) → index 34 - Délai d'approche
-    const COL_DEB = 35;  // AK (Excel col 37) → index 35 - Début
-    const COL_FIN = 36;  // AL (Excel col 38) → index 36 - Fin
+    // Column indices for sheetData array (adjusted for column A presence)
+    const COL_DA = 34 + colOffset;   // AJ - Délai d'approche
+    const COL_DEB = 35 + colOffset;  // AK - Début
+    const COL_FIN = 36 + colOffset;  // AL - Fin
 
     // Extract cycle duration from AL3 (row 3 = index 2, col AL = index 36)
     if (sheetData[2] && sheetData[2][COL_FIN]) {
@@ -671,11 +688,10 @@ function parseMatrixSheet(sheetData, result, sheet, sheetName) {
     }
 
     const size = result.groups.length;
-    const matrix = Array(size).fill(null).map(() => Array(size).fill(0));
+    const matrix = Array(size).fill(null).map(() => Array(size).fill(''));
 
-    // Matrix starts at D6 - using same logic as DA/Déb/Fin: Excel col - 2 = JS index
-    // D = col 4 → index 2, Row 6 → index 5
-    const MATRIX_COL_START = 2;  // D (Excel col 4) → index 2
+    // Matrix starts at D6
+    const MATRIX_COL_START = 2 + colOffset;  // D
     const MATRIX_ROW_START = 5;  // Row 6 in Excel → index 5
 
     // Store diagram data for PF1 (same format as additional PF tabs)
@@ -694,9 +710,13 @@ function parseMatrixSheet(sheetData, result, sheet, sheetName) {
             for (let colIndex = 0; colIndex < size; colIndex++) {
                 const excelCol = MATRIX_COL_START + colIndex; // D=3, E=4, F=5, G=6...
                 if (excelCol < row.length) {
-                    const value = parseNumber(row[excelCol], 0);
-                    // Store the value (diagonal will be 0, UI handles display)
-                    matrix[rowIndex][colIndex] = Math.max(0, Math.min(20, value));
+                    const raw = row[excelCol];
+                    if (raw === null || raw === undefined || raw === '') {
+                        matrix[rowIndex][colIndex] = '';
+                    } else {
+                        const value = parseNumber(raw, 0);
+                        matrix[rowIndex][colIndex] = Math.max(0, Math.min(20, value));
+                    }
                     console.log(`  Matrix[${rowIndex}][${colIndex}] from col ${String.fromCharCode(65 + excelCol)}${excelRow + 1} = ${matrix[rowIndex][colIndex]}`);
                 }
             }
@@ -757,21 +777,20 @@ function parseMatrixSheet(sheetData, result, sheet, sheetName) {
     // Using sheetData with Excel col - 2 formula (same as other imports)
     const ACTION_ROW_START = 109;  // Row 110 → index 109
 
-    // Column indices for sheetData (Excel col - 2)
-    // B = Excel col 2 → index 0
-    const COL_GF = 0;              // B (Excel col 2) → index 0
-    const COL_ACTION = 1;          // C (Excel col 3) → index 1
-    const COL_DESCRIPTION = 2;     // D (Excel col 4) → index 2 (merged D-AJ)
-    const COL_ACTION_DEB = 35;     // AK (Excel col 37) → index 35
-    const COL_ACTION_FIN = 36;     // AL (Excel col 38) → index 36
-    const COL_ABRV = 37;           // AM (Excel col 39) → index 37
-    const COL_ACTION_MICRO = 38;   // AN (Excel col 40) → index 38 (merged AN-CK)
-    const COL_ACTION_GF1 = 88;     // CL (Excel col 90) → index 88 (merged CL-CN)
-    const COL_ACTION_GF2 = 91;     // CO (Excel col 93) → index 91 (merged CO-CQ)
-    const COL_ACTION_GF3 = 94;     // CR (Excel col 96) → index 94 (merged CR-CT)
-    const COL_ACTION_GF4 = 97;     // CU (Excel col 99) → index 97 (merged CU-CW)
-    const COL_PLAGE1 = 100;        // CX (Excel col 102) → index 100 (merged CX-CZ)
-    const COL_PLAGE2 = 103;        // DA (Excel col 105) → index 103 (merged DA-DC)
+    // Column indices for action table (adjusted for column A presence)
+    const COL_GF = 0 + colOffset;              // B
+    const COL_ACTION = 1 + colOffset;          // C
+    const COL_DESCRIPTION = 2 + colOffset;     // D (merged D-AJ)
+    const COL_ACTION_DEB = 35 + colOffset;     // AK
+    const COL_ACTION_FIN = 36 + colOffset;     // AL
+    const COL_ABRV = 37 + colOffset;           // AM
+    const COL_ACTION_MICRO = 38 + colOffset;   // AN (merged AN-CK)
+    const COL_ACTION_GF1 = 88 + colOffset;     // CL (merged CL-CN)
+    const COL_ACTION_GF2 = 91 + colOffset;     // CO (merged CO-CQ)
+    const COL_ACTION_GF3 = 94 + colOffset;     // CR (merged CR-CT)
+    const COL_ACTION_GF4 = 97 + colOffset;     // CU (merged CU-CW)
+    const COL_PLAGE1 = 100 + colOffset;        // CX (merged CX-CZ)
+    const COL_PLAGE2 = 103 + colOffset;        // DA (merged DA-DC)
 
     console.log('Parsing action table from row 110...');
     console.log('sheetData total length:', sheetData.length);
@@ -899,8 +918,9 @@ function parseMatrixSheet(sheetData, result, sheet, sheetName) {
  * @param {string} sheetName - Original sheet name from Excel
  * @param {Object} sheet - Excel sheet object (for tab color)
  */
-function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet) {
+function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet, colOffset) {
     console.log(`parseAdditionalPFSheet called for PF${pfNumber}, sheetData length:`, sheetData.length);
+    colOffset = colOffset || 0;
 
     if (sheetData.length < 6) {
         console.log(`Sheet ${sheetName} too short, skipping`);
@@ -918,10 +938,10 @@ function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet) {
     }
     console.log(`Sheet "${sheetName}" tab color:`, tabColor);
 
-    // Column indices for sheetData array (Excel col - 2)
-    const COL_DA = 34;   // AJ (Excel col 36) → index 34 - Délai d'approche
-    const COL_DEB = 35;  // AK (Excel col 37) → index 35 - Début
-    const COL_FIN = 36;  // AL (Excel col 38) → index 36 - Fin
+    // Column indices for sheetData array (adjusted for column A presence)
+    const COL_DA = 34 + colOffset;   // AJ - Délai d'approche
+    const COL_DEB = 35 + colOffset;  // AK - Début
+    const COL_FIN = 36 + colOffset;  // AL - Fin
 
     // Extract cycle duration from AL3 (row 3 = index 2, col AL = index 36)
     let pfCycleLength = result.cycleLength; // Default to main cycle
@@ -939,8 +959,8 @@ function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet) {
     const size = result.groups.length;
 
     // Initialize conflict matrix for this PF tab
-    const pfMatrix = Array(size).fill(null).map(() => Array(size).fill(0));
-    const MATRIX_COL_START = 2;  // D (Excel col 4) → index 2
+    const pfMatrix = Array(size).fill(null).map(() => Array(size).fill(''));
+    const MATRIX_COL_START = 2 + colOffset;  // D
 
     let excelRow = 5; // Start at row 6 (index 5)
 
@@ -952,8 +972,13 @@ function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet) {
             for (let colIndex = 0; colIndex < size; colIndex++) {
                 const excelCol = MATRIX_COL_START + colIndex;
                 if (excelCol < row.length) {
-                    const value = parseNumber(row[excelCol], 0);
-                    pfMatrix[groupIndex][colIndex] = Math.max(0, Math.min(20, value));
+                    const raw = row[excelCol];
+                    if (raw === null || raw === undefined || raw === '') {
+                        pfMatrix[groupIndex][colIndex] = '';
+                    } else {
+                        const value = parseNumber(raw, 0);
+                        pfMatrix[groupIndex][colIndex] = Math.max(0, Math.min(20, value));
+                    }
                 }
             }
 
@@ -991,20 +1016,20 @@ function parseAdditionalPFSheet(sheetData, result, pfNumber, sheetName, sheet) {
     // Parse action table starting at row 110 (Excel row 110 = 0-based index 109)
     const ACTION_ROW_START = 109;
 
-    // Column indices for action table
-    const COL_GF = 0;
-    const COL_ACTION = 1;
-    const COL_DESCRIPTION = 2;
-    const COL_ACTION_DEB = 35;
-    const COL_ACTION_FIN = 36;
-    const COL_ABRV = 37;
-    const COL_ACTION_MICRO = 38;
-    const COL_ACTION_GF1 = 88;
-    const COL_ACTION_GF2 = 91;
-    const COL_ACTION_GF3 = 94;
-    const COL_ACTION_GF4 = 97;
-    const COL_PLAGE1 = 100;
-    const COL_PLAGE2 = 103;
+    // Column indices for action table (adjusted for column A presence)
+    const COL_GF = 0 + colOffset;
+    const COL_ACTION = 1 + colOffset;
+    const COL_DESCRIPTION = 2 + colOffset;
+    const COL_ACTION_DEB = 35 + colOffset;
+    const COL_ACTION_FIN = 36 + colOffset;
+    const COL_ABRV = 37 + colOffset;
+    const COL_ACTION_MICRO = 38 + colOffset;
+    const COL_ACTION_GF1 = 88 + colOffset;
+    const COL_ACTION_GF2 = 91 + colOffset;
+    const COL_ACTION_GF3 = 94 + colOffset;
+    const COL_ACTION_GF4 = 97 + colOffset;
+    const COL_PLAGE1 = 100 + colOffset;
+    const COL_PLAGE2 = 103 + colOffset;
 
     const actions = [];
     let actionRow = ACTION_ROW_START;
@@ -1289,20 +1314,21 @@ function parseActionsSheet(sheetData, result) {
  * - J3: First dataset name, J6, J8, J10... (every 2 rows): First dataset traffic volume - index 8
  * - O3: Second dataset name, O6, O8, O10... (every 2 rows): Second dataset traffic volume - index 13
  */
-function parseTrafficSheet(sheetData, result) {
+function parseTrafficSheet(sheetData, result, colOffset) {
     if (sheetData.length < 6) return;
+    colOffset = colOffset || 0;
 
     console.log('=== parseTrafficSheet called ===');
-    console.log('sheetData length:', sheetData.length);
+    console.log('sheetData length:', sheetData.length, 'colOffset:', colOffset);
     console.log('Number of groups:', result.groups.length);
 
-    // Column indices (0-based, with column A hidden, so B=0, C=1, D=2, E=3, etc.)
-    const COL_COURANT = 3;     // E → index 3 (Courant / traffic stream)
-    const COL_COEF = 7;        // I → index 7
-    const COL_TRAFIC_1 = 8;    // J → index 8 (first dataset)
-    const COL_PF_NAME_1 = 8;   // J3 contains the first PF name
-    const COL_TRAFIC_2 = 13;   // O → index 13 (second dataset)
-    const COL_PF_NAME_2 = 13;  // O3 contains the second PF name
+    // Column indices (adjusted for column A presence)
+    const COL_COURANT = 3 + colOffset;     // E (Courant / traffic stream)
+    const COL_COEF = 7 + colOffset;        // I
+    const COL_TRAFIC_1 = 8 + colOffset;    // J (first dataset)
+    const COL_PF_NAME_1 = 8 + colOffset;   // J3 contains the first PF name
+    const COL_TRAFIC_2 = 13 + colOffset;   // O (second dataset)
+    const COL_PF_NAME_2 = 13 + colOffset;  // O3 contains the second PF name
 
     // Read PF names from J3 and O3 (row 3 = index 2)
     const pfName1 = sheetData[2]?.[COL_PF_NAME_1] || null;
