@@ -18,7 +18,13 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength }) => {
     };
 
     const handleTypeChange = (id, value) => {
-        updateGroupParams(id, { type: value });
+        const updates = { type: value };
+        if (value === 'P') {
+            updates.courant = 'Piéton';
+        } else if (value === 'CY') {
+            updates.courant = 'Cycle';
+        }
+        updateGroupParams(id, updates);
     };
 
     const handleMinGreenChange = (id, value) => {

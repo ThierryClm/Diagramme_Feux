@@ -844,40 +844,50 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 ) : (
                                     <span className="input-da-placeholder"></span>
                                 )}
-                                <input
-                                    type="number"
-                                    className="input-time-sm"
-                                    value={hasValue ? start : ''}
-                                    onChange={(e) => handleStartChange(g.id, e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    title="Début"
-                                    placeholder=""
-                                />
-                                <input
-                                    type="number"
-                                    className="input-time-sm"
-                                    value={hasValue ? end : ''}
-                                    onChange={(e) => handleEndChange(g.id, e.target.value, start)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    title="Fin"
-                                    style={{ color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }}
-                                    placeholder=""
-                                />
-                                <input
-                                    type="number"
-                                    className="input-time-sm"
-                                    value={hasValue && duration > 0 ? duration : ''}
-                                    readOnly
-                                    onClick={(e) => e.stopPropagation()}
-                                    title="Durée (calculée automatiquement)"
-                                    style={{
-                                        color: duration < g.minGreen ? '#ff4d4d' : 'inherit',
-                                        cursor: 'default',
-                                        background: 'transparent',
-                                        border: 'none'
-                                    }}
-                                    placeholder=""
-                                />
+                                {g.type ? (
+                                    <>
+                                        <input
+                                            type="number"
+                                            className="input-time-sm"
+                                            value={hasValue ? start : ''}
+                                            onChange={(e) => handleStartChange(g.id, e.target.value)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            title="Début"
+                                            placeholder=""
+                                        />
+                                        <input
+                                            type="number"
+                                            className="input-time-sm"
+                                            value={hasValue ? end : ''}
+                                            onChange={(e) => handleEndChange(g.id, e.target.value, start)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            title="Fin"
+                                            style={{ color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }}
+                                            placeholder=""
+                                        />
+                                        <input
+                                            type="number"
+                                            className="input-time-sm"
+                                            value={hasValue && duration > 0 ? duration : ''}
+                                            readOnly
+                                            onClick={(e) => e.stopPropagation()}
+                                            title="Durée (calculée automatiquement)"
+                                            style={{
+                                                color: duration < g.minGreen ? '#ff4d4d' : 'inherit',
+                                                cursor: 'default',
+                                                background: 'transparent',
+                                                border: 'none'
+                                            }}
+                                            placeholder=""
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="input-time-sm-placeholder"></span>
+                                        <span className="input-time-sm-placeholder"></span>
+                                        <span className="input-time-sm-placeholder"></span>
+                                    </>
+                                )}
                             </div>
                         );
                     })}

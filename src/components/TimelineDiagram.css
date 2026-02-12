@@ -188,6 +188,11 @@
     flex-shrink: 0;
 }
 
+.input-time-sm-placeholder {
+    width: 26px;
+    flex-shrink: 0;
+}
+
 .input-time {
     width: 45px;
     background: #333;
