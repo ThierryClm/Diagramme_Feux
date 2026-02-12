@@ -3029,6 +3029,8 @@ function App() {
                     <section className="help-section">
                         <h4>Présentation</h4>
                         <p>Application de conception de diagrammes de feux de signalisation pour carrefours à feux.</p>
+                        <p>Chaque modification se répercute instantanément sur l'ensemble de l'interface : ajustez un temps de vert dans le formulaire et le diagramme se redessine en temps réel ; déplacez une barre directement sur le diagramme et les valeurs du formulaire suivent ; modifiez la matrice des temps interverts et la détection des conflits se met à jour immédiatement. Cette interactivité permanente entre le formulaire, le diagramme, la matrice et le tableau des actions vous offre une vision globale et cohérente à chaque instant.</p>
+                        <p>Le glisser-déposer des barres, la surbrillance croisée entre le tableau des actions et le diagramme, les flèches de dépendance, le calcul automatique des conflits et des données trafic : tout est pensé pour vous accompagner dans la mise au point de vos plans de feux, de la première esquisse jusqu'à la validation finale.</p>
                     </section>
 
                     <section id="help-interface" className="help-section">
@@ -3040,6 +3042,16 @@ function App() {
                             <li><strong>Onglets PF :</strong> Gérez plusieurs plans de feux (PF1, PF2...) avec le bouton "+"</li>
                             <li><strong>Indicateur Valider/Validé :</strong> Cliquez sur "Valider" (quand aucun conflit) pour marquer l'onglet PF en vert. Cliquez à nouveau pour annuler la validation.</li>
                             <li><strong>Séparateur ajustable :</strong> La position du séparateur entre le diagramme et les conditions de micro-régulation est sauvegardée avec le projet.</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Mise en page de l'interface et optimisation de l'écran</h4>
+                        <ul>
+                            <li><strong>Zoom du diagramme :</strong> Le curseur "Zoom" dans l'en-tête permet d'ajuster l'échelle horizontale du diagramme (de 4 à 20 px/s). Vous pouvez également utiliser <strong>Ctrl + molette de la souris</strong> pour zoomer ou dézoomer la page entière.</li>
+                            <li><strong>Séparateur vertical :</strong> La barre de séparation entre le panneau de configuration (à gauche) et la zone du diagramme (à droite) est déplaçable par glisser-déposer. Sa position est sauvegardée automatiquement.</li>
+                            <li><strong>Séparateur horizontal :</strong> La barre de séparation entre le diagramme (en haut) et le tableau des conditions de micro-régulation (en bas) est également déplaçable par glisser-déposer. Sa position est sauvegardée avec le projet.</li>
+                            <li><strong>Masquer le panneau de configuration :</strong> Le bouton "Paramètre" dans l'en-tête permet de masquer ou d'afficher le panneau de configuration à gauche, libérant ainsi toute la largeur de l'écran pour le diagramme.</li>
                         </ul>
                     </section>
 
@@ -3398,7 +3410,8 @@ function App() {
 
                     <section className="help-section">
                         <h4>Présentation</h4>
-                        <p>L'onde verte permet de coordonner les feux de signalisation le long d'un axe routier afin d'offrir aux usagers une progression fluide sans arrêt aux feux successifs. L'outil exploite directement les plans de feux des carrefours sauvegardés pour construire un diagramme espace-temps interactif.</p>
+                        <p>L'onde verte permet de coordonner les feux de signalisation le long d'un axe routier afin d'offrir aux usagers une progression fluide sans arrêt aux feux successifs.</p>
+                        <p>Directement connectée aux plans de feux de vos carrefours, l'onde verte se construit et se met à jour en temps réel : modifiez un offset, changez de plan de feu ou ajustez une vitesse, et le diagramme espace-temps se redessine instantanément. Chaque carrefour ajouté récupère automatiquement ses données depuis le projet sauvegardé, garantissant une cohérence permanente entre vos diagrammes de feux et la coordination d'axe. La synchronisation bidirectionnelle, le changement de plan de feu global ou individuel, et la visualisation immédiate des bandes passantes font de cet outil un véritable assistant pour optimiser la fluidité de vos axes routiers.</p>
                     </section>
 
                     <section className="help-section">
