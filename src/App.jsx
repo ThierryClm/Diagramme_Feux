@@ -2668,6 +2668,8 @@ function App() {
                                 simulationResult={simulationResult}
                                 simulationCurrentTime={simulationEnabled ? simulationCurrentTime : null}
                                 isPlayingSimulation={simulationEnabled && isPlayingSimulation}
+                                setIsPlayingSimulation={setIsPlayingSimulation}
+                                setSimulationCurrentTime={setSimulationCurrentTime}
                                 hoveredArrowGroupId={hoveredArrowGroupId}
                                 hoveredConflict={hoveredConflict}
                                 setHoveredGroupId={setHoveredArrowGroupId}
@@ -2742,6 +2744,7 @@ function App() {
                                 recentImageDirs={recentImageDirs}
                                 addRecentDirectory={addRecentDirectory}
                                 onShowFloatingImage={() => setShowFloatingImage(true)}
+                                intersectionName={intersectionName}
                                 imageBrightness={imageBrightness}
                                 setImageBrightness={setImageBrightness}
                                 imageContrast={imageContrast}

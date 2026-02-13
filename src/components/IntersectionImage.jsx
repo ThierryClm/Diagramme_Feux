@@ -30,6 +30,8 @@ const IntersectionImage = ({
     addRecentDirectory,
     // Floating image callback (handled by parent)
     onShowFloatingImage,
+    // Project name
+    intersectionName,
     // Image brightness/contrast (persisted with project)
     imageBrightness = 100,
     setImageBrightness,
@@ -674,38 +676,8 @@ const IntersectionImage = ({
     return (
         <div className="intersection-image-container">
             <div className="intersection-header">
-                <h3>Image du carrefour</h3>
+                <h3>Image du carrefour{intersectionName ? ` — ${intersectionName}` : ''}</h3>
                 <div className="intersection-controls">
-                    {imageData && arrows.length > 0 && (
-                        <div className="simulation-controls">
-                            <button
-                                className={`sim-btn ${isPlaying ? 'playing' : ''}`}
-                                onClick={togglePlay}
-                                title={isPlaying ? 'Pause' : 'Lecture'}
-                            >
-                                {isPlaying ? '⏸' : '▶'}
-                            </button>
-                            <button
-                                className="sim-btn reset-btn"
-                                onClick={resetAnimation}
-                                title="Réinitialiser"
-                            >
-                                ⏹
-                            </button>
-                            <input
-                                type="range"
-                                min="0"
-                                max={(simulationResult?.cycleLength || cycleLength) - 1}
-                                value={currentTime || 0}
-                                onChange={(e) => handleTimeChange(e.target.value)}
-                                className="time-slider"
-                                title="Position dans le cycle"
-                            />
-                            <span className="sim-time">
-                                {currentTime || 0}s / {simulationResult?.cycleLength || cycleLength}s
-                            </span>
-                        </div>
-                    )}
                     {imageData && onShowFloatingImage && (
                         <button
                             className="upload-btn floating-btn"

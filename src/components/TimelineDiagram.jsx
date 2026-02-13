@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -773,7 +773,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             <h3 className="diagram-title">
                 <span>Diagramme{planName ? ` : simulation du plan de feu ${planName}` : ''}</span>
                 {setCycleLengthInput && (
-                    <label className="cycle-input-label" style={{ marginLeft: '50px', fontSize: '13px', fontWeight: 'normal' }}>
+                    <label className="cycle-input-label" style={{ marginLeft: '50px', fontSize: '14px', fontWeight: 'normal', color: '#fff' }}>
                         Cycle:
                         <input
                             type="number"
@@ -797,6 +797,36 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         />
                         <span>s</span>
                     </label>
+                )}
+                {planName && setIsPlayingSimulation && (
+                    <div className="diagram-playback" style={{ marginLeft: '20px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 'normal' }}>
+                        <button
+                            className={`sim-btn ${isPlayingSimulation ? 'playing' : ''}`}
+                            onClick={() => setIsPlayingSimulation(!isPlayingSimulation)}
+                            title={isPlayingSimulation ? 'Pause' : 'Lecture'}
+                        >
+                            {isPlayingSimulation ? '⏸' : '▶'}
+                        </button>
+                        <button
+                            className="sim-btn reset-btn"
+                            onClick={() => { setIsPlayingSimulation(false); setSimulationCurrentTime(0); }}
+                            title="Réinitialiser"
+                        >
+                            ⏹
+                        </button>
+                        <input
+                            type="range"
+                            min="0"
+                            max={(simulationResult?.cycleLength || cycleLength) - 1}
+                            value={simulationCurrentTime || 0}
+                            onChange={(e) => setSimulationCurrentTime(parseInt(e.target.value) || 0)}
+                            className="time-slider"
+                            title="Position dans le cycle"
+                        />
+                        <span className="sim-time" style={{ color: '#fff', whiteSpace: 'nowrap', fontSize: '14px' }}>
+                            {simulationCurrentTime || 0}s / {simulationResult?.cycleLength || cycleLength}s
+                        </span>
+                    </div>
                 )}
             </h3>
             <div className="timeline-layout">

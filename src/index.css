@@ -648,6 +648,56 @@ body.light-mode .green-cut-overlay {
     background: #e8e8e8;
 }
 
+/* Intersection image in light mode */
+body.light-mode .intersection-image-container {
+    background: #ffffff;
+}
+body.light-mode .intersection-header {
+    background: #ffffff;
+}
+body.light-mode .intersection-header h3 {
+    color: #222;
+}
+body.light-mode .intersection-image-area {
+    background: #ffffff;
+}
+body.light-mode .display-options {
+    background: #f0f0f0;
+    border-color: #ccc;
+}
+body.light-mode .checkbox-option {
+    color: #333;
+}
+body.light-mode .image-filters {
+    background: #f0f0f0;
+    border-color: #ccc;
+}
+body.light-mode .filter-row {
+    color: #333;
+}
+body.light-mode .filter-value {
+    color: #666;
+}
+body.light-mode .no-selection-hint {
+    background: #f0f0f0;
+    border-color: #ccc;
+    color: #333;
+}
+body.light-mode .hint {
+    color: #666;
+}
+body.light-mode .arrow-editor {
+    background: #f0f0f0;
+    border-color: #ccc;
+    color: #333;
+}
+body.light-mode .arrow-editor h4 {
+    color: #222;
+}
+body.light-mode .arrow-editor label {
+    color: #333;
+}
+
 h1 {
     font-size: 2.2em;
     line-height: 1.1;
