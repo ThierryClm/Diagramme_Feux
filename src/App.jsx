@@ -3067,6 +3067,14 @@ function App() {
                         <h4>Matrice des temps interverts</h4>
                         <p>Définit les temps de dégagement (intervert) entre groupes conflictuels.
                         Valeurs acceptées : 3 à 20 secondes.</p>
+                        <p>Dans les différents plans de feux, les valeurs de la matrice sont affichées selon un code couleur :</p>
+                        <ul>
+                            <li><strong style={{ color: '#fff' }}>Blanc :</strong> Valeur de base, telle que définie dans le plan de feux de référence (PF1).</li>
+                            <li><strong style={{ color: '#4caf50' }}>Vert :</strong> Valeur réévaluée à la baisse par rapport au PF1 pour tenir compte des temps de dégagement.</li>
+                            <li><strong style={{ color: '#f44336' }}>Rouge :</strong> Valeur ajustée à la hausse par rapport au PF1.</li>
+                            <li><strong style={{ color: '#fff', background: 'rgba(255,0,0,0.3)', padding: '0 4px', borderRadius: '2px' }}>Fond rouge :</strong> Conflit détecté — le temps de dégagement requis n'est pas respecté dans le diagramme.</li>
+                            <li><strong style={{ color: '#fff', background: 'rgba(255,165,0,0.3)', padding: '0 4px', borderRadius: '2px' }}>Fond orange :</strong> Valeur manquante — une case symétrique (GFx→GFy / GFy→GFx) n'est pas renseignée, ce qui compromet la symétrie de la matrice.</li>
+                        </ul>
                     </section>
 
                     <section id="help-diagramme" className="help-section">
