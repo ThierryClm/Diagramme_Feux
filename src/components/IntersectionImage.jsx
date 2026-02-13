@@ -438,12 +438,12 @@ const IntersectionImage = ({
     // Get the color for a group at a specific time
     const getGroupColorAtTime = useCallback((groupId, time) => {
         // Use simulation result if available, otherwise use original groups
-        const groupsData = simulationResult?.groups || groups;
+        const groupsData = simulationResult?.simulatedGroups || groups;
         const group = groupsData.find(g => g.id === groupId);
 
         if (!group) return 'rgb(255, 0, 0)'; // Red by default
 
-        const effectiveCycleLength = simulationResult?.cycleLength || cycleLength;
+        const effectiveCycleLength = simulationResult?.simulatedCycleLength || cycleLength;
         const offset = simulationResult ? (group.simulatedOffset ?? group.offset) : group.offset;
         const greenDuration = simulationResult ? (group.simulatedGreen ?? group.durations?.green ?? 0) : (group.durations?.green || 0);
         const orangeDuration = group.durations?.orange || 0;
@@ -633,7 +633,7 @@ const IntersectionImage = ({
                 if (elapsed >= 1000) {
                     lastTimeRef.current = timestamp;
                     setCurrentTime(prev => {
-                        const effectiveCycleLength = simulationResult?.cycleLength || cycleLength;
+                        const effectiveCycleLength = simulationResult?.simulatedCycleLength || cycleLength;
                         const next = prev + 1;
                         return next >= effectiveCycleLength ? 0 : next;
                     });

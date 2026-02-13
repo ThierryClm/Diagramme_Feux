@@ -318,8 +318,14 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
                         }
                     }
                     // Case 3: Green bar starts at or after fin - shift left by full amount (partial mode)
+                    // Exception: if bar wraps around cycle and its wrapped portion completely covers [deb, fin],
+                    // it "straddles" the zone via wrapping (like Case 1) and Deb should not shift
                     else if (offset >= fin && hasPlageRange) {
-                        g.simulatedOffset = Math.max(0, g.simulatedOffset - shiftAmount);
+                        const wrapsAndCoversZone = greenEnd > simulatedCycleLength &&
+                            (greenEnd - simulatedCycleLength) >= fin;
+                        if (!wrapsAndCoversZone) {
+                            g.simulatedOffset = Math.max(0, g.simulatedOffset - shiftAmount);
+                        }
                     }
 
                     // Case 4: Green bar wraps around the cycle and its wrap portion [0, wrapEnd] overlaps [deb, fin]

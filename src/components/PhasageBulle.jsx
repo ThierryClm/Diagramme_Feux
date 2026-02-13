@@ -52,14 +52,14 @@ const PhasageBulle = ({
 
     // Get the color for a group at a specific time
     const getGroupColorAtTime = useCallback((groupId, time) => {
-        const groupsData = simulationResult?.groups || groups;
+        const groupsData = simulationResult?.simulatedGroups || groups;
         const group = groupsData.find(g => g.id === groupId);
 
         if (!group) return 'rgb(255, 0, 0)';
 
-        const effectiveCycleLength = simulationResult?.cycleLength || cycleLength;
+        const effectiveCycleLength = simulationResult?.simulatedCycleLength || cycleLength;
         const offset = simulationResult ? (group.simulatedOffset ?? group.offset) : group.offset;
-        const greenDuration = group.durations?.green || 0;
+        const greenDuration = simulationResult ? (group.simulatedGreen ?? group.durations?.green ?? 0) : (group.durations?.green || 0);
         const orangeDuration = group.durations?.orange || 0;
 
         const normalizedTime = time % effectiveCycleLength;

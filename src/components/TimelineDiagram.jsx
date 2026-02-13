@@ -823,14 +823,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         <input
                             type="range"
                             min="0"
-                            max={(simulationResult?.cycleLength || cycleLength) - 1}
+                            max={(simulationResult?.simulatedCycleLength || cycleLength) - 1}
                             value={simulationCurrentTime || 0}
                             onChange={(e) => setSimulationCurrentTime(parseInt(e.target.value) || 0)}
                             className="time-slider"
                             title="Position dans le cycle"
                         />
                         <span className="sim-time" style={{ color: '#fff', whiteSpace: 'nowrap', fontSize: '14px' }}>
-                            {simulationCurrentTime || 0}s / {simulationResult?.cycleLength || cycleLength}s
+                            {simulationCurrentTime || 0}s / {simulationResult?.simulatedCycleLength || cycleLength}s
                         </span>
                     </div>
                 )}
@@ -848,11 +848,18 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     </div>
 
                     {groups.map(g => {
-                        const start = g.offset % cycleLength;
-                        const duration = g.durations.green;
-                        const end = (start + duration) % cycleLength;
-                        // Show both values if either is non-zero
-                        const hasValue = start > 0 || end > 0;
+                        // Use simulated values during simulation, original values otherwise
+                        const simGroup = simulationResult ? getSimulatedGroup(g.id) : null;
+                        const isSimEscamoted = simGroup?.isEscamoted || false;
+                        const start = simGroup
+                            ? (simGroup.simulatedOffset % effectiveCycleLength)
+                            : (g.offset % cycleLength);
+                        const duration = simGroup
+                            ? simGroup.simulatedGreen
+                            : g.durations.green;
+                        const end = isSimEscamoted ? 0 : ((start + duration) % (simGroup ? effectiveCycleLength : cycleLength));
+                        // Show both values if either is non-zero (and not escamoted during simulation)
+                        const hasValue = !isSimEscamoted && (start > 0 || end > 0);
 
                         return (
                             <div
@@ -912,19 +919,25 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             type="number"
                                             className="input-time-sm"
                                             value={hasValue ? start : ''}
-                                            onChange={(e) => handleStartChange(g.id, e.target.value)}
+                                            onChange={(e) => !simulationResult && handleStartChange(g.id, e.target.value)}
+                                            readOnly={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
                                             title="Début"
                                             placeholder=""
+                                            style={simulationResult ? { cursor: 'default', background: 'transparent', border: 'none' } : undefined}
                                         />
                                         <input
                                             type="number"
                                             className="input-time-sm"
                                             value={hasValue ? end : ''}
-                                            onChange={(e) => handleEndChange(g.id, e.target.value, start)}
+                                            onChange={(e) => !simulationResult && handleEndChange(g.id, e.target.value, start)}
+                                            readOnly={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
                                             title="Fin"
-                                            style={{ color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }}
+                                            style={simulationResult
+                                                ? { color: duration < g.minGreen ? '#ff4d4d' : 'inherit', cursor: 'default', background: 'transparent', border: 'none' }
+                                                : { color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }
+                                            }
                                             placeholder=""
                                         />
                                         <input

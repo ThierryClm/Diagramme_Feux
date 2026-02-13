@@ -4308,11 +4308,13 @@ function App() {
                                         : hoveredDiagramTime;
 
                                     if (activeTime !== null && group) {
-                                        // Calculate phase color based on time
-                                        const offset = group.offset || 0;
-                                        const greenDuration = group.durations?.green || 0;
+                                        // Use simulated values only during simulation playback
+                                        const isSimPlaying = simulationEnabled && isPlayingSimulation;
+                                        const simGroup = isSimPlaying ? simulationResult?.simulatedGroups?.find(g => g.id === arrow.groupId) : null;
+                                        const offset = simGroup ? (simGroup.simulatedOffset ?? group.offset) : (group.offset || 0);
+                                        const greenDuration = simGroup ? (simGroup.simulatedGreen ?? group.durations?.green ?? 0) : (group.durations?.green || 0);
                                         const orangeDuration = group.durations?.orange || 0;
-                                        const cycle = cycleLength || 100;
+                                        const cycle = isSimPlaying ? (simulationResult?.simulatedCycleLength || cycleLength || 100) : (cycleLength || 100);
 
                                         // Check for "Seconde lucarne" action for this group
                                         const secondeLucarneAction = actionData.find(action =>
