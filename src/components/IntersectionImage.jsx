@@ -29,7 +29,12 @@ const IntersectionImage = ({
     recentImageDirs = [],
     addRecentDirectory,
     // Floating image callback (handled by parent)
-    onShowFloatingImage
+    onShowFloatingImage,
+    // Image brightness/contrast (persisted with project)
+    imageBrightness = 100,
+    setImageBrightness,
+    imageContrast = 100,
+    setImageContrast
 }) => {
     const fileInputRef = useRef(null);
     const containerRef = useRef(null);
@@ -763,7 +768,12 @@ const IntersectionImage = ({
                 >
                 {imageData ? (
                     <>
-                        <img src={imageData} alt="Carrefour" className="intersection-img" />
+                        <img
+                            src={imageData}
+                            alt="Carrefour"
+                            className="intersection-img"
+                            style={{ filter: `brightness(${imageBrightness}%) contrast(${imageContrast}%)` }}
+                        />
                         {arrows.map(arrow => {
                             const groupInfo = getGroupInfo(arrow.groupId);
                             const rotation = arrow.rotation || 0;
@@ -1033,6 +1043,34 @@ const IntersectionImage = ({
                             <span>Ajout de flèches</span>
                         </label>
                     </div>
+                    {imageData && setImageBrightness && (
+                        <div className="image-filters">
+                            <div className="filter-row">
+                                <label>Luminosité:</label>
+                                <input
+                                    type="range"
+                                    min="20"
+                                    max="200"
+                                    value={imageBrightness}
+                                    onChange={(e) => setImageBrightness(Number(e.target.value))}
+                                    className="filter-slider"
+                                />
+                                <span className="filter-value">{imageBrightness}%</span>
+                            </div>
+                            <div className="filter-row">
+                                <label>Contraste:</label>
+                                <input
+                                    type="range"
+                                    min="20"
+                                    max="200"
+                                    value={imageContrast}
+                                    onChange={(e) => setImageContrast(Number(e.target.value))}
+                                    className="filter-slider"
+                                />
+                                <span className="filter-value">{imageContrast}%</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -279,6 +279,47 @@
     accent-color: #4ecdc4;
 }
 
+/* Image brightness/contrast filters */
+.image-filters {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ccc;
+    font-size: 0.85em;
+    margin-bottom: 4px;
+}
+
+.filter-row:last-child {
+    margin-bottom: 0;
+}
+
+.filter-row label {
+    min-width: 75px;
+    white-space: nowrap;
+}
+
+.filter-slider {
+    flex: 1;
+    height: 4px;
+    accent-color: #4ecdc4;
+    cursor: pointer;
+}
+
+.filter-value {
+    min-width: 38px;
+    text-align: right;
+    font-size: 0.85em;
+    color: #999;
+}
+
 .no-selection-hint p {
     margin: 5px 0;
     color: #666;

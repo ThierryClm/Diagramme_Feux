@@ -84,6 +84,10 @@ function App() {
         setIntersectionImage,
         intersectionArrows,
         setIntersectionArrows,
+        imageBrightness,
+        setImageBrightness,
+        imageContrast,
+        setImageContrast,
         activeTrafficDataset,
         setActiveTrafficDataset,
         updateTrafficData,
@@ -2738,6 +2742,10 @@ function App() {
                                 recentImageDirs={recentImageDirs}
                                 addRecentDirectory={addRecentDirectory}
                                 onShowFloatingImage={() => setShowFloatingImage(true)}
+                                imageBrightness={imageBrightness}
+                                setImageBrightness={setImageBrightness}
+                                imageContrast={imageContrast}
+                                setImageContrast={setImageContrast}
                             />
                         ) : (
                             <ActionTable
@@ -4269,7 +4277,7 @@ function App() {
                                     transformOrigin: 'top left'
                                 }}
                             >
-                                <img src={intersectionImage} alt="Carrefour" />
+                                <img src={intersectionImage} alt="Carrefour" style={{ filter: `brightness(${imageBrightness}%) contrast(${imageContrast}%)` }} />
                                 {intersectionArrows.map(arrow => {
                                     const group = groups.find(g => g.id === arrow.groupId);
                                     const courant = group?.courant || '';

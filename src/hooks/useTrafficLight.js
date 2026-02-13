@@ -781,6 +781,16 @@ export const useTrafficLight = () => {
             if (data.intersectionArrows) {
                 setIntersectionArrows(data.intersectionArrows);
             }
+            if (data.imageBrightness !== undefined) {
+                setImageBrightness(data.imageBrightness);
+            } else {
+                setImageBrightness(100);
+            }
+            if (data.imageContrast !== undefined) {
+                setImageContrast(data.imageContrast);
+            } else {
+                setImageContrast(100);
+            }
 
             // Load traffic datasets
             if (data.trafficDatasets) {
@@ -983,6 +993,16 @@ export const useTrafficLight = () => {
             } else {
                 setIntersectionArrows([]);
             }
+            if (state.imageBrightness !== undefined) {
+                setImageBrightness(state.imageBrightness);
+            } else {
+                setImageBrightness(100);
+            }
+            if (state.imageContrast !== undefined) {
+                setImageContrast(state.imageContrast);
+            } else {
+                setImageContrast(100);
+            }
 
             // Reset simulation state when loading full state
             setSimulationEnabled(false);
@@ -1114,6 +1134,8 @@ export const useTrafficLight = () => {
     // Intersection image state (persisted with project)
     const [intersectionImage, setIntersectionImage] = useState(null);
     const [intersectionArrows, setIntersectionArrows] = useState([]);
+    const [imageBrightness, setImageBrightness] = useState(100);
+    const [imageContrast, setImageContrast] = useState(100);
 
     // Traffic datasets state (HPM, HPS, HC, Estimation, Projection)
     const [activeTrafficDataset, setActiveTrafficDataset] = useState('HPM');
@@ -1496,6 +1518,8 @@ export const useTrafficLight = () => {
             activePFId,
             intersectionImage,
             intersectionArrows,
+            imageBrightness,
+            imageContrast,
             trafficDatasets,
             activeTrafficDataset,
             dependencyGap,
@@ -1568,7 +1592,7 @@ export const useTrafficLight = () => {
             }
             return false;
         }
-    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, externalLinks]);
+    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, externalLinks]);
 
     // Save pfTabs to localStorage
     useEffect(() => {
@@ -1787,6 +1811,8 @@ export const useTrafficLight = () => {
                     activePFId,
                     intersectionImage,
                     intersectionArrows,
+                    imageBrightness,
+                    imageContrast,
                     trafficDatasets,
                     activeTrafficDataset,
                     dependencyGap,
@@ -1810,7 +1836,7 @@ export const useTrafficLight = () => {
                 clearTimeout(autoSaveTimerRef.current);
             }
         };
-    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, intersectionName]);
+    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, intersectionName]);
 
     // Update traffic data for a specific group in the active dataset
     const updateTrafficData = useCallback((groupId, field, value) => {
@@ -2347,6 +2373,10 @@ export const useTrafficLight = () => {
         setIntersectionImage,
         intersectionArrows,
         setIntersectionArrows,
+        imageBrightness,
+        setImageBrightness,
+        imageContrast,
+        setImageContrast,
         // Traffic datasets
         trafficDatasets,
         activeTrafficDataset,
