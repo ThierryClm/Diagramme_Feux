@@ -88,7 +88,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     // Returns adjusted deb/fin values after applying time shifts
     // Also returns hidden=true if the action is within a removed period
     // actionType: optional action type - "Seconde lucarne" is NOT shifted by group glissement
-    const getShiftedActionPosition = (deb, fin, groupId = null, actionType = null) => {
+    const getShiftedActionPosition = (deb, fin, groupId = null, actionType = null, actionPlage = null) => {
         let hidden = false;
         let totalShift = 0;
         let adjustedDeb = deb;
@@ -193,9 +193,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             totalShift += shift.amount;
                         }
                     } else {
-                        // Partial shift for actions without groupId (e.g., Priorité piétons)
-                        // These actions are shifted if they fall within the adaptatif zone
-                        totalShift += shift.amount;
+                        // Partial shift for actions without groupId
+                        // Only shift if the action's plage is entirely within the shift's plage range
+                        // Actions without plage (e.g., Escamotage de phase) or with plage extending
+                        // outside the shift's plage are NOT shifted (independent diagrams)
+                        if (actionPlage &&
+                            actionPlage.plage1 >= shift.plage1 &&
+                            actionPlage.plage2 <= shift.plage2) {
+                            totalShift += shift.amount;
+                        }
                     }
                 }
             });
@@ -1628,17 +1634,16 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const origDeb = parseInt(action.deb) || 0;
                             const origFin = parseInt(action.fin) || 0;
                             // Apply shift from other Escamotage de phase or Adaptatif vertical actions
-                            const shifted = getShiftedActionPosition(origDeb, origFin, null, 'Adaptatif vertical');
+                            const plage1 = parseInt(action.plage1) || 0;
+                            const plage2 = parseInt(action.plage2) || 0;
+                            const avPlage = (plage1 > 0 && plage2 > 0) ? { plage1, plage2 } : null;
+                            const shifted = getShiftedActionPosition(origDeb, origFin, null, 'Adaptatif vertical', avPlage);
                             if (shifted.hidden) return null;
                             const deb = shifted.deb;
                             const fin = shifted.fin;
                             const leftPos = deb * pixelsPerSecond;
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
-
-                            // Calculate vertical position based on Plage1/Plage2
-                            const plage1 = parseInt(action.plage1) || 0;
-                            const plage2 = parseInt(action.plage2) || 0;
 
                             let topPos, height;
                             if (plage1 > 0 && plage2 > 0) {
@@ -2442,7 +2447,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             if (plage1 < 1 || plage2 < 1 || plage1 > groups.length || plage2 > groups.length) return null;
 
                             // Apply time shifts in simulation mode
-                            const shiftedPos = getShiftedActionPosition(rawDeb, rawDeb, null, 'Point de repos');
+                            const reposPlage = (plage1 > 0 && plage2 > 0) ? { plage1, plage2 } : null;
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawDeb, null, 'Point de repos', reposPlage);
                             if (shiftedPos.hidden) return null;
                             const deb = shiftedPos.deb;
 
@@ -2544,7 +2550,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             if (plage1 < 1 || plage2 < 1 || plage1 > groups.length || plage2 > groups.length) return null;
 
                             // Apply time shifts in simulation mode
-                            const shiftedPos = getShiftedActionPosition(rawDeb, rawDeb, null, 'Synchro BTS');
+                            const btsPlage = (plage1 > 0 && plage2 > 0) ? { plage1, plage2 } : null;
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawDeb, null, 'Synchro BTS', btsPlage);
                             if (shiftedPos.hidden) return null;
                             const deb = shiftedPos.deb;
 
@@ -2646,7 +2653,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             if (plage1 < 1 || plage2 < 1 || plage1 > groups.length || plage2 > groups.length) return null;
 
                             // Apply time shifts in simulation mode
-                            const shiftedPos = getShiftedActionPosition(rawDeb, rawDeb, null, 'Instant Co');
+                            const coPlage = (plage1 > 0 && plage2 > 0) ? { plage1, plage2 } : null;
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawDeb, null, 'Instant Co', coPlage);
                             if (shiftedPos.hidden) return null;
                             const deb = shiftedPos.deb;
 

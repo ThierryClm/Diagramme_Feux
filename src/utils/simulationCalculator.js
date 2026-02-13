@@ -295,6 +295,7 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
                 const greenEnd = offset + g.simulatedGreen;
 
                 if (fin > deb) {
+                    // Non-wrapping adaptatif zone [deb, fin]
                     // Case 1: Green bar starts before deb and extends into [deb, fin]
                     if (offset < deb && greenEnd > deb) {
                         const cutAmount = Math.min(greenEnd, fin) - deb;
