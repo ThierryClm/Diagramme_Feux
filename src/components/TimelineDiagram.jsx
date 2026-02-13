@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, hoveredArrowGroupId = null, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -771,7 +771,33 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     return (
         <div className={`timeline-container ${dragState ? 'dragging' : ''}`} ref={containerRef}>
             <h3 className="diagram-title">
-                Diagramme{planName ? ` : simulation du plan de feu ${planName}` : ''}
+                <span>Diagramme{planName ? ` : simulation du plan de feu ${planName}` : ''}</span>
+                {setCycleLengthInput && (
+                    <label className="cycle-input-label" style={{ marginLeft: '50px', fontSize: '13px', fontWeight: 'normal' }}>
+                        Cycle:
+                        <input
+                            type="number"
+                            min="10"
+                            value={cycleLengthInput}
+                            onChange={(e) => setCycleLengthInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.target.blur();
+                                }
+                            }}
+                            onBlur={() => {
+                                const newCycle = parseInt(cycleLengthInput);
+                                if (!isNaN(newCycle) && newCycle >= 10 && newCycle !== cycleLength) {
+                                    setCycleLength(newCycle);
+                                } else {
+                                    setCycleLengthInput(cycleLength.toString());
+                                }
+                            }}
+                            className="input-count"
+                        />
+                        <span>s</span>
+                    </label>
+                )}
             </h3>
             <div className="timeline-layout">
                 <div className="timeline-sidebar">
@@ -3415,7 +3441,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         })}
 
                         {/* Dependency arrows - intergreen times between groups */}
-                        {showDependencies && (
+                        {(showDependencies || hoveredConflict) && (
                             <svg
                                 className="dependency-arrows"
                                 style={{
@@ -3439,6 +3465,16 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     >
                                         <polygon points="0 0, 6 2, 0 4" fill="#999" />
                                     </marker>
+                                    <marker
+                                        id="dep-arrowhead-conflict"
+                                        markerWidth="6"
+                                        markerHeight="4"
+                                        refX="6"
+                                        refY="2"
+                                        orient="auto"
+                                    >
+                                        <polygon points="0 0, 6 2, 0 4" fill="red" />
+                                    </marker>
                                 </defs>
                                 {/* Arrows from main green phases */}
                                 {groups.map((fromGroup, fromIndex) => {
@@ -3452,10 +3488,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const toId = toGroup.id;
                                         if (fromId === toId) return null;
 
-                                        // Check if this arrow matches the hovered conflict
+                                        // Check if this arrow matches the hovered conflict (exact direction only)
                                         const showForConflict = hoveredConflict &&
-                                            ((fromId === hoveredConflict.from && toId === hoveredConflict.to) ||
-                                             (fromId === hoveredConflict.to && toId === hoveredConflict.from));
+                                            (fromId === hoveredConflict.from && toId === hoveredConflict.to);
 
                                         // Filter: show arrows for hovered group OR hovered conflict
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
@@ -3465,6 +3500,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const intergreenTime = conflictMatrix[fromId - 1]?.[toId - 1] || 0;
                                         if (intergreenTime <= 0) return null;
 
+                                        // Determine if this arrow is a conflict (from matrix hover)
+                                        const isConflictArrow = showForConflict && hoveredConflict?.isConflict;
+                                        const arrowColor = isConflictArrow ? 'red' : '#999';
+                                        const arrowWidth = isConflictArrow ? 3 : 1;
+                                        const arrowOpacity = isConflictArrow ? 0.9 : 0.6;
+                                        const arrowMarker = isConflictArrow ? 'url(#dep-arrowhead-conflict)' : 'url(#dep-arrowhead)';
+                                        const arrowDash = isConflictArrow ? '6,3' : undefined;
+
                                         const toOffset = toGroup.offset % cycleLength;
 
                                         // Calculate gap between end of fromGroup green and start of toGroup green
@@ -3472,8 +3515,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         // If gap is 0, it means they're at the same time, consider it as full cycle
                                         if (gap === 0) gap = cycleLength;
 
-                                        // Don't show arrow if gap > dependencyGap seconds
-                                        if (gap > dependencyGap) return null;
+                                        // Don't show arrow if gap > dependencyGap seconds (unless forced by conflict hover)
+                                        if (!showForConflict && gap > dependencyGap) return null;
 
                                         // Arrow ends at: end of green + intergreen time
                                         const arrowEndTime = (fromGreenEnd + intergreenTime) % cycleLength;
@@ -3491,9 +3534,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         y1={fromRowY}
                                                         x2={cycleEndX}
                                                         y2={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
-                                                        stroke="#999"
-                                                        strokeWidth="1"
-                                                        opacity="0.6"
+                                                        stroke={arrowColor}
+                                                        strokeWidth={arrowWidth}
+                                                        strokeDasharray={arrowDash}
+                                                        opacity={arrowOpacity}
                                                     />
                                                     {/* Second segment: from start of cycle to end point */}
                                                     <line
@@ -3501,10 +3545,11 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         y1={fromRowY + (toRowY - fromRowY) * ((cycleEndX - fromX) / (cycleEndX - fromX + toX))}
                                                         x2={toX}
                                                         y2={toRowY}
-                                                        stroke="#999"
-                                                        strokeWidth="1"
-                                                        markerEnd="url(#dep-arrowhead)"
-                                                        opacity="0.6"
+                                                        stroke={arrowColor}
+                                                        strokeWidth={arrowWidth}
+                                                        strokeDasharray={arrowDash}
+                                                        markerEnd={arrowMarker}
+                                                        opacity={arrowOpacity}
                                                     />
                                                 </g>
                                             );
@@ -3517,10 +3562,11 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 y1={fromRowY}
                                                 x2={toX}
                                                 y2={toRowY}
-                                                stroke="#999"
-                                                strokeWidth="1"
-                                                markerEnd="url(#dep-arrowhead)"
-                                                opacity="0.6"
+                                                stroke={arrowColor}
+                                                strokeWidth={arrowWidth}
+                                                strokeDasharray={arrowDash}
+                                                markerEnd={arrowMarker}
+                                                opacity={arrowOpacity}
                                             />
                                         );
                                     });
@@ -3540,10 +3586,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const toId = toGroup.id;
                                         if (fromId === toId) return null;
 
-                                        // Check if this arrow matches the hovered conflict
+                                        // Check if this arrow matches the hovered conflict (exact direction only)
                                         const showForConflict = hoveredConflict &&
-                                            ((fromId === hoveredConflict.from && toId === hoveredConflict.to) ||
-                                             (fromId === hoveredConflict.to && toId === hoveredConflict.from));
+                                            (fromId === hoveredConflict.from && toId === hoveredConflict.to);
 
                                         // Filter: show arrows for hovered group OR hovered conflict
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
@@ -3628,10 +3673,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (fromId === toId) return null;
                                         if (fromLIdx === toLIdx) return null;
 
-                                        // Check if this arrow matches the hovered conflict
+                                        // Check if this arrow matches the hovered conflict (exact direction only)
                                         const showForConflict = hoveredConflict &&
-                                            ((fromId === hoveredConflict.from && toId === hoveredConflict.to) ||
-                                             (fromId === hoveredConflict.to && toId === hoveredConflict.from));
+                                            (fromId === hoveredConflict.from && toId === hoveredConflict.to);
 
                                         // Filter: show arrows for hovered group OR hovered conflict
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
@@ -3716,10 +3760,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const toId = parseInt(toLucarne.gf);
                                         if (fromId === toId) return null;
 
-                                        // Check if this arrow matches the hovered conflict
+                                        // Check if this arrow matches the hovered conflict (exact direction only)
                                         const showForConflict = hoveredConflict &&
-                                            ((fromId === hoveredConflict.from && toId === hoveredConflict.to) ||
-                                             (fromId === hoveredConflict.to && toId === hoveredConflict.from));
+                                            (fromId === hoveredConflict.from && toId === hoveredConflict.to);
 
                                         // Filter: show arrows for hovered group OR hovered conflict
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;
@@ -3807,10 +3850,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (fromId === toId) return null;
                                         if (fromLIdx === toLIdx) return null;
 
-                                        // Check if this arrow matches the hovered conflict
+                                        // Check if this arrow matches the hovered conflict (exact direction only)
                                         const showForConflict = hoveredConflict &&
-                                            ((fromId === hoveredConflict.from && toId === hoveredConflict.to) ||
-                                             (fromId === hoveredConflict.to && toId === hoveredConflict.from));
+                                            (fromId === hoveredConflict.from && toId === hoveredConflict.to);
 
                                         // Filter: show arrows for hovered group OR hovered conflict
                                         if (!showForConflict && hoveredGroupId !== null && fromId !== hoveredGroupId && toId !== hoveredGroupId) return null;

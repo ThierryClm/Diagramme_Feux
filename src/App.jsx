@@ -2435,6 +2435,7 @@ function App() {
                                             activePFId={activePFId}
                                             pfTabs={pfTabs}
                                             biCarrefourSeparator={biCarrefourSeparator}
+                                            onCellHover={setHoveredConflict}
                                         />
                                     </div>
                                 </>
@@ -2451,6 +2452,7 @@ function App() {
                                     activePFId={activePFId}
                                     pfTabs={pfTabs}
                                     biCarrefourSeparator={biCarrefourSeparator}
+                                    onCellHover={setHoveredConflict}
                                 />
                                 </div>
                             )}
@@ -2624,32 +2626,7 @@ function App() {
                             <span className="pf-tab-name">Phasage bulle</span>
                         </div>
 
-                        {/* Cycle length input - positioned at the right of tabs */}
                         <div className="pf-tabs-spacer"></div>
-                        <label className="cycle-input-label">
-                            Cycle:
-                            <input
-                                type="number"
-                                min="10"
-                                value={cycleLengthInput}
-                                onChange={(e) => setCycleLengthInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.target.blur();
-                                    }
-                                }}
-                                onBlur={() => {
-                                    const newCycle = parseInt(cycleLengthInput);
-                                    if (!isNaN(newCycle) && newCycle >= 10 && newCycle !== cycleLength) {
-                                        setCycleLength(newCycle);
-                                    } else {
-                                        setCycleLengthInput(cycleLength.toString());
-                                    }
-                                }}
-                                className="input-count"
-                            />
-                            <span>s</span>
-                        </label>
                     </div>
 
                     {!phasageBulleEnabled && (
@@ -2696,6 +2673,9 @@ function App() {
                                 remarques={currentRemarques}
                                 updateRemarques={updatePFRemarques}
                                 biCarrefourSeparator={biCarrefourSeparator}
+                                cycleLengthInput={cycleLengthInput}
+                                setCycleLengthInput={setCycleLengthInput}
+                                setCycleLength={setCycleLength}
                             />
                         </div>
                     )}

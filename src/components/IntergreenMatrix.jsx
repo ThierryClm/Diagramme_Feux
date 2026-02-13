@@ -54,7 +54,7 @@ const MatrixInput = ({ value, onChange, className }) => {
     );
 };
 
-const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator }) => {
+const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover }) => {
 
     // Bi-carrefour separator index
     const separatorIdx = biCarrefourSeparator != null ? groups.findIndex(g => g.id === biCarrefourSeparator) : -1;
@@ -404,7 +404,12 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                                     if (separatorIdx >= 0 && toIdx === separatorIdx) biClass += ' matrix-bi-sep-right';
 
                                     return (
-                                        <td key={toIdx} className={(fromIdx === toIdx ? 'diagonal-cell' : cellClass) + biClass}>
+                                        <td
+                                            key={toIdx}
+                                            className={(fromIdx === toIdx ? 'diagonal-cell' : cellClass) + biClass}
+                                            onMouseEnter={fromIdx !== toIdx && onCellHover ? () => onCellHover({ from: fromIdx + 1, to: toIdx + 1, isConflict: hasInsufficientDelay }) : undefined}
+                                            onMouseLeave={fromIdx !== toIdx && onCellHover ? () => onCellHover(null) : undefined}
+                                        >
                                             {fromIdx === toIdx ? (
                                                 <span className="diagonal">-</span>
                                             ) : (
