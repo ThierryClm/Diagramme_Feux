@@ -93,6 +93,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         let totalShift = 0;
         let adjustedDeb = deb;
         let adjustedFin = fin;
+        let fullShiftOnDeb = 0;
 
         // For full Adaptatif vertical (applies to all groups), apply special logic:
         // - If BOTH deb and fin are inside [avDeb, avFin] → hidden = true
@@ -130,8 +131,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     }
 
                     // Shift values that are after the adaptatif zone (applies to ALL action types)
+                    // Track how much was applied on deb to avoid double-counting with getGroupShift later
                     if (adjustedDeb >= avFin) {
                         adjustedDeb -= avWidth;
+                        fullShiftOnDeb += avWidth;
                     }
                     if (adjustedFin >= avFin) {
                         adjustedFin -= avWidth;
@@ -172,7 +175,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         if (groupId && simulationResult && actionType !== 'Seconde lucarne') {
             const groupShift = getGroupShift(groupId);
             if (groupShift > 0) {
-                totalShift = groupShift;
+                // Subtract shift already applied by the full shift logic above to avoid double-counting
+                // (Escamotage de phase and full Adaptatif vertical shift deb in both places)
+                totalShift = Math.max(0, groupShift - fullShiftOnDeb);
             }
             // Note: No need to add partial Adaptatif vertical shifts here - getGroupShift() already
             // includes them since simulatedOffset is modified for groups in the plage range.
@@ -1392,20 +1397,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const isHighlighted = hoveredActionId === action.id;
 
                                         // For Fermeture anticipée: calculate brace start position
-                                        // Rule: if calculated position > original fin, move the brace; otherwise keep original
+                                        // Uses shifted deb/fin (accounting for adaptatif vertical / escamotage de phase contraction)
                                         let fermetureStartPos = deb; // Default to shifted deb
                                         if (action.action === 'Fermeture anticipée' && simGroup) {
                                             const originalGreenEnd = group.offset + group.durations.green;
                                             const simulatedGreenEnd = simGroup.simulatedOffset + simGroup.simulatedGreen;
                                             if (originalGreenEnd === simulatedGreenEnd) {
-                                                // Green end didn't change - use original deb position
-                                                fermetureStartPos = origDeb;
+                                                // Green end didn't change - use shifted deb position
+                                                fermetureStartPos = deb;
                                             } else {
-                                                // Green end changed - shift deb by the same amount
+                                                // Green end changed - shift origDeb by the same amount
                                                 const endShift = simulatedGreenEnd - originalGreenEnd;
                                                 const calculatedPos = ((origDeb + endShift) % effectiveCycleLength + effectiveCycleLength) % effectiveCycleLength;
-                                                // If calculated position > original fin, move the brace; otherwise keep original
-                                                fermetureStartPos = calculatedPos > origFin ? calculatedPos : origDeb;
+                                                // If calculated position > shifted fin, move the brace; otherwise keep shifted deb
+                                                fermetureStartPos = calculatedPos > fin ? calculatedPos : deb;
                                             }
                                         }
                                         const fermetureLeftPos = fermetureStartPos * pixelsPerSecond;
