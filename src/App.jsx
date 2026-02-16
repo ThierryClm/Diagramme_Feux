@@ -1278,6 +1278,10 @@ function App() {
                 setPrintType('diagram');
                 setPrintPreviewModal(true);
                 break;
+            case 'printDossier':
+                setPrintType('dossier');
+                setPrintPreviewModal(true);
+                break;
             case 'close':
                 window.close();
                 break;
@@ -3935,13 +3939,14 @@ function App() {
                                 {printType === 'matrix' && 'Aperçu - Matrice de dégagement'}
                                 {printType === 'form' && 'Aperçu - Formulaire'}
                                 {printType === 'diagram' && 'Aperçu - Diagramme'}
+                                {printType === 'dossier' && 'Aperçu - Dossier complet'}
                             </h3>
                             <button className="modal-close" onClick={() => setPrintPreviewModal(false)}>×</button>
                         </div>
                         <div className="print-preview-container">
                             <div className="print-preview-page">
                                 {/* Header commun (sauf pour diagramme qui a son propre en-tête) */}
-                                {printType !== 'diagram' && (
+                                {printType !== 'diagram' && printType !== 'dossier' && (
                                     <div className="print-preview-header">
                                         <h2>{intersectionName || 'Sans titre'}</h2>
                                         <p>{groups.length} groupes - Cycle: {cycleLength}s</p>
@@ -4122,6 +4127,331 @@ function App() {
 
                                         {/* Pied de page: chemin du fichier JSON à gauche, date à droite */}
                                         <div className="print-diagram-footer">
+                                            <span className="print-footer-path">
+                                                {currentProjectPath || 'Projet non enregistré'}
+                                            </span>
+                                            <span className="print-footer-date">{new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                    </div>
+                                    );
+                                })()}
+
+                                {printType === 'dossier' && (() => {
+                                    // A4 paysage avec marges 5mm: ~277mm imprimable = ~1047px à 96dpi
+                                    // On utilise la largeur max pour que le cycle touche la marge droite
+                                    const dossierSidebarWidth = 200;
+                                    const dossierTotalWidth = 1000;
+                                    const dossierTimelineWidth = dossierTotalWidth - dossierSidebarWidth;
+                                    // PPS calculé pour que timeline = exactement la largeur dispo
+                                    const dossierPPS = dossierTimelineWidth / cycleLength;
+                                    const dossierActualWidth = dossierSidebarWidth + (cycleLength * dossierPPS);
+                                    const dossierScale = dossierActualWidth > dossierTotalWidth ? dossierTotalWidth / dossierActualWidth : 1;
+
+                                    // Fonctions de calcul trafic (dupliquées de TrafficTable)
+                                    const getTotalGreenTime = (groupId, mainGreenTime) => {
+                                        if (!mainGreenTime) return 0;
+                                        const lucarneActions = actionData.filter(
+                                            action => action.action === 'Seconde lucarne' &&
+                                                     parseInt(action.gf) === groupId &&
+                                                     action.deb !== '' && action.deb !== null &&
+                                                     action.fin !== '' && action.fin !== null
+                                        );
+                                        let lucarneDuration = 0;
+                                        lucarneActions.forEach(lucarne => {
+                                            const deb = parseFloat(lucarne.deb);
+                                            const fin = parseFloat(lucarne.fin);
+                                            if (!isNaN(deb) && !isNaN(fin)) {
+                                                let duration = fin - deb;
+                                                if (duration < 0) duration += cycleLength;
+                                                lucarneDuration += duration;
+                                            }
+                                        });
+                                        return mainGreenTime + lucarneDuration;
+                                    };
+                                    const calcVUtile = (trafficVol, laneCoef) => {
+                                        if (!trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
+                                        return Math.round(trafficVol / (1800 * laneCoef / cycleLength));
+                                    };
+                                    const calcCapacity = (greenTime, vUtile) => {
+                                        if (!greenTime || !vUtile || greenTime === 0) return null;
+                                        return Math.round((vUtile / greenTime) * 100);
+                                    };
+                                    const calcDelay = (greenTime, trafficVol, laneCoef, groupId, groupOffset) => {
+                                        const bandeAction = actionData.find(
+                                            action => action.action === 'Début de bande passante' &&
+                                                     parseInt(action.actGf1) === groupId &&
+                                                     action.fin !== '' && action.fin !== null && action.fin !== undefined
+                                        );
+                                        if (bandeAction) {
+                                            const finValue = parseFloat(bandeAction.fin);
+                                            if (!isNaN(finValue) && groupOffset !== undefined && groupOffset !== null) {
+                                                return Math.max(0, Math.round(groupOffset - finValue));
+                                            }
+                                        }
+                                        if (!greenTime || !trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
+                                        const ratio = trafficVol / (1800 * laneCoef);
+                                        if (ratio >= 1) return null;
+                                        const denominator = 2 * cycleLength * (1 - ratio);
+                                        if (denominator === 0) return null;
+                                        const redTime = cycleLength - greenTime;
+                                        return Math.round((redTime * redTime) / denominator);
+                                    };
+                                    const calcQueue = (greenTime, trafficVol, laneCoef, groupId, groupOffset) => {
+                                        const bandeAction = actionData.find(
+                                            action => action.action === 'Début de bande passante' &&
+                                                     parseInt(action.actGf1) === groupId &&
+                                                     action.fin !== '' && action.fin !== null && action.fin !== undefined
+                                        );
+                                        if (bandeAction) {
+                                            const finValue = parseFloat(bandeAction.fin);
+                                            if (!isNaN(finValue) && groupOffset !== undefined && groupOffset !== null) {
+                                                return Math.max(0, Math.round(groupOffset - finValue));
+                                            }
+                                        }
+                                        if (!greenTime || !trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
+                                        const redTime = cycleLength - greenTime;
+                                        const innerValue = trafficVol * redTime / 3600 / laneCoef;
+                                        return (Math.floor(innerValue) + 1) * 6;
+                                    };
+                                    const parseTrafficVol = (val) => {
+                                        if (!val) return 0;
+                                        return parseInt(String(val).replace(/c$/i, '')) || 0;
+                                    };
+
+                                    return (
+                                    <div className="print-preview-dossier">
+                                        {/* 1. Titre du projet */}
+                                        <div className="print-dossier-section print-dossier-title">
+                                            <h2>{intersectionName || 'Sans titre'}</h2>
+                                        </div>
+
+                                        {/* 2. Image du carrefour */}
+                                        <div className="print-dossier-section print-dossier-image">
+                                            <h3>Image du carrefour</h3>
+                                            {intersectionImage ? (
+                                                <div className="dossier-image-container">
+                                                    <img
+                                                        src={intersectionImage}
+                                                        alt="Carrefour"
+                                                        className="dossier-carrefour-img"
+                                                        style={{ filter: `brightness(${imageBrightness}%) contrast(${imageContrast}%)` }}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <p className="dossier-no-image">(Pas d'image)</p>
+                                            )}
+                                        </div>
+
+                                        {/* 3. Formulaire */}
+                                        <div className="print-dossier-section print-dossier-form">
+                                            <h3>Formulaire</h3>
+                                            <table className="preview-form-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>GF</th>
+                                                        <th>Nom</th>
+                                                        <th>Type</th>
+                                                        <th>D&eacute;c</th>
+                                                        <th>V</th>
+                                                        <th>J</th>
+                                                        <th>R</th>
+                                                        <th>Vm</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {groups.map(g => (
+                                                        <tr key={g.id}>
+                                                            <td>{g.id}</td>
+                                                            <td>{g.name || ''}</td>
+                                                            <td>{g.type || 'VL'}</td>
+                                                            <td>{g.offset}</td>
+                                                            <td>{g.durations?.green || 0}</td>
+                                                            <td>{g.durations?.orange || 0}</td>
+                                                            <td>{g.durations?.red || 0}</td>
+                                                            <td>{g.minGreen || 0}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* 4. Matrice */}
+                                        <div className="print-dossier-section print-dossier-matrix">
+                                            <h3>Matrice des temps interverts</h3>
+                                            <table className="preview-matrix-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th></th>
+                                                        {groups.map(g => (
+                                                            <th key={g.id}>{g.id}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {groups.map((fromGroup, fromIdx) => (
+                                                        <tr key={fromGroup.id}>
+                                                            <td className="row-header">{fromGroup.id}</td>
+                                                            {groups.map((toGroup, toIdx) => (
+                                                                <td
+                                                                    key={toGroup.id}
+                                                                    className={fromIdx === toIdx ? 'diagonal' : ''}
+                                                                >
+                                                                    {fromIdx !== toIdx ? (conflictMatrix[fromIdx]?.[toIdx] || '') : ''}
+                                                                </td>
+                                                            ))}
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* 5. Diagramme */}
+                                        <div className="print-dossier-section print-dossier-diagram">
+                                            <h3>Diagramme du plan de feu : {pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}</h3>
+                                            <div className="print-diagram-content dossier-diagram-content" style={{
+                                                transform: dossierScale < 1 ? `scale(${dossierScale.toFixed(3)})` : 'none',
+                                                transformOrigin: 'top left'
+                                            }}>
+                                                <TimelineDiagram
+                                                    groups={groups}
+                                                    globalTime={0}
+                                                    onGroupClick={() => {}}
+                                                    pixelsPerSecond={dossierPPS}
+                                                    conflicts={[]}
+                                                    conflictMatrix={conflictMatrix}
+                                                    updateGroupParams={() => {}}
+                                                    cycleLength={cycleLength}
+                                                    actionData={actionData}
+                                                    updateActionRow={() => {}}
+                                                    startDrag={() => {}}
+                                                    endDrag={() => {}}
+                                                    showDependencies={false}
+                                                    dependencyGap={20}
+                                                    hoveredActionId={null}
+                                                    setHoveredActionId={() => {}}
+                                                    planName={pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}
+                                                    isPrintMode={true}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* 6. Conditions de micro-régulation */}
+                                        {actionData.filter(row => row.gf || row.action || row.description || row.deb !== '' || row.fin !== '').length > 0 && (
+                                            <div className="print-dossier-section print-dossier-actions">
+                                                <h3>Conditions de micro-r&eacute;gulation</h3>
+                                                <table className="print-actions-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>GF</th>
+                                                            <th>Action</th>
+                                                            <th>Description</th>
+                                                            <th>D&eacute;b</th>
+                                                            <th>Fin</th>
+                                                            <th>Abrv</th>
+                                                            <th>Action_Micro</th>
+                                                            <th colSpan="2">Plage</th>
+                                                            <th colSpan="4">Action GF</th>
+                                                        </tr>
+                                                        <tr className="print-actions-subheader">
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                            <th>1</th>
+                                                            <th>2</th>
+                                                            <th>1</th>
+                                                            <th>2</th>
+                                                            <th>3</th>
+                                                            <th>4</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {actionData
+                                                            .filter(row => row.gf || row.action || row.description || row.deb !== '' || row.fin !== '')
+                                                            .map(row => (
+                                                                <tr key={row.id}>
+                                                                    <td>{row.gf}</td>
+                                                                    <td>{row.action}</td>
+                                                                    <td>{row.description}</td>
+                                                                    <td>{row.deb}</td>
+                                                                    <td>{row.fin}</td>
+                                                                    <td>{row.abrv}</td>
+                                                                    <td>{row.micro}</td>
+                                                                    <td>{row.plage1}</td>
+                                                                    <td>{row.plage2}</td>
+                                                                    <td>{row.actGf1}</td>
+                                                                    <td>{row.actGf1Gf2}</td>
+                                                                    <td>{row.actGf1Gf3}</td>
+                                                                    <td>{row.actGf1Gf4}</td>
+                                                                </tr>
+                                                            ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+
+                                        {/* 7. Variables micro */}
+                                        {microCustomFields.some(f => f && f.trim()) && (
+                                            <div className="print-dossier-section print-dossier-variables">
+                                                <h3>Variables micro</h3>
+                                                <div className="dossier-variables-list">
+                                                    {microCustomFields.map((field, index) => (
+                                                        field && field.trim() ? (
+                                                            <p key={index}>{field}</p>
+                                                        ) : null
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* 8. Tableau trafic */}
+                                        <div className="print-dossier-section print-dossier-traffic">
+                                            <h3>Donn&eacute;es de trafic et calcul de capacit&eacute;</h3>
+                                            <table className="dossier-traffic-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Grp</th>
+                                                        <th>Nom</th>
+                                                        <th>Coef</th>
+                                                        <th>Trafic</th>
+                                                        <th>V.Utile</th>
+                                                        <th>Cap.U</th>
+                                                        <th>Retard</th>
+                                                        <th>File</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {groups.map(g => {
+                                                        const td = getTrafficData(g.id);
+                                                        const trafficVol = parseTrafficVol(td.trafficVol);
+                                                        const coef = g.laneCoef || 1;
+                                                        const greenTime = getTotalGreenTime(g.id, g.durations?.green || 0);
+                                                        const vUtile = calcVUtile(trafficVol, coef);
+                                                        const capU = calcCapacity(greenTime, vUtile);
+                                                        const delay = calcDelay(greenTime, trafficVol, coef, g.id, g.offset);
+                                                        const queue = calcQueue(greenTime, trafficVol, coef, g.id, g.offset);
+                                                        return (
+                                                            <tr key={g.id}>
+                                                                <td>{g.id}</td>
+                                                                <td>{g.name || ''}</td>
+                                                                <td>{coef}</td>
+                                                                <td>{td.trafficVol || ''}</td>
+                                                                <td>{vUtile !== null ? vUtile : ''}</td>
+                                                                <td>{capU !== null ? capU + '%' : ''}</td>
+                                                                <td>{delay !== null ? delay : ''}</td>
+                                                                <td>{queue !== null ? queue : ''}</td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* 9. Pied de page */}
+                                        <div className="print-dossier-footer">
                                             <span className="print-footer-path">
                                                 {currentProjectPath || 'Projet non enregistré'}
                                             </span>

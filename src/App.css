@@ -1598,6 +1598,174 @@
     max-height: none;
 }
 
+/* Dossier preview styles */
+.print-preview-modal-large:has(.print-preview-dossier) {
+    max-width: 95%;
+    width: 1100px;
+    max-height: 95vh;
+}
+
+.print-preview-page:has(.print-preview-dossier) {
+    min-width: 950px;
+    max-width: none;
+}
+
+.print-preview-dossier {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: #fff;
+    color: #000;
+}
+
+.print-dossier-section {
+    page-break-inside: avoid;
+    background: #fff;
+    color: #000;
+}
+
+.print-dossier-section h3 {
+    font-size: 14px;
+    font-weight: bold;
+    margin: 0 0 8px 0;
+    padding: 4px 6px;
+    border-bottom: 1px solid #999;
+    color: #000 !important;
+    background: #fff !important;
+}
+
+.print-dossier-title {
+    text-align: center;
+}
+
+.print-dossier-title h2 {
+    margin: 0 0 4px 0;
+}
+
+.print-dossier-title p {
+    margin: 0;
+    color: #666;
+}
+
+.dossier-image-container {
+    text-align: center;
+    max-height: 350px;
+    overflow: hidden;
+}
+
+.dossier-carrefour-img {
+    max-width: 100%;
+    max-height: 340px;
+    object-fit: contain;
+}
+
+.dossier-no-image {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+}
+
+.dossier-diagram-content {
+    overflow: hidden;
+}
+
+/* Dossier: matrice texte noir sur fond blanc */
+.print-dossier-matrix .preview-matrix-table {
+    color: #000;
+}
+
+.print-dossier-matrix .preview-matrix-table th,
+.print-dossier-matrix .preview-matrix-table td {
+    color: #000;
+    background: #fff;
+    border-color: #999;
+}
+
+.print-dossier-matrix .preview-matrix-table th,
+.print-dossier-matrix .preview-matrix-table td.row-header {
+    background: #f0f0f0;
+    color: #000;
+}
+
+.print-dossier-matrix .preview-matrix-table td.diagonal {
+    background: #e0e0e0;
+}
+
+/* Dossier: formulaire compact fond blanc */
+.print-dossier-form .preview-form-table {
+    color: #000;
+    width: auto;
+    table-layout: auto;
+    font-size: 0.75rem;
+}
+
+.print-dossier-form .preview-form-table th,
+.print-dossier-form .preview-form-table td {
+    color: #000;
+    background: #fff;
+    border-color: #999;
+    padding: 2px 6px;
+    white-space: nowrap;
+}
+
+.print-dossier-form .preview-form-table th {
+    background: #f0f0f0;
+}
+
+.dossier-variables-list p {
+    margin: 2px 0;
+    font-size: 12px;
+}
+
+.dossier-traffic-table {
+    width: auto;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+    color: #000;
+    background: #fff;
+}
+
+.dossier-traffic-table th,
+.dossier-traffic-table td {
+    border: 1px solid #999;
+    padding: 2px 6px;
+    text-align: center;
+    color: #000;
+    background: #fff;
+    white-space: nowrap;
+}
+
+.dossier-traffic-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+    color: #000;
+}
+
+/* Matrice dossier: compact */
+.print-dossier-matrix .preview-matrix-table {
+    table-layout: auto;
+    width: auto;
+    max-width: 100%;
+    font-size: 0.65rem;
+}
+
+.print-dossier-matrix .preview-matrix-table th,
+.print-dossier-matrix .preview-matrix-table td {
+    padding: 1px 3px;
+    min-width: 16px;
+    white-space: nowrap;
+}
+
+.print-dossier-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #666;
+    border-top: 1px solid #ddd;
+    padding-top: 8px;
+    margin-top: 10px;
+}
+
 /* Print Media Queries */
 @media print {
     @page {
@@ -2293,6 +2461,124 @@
     /* Empêcher tout débordement vertical */
     body.print-diagram .print-preview-page {
         overflow: hidden !important;
+    }
+
+    /* Dossier print - Paysage A4 */
+    body.print-dossier {
+        page: dossier-page;
+    }
+
+    @page dossier-page {
+        size: A4 landscape;
+        margin: 5mm;
+    }
+
+    body.print-dossier .print-preview-overlay,
+    body.print-dossier .print-preview-overlay *,
+    body.print-dossier .print-preview-modal-large,
+    body.print-dossier .print-preview-modal-large * {
+        visibility: visible !important;
+    }
+
+    body.print-dossier .print-preview-overlay,
+    body.print-dossier .modal-overlay {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+
+    body.print-dossier .print-preview-modal-large,
+    body.print-dossier .modal-content {
+        position: relative !important;
+        box-shadow: none !important;
+        border: none !important;
+        max-width: none !important;
+        max-height: none !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    body.print-dossier .modal-header,
+    body.print-dossier .modal-footer {
+        display: none !important;
+    }
+
+    body.print-dossier .print-preview-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    body.print-dossier .print-preview-page {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    body.print-dossier .print-preview-dossier {
+        background: white !important;
+        color: #000 !important;
+    }
+
+    body.print-dossier .print-dossier-section {
+        page-break-inside: avoid;
+        page-break-after: auto;
+        background: white !important;
+        color: #000 !important;
+    }
+
+    body.print-dossier .print-dossier-section h3 {
+        color: #000 !important;
+        background: #fff !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+
+    body.print-dossier .dossier-diagram-content {
+        overflow: visible !important;
+    }
+
+    body.print-dossier .print-actions-table,
+    body.print-dossier .dossier-traffic-table,
+    body.print-dossier .preview-form-table,
+    body.print-dossier .preview-matrix-table {
+        background: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body.print-dossier .print-actions-table th,
+    body.print-dossier .dossier-traffic-table th,
+    body.print-dossier .preview-form-table th,
+    body.print-dossier .preview-matrix-table th {
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body.print-dossier .print-dossier-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 5px 10mm;
     }
 }
 
