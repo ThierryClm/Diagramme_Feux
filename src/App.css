@@ -1598,22 +1598,23 @@
     max-height: none;
 }
 
-/* Dossier preview styles */
-.print-preview-modal-large:has(.print-preview-dossier) {
-    max-width: 95%;
-    width: 1100px;
-    max-height: 95vh;
+/* Dossier: masquer le modal à l'écran (impression directe) */
+.print-preview-overlay:has(.print-preview-dossier) {
+    background: transparent !important;
+    pointer-events: none;
 }
 
-.print-preview-page:has(.print-preview-dossier) {
-    min-width: 950px;
-    max-width: none;
+.print-preview-modal-large:has(.print-preview-dossier) {
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    opacity: 0;
 }
 
 .print-preview-dossier {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 30px;
     background: #fff;
     color: #000;
 }
@@ -1622,6 +1623,7 @@
     page-break-inside: avoid;
     background: #fff;
     color: #000;
+    padding: 0 2px;
 }
 
 .print-dossier-section h3 {
@@ -1712,9 +1714,21 @@
     background: #f0f0f0;
 }
 
+.print-dossier-variables {
+    background: #fff;
+    color: #000;
+}
+
+.dossier-variables-list {
+    background: #fff;
+    color: #000;
+}
+
 .dossier-variables-list p {
     margin: 2px 0;
     font-size: 12px;
+    color: #000;
+    background: #fff;
 }
 
 .dossier-traffic-table {
@@ -1756,14 +1770,41 @@
     white-space: nowrap;
 }
 
+/* Dossier: tableau conditions micro optimisé */
+.print-dossier-actions .print-actions-table {
+    width: auto;
+    font-size: 0.7rem;
+}
+
+/* Colonnes compactes: Déb(4), Fin(5), Abrv(6), Plage1(8), Plage2(9), ActGf1-4(10-13) */
+.print-dossier-actions .print-actions-table td:nth-child(4),
+.print-dossier-actions .print-actions-table td:nth-child(5),
+.print-dossier-actions .print-actions-table td:nth-child(6),
+.print-dossier-actions .print-actions-table td:nth-child(8),
+.print-dossier-actions .print-actions-table td:nth-child(9),
+.print-dossier-actions .print-actions-table td:nth-child(10),
+.print-dossier-actions .print-actions-table td:nth-child(11),
+.print-dossier-actions .print-actions-table td:nth-child(12),
+.print-dossier-actions .print-actions-table td:nth-child(13) {
+    padding: 2px 3px;
+    white-space: nowrap;
+}
+
+/* Action_Micro(7) : afficher en entier */
+.print-dossier-actions .print-actions-table td:nth-child(7) {
+    text-align: left;
+    max-width: none;
+    overflow: visible;
+    white-space: nowrap;
+}
+
 .print-dossier-footer {
+    display: none;
+}
+
+.print-footer-page-date {
     display: flex;
-    justify-content: space-between;
-    font-size: 10px;
-    color: #666;
-    border-top: 1px solid #ddd;
-    padding-top: 8px;
-    margin-top: 10px;
+    gap: 20px;
 }
 
 /* Print Media Queries */
@@ -2466,13 +2507,20 @@
     /* Dossier print - Paysage A4 */
     body.print-dossier {
         page: dossier-page;
+        background: white !important;
     }
 
     @page dossier-page {
         size: A4 landscape;
-        margin: 5mm;
+        margin: 10mm;
     }
 
+    /* Masquer TOUS les éléments de l'app (sidebar, header, etc.) */
+    body.print-dossier * {
+        visibility: hidden !important;
+    }
+
+    /* Rendre visible uniquement le contenu du dossier */
     body.print-dossier .print-preview-overlay,
     body.print-dossier .print-preview-overlay *,
     body.print-dossier .print-preview-modal-large,
@@ -2487,15 +2535,20 @@
         top: 0 !important;
         width: 100% !important;
         height: auto !important;
+        max-height: none !important;
         background: white !important;
         padding: 0 !important;
         margin: 0 !important;
         overflow: visible !important;
+        display: block !important;
     }
 
     body.print-dossier .print-preview-modal-large,
     body.print-dossier .modal-content {
         position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        opacity: 1 !important;
         box-shadow: none !important;
         border: none !important;
         max-width: none !important;
@@ -2506,6 +2559,7 @@
         padding: 0 !important;
         background: white !important;
         overflow: visible !important;
+        border-radius: 0 !important;
     }
 
     body.print-dossier .modal-header,
@@ -2518,6 +2572,11 @@
         margin: 0 !important;
         background: white !important;
         overflow: visible !important;
+        max-height: none !important;
+        max-width: none !important;
+        width: 100% !important;
+        height: auto !important;
+        flex: none !important;
     }
 
     body.print-dossier .print-preview-page {
@@ -2526,6 +2585,10 @@
         padding: 0 !important;
         margin: 0 !important;
         max-width: none !important;
+        max-height: none !important;
+        min-width: auto !important;
+        width: 100% !important;
+        height: auto !important;
         background: white !important;
         overflow: visible !important;
     }
@@ -2533,6 +2596,8 @@
     body.print-dossier .print-preview-dossier {
         background: white !important;
         color: #000 !important;
+        overflow: visible !important;
+        height: auto !important;
     }
 
     body.print-dossier .print-dossier-section {
@@ -2540,6 +2605,7 @@
         page-break-after: auto;
         background: white !important;
         color: #000 !important;
+        overflow: visible !important;
     }
 
     body.print-dossier .print-dossier-section h3 {
@@ -2555,30 +2621,108 @@
         overflow: visible !important;
     }
 
-    body.print-dossier .print-actions-table,
-    body.print-dossier .dossier-traffic-table,
-    body.print-dossier .preview-form-table,
-    body.print-dossier .preview-matrix-table {
-        background: white !important;
+    /* Forcer l'impression des couleurs sur TOUS les éléments */
+    body.print-dossier .print-preview-overlay *,
+    body.print-dossier .print-preview-modal-large * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        color-adjust: exact !important;
     }
 
-    body.print-dossier .print-actions-table th,
-    body.print-dossier .dossier-traffic-table th,
+    /* Fond blanc sur conteneurs et cellules (pas sur *) */
+    body.print-dossier .print-preview-dossier,
+    body.print-dossier .print-dossier-section,
+    body.print-dossier .print-dossier-title,
+    body.print-dossier .print-dossier-form,
+    body.print-dossier .print-dossier-form td,
+    body.print-dossier .print-dossier-matrix,
+    body.print-dossier .print-dossier-matrix td,
+    body.print-dossier .print-dossier-variables,
+    body.print-dossier .dossier-variables-list,
+    body.print-dossier .dossier-variables-list p,
+    body.print-dossier .print-dossier-traffic,
+    body.print-dossier .dossier-traffic-table td,
+    body.print-dossier .print-dossier-actions,
+    body.print-dossier .print-actions-table td,
+    body.print-dossier .print-dossier-diagram {
+        background: white !important;
+        background-color: white !important;
+        color: #000 !important;
+    }
+
+    /* Fond blanc diagramme: sidebar, tracks, ruler */
+    body.print-dossier .timeline-row-track,
+    body.print-dossier .timeline-track-container,
+    body.print-dossier .row-label-container,
+    body.print-dossier .sidebar-header-row,
+    body.print-dossier .ruler-container,
+    body.print-dossier .timeline-ruler,
+    body.print-dossier .timeline-sidebar {
+        background: #fff !important;
+        background-color: #fff !important;
+    }
+
+    /* Couleurs des barres de phase du diagramme */
+    body.print-dossier .phase-bar.green {
+        background: linear-gradient(to bottom, #00FF00, #00CC00) !important;
+        background-color: #00CC00 !important;
+    }
+    body.print-dossier .phase-bar.green-dark {
+        background: linear-gradient(to bottom, #008800, #006600) !important;
+        background-color: #006600 !important;
+    }
+    body.print-dossier .phase-bar.orange {
+        background: linear-gradient(to bottom, #FFFF00, #CCCC00) !important;
+        background-color: #CCCC00 !important;
+    }
+    body.print-dossier .phase-bar.red {
+        background: linear-gradient(to bottom, #FF0000, #CC0000) !important;
+        background-color: #CC0000 !important;
+    }
+
+    /* Quadrillage visible dans le diagramme */
+    body.print-dossier .grid-line {
+        background-color: rgba(0, 0, 0, 0.15) !important;
+    }
+    body.print-dossier .grid-5s {
+        background-color: rgba(0, 0, 0, 0.25) !important;
+    }
+    body.print-dossier .grid-10s {
+        background-color: rgba(0, 0, 0, 0.4) !important;
+    }
+
+    /* Fond gris en-têtes de tableaux */
     body.print-dossier .preview-form-table th,
-    body.print-dossier .preview-matrix-table th {
+    body.print-dossier .preview-matrix-table th,
+    body.print-dossier .preview-matrix-table td.row-header,
+    body.print-dossier .print-actions-table th,
+    body.print-dossier .dossier-traffic-table th {
         background: #f0f0f0 !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+        background-color: #f0f0f0 !important;
+    }
+
+    body.print-dossier .preview-matrix-table td.diagonal {
+        background: #e0e0e0 !important;
+        background-color: #e0e0e0 !important;
     }
 
     body.print-dossier .print-dossier-footer {
+        display: flex !important;
+        justify-content: space-between;
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        padding: 5px 10mm;
+        padding: 3px 10mm;
+        font-size: 9px;
+        color: #333;
+        border-top: 1px solid #ccc;
+        background: white;
+    }
+
+    /* Numéro de page via CSS counter */
+    body.print-dossier .print-footer-page::after {
+        content: "Page " counter(page) " / " counter(pages);
     }
 }
 

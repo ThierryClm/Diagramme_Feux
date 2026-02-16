@@ -1281,6 +1281,14 @@ function App() {
             case 'printDossier':
                 setPrintType('dossier');
                 setPrintPreviewModal(true);
+                // Impression directe sans aperçu
+                setTimeout(() => {
+                    document.body.classList.add('print-dossier');
+                    window.print();
+                    document.body.classList.remove('print-dossier');
+                    setPrintPreviewModal(false);
+                    setPrintType(null);
+                }, 500);
                 break;
             case 'close':
                 window.close();
@@ -4137,15 +4145,15 @@ function App() {
                                 })()}
 
                                 {printType === 'dossier' && (() => {
-                                    // A4 paysage avec marges 5mm: ~277mm imprimable = ~1047px à 96dpi
-                                    // On utilise la largeur max pour que le cycle touche la marge droite
-                                    const dossierSidebarWidth = 200;
-                                    const dossierTotalWidth = 1000;
-                                    const dossierTimelineWidth = dossierTotalWidth - dossierSidebarWidth;
-                                    // PPS calculé pour que timeline = exactement la largeur dispo
-                                    const dossierPPS = dossierTimelineWidth / cycleLength;
-                                    const dossierActualWidth = dossierSidebarWidth + (cycleLength * dossierPPS);
-                                    const dossierScale = dossierActualWidth > dossierTotalWidth ? dossierTotalWidth / dossierActualWidth : 1;
+                                    // A4 paysage marges 10mm: 297-20=277mm = ~1047px à 96dpi
+                                    // Sidebar TimelineDiagram réelle = 325px (sans commentaires/remarques masqués)
+                                    const dossierPrintWidth = 1047;
+                                    const dossierSidebarReal = 325;
+                                    // PPS pour remplir exactement la largeur disponible
+                                    const dossierPPS = (dossierPrintWidth - dossierSidebarReal) / cycleLength;
+                                    // Largeur réelle du composant rendu
+                                    const dossierRenderedWidth = dossierSidebarReal + (cycleLength * dossierPPS);
+                                    const dossierScale = dossierRenderedWidth > dossierPrintWidth ? dossierPrintWidth / dossierRenderedWidth : 1;
 
                                     // Fonctions de calcul trafic (dupliquées de TrafficTable)
                                     const getTotalGreenTime = (groupId, mainGreenTime) => {
@@ -4306,34 +4314,53 @@ function App() {
                                         </div>
 
                                         {/* 5. Diagramme */}
+                                        {(() => {
+                                            // Calcul du scale combiné (largeur + hauteur)
+                                            // A4 paysage 10mm marges: 190mm = ~718px
+                                            // Moins: titre h3 (~30px) + pied de page fixe (~25px) + marges (~15px)
+                                            const diagramPageHeight = 648;
+                                            // header(50) + rows(31px chacune: 30+border) + ruler(25) + padding(10)
+                                            const diagramRenderedHeight = 85 + groups.length * 31;
+                                            const heightScale = diagramRenderedHeight > diagramPageHeight ? diagramPageHeight / diagramRenderedHeight : 1;
+                                            const combinedScale = Math.min(dossierScale, heightScale);
+                                            return (
                                         <div className="print-dossier-section print-dossier-diagram">
                                             <h3>Diagramme du plan de feu : {pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}</h3>
-                                            <div className="print-diagram-content dossier-diagram-content" style={{
-                                                transform: dossierScale < 1 ? `scale(${dossierScale.toFixed(3)})` : 'none',
-                                                transformOrigin: 'top left'
+                                            {/* Wrapper avec hauteur fixée pour éviter le saut de page */}
+                                            <div style={{
+                                                height: `${Math.ceil(diagramRenderedHeight * combinedScale)}px`,
+                                                overflow: 'hidden',
+                                                background: '#fff'
                                             }}>
-                                                <TimelineDiagram
-                                                    groups={groups}
-                                                    globalTime={0}
-                                                    onGroupClick={() => {}}
-                                                    pixelsPerSecond={dossierPPS}
-                                                    conflicts={[]}
-                                                    conflictMatrix={conflictMatrix}
-                                                    updateGroupParams={() => {}}
-                                                    cycleLength={cycleLength}
-                                                    actionData={actionData}
-                                                    updateActionRow={() => {}}
-                                                    startDrag={() => {}}
-                                                    endDrag={() => {}}
-                                                    showDependencies={false}
-                                                    dependencyGap={20}
-                                                    hoveredActionId={null}
-                                                    setHoveredActionId={() => {}}
-                                                    planName={pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}
-                                                    isPrintMode={true}
-                                                />
+                                                <div className="print-diagram-content dossier-diagram-content" style={{
+                                                    transform: combinedScale < 1 ? `scale(${combinedScale.toFixed(3)})` : 'none',
+                                                    transformOrigin: 'top left'
+                                                }}>
+                                                    <TimelineDiagram
+                                                        groups={groups}
+                                                        globalTime={0}
+                                                        onGroupClick={() => {}}
+                                                        pixelsPerSecond={dossierPPS}
+                                                        conflicts={[]}
+                                                        conflictMatrix={conflictMatrix}
+                                                        updateGroupParams={() => {}}
+                                                        cycleLength={cycleLength}
+                                                        actionData={actionData}
+                                                        updateActionRow={() => {}}
+                                                        startDrag={() => {}}
+                                                        endDrag={() => {}}
+                                                        showDependencies={false}
+                                                        dependencyGap={20}
+                                                        hoveredActionId={null}
+                                                        setHoveredActionId={() => {}}
+                                                        planName={pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}
+                                                        isPrintMode={true}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
+                                            );
+                                        })()}
 
                                         {/* 6. Conditions de micro-régulation */}
                                         {actionData.filter(row => row.gf || row.action || row.description || row.deb !== '' || row.fin !== '').length > 0 && (
@@ -4455,7 +4482,10 @@ function App() {
                                             <span className="print-footer-path">
                                                 {currentProjectPath || 'Projet non enregistré'}
                                             </span>
-                                            <span className="print-footer-date">{new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                            <span className="print-footer-page-date">
+                                                <span className="print-footer-page"></span>
+                                                <span className="print-footer-date">{new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                            </span>
                                         </div>
                                     </div>
                                     );
