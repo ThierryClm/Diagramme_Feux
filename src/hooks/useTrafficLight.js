@@ -714,7 +714,8 @@ export const useTrafficLight = () => {
                                 greenDuration: g.durations?.green !== undefined && !isNaN(g.durations.green) ? g.durations.green : 10,
                                 da: g.da || '',
                                 comment: g.comment || '',
-                                commentColor: g.commentColor || '#000000'
+                                commentColor: g.commentColor || '#000000',
+                                phaseFlag: g.phaseFlag || ''
                             }));
                         } else {
                             migrated.diagram = [];
@@ -1657,7 +1658,8 @@ export const useTrafficLight = () => {
             greenDuration: g.durations.green,
             da: g.da || '',
             comment: g.comment || '',
-            commentColor: g.commentColor || ''
+            commentColor: g.commentColor || '',
+            phaseFlag: g.phaseFlag || ''
         }));
         const groupsKey = JSON.stringify(diagramData);
 
@@ -1721,6 +1723,7 @@ export const useTrafficLight = () => {
                             da: diagramEntry.da !== undefined ? diagramEntry.da : group.da,
                             comment: diagramEntry.comment !== undefined ? diagramEntry.comment : group.comment,
                             commentColor: diagramEntry.commentColor !== undefined ? diagramEntry.commentColor : group.commentColor,
+                            phaseFlag: diagramEntry.phaseFlag !== undefined ? diagramEntry.phaseFlag : (group.phaseFlag || ''),
                             durations: {
                                 ...group.durations,
                                 green: newGreenDuration

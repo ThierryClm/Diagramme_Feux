@@ -3030,7 +3030,15 @@ function App() {
                             <li><strong>En-tête :</strong> Nom du carrefour, nombre de groupes, durée du cycle, zoom</li>
                             <li><strong>Panneau gauche :</strong> Onglets Projets, Configuration et Trafic</li>
                             <li><strong>Zone centrale :</strong> Diagramme temporel et tableau des conditions de micro-régulation</li>
-                            <li><strong>Onglets PF :</strong> Gérez plusieurs plans de feux (PF1, PF2...) avec le bouton "+"</li>
+                            <li><strong>Onglets PF :</strong> Gérez plusieurs plans de feux (PF1, PF2...) :
+                                <ul>
+                                    <li><em>Ajouter :</em> Cliquez sur le bouton "+" pour créer un nouveau plan de feux vierge.</li>
+                                    <li><em>Dupliquer :</em> Via le menu Diagramme → Dupliquer, crée un nouvel onglet avec une copie du plan actuel.</li>
+                                    <li><em>Renommer :</em> Double-cliquez sur un onglet PF pour modifier son nom.</li>
+                                    <li><em>Réordonner :</em> Glissez-déposez un onglet PF pour modifier l'ordre des plans de feux.</li>
+                                    <li><em>Supprimer :</em> Via le menu Diagramme → Supprimer, supprime l'onglet PF actif (impossible s'il n'en reste qu'un).</li>
+                                </ul>
+                            </li>
                             <li><strong>Indicateur Valider/Validé :</strong> Cliquez sur "Valider" (quand aucun conflit) pour marquer l'onglet PF en vert. Cliquez à nouveau pour annuler la validation.</li>
                             <li><strong>Séparateur ajustable :</strong> La position du séparateur entre le diagramme et les conditions de micro-régulation est sauvegardée avec le projet.</li>
                         </ul>
@@ -3085,6 +3093,20 @@ function App() {
                             <li><strong>Fin (Fin de vert) :</strong> Position de fin du vert dans le cycle (en secondes depuis le début du cycle)</li>
                             <li><strong>V (Vert) :</strong> Durée du feu vert, calculée automatiquement comme la différence entre Fin et Déb</li>
                             <li><strong>Indicateur aiguillage/escamotage :</strong> Cliquez sur un nom de groupe puis utilisez <em>Alt+A</em> (aiguillage) ou <em>Alt+E</em> (escamotage) pour marquer le groupe. Un petit "a" ou "e" apparaît à côté du nom. Les conflits où ce groupe est en première position (GFx dans "GFx ↔ GFy") sont alors grisés et non comptabilisés, ce qui peut permettre de valider le plan de feux.</li>
+                        </ul>
+                    </section>
+
+                    <section id="help-actions" className="help-section">
+                        <h4>Colonnes du tableau des actions de micro-régulation</h4>
+                        <ul>
+                            <li><strong>GF :</strong> Groupe fonctionnel concerné par l'action</li>
+                            <li><strong>Action :</strong> Type d'action (liste déroulante)</li>
+                            <li><strong>Description :</strong> Description libre (30 caractères max)</li>
+                            <li><strong>Déb/Fin :</strong> Temps de début et fin de l'action dans le cycle</li>
+                            <li><strong>Abrv :</strong> Abréviation affichée sur le diagramme</li>
+                            <li><strong>Action_Micro :</strong> Action de micro-régulation appliquée au diagramme (40 caractères)</li>
+                            <li><strong>Plage 1/2 :</strong> Groupes délimitant la zone verticale (Adaptatif)</li>
+                            <li><strong>Action GF 1-4 :</strong> Groupes liés à l'action (Fermeture anticipée, Escamotage)</li>
                         </ul>
                     </section>
 
@@ -3196,20 +3218,6 @@ function App() {
                                 <span>Synchro BTS</span>
                             </div>
                         </div>
-                    </section>
-
-                    <section id="help-actions" className="help-section">
-                        <h4>Colonnes du tableau des actions</h4>
-                        <ul>
-                            <li><strong>GF :</strong> Groupe fonctionnel concerné par l'action</li>
-                            <li><strong>Action :</strong> Type d'action (liste déroulante)</li>
-                            <li><strong>Description :</strong> Description libre (30 caractères max)</li>
-                            <li><strong>Déb/Fin :</strong> Temps de début et fin de l'action dans le cycle</li>
-                            <li><strong>Abrv :</strong> Abréviation affichée sur le diagramme</li>
-                            <li><strong>Action_Micro :</strong> Commande micro-contrôleur (40 caractères)</li>
-                            <li><strong>Plage 1/2 :</strong> Groupes délimitant la zone verticale (Adaptatif)</li>
-                            <li><strong>Action GF 1-4 :</strong> Groupes liés à l'action (Escamotage)</li>
-                        </ul>
                     </section>
 
                     <section className="help-section">
