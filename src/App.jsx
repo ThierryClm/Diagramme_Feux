@@ -3396,25 +3396,46 @@ function App() {
                     </section>
 
                     <section className="help-section">
-                        <h4>Impression</h4>
-                        <p>Le menu Fichier propose trois options d'impression avec prévisualisation :</p>
+                        <h4>Impression du dossier</h4>
+                        <p>Le menu Fichier → <strong>Imprimer le dossier...</strong> ouvre un dialog de sélection des sections à inclure dans le dossier imprimé (format A4 paysage).</p>
+                        <h5 style={{ marginTop: '12px', marginBottom: '8px', color: '#aaa' }}>Sélection des sections</h5>
+                        <p>Le dialog présente des cases à cocher organisées en deux niveaux :</p>
                         <ul>
-                            <li><strong>Imprimer la matrice :</strong> Imprime la matrice de dégagement avec le nom du carrefour</li>
-                            <li><strong>Imprimer le formulaire :</strong> Imprime la liste des groupes avec leurs paramètres</li>
-                            <li><strong>Imprimer le diagramme :</strong> Imprime le diagramme temporel complet en format A4 paysage, incluant :
+                            <li><strong>Sections globales</strong> (niveau principal) :
                                 <ul>
-                                    <li>En-tête : nom du carrefour et plan de feu actif</li>
-                                    <li>Diagramme des phases avec les barres colorées</li>
-                                    <li>Tableau des conditions de micro-régulation (si définies)</li>
-                                    <li>Pied de page : nom du fichier projet et date d'impression</li>
+                                    <li><em>Image du carrefour :</em> Photo ou schéma du carrefour avec les flèches des groupes</li>
+                                    <li><em>Formulaire :</em> Tableau des groupes avec leurs paramètres (type, courant, durées)</li>
+                                    <li><em>Matrice des temps interverts :</em> Matrice de dégagement entre groupes conflictuels</li>
+                                </ul>
+                            </li>
+                            <li><strong>Sections par plan de feu</strong> (une ligne par PF) :
+                                <ul>
+                                    <li>Chaque plan de feu dispose de sa propre case à cocher</li>
+                                    <li>Les PF validés sont signalés en vert et cochés par défaut ; les autres sont décochés</li>
+                                    <li>Cocher/décocher un PF active/désactive automatiquement ses sous-options</li>
+                                </ul>
+                            </li>
+                            <li><strong>Sous-options par PF</strong> (indentées sous chaque PF) :
+                                <ul>
+                                    <li><em>Conditions de micro-régulation :</em> Tableau des actions de micro-régulation du PF</li>
+                                    <li><em>Données de trafic et capacité :</em> Tableau des données trafic associées au PF</li>
+                                    <li><em>Variables micro :</em> Variables personnalisées de micro-régulation du PF</li>
                                 </ul>
                             </li>
                         </ul>
-                        <p><strong>Paramètres d'impression recommandés :</strong></p>
+                        <h5 style={{ marginTop: '12px', marginBottom: '8px', color: '#aaa' }}>Organisation du document imprimé</h5>
+                        <p>Le dossier est structuré comme suit :</p>
+                        <ul>
+                            <li><strong>Page de titre :</strong> Nom du carrefour</li>
+                            <li><strong>Sections globales :</strong> Image, formulaire et matrice (si cochées)</li>
+                            <li><strong>Pour chaque PF coché :</strong> Diagramme du plan de feu, suivi de ses conditions de micro-régulation, données de trafic/capacité et variables micro (selon les sous-options cochées)</li>
+                            <li><strong>Pied de page :</strong> Nom du fichier projet et date d'impression sur chaque page</li>
+                        </ul>
+                        <h5 style={{ marginTop: '12px', marginBottom: '8px', color: '#aaa' }}>Paramètres d'impression recommandés</h5>
                         <ul>
                             <li><strong>Couleur :</strong> Sélectionnez "Couleur" pour imprimer les barres du diagramme en couleur</li>
                             <li><strong>Marges :</strong> Sélectionnez "Minimum" ou "Aucune" pour maximiser l'espace</li>
-                            <li><strong>Graphiques d'arrière-plan :</strong> Activez cette option pour imprimer les couleurs des barres de phase</li>
+                            <li><strong>Graphiques d'arrière-plan :</strong> Activez cette option pour imprimer les couleurs des barres de phase et le quadrillage</li>
                         </ul>
                     </section>
 
@@ -4458,6 +4479,17 @@ function App() {
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {/* Remarques du PF (si non vides) */}
+                                        {(() => {
+                                            const pfRemarques = pf.remarques || '';
+                                            const textOnly = pfRemarques.replace(/<[^>]*>/g, '').trim();
+                                            return textOnly ? (
+                                                <div className="print-dossier-remarques">
+                                                    <strong>Remarques :</strong> <span dangerouslySetInnerHTML={{ __html: pfRemarques }} />
+                                                </div>
+                                            ) : null;
+                                        })()}
 
                                         {/* Conditions micro pour ce PF */}
                                         {dossierSections[`conditionsMicro_${pf.id}`] && pfActionData.filter(row => row.gf || row.action || row.description || row.deb !== '' || row.fin !== '').length > 0 && (
