@@ -167,9 +167,6 @@ const MenuBar = ({
                 { label: 'Liens externes...', action: 'externalLinks' },
                 { type: 'separator' },
                 { label: 'Imprimer le dossier...', action: 'printDossier' },
-                { label: 'Imprimer la matrice...', action: 'printMatrix' },
-                { label: 'Imprimer le formulaire...', action: 'printForm' },
-                { label: 'Imprimer le diagramme...', action: 'printDiagram' },
                 { type: 'separator' },
                 { label: 'Fermer', action: 'close' }
             ]

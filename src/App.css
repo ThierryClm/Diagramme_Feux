@@ -1611,6 +1611,64 @@
     opacity: 0;
 }
 
+/* Dialog sélection sections dossier */
+.dossier-dialog {
+    max-width: 400px;
+    min-width: 320px;
+}
+
+.dossier-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 20px;
+}
+
+.dossier-dialog-body label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 3px 0;
+}
+
+.dossier-dialog-body label:hover {
+    color: #4fc3f7;
+}
+
+.dossier-dialog-body input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Groupe PF dans le dialog */
+.dossier-pf-group {
+    margin-top: 4px;
+    border-left: 2px solid transparent;
+    padding-left: 0;
+}
+
+/* PF validé : touche de vert */
+.dossier-pf-validated {
+    color: #4CAF50 !important;
+    font-weight: bold;
+}
+
+/* Sous-options indentées sous chaque PF */
+.dossier-pf-suboptions {
+    margin-left: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.dossier-pf-suboptions label {
+    font-size: 12px !important;
+    opacity: 0.85;
+}
+
 .print-preview-dossier {
     display: flex;
     flex-direction: column;
@@ -2505,9 +2563,15 @@
     }
 
     /* Dossier print - Paysage A4 */
+    html:has(body.print-dossier) {
+        background: white !important;
+        background-color: white !important;
+    }
+
     body.print-dossier {
         page: dossier-page;
         background: white !important;
+        background-color: white !important;
     }
 
     @page dossier-page {
@@ -2515,16 +2579,18 @@
         margin: 10mm;
     }
 
-    /* Masquer TOUS les éléments de l'app (sidebar, header, etc.) */
+    /* Masquer TOUS les éléments descendants (visibility: hidden ne dessine pas les fonds) */
     body.print-dossier * {
         visibility: hidden !important;
     }
 
-    /* Rendre visible uniquement le contenu du dossier */
+    /* Rendre visible le contenu du dossier (sans forcer background: white sur *) */
     body.print-dossier .print-preview-overlay,
     body.print-dossier .print-preview-overlay *,
     body.print-dossier .print-preview-modal-large,
-    body.print-dossier .print-preview-modal-large * {
+    body.print-dossier .print-preview-modal-large *,
+    body.print-dossier .print-preview-dossier,
+    body.print-dossier .print-preview-dossier * {
         visibility: visible !important;
     }
 
@@ -2613,7 +2679,6 @@
         background: #fff !important;
         font-size: 14px !important;
         font-weight: bold !important;
-        visibility: visible !important;
         display: block !important;
     }
 

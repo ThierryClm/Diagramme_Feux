@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react';
 import { useTrafficLight } from './hooks/useTrafficLight';
 import { useAuth, PERMISSIONS } from './hooks/useAuth';
 import TimelineDiagram from './components/TimelineDiagram';
@@ -537,7 +537,9 @@ function App() {
 
     // Print preview states
     const [printPreviewModal, setPrintPreviewModal] = useState(false);
-    const [printType, setPrintType] = useState(null); // 'matrix', 'form', 'diagram'
+    const [printType, setPrintType] = useState(null); // 'matrix', 'form', 'diagram', 'dossier'
+    const [dossierDialog, setDossierDialog] = useState(false);
+    const [dossierSections, setDossierSections] = useState({});
     const [currentProjectPath, setCurrentProjectPath] = useState(''); // Chemin du projet courant
 
     // Bi-carrefour modal states
@@ -1243,6 +1245,20 @@ function App() {
         }
     }, []);
 
+    // Handler confirmation impression dossier
+    const handleDossierConfirm = () => {
+        setDossierDialog(false);
+        setPrintType('dossier');
+        setPrintPreviewModal(true);
+        setTimeout(() => {
+            document.body.classList.add('print-dossier');
+            window.print();
+            document.body.classList.remove('print-dossier');
+            setPrintPreviewModal(false);
+            setPrintType(null);
+        }, 500);
+    };
+
     // Menu action handler
     const handleMenuAction = (action) => {
         switch (action) {
@@ -1266,29 +1282,24 @@ function App() {
             case 'save':
                 handleSaveFileWithPicker();
                 break;
-            case 'printMatrix':
-                setPrintType('matrix');
-                setPrintPreviewModal(true);
-                break;
-            case 'printForm':
-                setPrintType('form');
-                setPrintPreviewModal(true);
-                break;
-            case 'printDiagram':
-                setPrintType('diagram');
-                setPrintPreviewModal(true);
-                break;
             case 'printDossier':
-                setPrintType('dossier');
-                setPrintPreviewModal(true);
-                // Impression directe sans aperçu
-                setTimeout(() => {
-                    document.body.classList.add('print-dossier');
-                    window.print();
-                    document.body.classList.remove('print-dossier');
-                    setPrintPreviewModal(false);
-                    setPrintType(null);
-                }, 500);
+                // Ouvrir le dialog de sélection des sections
+                // PF validés (color) cochés par défaut, les autres décochés
+                setDossierSections({
+                    image: true,
+                    formulaire: true,
+                    matrice: true,
+                    ...Object.fromEntries(pfTabs.flatMap(pf => {
+                        const checked = !!pf.color;
+                        return [
+                            [`diagram_${pf.id}`, checked],
+                            [`conditionsMicro_${pf.id}`, checked],
+                            [`traficCapacite_${pf.id}`, checked],
+                            [`variablesMicro_${pf.id}`, checked],
+                        ];
+                    })),
+                });
+                setDossierDialog(true);
                 break;
             case 'close':
                 window.close();
@@ -3938,6 +3949,80 @@ function App() {
                 </div>
             </Modal>
 
+            {/* Dialog sélection sections dossier */}
+            {dossierDialog && (
+                <div className="modal-overlay" onClick={() => setDossierDialog(false)}>
+                    <div className="modal-content dossier-dialog" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Imprimer le dossier</h3>
+                            <button className="modal-close" onClick={() => setDossierDialog(false)}>&times;</button>
+                        </div>
+                        <div className="dossier-dialog-body">
+                            <label>
+                                <input type="checkbox" checked={dossierSections.image || false}
+                                    onChange={e => setDossierSections(s => ({...s, image: e.target.checked}))} />
+                                Image du carrefour
+                            </label>
+                            <label>
+                                <input type="checkbox" checked={dossierSections.formulaire || false}
+                                    onChange={e => setDossierSections(s => ({...s, formulaire: e.target.checked}))} />
+                                Formulaire
+                            </label>
+                            <label>
+                                <input type="checkbox" checked={dossierSections.matrice || false}
+                                    onChange={e => setDossierSections(s => ({...s, matrice: e.target.checked}))} />
+                                Matrice des temps intervers
+                            </label>
+                            {pfTabs.map(pf => {
+                                const isValidated = !!pf.color;
+                                const pfChecked = dossierSections[`diagram_${pf.id}`] || false;
+                                return (
+                                <div key={pf.id} className="dossier-pf-group">
+                                    <label className={isValidated ? 'dossier-pf-validated' : ''}>
+                                        <input type="checkbox" checked={pfChecked}
+                                            onChange={e => {
+                                                const checked = e.target.checked;
+                                                setDossierSections(s => ({
+                                                    ...s,
+                                                    [`diagram_${pf.id}`]: checked,
+                                                    [`conditionsMicro_${pf.id}`]: checked,
+                                                    [`traficCapacite_${pf.id}`]: checked,
+                                                    [`variablesMicro_${pf.id}`]: checked,
+                                                }));
+                                            }} />
+                                        Diagramme {pf.name}
+                                    </label>
+                                    {pfChecked && (
+                                    <div className="dossier-pf-suboptions">
+                                        <label>
+                                            <input type="checkbox" checked={dossierSections[`conditionsMicro_${pf.id}`] || false}
+                                                onChange={e => setDossierSections(s => ({...s, [`conditionsMicro_${pf.id}`]: e.target.checked}))} />
+                                            Conditions de micro-régulation
+                                        </label>
+                                        <label>
+                                            <input type="checkbox" checked={dossierSections[`traficCapacite_${pf.id}`] || false}
+                                                onChange={e => setDossierSections(s => ({...s, [`traficCapacite_${pf.id}`]: e.target.checked}))} />
+                                            Données de trafic et calcul de capacité
+                                        </label>
+                                        <label>
+                                            <input type="checkbox" checked={dossierSections[`variablesMicro_${pf.id}`] || false}
+                                                onChange={e => setDossierSections(s => ({...s, [`variablesMicro_${pf.id}`]: e.target.checked}))} />
+                                            Variables micro
+                                        </label>
+                                    </div>
+                                    )}
+                                </div>
+                                );
+                            })}
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-cancel" onClick={() => setDossierDialog(false)}>Annuler</button>
+                            <button className="btn-confirm" onClick={handleDossierConfirm}>Confirmer</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Print Preview Modal */}
             {printPreviewModal && (
                 <div className="modal-overlay print-preview-overlay" onClick={() => setPrintPreviewModal(false)}>
@@ -4234,6 +4319,7 @@ function App() {
                                         </div>
 
                                         {/* 2. Image du carrefour */}
+                                        {dossierSections.image && (
                                         <div className="print-dossier-section print-dossier-image">
                                             <h3>Image du carrefour</h3>
                                             {intersectionImage ? (
@@ -4249,8 +4335,10 @@ function App() {
                                                 <p className="dossier-no-image">(Pas d'image)</p>
                                             )}
                                         </div>
+                                        )}
 
                                         {/* 3. Formulaire */}
+                                        {dossierSections.formulaire && (
                                         <div className="print-dossier-section print-dossier-form">
                                             <h3>Formulaire</h3>
                                             <table className="preview-form-table">
@@ -4282,8 +4370,10 @@ function App() {
                                                 </tbody>
                                             </table>
                                         </div>
+                                        )}
 
                                         {/* 4. Matrice */}
+                                        {dossierSections.matrice && (
                                         <div className="print-dossier-section print-dossier-matrix">
                                             <h3>Matrice des temps interverts</h3>
                                             <table className="preview-matrix-table">
@@ -4312,21 +4402,30 @@ function App() {
                                                 </tbody>
                                             </table>
                                         </div>
+                                        )}
 
-                                        {/* 5. Diagramme */}
-                                        {(() => {
+                                        {/* 5-8. Pour chaque PF coché : diagramme + conditions micro + trafic/capacité + variables micro */}
+                                        {pfTabs.filter(pf => dossierSections[`diagram_${pf.id}`]).map(pf => {
+                                            // Appliquer les données diagramme du PF aux groupes
+                                            const pfGroups = pf.id === activePFId
+                                                ? groups
+                                                : groups.map(g => {
+                                                    const pfDiag = pf.diagram?.find(d => d.id === g.id);
+                                                    return pfDiag ? { ...g, offset: pfDiag.offset, durations: pfDiag.durations, minGreen: pfDiag.minGreen } : g;
+                                                });
+                                            const pfActionData = pf.id === activePFId ? actionData : (pf.data || []);
+                                            const pfMicroFields = pf.id === activePFId ? microCustomFields : (pf.microCustomFields || []);
                                             // Calcul du scale combiné (largeur + hauteur)
-                                            // A4 paysage 10mm marges: 190mm = ~718px
-                                            // Moins: titre h3 (~30px) + pied de page fixe (~25px) + marges (~15px)
                                             const diagramPageHeight = 648;
-                                            // header(50) + rows(31px chacune: 30+border) + ruler(25) + padding(10)
-                                            const diagramRenderedHeight = 85 + groups.length * 31;
+                                            // RULER_HEIGHT(50) + 1px border + groups*31 + 30px bottom + 4px border + 10px marge
+                                            const diagramRenderedHeight = 95 + pfGroups.length * 31 + 30;
                                             const heightScale = diagramRenderedHeight > diagramPageHeight ? diagramPageHeight / diagramRenderedHeight : 1;
                                             const combinedScale = Math.min(dossierScale, heightScale);
                                             return (
+                                        <Fragment key={pf.id}>
+                                        {/* Diagramme */}
                                         <div className="print-dossier-section print-dossier-diagram">
-                                            <h3>Diagramme du plan de feu : {pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}</h3>
-                                            {/* Wrapper avec hauteur fixée pour éviter le saut de page */}
+                                            <h3>Diagramme du plan de feu : {pf.name}</h3>
                                             <div style={{
                                                 height: `${Math.ceil(diagramRenderedHeight * combinedScale)}px`,
                                                 overflow: 'hidden',
@@ -4337,7 +4436,7 @@ function App() {
                                                     transformOrigin: 'top left'
                                                 }}>
                                                     <TimelineDiagram
-                                                        groups={groups}
+                                                        groups={pfGroups}
                                                         globalTime={0}
                                                         onGroupClick={() => {}}
                                                         pixelsPerSecond={dossierPPS}
@@ -4345,7 +4444,7 @@ function App() {
                                                         conflictMatrix={conflictMatrix}
                                                         updateGroupParams={() => {}}
                                                         cycleLength={cycleLength}
-                                                        actionData={actionData}
+                                                        actionData={pfActionData}
                                                         updateActionRow={() => {}}
                                                         startDrag={() => {}}
                                                         endDrag={() => {}}
@@ -4353,26 +4452,24 @@ function App() {
                                                         dependencyGap={20}
                                                         hoveredActionId={null}
                                                         setHoveredActionId={() => {}}
-                                                        planName={pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}
+                                                        planName={pf.name}
                                                         isPrintMode={true}
                                                     />
                                                 </div>
                                             </div>
                                         </div>
-                                            );
-                                        })()}
 
-                                        {/* 6. Conditions de micro-régulation */}
-                                        {actionData.filter(row => row.gf || row.action || row.description || row.deb !== '' || row.fin !== '').length > 0 && (
+                                        {/* Conditions micro pour ce PF */}
+                                        {dossierSections[`conditionsMicro_${pf.id}`] && pfActionData.filter(row => row.gf || row.action || row.description || row.deb !== '' || row.fin !== '').length > 0 && (
                                             <div className="print-dossier-section print-dossier-actions">
-                                                <h3>Conditions de micro-r&eacute;gulation</h3>
+                                                <h3>Conditions de micro-régulation - {pf.name}</h3>
                                                 <table className="print-actions-table">
                                                     <thead>
                                                         <tr>
                                                             <th>GF</th>
                                                             <th>Action</th>
                                                             <th>Description</th>
-                                                            <th>D&eacute;b</th>
+                                                            <th>Déb</th>
                                                             <th>Fin</th>
                                                             <th>Abrv</th>
                                                             <th>Action_Micro</th>
@@ -4380,23 +4477,12 @@ function App() {
                                                             <th colSpan="4">Action GF</th>
                                                         </tr>
                                                         <tr className="print-actions-subheader">
-                                                            <th></th>
-                                                            <th></th>
-                                                            <th></th>
-                                                            <th></th>
-                                                            <th></th>
-                                                            <th></th>
-                                                            <th></th>
-                                                            <th>1</th>
-                                                            <th>2</th>
-                                                            <th>1</th>
-                                                            <th>2</th>
-                                                            <th>3</th>
-                                                            <th>4</th>
+                                                            <th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                                                            <th>1</th><th>2</th><th>1</th><th>2</th><th>3</th><th>4</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {actionData
+                                                        {pfActionData
                                                             .filter(row => row.gf || row.action || row.description || row.deb !== '' || row.fin !== '')
                                                             .map(row => (
                                                                 <tr key={row.id}>
@@ -4420,12 +4506,57 @@ function App() {
                                             </div>
                                         )}
 
-                                        {/* 7. Variables micro */}
-                                        {microCustomFields.some(f => f && f.trim()) && (
+                                        {/* Données de trafic et calcul de capacité pour ce PF */}
+                                        {dossierSections[`traficCapacite_${pf.id}`] && (
+                                            <div className="print-dossier-section print-dossier-traffic">
+                                                <h3>Données de trafic et calcul de capacité - {pf.name}</h3>
+                                                <table className="dossier-traffic-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Grp</th>
+                                                            <th>Nom</th>
+                                                            <th>Coef</th>
+                                                            <th>Trafic</th>
+                                                            <th>V.Utile</th>
+                                                            <th>Cap.U</th>
+                                                            <th>Retard</th>
+                                                            <th>File</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {pfGroups.map(g => {
+                                                            const td = getTrafficData(g.id);
+                                                            const trafficVol = parseTrafficVol(td.trafficVol);
+                                                            const coef = g.laneCoef || 1;
+                                                            const greenTime = getTotalGreenTime(g.id, g.durations?.green || 0);
+                                                            const vUtile = calcVUtile(trafficVol, coef);
+                                                            const capU = calcCapacity(greenTime, vUtile);
+                                                            const delay = calcDelay(greenTime, trafficVol, coef, g.id, g.offset);
+                                                            const queue = calcQueue(greenTime, trafficVol, coef, g.id, g.offset);
+                                                            return (
+                                                                <tr key={g.id}>
+                                                                    <td>{g.id}</td>
+                                                                    <td>{g.name || ''}</td>
+                                                                    <td>{coef}</td>
+                                                                    <td>{td.trafficVol || ''}</td>
+                                                                    <td>{vUtile !== null ? vUtile : ''}</td>
+                                                                    <td>{capU !== null ? capU + '%' : ''}</td>
+                                                                    <td>{delay !== null ? delay : ''}</td>
+                                                                    <td>{queue !== null ? queue : ''}</td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+
+                                        {/* Variables micro pour ce PF */}
+                                        {dossierSections[`variablesMicro_${pf.id}`] && pfMicroFields.some(f => f && f.trim()) && (
                                             <div className="print-dossier-section print-dossier-variables">
-                                                <h3>Variables micro</h3>
+                                                <h3>Variables micro - {pf.name}</h3>
                                                 <div className="dossier-variables-list">
-                                                    {microCustomFields.map((field, index) => (
+                                                    {pfMicroFields.map((field, index) => (
                                                         field && field.trim() ? (
                                                             <p key={index}>{field}</p>
                                                         ) : null
@@ -4433,49 +4564,9 @@ function App() {
                                                 </div>
                                             </div>
                                         )}
-
-                                        {/* 8. Tableau trafic */}
-                                        <div className="print-dossier-section print-dossier-traffic">
-                                            <h3>Donn&eacute;es de trafic et calcul de capacit&eacute;</h3>
-                                            <table className="dossier-traffic-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Grp</th>
-                                                        <th>Nom</th>
-                                                        <th>Coef</th>
-                                                        <th>Trafic</th>
-                                                        <th>V.Utile</th>
-                                                        <th>Cap.U</th>
-                                                        <th>Retard</th>
-                                                        <th>File</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {groups.map(g => {
-                                                        const td = getTrafficData(g.id);
-                                                        const trafficVol = parseTrafficVol(td.trafficVol);
-                                                        const coef = g.laneCoef || 1;
-                                                        const greenTime = getTotalGreenTime(g.id, g.durations?.green || 0);
-                                                        const vUtile = calcVUtile(trafficVol, coef);
-                                                        const capU = calcCapacity(greenTime, vUtile);
-                                                        const delay = calcDelay(greenTime, trafficVol, coef, g.id, g.offset);
-                                                        const queue = calcQueue(greenTime, trafficVol, coef, g.id, g.offset);
-                                                        return (
-                                                            <tr key={g.id}>
-                                                                <td>{g.id}</td>
-                                                                <td>{g.name || ''}</td>
-                                                                <td>{coef}</td>
-                                                                <td>{td.trafficVol || ''}</td>
-                                                                <td>{vUtile !== null ? vUtile : ''}</td>
-                                                                <td>{capU !== null ? capU + '%' : ''}</td>
-                                                                <td>{delay !== null ? delay : ''}</td>
-                                                                <td>{queue !== null ? queue : ''}</td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                        </Fragment>
+                                            );
+                                        })}
 
                                         {/* 9. Pied de page */}
                                         <div className="print-dossier-footer">
