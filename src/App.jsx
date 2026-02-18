@@ -227,6 +227,16 @@ function App() {
     const [phasageBulleVisibleGroups, setPhasageBulleVisibleGroups] = useState(new Set());
     const [phasageBulleVersion, setPhasageBulleVersion] = useState(0);
     const [hoveredPhasageGroupId, setHoveredPhasageGroupId] = useState(null);
+    const [imageNaturalDims, setImageNaturalDims] = useState({ width: 1, height: 1 });
+
+    // Compute natural dimensions of intersection image (for print scaling)
+    useEffect(() => {
+        if (intersectionImage) {
+            const img = new Image();
+            img.onload = () => setImageNaturalDims({ width: img.naturalWidth || 1, height: img.naturalHeight || 1 });
+            img.src = intersectionImage;
+        }
+    }, [intersectionImage]);
 
     // Diagram arrow style
     const [diagramArrowStyle, setDiagramArrowStyle] = useState('solid');
@@ -1245,6 +1255,26 @@ function App() {
         }
     }, []);
 
+    // Inject dynamic @page margin box content for dossier footer
+    const injectDossierFooterStyle = () => {
+        // Remove previous if exists
+        const prev = document.getElementById('dossier-print-footer-style');
+        if (prev) prev.remove();
+        const path = currentProjectPath ? currentProjectPath.replace(/\.json$/i, '').replace(/"/g, '\\"') : 'Projet non enregistré';
+        const dateStr = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const style = document.createElement('style');
+        style.id = 'dossier-print-footer-style';
+        style.textContent = `
+            @page dossier-page {
+                @bottom-left { content: "${path}"; font-size: 9px; color: #333; }
+                @bottom-center { content: "${dateStr}"; font-size: 9px; color: #333; }
+                @bottom-right { content: "Page " counter(page); font-size: 9px; color: #333; }
+            }
+        `;
+        document.head.appendChild(style);
+        return style;
+    };
+
     // Handler confirmation impression dossier
     const handleDossierConfirm = () => {
         setDossierDialog(false);
@@ -1252,7 +1282,9 @@ function App() {
         setPrintPreviewModal(true);
         setTimeout(() => {
             document.body.classList.add('print-dossier');
+            const footerStyle = injectDossierFooterStyle();
             window.print();
+            footerStyle.remove();
             document.body.classList.remove('print-dossier');
             setPrintPreviewModal(false);
             setPrintType(null);
@@ -1287,6 +1319,7 @@ function App() {
                 // PF validés (color) cochés par défaut, les autres décochés
                 setDossierSections({
                     image: true,
+                    gfNumbers: true,
                     formulaire: true,
                     matrice: true,
                     ...Object.fromEntries(pfTabs.flatMap(pf => {
@@ -1294,8 +1327,9 @@ function App() {
                         return [
                             [`diagram_${pf.id}`, checked],
                             [`conditionsMicro_${pf.id}`, checked],
-                            [`traficCapacite_${pf.id}`, checked],
                             [`variablesMicro_${pf.id}`, checked],
+                            [`phasageBulle_${pf.id}`, checked],
+                            [`traficCapacite_${pf.id}`, checked],
                         ];
                     })),
                 });
@@ -3984,6 +4018,13 @@ function App() {
                                     onChange={e => setDossierSections(s => ({...s, image: e.target.checked}))} />
                                 Image du carrefour
                             </label>
+                            {dossierSections.image && intersectionArrows.length > 0 && (
+                            <label className="dossier-checkbox-indent">
+                                <input type="checkbox" checked={dossierSections.gfNumbers || false}
+                                    onChange={e => setDossierSections(s => ({...s, gfNumbers: e.target.checked}))} />
+                                Numéro des groupes de feu
+                            </label>
+                            )}
                             <label>
                                 <input type="checkbox" checked={dossierSections.formulaire || false}
                                     onChange={e => setDossierSections(s => ({...s, formulaire: e.target.checked}))} />
@@ -4007,8 +4048,9 @@ function App() {
                                                     ...s,
                                                     [`diagram_${pf.id}`]: checked,
                                                     [`conditionsMicro_${pf.id}`]: checked,
-                                                    [`traficCapacite_${pf.id}`]: checked,
                                                     [`variablesMicro_${pf.id}`]: checked,
+                                                    [`phasageBulle_${pf.id}`]: checked,
+                                                    [`traficCapacite_${pf.id}`]: checked,
                                                 }));
                                             }} />
                                         Diagramme {pf.name}
@@ -4021,14 +4063,21 @@ function App() {
                                             Conditions de micro-régulation
                                         </label>
                                         <label>
-                                            <input type="checkbox" checked={dossierSections[`traficCapacite_${pf.id}`] || false}
-                                                onChange={e => setDossierSections(s => ({...s, [`traficCapacite_${pf.id}`]: e.target.checked}))} />
-                                            Données de trafic et calcul de capacité
-                                        </label>
-                                        <label>
                                             <input type="checkbox" checked={dossierSections[`variablesMicro_${pf.id}`] || false}
                                                 onChange={e => setDossierSections(s => ({...s, [`variablesMicro_${pf.id}`]: e.target.checked}))} />
                                             Variables micro
+                                        </label>
+                                        {intersectionArrows.length > 0 && intersectionImage && (
+                                        <label>
+                                            <input type="checkbox" checked={dossierSections[`phasageBulle_${pf.id}`] || false}
+                                                onChange={e => setDossierSections(s => ({...s, [`phasageBulle_${pf.id}`]: e.target.checked}))} />
+                                            Phasage bulle
+                                        </label>
+                                        )}
+                                        <label>
+                                            <input type="checkbox" checked={dossierSections[`traficCapacite_${pf.id}`] || false}
+                                                onChange={e => setDossierSections(s => ({...s, [`traficCapacite_${pf.id}`]: e.target.checked}))} />
+                                            Données de trafic et calcul de capacité
                                         </label>
                                     </div>
                                     )}
@@ -4339,10 +4388,10 @@ function App() {
                                             <h2>{intersectionName || 'Sans titre'}</h2>
                                         </div>
 
-                                        {/* 2. Image du carrefour */}
+                                        {/* 2. Plan du carrefour */}
                                         {dossierSections.image && (
                                         <div className="print-dossier-section print-dossier-image">
-                                            <h3>Image du carrefour</h3>
+                                            <h3>Plan du carrefour</h3>
                                             {intersectionImage ? (
                                                 <div className="dossier-image-container">
                                                     <img
@@ -4351,6 +4400,29 @@ function App() {
                                                         className="dossier-carrefour-img"
                                                         style={{ filter: `brightness(${imageBrightness}%) contrast(${imageContrast}%)` }}
                                                     />
+                                                    {dossierSections.gfNumbers && (() => {
+                                                        // Grouper les flèches par groupId (exclure celles hors image)
+                                                        const groupMap = {};
+                                                        intersectionArrows.forEach(arrow => {
+                                                            if (!arrow.groupId) return;
+                                                            if (arrow.x < 0 || arrow.x > 100 || arrow.y < 0 || arrow.y > 100) return;
+                                                            if (!groupMap[arrow.groupId]) groupMap[arrow.groupId] = [];
+                                                            groupMap[arrow.groupId].push({ x: arrow.x, y: arrow.y });
+                                                        });
+                                                        return Object.entries(groupMap).map(([gId, pts]) => {
+                                                            const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+                                                            const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+                                                            return (
+                                                                <div
+                                                                    key={`gf-${gId}`}
+                                                                    className="dossier-gf-label"
+                                                                    style={{ left: `${cx}%`, top: `${cy}%` }}
+                                                                >
+                                                                    {gId}
+                                                                </div>
+                                                            );
+                                                        });
+                                                    })()}
                                                 </div>
                                             ) : (
                                                 <p className="dossier-no-image">(Pas d'image)</p>
@@ -4368,11 +4440,9 @@ function App() {
                                                         <th>GF</th>
                                                         <th>Nom</th>
                                                         <th>Type</th>
-                                                        <th>D&eacute;c</th>
-                                                        <th>V</th>
-                                                        <th>J</th>
-                                                        <th>R</th>
-                                                        <th>Vm</th>
+                                                        <th>Courant</th>
+                                                        <th>Mini</th>
+                                                        <th>Jaune</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -4381,11 +4451,9 @@ function App() {
                                                             <td>{g.id}</td>
                                                             <td>{g.name || ''}</td>
                                                             <td>{g.type || 'VL'}</td>
-                                                            <td>{g.offset}</td>
-                                                            <td>{g.durations?.green || 0}</td>
-                                                            <td>{g.durations?.orange || 0}</td>
-                                                            <td>{g.durations?.red || 0}</td>
+                                                            <td>{g.courant || ''}</td>
                                                             <td>{g.minGreen || 0}</td>
+                                                            <td>{g.durations?.orange || 0}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -4407,19 +4475,35 @@ function App() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {groups.map((fromGroup, fromIdx) => (
+                                                    {(() => {
+                                                        const pf1Matrix = pfTabs?.find(pf => pf.id === 1)?.conflictMatrix || null;
+                                                        const isComparing = activePFId !== 1 && pf1Matrix && pf1Matrix.length > 0;
+                                                        return groups.map((fromGroup, fromIdx) => (
                                                         <tr key={fromGroup.id}>
                                                             <td className="row-header">{fromGroup.id}</td>
-                                                            {groups.map((toGroup, toIdx) => (
+                                                            {groups.map((toGroup, toIdx) => {
+                                                                const val = fromIdx !== toIdx ? (conflictMatrix[fromIdx]?.[toIdx] || '') : '';
+                                                                let color = null;
+                                                                if (isComparing && fromIdx !== toIdx && val !== '') {
+                                                                    const pf1Val = pf1Matrix[fromIdx]?.[toIdx];
+                                                                    const curr = parseInt(val) || 0;
+                                                                    const ref = (pf1Val === '' || pf1Val == null) ? 0 : parseInt(pf1Val);
+                                                                    if (curr > ref) color = '#f44336';
+                                                                    else if (curr < ref) color = '#4caf50';
+                                                                }
+                                                                return (
                                                                 <td
                                                                     key={toGroup.id}
                                                                     className={fromIdx === toIdx ? 'diagonal' : ''}
+                                                                    style={color ? { color, fontWeight: 'bold' } : undefined}
                                                                 >
-                                                                    {fromIdx !== toIdx ? (conflictMatrix[fromIdx]?.[toIdx] || '') : ''}
+                                                                    {val}
                                                                 </td>
-                                                            ))}
+                                                                );
+                                                            })}
                                                         </tr>
-                                                    ))}
+                                                        ));
+                                                    })()}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -4438,15 +4522,15 @@ function App() {
                                             const pfMicroFields = pf.id === activePFId ? microCustomFields : (pf.microCustomFields || []);
                                             // Calcul du scale combiné (largeur + hauteur)
                                             const diagramPageHeight = 648;
-                                            // RULER_HEIGHT(50) + 1px border + groups*31 + 30px bottom + 4px border + 10px marge
-                                            const diagramRenderedHeight = 95 + pfGroups.length * 31 + 30;
+                                            // Sans le titre interne (display:none): RULER_HEIGHT(50) + 1px border + groups*31 + 30px grid-bottom + SVG labels/flèches en bas + marge
+                                            const diagramRenderedHeight = 50 + 1 + pfGroups.length * 31 + 90;
                                             const heightScale = diagramRenderedHeight > diagramPageHeight ? diagramPageHeight / diagramRenderedHeight : 1;
                                             const combinedScale = Math.min(dossierScale, heightScale);
                                             return (
                                         <Fragment key={pf.id}>
                                         {/* Diagramme */}
                                         <div className="print-dossier-section print-dossier-diagram">
-                                            <h3>Diagramme du plan de feu : {pf.name}</h3>
+                                            <h3>Diagramme du plan de feu : {pf.name} — Cycle : {cycleLength}s</h3>
                                             <div style={{
                                                 height: `${Math.ceil(diagramRenderedHeight * combinedScale)}px`,
                                                 overflow: 'hidden',
@@ -4538,51 +4622,6 @@ function App() {
                                             </div>
                                         )}
 
-                                        {/* Données de trafic et calcul de capacité pour ce PF */}
-                                        {dossierSections[`traficCapacite_${pf.id}`] && (
-                                            <div className="print-dossier-section print-dossier-traffic">
-                                                <h3>Données de trafic et calcul de capacité - {pf.name}</h3>
-                                                <table className="dossier-traffic-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Grp</th>
-                                                            <th>Nom</th>
-                                                            <th>Coef</th>
-                                                            <th>Trafic</th>
-                                                            <th>V.Utile</th>
-                                                            <th>Cap.U</th>
-                                                            <th>Retard</th>
-                                                            <th>File</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {pfGroups.map(g => {
-                                                            const td = getTrafficData(g.id);
-                                                            const trafficVol = parseTrafficVol(td.trafficVol);
-                                                            const coef = g.laneCoef || 1;
-                                                            const greenTime = getTotalGreenTime(g.id, g.durations?.green || 0);
-                                                            const vUtile = calcVUtile(trafficVol, coef);
-                                                            const capU = calcCapacity(greenTime, vUtile);
-                                                            const delay = calcDelay(greenTime, trafficVol, coef, g.id, g.offset);
-                                                            const queue = calcQueue(greenTime, trafficVol, coef, g.id, g.offset);
-                                                            return (
-                                                                <tr key={g.id}>
-                                                                    <td>{g.id}</td>
-                                                                    <td>{g.name || ''}</td>
-                                                                    <td>{coef}</td>
-                                                                    <td>{td.trafficVol || ''}</td>
-                                                                    <td>{vUtile !== null ? vUtile : ''}</td>
-                                                                    <td>{capU !== null ? capU + '%' : ''}</td>
-                                                                    <td>{delay !== null ? delay : ''}</td>
-                                                                    <td>{queue !== null ? queue : ''}</td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )}
-
                                         {/* Variables micro pour ce PF */}
                                         {dossierSections[`variablesMicro_${pf.id}`] && pfMicroFields.some(f => f && f.trim()) && (
                                             <div className="print-dossier-section print-dossier-variables">
@@ -4596,20 +4635,117 @@ function App() {
                                                 </div>
                                             </div>
                                         )}
+
+                                        {/* Phasage bulle pour ce PF (si image + flèches existent) */}
+                                        {dossierSections[`phasageBulle_${pf.id}`] && intersectionArrows.length > 0 && intersectionImage && (() => {
+                                            const bulleCount = pf.phasageBulleCount || 4;
+                                            // Bubble dimensions (from PhasageBulle constants)
+                                            const bsf = bulleCount === 2 ? 1.2 : bulleCount === 5 ? 0.9 : bulleCount === 6 ? 0.8 : 1.0;
+                                            const bulleW = 570 * bsf;
+                                            const bulleH = 456 * bsf;
+                                            // Ellipse radii (from PhasageBulle getEllipseConfig)
+                                            const rX = bulleCount === 2 ? 22 : bulleCount === 3 ? 23 : bulleCount === 5 ? 27 : bulleCount === 6 ? 29 : 26;
+                                            const rY = bulleCount === 2 ? 25 : bulleCount === 3 ? 30 : bulleCount === 5 ? 34 : bulleCount === 6 ? 36 : 32;
+                                            // Image ratio: hide ellipse if very elongated
+                                            const imgRatio = imageNaturalDims.width / imageNaturalDims.height;
+                                            const hideOvals = imgRatio > 1.5 || imgRatio < (1 / 1.5);
+                                            // Available print area (A4 landscape minus margins, title at top-left)
+                                            const pageW = 1040;
+                                            const pageH = 700;
+                                            const refH = 900;
+                                            // For elongated images, effective bubble height is shorter (object-fit: contain)
+                                            const effectiveBulleH = hideOvals
+                                                ? Math.min(bulleH, bulleW / Math.max(imgRatio, 1 / imgRatio) + 80)
+                                                : bulleH;
+                                            // Unscaled extent: bubbles spread + bubble size + labels
+                                            const extentW = (2 * rX / 100) * pageW + bulleW + 80;
+                                            const extentH = (2 * rY / 100) * refH + effectiveBulleH + 80;
+                                            const scaleX = pageW / extentW;
+                                            const scaleY = pageH / extentH;
+                                            const phasageScale = Math.min(scaleX, scaleY, 1.0);
+                                            const visualH = Math.ceil(refH * phasageScale);
+                                            return (
+                                            <div className="print-dossier-section print-dossier-phasage dossier-phasage-centered">
+                                                <h3>Phasage bulle - {pf.name}</h3>
+                                                <div className={`dossier-phasage-content ${hideOvals ? 'phasage-hide-ovals' : ''}`}
+                                                    style={{ height: `${visualH + 20}px`, overflow: 'hidden' }}>
+                                                    <div className="dossier-phasage-scaler" style={{
+                                                        transform: `scale(${phasageScale.toFixed(3)})`,
+                                                        transformOrigin: 'top center',
+                                                    }}>
+                                                        <PhasageBulle
+                                                            groups={pfGroups}
+                                                            cycleLength={cycleLength}
+                                                            intersectionImage={intersectionImage}
+                                                            intersectionArrows={intersectionArrows.filter(a => a.x >= 0 && a.x <= 100 && a.y >= 0 && a.y <= 100)}
+                                                            actionData={pfActionData}
+                                                            selectedActions={[]}
+                                                            intersectionName={intersectionName}
+                                                            planName={pf.name}
+                                                            initialTimes={pf.phasageBulleTimes || [0, 15, 30, 45, 60, 75]}
+                                                            initialCount={bulleCount}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            );
+                                        })()}
+
+                                        {/* Données de trafic et calcul de capacité pour ce PF */}
+                                        {dossierSections[`traficCapacite_${pf.id}`] && (
+                                            <div className="print-dossier-section print-dossier-traffic">
+                                                <h3>Données de trafic et calcul de capacité - {pf.name}</h3>
+                                                <table className="dossier-traffic-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Grp</th>
+                                                            <th>Nom</th>
+                                                            <th>Coef</th>
+                                                            <th>Trafic</th>
+                                                            <th>V.Utile (s)</th>
+                                                            <th>Cap.U</th>
+                                                            <th>Retard (s)</th>
+                                                            <th>File d'attente (m)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {pfGroups.map(g => {
+                                                            const td = getTrafficData(g.id);
+                                                            const trafficVol = parseTrafficVol(td.trafficVol);
+                                                            const coef = g.laneCoef || 1;
+                                                            const greenTime = getTotalGreenTime(g.id, g.durations?.green || 0);
+                                                            const vUtile = calcVUtile(trafficVol, coef);
+                                                            const capU = calcCapacity(greenTime, vUtile);
+                                                            const delay = calcDelay(greenTime, trafficVol, coef, g.id, g.offset);
+                                                            const queue = calcQueue(greenTime, trafficVol, coef, g.id, g.offset);
+                                                            const capColor = capU === null ? undefined
+                                                                : capU < 76 ? '#4caf50'
+                                                                : capU <= 85 ? '#ff9800'
+                                                                : capU <= 100 ? '#f44336'
+                                                                : '#000';
+                                                            const capBg = capU !== null && capU > 100 ? '#ff6b6b' : undefined;
+                                                            return (
+                                                                <tr key={g.id}>
+                                                                    <td>{g.id}</td>
+                                                                    <td>{g.name || ''}</td>
+                                                                    <td>{coef}</td>
+                                                                    <td>{td.trafficVol || ''}</td>
+                                                                    <td>{vUtile !== null ? vUtile : ''}</td>
+                                                                    <td style={capColor ? { color: capColor, fontWeight: 'bold', backgroundColor: capBg } : undefined}>{capU !== null ? capU + '%' : ''}</td>
+                                                                    <td>{delay !== null ? delay : ''}</td>
+                                                                    <td>{queue !== null ? queue : ''}</td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
                                         </Fragment>
                                             );
                                         })}
 
-                                        {/* 9. Pied de page */}
-                                        <div className="print-dossier-footer">
-                                            <span className="print-footer-path">
-                                                {currentProjectPath || 'Projet non enregistré'}
-                                            </span>
-                                            <span className="print-footer-page-date">
-                                                <span className="print-footer-page"></span>
-                                                <span className="print-footer-date">{new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                            </span>
-                                        </div>
+                                        {/* Le pied de page est géré par @page margin boxes (injecté dynamiquement) */}
                                     </div>
                                     );
                                 })()}
@@ -4624,9 +4760,12 @@ function App() {
                                 onClick={() => {
                                     // Ajouter la classe pour l'impression AVANT d'imprimer
                                     document.body.classList.add(`print-${printType}`);
+                                    // Injecter le footer dynamique si dossier
+                                    const footerStyle = printType === 'dossier' ? injectDossierFooterStyle() : null;
                                     // Imprimer avec le modal ouvert
                                     window.print();
-                                    // Retirer la classe après l'impression
+                                    // Retirer le footer dynamique et la classe après l'impression
+                                    if (footerStyle) footerStyle.remove();
                                     document.body.classList.remove(`print-${printType}`);
                                 }}
                             >

@@ -125,6 +125,7 @@ export const useTrafficLight = () => {
         id,
         name: `Groupe ${id}`, // Default name
         type: 'VL', // VL, TC, Cycliste, Piéton
+        courant: '', // Identification du mouvement de trafic (TD, TàD, TàG, etc.)
         minGreen: 6,
         durations: { green: 0, orange: 3, red: 0 }, // New groups start with no green duration
         offset: 0, // New groups start at 0
@@ -133,7 +134,7 @@ export const useTrafficLight = () => {
         comment: '', // Comment field (50 characters max, not printable)
         commentColor: '', // Comment color: 'green', 'red', or '' (default)
         // Traffic Engineering Props
-        trafficStream: '', // Courant de circulation
+        trafficStream: '', // Courant de circulation (legacy)
         laneCoef: 1, // Coef voie
         trafficVol: 0, // Trafic
         effectiveGreen: 0, // Vert utile
@@ -649,10 +650,12 @@ export const useTrafficLight = () => {
                         id,
                         name: g.name || `Groupe ${id}`,
                         type: g.type || 'VL',
+                        courant: g.courant || '',
                         minGreen: g.minGreen !== undefined && !isNaN(g.minGreen) ? g.minGreen : 6,
                         durations,
                         offset: g.offset !== undefined && !isNaN(g.offset) ? g.offset : 0,
                         da: g.da || '',
+                        phaseFlag: g.phaseFlag || '',
                         comment: g.comment || '',
                         commentColor: g.commentColor || '',
                         // Traffic Engineering Props

@@ -1620,8 +1620,8 @@
 .dossier-dialog-body {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 16px 20px;
+    gap: 2px;
+    padding: 12px 20px;
 }
 
 .dossier-dialog-body label {
@@ -1630,7 +1630,7 @@
     gap: 8px;
     cursor: pointer;
     font-size: 14px;
-    padding: 3px 0;
+    padding: 1px 0;
 }
 
 .dossier-dialog-body label:hover {
@@ -1643,9 +1643,16 @@
     cursor: pointer;
 }
 
+/* Checkbox indentée sous une option parente */
+.dossier-checkbox-indent {
+    margin-left: 24px;
+    font-size: 13px !important;
+    opacity: 0.85;
+}
+
 /* Groupe PF dans le dialog */
 .dossier-pf-group {
-    margin-top: 4px;
+    margin-top: 2px;
     border-left: 2px solid transparent;
     padding-left: 0;
 }
@@ -1661,7 +1668,7 @@
     margin-left: 28px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 1px;
 }
 
 .dossier-pf-suboptions label {
@@ -1707,16 +1714,36 @@
     color: #666;
 }
 
+.print-dossier-image {
+    text-align: left;
+}
+
 .dossier-image-container {
-    text-align: center;
-    max-height: 350px;
-    overflow: hidden;
+    position: relative;
+    display: inline-block;
+    max-height: 500px;
+    overflow: visible;
 }
 
 .dossier-carrefour-img {
     max-width: 100%;
-    max-height: 340px;
-    object-fit: contain;
+    max-height: 480px;
+    height: auto;
+    display: block;
+}
+
+.dossier-gf-label {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.85);
+    color: #000;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 1px 4px;
+    border: 1px solid #333;
+    border-radius: 3px;
+    z-index: 10;
+    line-height: 1.2;
 }
 
 .dossier-no-image {
@@ -1856,14 +1883,7 @@
     white-space: nowrap;
 }
 
-.print-dossier-footer {
-    display: none;
-}
-
-.print-footer-page-date {
-    display: flex;
-    gap: 20px;
-}
+/* Le pied de page dossier est géré par @page margin boxes */
 
 /* Print Media Queries */
 @media print {
@@ -2577,6 +2597,8 @@
     @page dossier-page {
         size: A4 landscape;
         margin: 10mm;
+        margin-bottom: 14mm;
+        /* Les @bottom-left, @bottom-center, @bottom-right sont injectés dynamiquement par JS */
     }
 
     /* Masquer TOUS les éléments descendants (visibility: hidden ne dessine pas les fonds) */
@@ -2699,6 +2721,36 @@
         overflow: visible !important;
     }
 
+    body.print-dossier .dossier-diagram-content .diagram-title {
+        display: none !important;
+    }
+
+    /* Bande passante : tracés plus discrets en impression (très discontinu) */
+    body.print-dossier .debut-bande-arrows line,
+    body.print-dossier .fin-bande-arrows line {
+        stroke-dasharray: 2,8 !important;
+        opacity: 0.5 !important;
+    }
+    body.print-dossier .debut-bande-arrows polygon,
+    body.print-dossier .fin-bande-arrows polygon {
+        opacity: 0.5 !important;
+    }
+
+    /* Labels en bas du diagramme (repos, bts, instant co) visibles en noir */
+    body.print-dossier .point-repos-label,
+    body.print-dossier .synchro-bts-label,
+    body.print-dossier .instant-co-label {
+        color: #000 !important;
+    }
+
+    /* Séparations verticales entre colonnes du sidebar diagramme */
+    body.print-dossier .sidebar-header-row > :not(:last-child) {
+        border-right: 1px solid #bbb !important;
+    }
+    body.print-dossier .row-label-container > :not(:last-child) {
+        border-right: 1px solid #bbb !important;
+    }
+
     /* Forcer l'impression des couleurs sur TOUS les éléments */
     body.print-dossier .print-preview-overlay *,
     body.print-dossier .print-preview-modal-large * {
@@ -2707,25 +2759,30 @@
         color-adjust: exact !important;
     }
 
-    /* Fond blanc sur conteneurs et cellules (pas sur *) */
+    /* Fond blanc + texte noir sur conteneurs et cellules (pas sur *) */
     body.print-dossier .print-preview-dossier,
     body.print-dossier .print-dossier-section,
     body.print-dossier .print-dossier-title,
     body.print-dossier .print-dossier-form,
     body.print-dossier .print-dossier-form td,
     body.print-dossier .print-dossier-matrix,
-    body.print-dossier .print-dossier-matrix td,
     body.print-dossier .print-dossier-variables,
     body.print-dossier .dossier-variables-list,
     body.print-dossier .dossier-variables-list p,
     body.print-dossier .print-dossier-traffic,
-    body.print-dossier .dossier-traffic-table td,
     body.print-dossier .print-dossier-actions,
     body.print-dossier .print-actions-table td,
     body.print-dossier .print-dossier-diagram {
         background: white !important;
         background-color: white !important;
         color: #000 !important;
+    }
+
+    /* Fond blanc sur cellules matrice/trafic SANS forcer color (pour laisser les couleurs inline rouge/vert) */
+    body.print-dossier .print-dossier-matrix td,
+    body.print-dossier .dossier-traffic-table td {
+        background: white !important;
+        background-color: white !important;
     }
 
     /* Fond blanc diagramme: sidebar, tracks, ruler */
@@ -2784,24 +2841,84 @@
         background-color: #e0e0e0 !important;
     }
 
-    body.print-dossier .print-dossier-footer {
-        display: flex !important;
-        justify-content: space-between;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 3px 10mm;
-        font-size: 9px;
-        color: #333;
-        border-top: 1px solid #ccc;
-        background: white;
+    /* Forcer les couleurs inline (matrice, trafic) à l'impression */
+    body.print-dossier .preview-matrix-table td[style],
+    body.print-dossier .dossier-traffic-table td[style] {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
     }
 
-    /* Numéro de page via CSS counter */
-    body.print-dossier .print-footer-page::after {
-        content: "Page " counter(page) " / " counter(pages);
+    /* Phasage bulle : titre en haut à gauche, contenu centré horizontalement */
+    body.print-dossier .dossier-phasage-centered {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
     }
+    body.print-dossier .dossier-phasage-centered h3 {
+        width: 100%;
+        text-align: left;
+        margin-bottom: 4px;
+    }
+    body.print-dossier .dossier-phasage-centered .dossier-phasage-content {
+        width: 100%;
+    }
+
+    /* Phasage bulle : fond blanc, texte noir, taille adaptée à la page */
+    body.print-dossier .dossier-phasage-content .phasage-bulle-container {
+        background: #fff !important;
+        padding: 0 !important;
+    }
+    body.print-dossier .dossier-phasage-content .phasage-bulle-header {
+        display: none !important;
+    }
+    body.print-dossier .dossier-phasage-content .phasage-circular-container {
+        height: 900px !important;
+        min-height: 900px !important;
+        max-height: 900px !important;
+    }
+    body.print-dossier .dossier-phasage-content .phase-bubble-content {
+        background: #fff !important;
+        border-color: #999 !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+    }
+    body.print-dossier .dossier-phasage-content .phase-bubble-label {
+        background: rgba(255,255,255,0.95) !important;
+        border-color: #666 !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
+    }
+    body.print-dossier .dossier-phasage-content .phase-number {
+        color: #333 !important;
+    }
+    body.print-dossier .dossier-phasage-content .phase-time-display {
+        color: #666 !important;
+    }
+    body.print-dossier .dossier-phasage-content .phase-bubble-image {
+        background: #fff !important;
+    }
+    body.print-dossier .dossier-phasage-content .ellipse-outline ellipse {
+        stroke: rgba(0,0,0,0.15) !important;
+    }
+    body.print-dossier .dossier-phasage-content .connecting-arrows path {
+        stroke: rgba(100,60,160,0.5) !important;
+    }
+    body.print-dossier .dossier-phasage-content .connecting-arrows marker polygon {
+        fill: rgba(100,60,160,0.5) !important;
+    }
+    /* Masquer uniquement l'ellipse (pas les flèches de connexion) si image très allongée */
+    body.print-dossier .phasage-hide-ovals .ellipse-outline {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
+    body.print-dossier .phasage-hide-ovals .ellipse-outline ellipse {
+        stroke: none !important;
+        display: none !important;
+    }
+
 }
 
 /* Les règles @page pour le diagramme sont définies dans le bloc @media print principal */
