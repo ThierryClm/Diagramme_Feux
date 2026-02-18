@@ -785,16 +785,35 @@ const IntersectionImage = ({
                                     >
                                         {renderArrowSVG(groupInfo.courant, arrowColor, arrowLength, turnLength)}
                                     </div>
-                                    {(showGroupNumbers || showGroupNames) && (
+                                    {showGroupNames && groupInfo.name && (
                                         <span className="arrow-label">
-                                            {showGroupNumbers ? `GF${arrow.groupId}` : ''}
-                                            {showGroupNumbers && showGroupNames && groupInfo.name ? ' - ' : ''}
-                                            {showGroupNames && groupInfo.name ? groupInfo.name : ''}
+                                            {groupInfo.name}
                                         </span>
                                     )}
                                 </div>
                             );
                         })}
+                        {showGroupNumbers && (() => {
+                            const groupMap = {};
+                            arrows.forEach(arrow => {
+                                if (!arrow.groupId) return;
+                                if (!groupMap[arrow.groupId]) groupMap[arrow.groupId] = [];
+                                groupMap[arrow.groupId].push({ x: arrow.x, y: arrow.y });
+                            });
+                            return Object.entries(groupMap).map(([gId, pts]) => {
+                                const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+                                const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+                                return (
+                                    <div
+                                        key={`gnum-${gId}`}
+                                        className="group-number-centroid"
+                                        style={{ left: `${cx}%`, top: `${cy}%` }}
+                                    >
+                                        {gId}
+                                    </div>
+                                );
+                            });
+                        })()}
                     </>
                 ) : (
                     <div className="no-image-placeholder">

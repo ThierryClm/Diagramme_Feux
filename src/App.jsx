@@ -4639,46 +4639,36 @@ function App() {
                                         {/* Phasage bulle pour ce PF (si image + flèches existent) */}
                                         {dossierSections[`phasageBulle_${pf.id}`] && intersectionArrows.length > 0 && intersectionImage && (() => {
                                             const bulleCount = pf.phasageBulleCount || 4;
-                                            // Bubble dimensions (from PhasageBulle constants)
                                             const bsf = bulleCount === 2 ? 1.2 : bulleCount === 5 ? 0.9 : bulleCount === 6 ? 0.8 : 1.0;
                                             const bulleW = 570 * bsf;
                                             const bulleH = 456 * bsf;
-                                            // Ellipse radii (from PhasageBulle getEllipseConfig)
+                                            // Ellipse config (same as PhasageBulle)
                                             const rX = bulleCount === 2 ? 22 : bulleCount === 3 ? 23 : bulleCount === 5 ? 27 : bulleCount === 6 ? 29 : 26;
                                             const rY = bulleCount === 2 ? 25 : bulleCount === 3 ? 30 : bulleCount === 5 ? 34 : bulleCount === 6 ? 36 : 32;
+                                            const startAngle = (bulleCount === 2 || bulleCount === 3) ? -Math.PI / 2 : Math.PI;
                                             // Image ratio: hide ellipse if very elongated
                                             const imgRatio = imageNaturalDims.width / imageNaturalDims.height;
                                             const hideOvals = imgRatio > 1.5 || imgRatio < (1 / 1.5);
-                                            // Available print area (A4 landscape minus margins)
+                                            // Page area (A4 landscape minus margins)
                                             const pageW = 1040;
-                                            const pageH = 700;
-                                            const titleH = 30;
-                                            const availH = pageH - titleH;
-                                            const refH = 900;
-                                            // For elongated images, effective bubble height is shorter (object-fit: contain)
-                                            const effectiveBulleH = hideOvals
-                                                ? Math.min(bulleH, bulleW / Math.max(imgRatio, 1 / imgRatio) + 80)
-                                                : bulleH;
-                                            // Bounding box of all content (bubbles on ellipse, in container coordinates)
-                                            const contentTop = (0.5 - rY / 100) * refH - effectiveBulleH / 2;
-                                            const contentBottom = (0.5 + rY / 100) * refH + effectiveBulleH / 2;
-                                            const contentLeft = (0.5 - rX / 100) * pageW - bulleW / 2;
-                                            const contentRight = (0.5 + rX / 100) * pageW + bulleW / 2;
-                                            const totalContentW = contentRight - contentLeft;
-                                            const totalContentH = contentBottom - contentTop;
-                                            const phasageScale = Math.min(pageW / totalContentW, availH / totalContentH, 1.0);
-                                            const visualH = Math.ceil(totalContentH * phasageScale);
-                                            const topOffset = Math.max(0, -contentTop);
+                                            const availH = 650;
+                                            // Min distance between adjacent bubble centers (at page container size)
+                                            const angleStep = (2 * Math.PI) / bulleCount;
+                                            const dxAdj = (rX / 100) * pageW * (Math.cos(startAngle) - Math.cos(startAngle + angleStep));
+                                            const dyAdj = (rY / 100) * availH * (Math.sin(startAngle) - Math.sin(startAngle + angleStep));
+                                            const minDist = Math.sqrt(dxAdj * dxAdj + dyAdj * dyAdj);
+                                            // Scale bubbles so they don't touch (with gap)
+                                            const bubbleMax = Math.max(bulleW, bulleH);
+                                            const bubbleScale = Math.min((minDist - 20) / bubbleMax, 1.0);
                                             // Visible image bounds within bubble (object-fit: contain)
                                             const bubbleAspect = bulleW / bulleH;
-                                            const imgAspect = imageNaturalDims.width / imageNaturalDims.height;
                                             let arrowXMin = 0, arrowXMax = 100, arrowYMin = 0, arrowYMax = 100;
-                                            if (imgAspect > bubbleAspect) {
-                                                const visH = (bubbleAspect / imgAspect) * 100;
+                                            if (imgRatio > bubbleAspect) {
+                                                const visH = (bubbleAspect / imgRatio) * 100;
                                                 arrowYMin = (100 - visH) / 2;
                                                 arrowYMax = 100 - arrowYMin;
                                             } else {
-                                                const visW = (imgAspect / bubbleAspect) * 100;
+                                                const visW = (imgRatio / bubbleAspect) * 100;
                                                 arrowXMin = (100 - visW) / 2;
                                                 arrowXMax = 100 - arrowXMin;
                                             }
@@ -4686,24 +4676,19 @@ function App() {
                                             <div className="print-dossier-section print-dossier-phasage dossier-phasage-centered">
                                                 <h3>Phasage bulle - {pf.name}</h3>
                                                 <div className={`dossier-phasage-content ${hideOvals ? 'phasage-hide-ovals' : ''}`}
-                                                    style={{ height: `${visualH}px`, overflow: 'hidden' }}>
-                                                    <div className="dossier-phasage-scaler" style={{
-                                                        transform: `scale(${phasageScale.toFixed(3)}) translateY(${topOffset}px)`,
-                                                        transformOrigin: 'top center',
-                                                    }}>
-                                                        <PhasageBulle
-                                                            groups={pfGroups}
-                                                            cycleLength={cycleLength}
-                                                            intersectionImage={intersectionImage}
-                                                            intersectionArrows={intersectionArrows.filter(a => a.x >= arrowXMin && a.x <= arrowXMax && a.y >= arrowYMin && a.y <= arrowYMax)}
-                                                            actionData={pfActionData}
-                                                            selectedActions={[]}
-                                                            intersectionName={intersectionName}
-                                                            planName={pf.name}
-                                                            initialTimes={pf.phasageBulleTimes || [0, 15, 30, 45, 60, 75]}
-                                                            initialCount={bulleCount}
-                                                        />
-                                                    </div>
+                                                    style={{ '--bubble-scale': bubbleScale.toFixed(3) }}>
+                                                    <PhasageBulle
+                                                        groups={pfGroups}
+                                                        cycleLength={cycleLength}
+                                                        intersectionImage={intersectionImage}
+                                                        intersectionArrows={intersectionArrows.filter(a => a.x >= arrowXMin && a.x <= arrowXMax && a.y >= arrowYMin && a.y <= arrowYMax)}
+                                                        actionData={pfActionData}
+                                                        selectedActions={[]}
+                                                        intersectionName={intersectionName}
+                                                        planName={pf.name}
+                                                        initialTimes={pf.phasageBulleTimes || [0, 15, 30, 45, 60, 75]}
+                                                        initialCount={bulleCount}
+                                                    />
                                                 </div>
                                             </div>
                                             );

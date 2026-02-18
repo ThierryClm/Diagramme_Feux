@@ -2696,6 +2696,14 @@
         overflow: visible !important;
     }
 
+    /* Phasage bulle : section pleine page */
+    body.print-dossier .print-dossier-phasage {
+        height: calc(100vh - 14mm) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
     body.print-dossier .print-dossier-section h3 {
         color: #000 !important;
         background: #fff !important;
@@ -2849,34 +2857,41 @@
         color-adjust: exact !important;
     }
 
-    /* Phasage bulle : titre en haut à gauche, contenu centré horizontalement */
+    /* Phasage bulle : titre en haut à gauche, contenu remplit la page */
     body.print-dossier .dossier-phasage-centered {
         display: flex !important;
         flex-direction: column !important;
         justify-content: flex-start !important;
-        align-items: center !important;
+        align-items: stretch !important;
     }
     body.print-dossier .dossier-phasage-centered h3 {
         width: 100%;
         text-align: left;
-        margin-bottom: 4px;
+        margin-bottom: 0;
     }
     body.print-dossier .dossier-phasage-centered .dossier-phasage-content {
         width: 100%;
+        flex: 1;
+        overflow: hidden !important;
     }
 
-    /* Phasage bulle : fond blanc, texte noir, taille adaptée à la page */
+    /* Phasage bulle : fond blanc, conteneur remplit l'espace disponible */
     body.print-dossier .dossier-phasage-content .phasage-bulle-container {
         background: #fff !important;
         padding: 0 !important;
+        height: 100% !important;
     }
     body.print-dossier .dossier-phasage-content .phasage-bulle-header {
         display: none !important;
     }
     body.print-dossier .dossier-phasage-content .phasage-circular-container {
-        height: 900px !important;
-        min-height: 900px !important;
-        max-height: 900px !important;
+        height: 100% !important;
+        min-height: unset !important;
+        max-height: unset !important;
+    }
+    /* Réduire les bulles individuelles pour éviter le chevauchement */
+    body.print-dossier .dossier-phasage-content .phase-bubble {
+        transform: translate(-50%, -50%) scale(var(--bubble-scale, 1)) !important;
     }
     body.print-dossier .dossier-phasage-content .phase-bubble-content {
         background: #fff !important;
