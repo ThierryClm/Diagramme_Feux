@@ -4649,35 +4649,53 @@ function App() {
                                             // Image ratio: hide ellipse if very elongated
                                             const imgRatio = imageNaturalDims.width / imageNaturalDims.height;
                                             const hideOvals = imgRatio > 1.5 || imgRatio < (1 / 1.5);
-                                            // Available print area (A4 landscape minus margins, title at top-left)
+                                            // Available print area (A4 landscape minus margins)
                                             const pageW = 1040;
                                             const pageH = 700;
+                                            const titleH = 30;
+                                            const availH = pageH - titleH;
                                             const refH = 900;
                                             // For elongated images, effective bubble height is shorter (object-fit: contain)
                                             const effectiveBulleH = hideOvals
                                                 ? Math.min(bulleH, bulleW / Math.max(imgRatio, 1 / imgRatio) + 80)
                                                 : bulleH;
-                                            // Unscaled extent: bubbles spread + bubble size + labels
-                                            const extentW = (2 * rX / 100) * pageW + bulleW + 80;
-                                            const extentH = (2 * rY / 100) * refH + effectiveBulleH + 80;
-                                            const scaleX = pageW / extentW;
-                                            const scaleY = pageH / extentH;
-                                            const phasageScale = Math.min(scaleX, scaleY, 1.0);
-                                            const visualH = Math.ceil(refH * phasageScale);
+                                            // Bounding box of all content (bubbles on ellipse, in container coordinates)
+                                            const contentTop = (0.5 - rY / 100) * refH - effectiveBulleH / 2;
+                                            const contentBottom = (0.5 + rY / 100) * refH + effectiveBulleH / 2;
+                                            const contentLeft = (0.5 - rX / 100) * pageW - bulleW / 2;
+                                            const contentRight = (0.5 + rX / 100) * pageW + bulleW / 2;
+                                            const totalContentW = contentRight - contentLeft;
+                                            const totalContentH = contentBottom - contentTop;
+                                            const phasageScale = Math.min(pageW / totalContentW, availH / totalContentH, 1.0);
+                                            const visualH = Math.ceil(totalContentH * phasageScale);
+                                            const topOffset = Math.max(0, -contentTop);
+                                            // Visible image bounds within bubble (object-fit: contain)
+                                            const bubbleAspect = bulleW / bulleH;
+                                            const imgAspect = imageNaturalDims.width / imageNaturalDims.height;
+                                            let arrowXMin = 0, arrowXMax = 100, arrowYMin = 0, arrowYMax = 100;
+                                            if (imgAspect > bubbleAspect) {
+                                                const visH = (bubbleAspect / imgAspect) * 100;
+                                                arrowYMin = (100 - visH) / 2;
+                                                arrowYMax = 100 - arrowYMin;
+                                            } else {
+                                                const visW = (imgAspect / bubbleAspect) * 100;
+                                                arrowXMin = (100 - visW) / 2;
+                                                arrowXMax = 100 - arrowXMin;
+                                            }
                                             return (
                                             <div className="print-dossier-section print-dossier-phasage dossier-phasage-centered">
                                                 <h3>Phasage bulle - {pf.name}</h3>
                                                 <div className={`dossier-phasage-content ${hideOvals ? 'phasage-hide-ovals' : ''}`}
-                                                    style={{ height: `${visualH + 20}px`, overflow: 'hidden' }}>
+                                                    style={{ height: `${visualH}px`, overflow: 'hidden' }}>
                                                     <div className="dossier-phasage-scaler" style={{
-                                                        transform: `scale(${phasageScale.toFixed(3)})`,
+                                                        transform: `scale(${phasageScale.toFixed(3)}) translateY(${topOffset}px)`,
                                                         transformOrigin: 'top center',
                                                     }}>
                                                         <PhasageBulle
                                                             groups={pfGroups}
                                                             cycleLength={cycleLength}
                                                             intersectionImage={intersectionImage}
-                                                            intersectionArrows={intersectionArrows.filter(a => a.x >= 0 && a.x <= 100 && a.y >= 0 && a.y <= 100)}
+                                                            intersectionArrows={intersectionArrows.filter(a => a.x >= arrowXMin && a.x <= arrowXMax && a.y >= arrowYMin && a.y <= arrowYMax)}
                                                             actionData={pfActionData}
                                                             selectedActions={[]}
                                                             intersectionName={intersectionName}
