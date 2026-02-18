@@ -2972,7 +2972,7 @@
 
 .phasage-bulle-sidebar .sidebar-header {
     padding-bottom: 1rem;
-    border-bottom: 1px solid #444;
+    border-bottom: 1px solid #555;
     margin-bottom: 1rem;
 }
 
@@ -2984,7 +2984,7 @@
 
 .phasage-bulle-sidebar .sidebar-subtitle {
     margin: 0;
-    color: #888;
+    color: #aaa;
     font-size: 0.85em;
 }
 
@@ -3002,20 +3002,20 @@
     align-items: center;
     gap: 8px;
     padding: 8px 10px;
-    background: #252525;
-    border: 1px solid #333;
+    background: #3a3a3a;
+    border: 1px solid #555;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
 }
 
 .phasage-group-item:hover {
-    background: #2a2a2a;
-    border-color: #444;
+    background: #505050;
+    border-color: #666;
 }
 
 .phasage-group-item.checked {
-    background: #2a252a;
+    background: #3a2a3a;
     border-color: #dc4edc;
 }
 
@@ -3025,7 +3025,7 @@
 }
 
 .phasage-group-item.hovered {
-    background: #3a2a3a;
+    background: #4a3a4a;
     border-color: #dc4edc;
     box-shadow: 0 0 8px rgba(220, 78, 220, 0.5);
 }
@@ -3049,7 +3049,7 @@
 
 .phasage-group-name {
     flex: 1;
-    color: #ccc;
+    color: #e0e0e0;
     font-size: 0.9em;
     white-space: nowrap;
     overflow: hidden;
@@ -3058,17 +3058,17 @@
 }
 
 .phasage-group-courant {
-    color: #888;
+    color: #aaa;
     font-size: 0.85em;
     padding: 2px 6px;
-    background: #333;
+    background: #444;
     border-radius: 3px;
     min-width: 50px;
     text-align: center;
 }
 
 .phasage-no-arrow-hint {
-    color: #666;
+    color: #888;
     font-size: 1em;
     margin-left: auto;
 }
@@ -3077,7 +3077,7 @@
     display: flex;
     gap: 8px;
     padding-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid #555;
     margin-top: 1rem;
 }
 
