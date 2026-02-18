@@ -1266,9 +1266,9 @@ function App() {
         style.id = 'dossier-print-footer-style';
         style.textContent = `
             @page dossier-page {
-                @bottom-left { content: "${path}"; font-size: 9px; color: #333; }
-                @bottom-center { content: "${dateStr}"; font-size: 9px; color: #333; }
-                @bottom-right { content: "Page " counter(page); font-size: 9px; color: #333; }
+                @bottom-left { content: "${path}"; font-size: 10px; color: #444; }
+                @bottom-center { content: "${dateStr}"; font-size: 10px; color: #444; }
+                @bottom-right { content: "Page " counter(page); font-size: 10px; color: #444; }
             }
         `;
         document.head.appendChild(style);
@@ -4402,17 +4402,49 @@ function App() {
                                                     />
                                                     {dossierSections.gfNumbers && (() => {
                                                         // Grouper les flèches par groupId (exclure celles hors image)
+                                                        // Estimer la taille rendue de l'image pour le décalage TàD/TàG
+                                                        const imgR = imageNaturalDims.width / imageNaturalDims.height;
+                                                        const estH = Math.min(480, imageNaturalDims.height);
+                                                        const estW = Math.min(estH * imgR, 1000);
                                                         const groupMap = {};
                                                         intersectionArrows.forEach(arrow => {
                                                             if (!arrow.groupId) return;
                                                             if (arrow.x < 0 || arrow.x > 100 || arrow.y < 0 || arrow.y > 100) return;
+                                                            const courant = groups.find(g => String(g.id) === String(arrow.groupId))?.courant || '';
+                                                            let px = arrow.x;
+                                                            let py = arrow.y;
+                                                            // Pour TàD/TàG, décaler vers le corps (ignorer le retour)
+                                                            if (courant === 'TàD' || courant === 'TàG') {
+                                                                const sc = arrow.scale || 1;
+                                                                const svgSz = 96 * sc;
+                                                                const dxSvg = courant === 'TàD' ? -8 : 8;
+                                                                const dySvg = 2;
+                                                                const dxPx = (dxSvg / 32) * svgSz;
+                                                                const dyPx = (dySvg / 32) * svgSz;
+                                                                const rotRad = (arrow.rotation || 0) * Math.PI / 180;
+                                                                px += (dxPx * Math.cos(rotRad) - dyPx * Math.sin(rotRad)) / estW * 100;
+                                                                py += (dxPx * Math.sin(rotRad) + dyPx * Math.cos(rotRad)) / estH * 100;
+                                                            }
                                                             if (!groupMap[arrow.groupId]) groupMap[arrow.groupId] = [];
-                                                            groupMap[arrow.groupId].push({ x: arrow.x, y: arrow.y });
+                                                            groupMap[arrow.groupId].push({ x: px, y: py });
                                                         });
                                                         return Object.entries(groupMap).map(([gId, pts]) => {
                                                             const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
                                                             const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
-                                                            return (
+                                                            const grp = groups.find(g => String(g.id) === gId);
+                                                            const isPieton = grp?.courant === 'Piéton';
+                                                            return isPieton ? (
+                                                                <div
+                                                                    key={`gf-${gId}`}
+                                                                    className="dossier-gf-label pieton"
+                                                                    style={{ left: `${cx}%`, top: `${cy}%` }}
+                                                                >
+                                                                    <svg viewBox="0 0 20 18" width="20" height="18">
+                                                                        <polygon points="10,1 1,17 19,17" fill="rgba(255,255,255,0.85)" stroke="#000" strokeWidth="1"/>
+                                                                        <text x="10" y="15" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#000">{gId}</text>
+                                                                    </svg>
+                                                                </div>
+                                                            ) : (
                                                                 <div
                                                                     key={`gf-${gId}`}
                                                                     className="dossier-gf-label"
@@ -4642,9 +4674,9 @@ function App() {
                                             const bsf = bulleCount === 2 ? 1.2 : bulleCount === 5 ? 0.9 : bulleCount === 6 ? 0.8 : 1.0;
                                             const bulleW = 570 * bsf;
                                             const bulleH = 456 * bsf;
-                                            // Ellipse config (same as PhasageBulle)
-                                            const rX = bulleCount === 2 ? 22 : bulleCount === 3 ? 23 : bulleCount === 5 ? 27 : bulleCount === 6 ? 29 : 26;
-                                            const rY = bulleCount === 2 ? 25 : bulleCount === 3 ? 30 : bulleCount === 5 ? 34 : bulleCount === 6 ? 36 : 32;
+                                            // Ellipse config (same as PhasageBulle, -20% pour impression)
+                                            const rX = (bulleCount === 2 ? 22 : bulleCount === 3 ? 23 : bulleCount === 5 ? 27 : bulleCount === 6 ? 29 : 26) * 0.8;
+                                            const rY = (bulleCount === 2 ? 25 : bulleCount === 3 ? 30 : bulleCount === 5 ? 34 : bulleCount === 6 ? 36 : 32) * 0.8;
                                             const startAngle = (bulleCount === 2 || bulleCount === 3) ? -Math.PI / 2 : Math.PI;
                                             // Image ratio: hide ellipse if very elongated
                                             const imgRatio = imageNaturalDims.width / imageNaturalDims.height;
@@ -4659,7 +4691,7 @@ function App() {
                                             const minDist = Math.sqrt(dxAdj * dxAdj + dyAdj * dyAdj);
                                             // Scale bubbles so they don't touch (with gap)
                                             const bubbleMax = Math.max(bulleW, bulleH);
-                                            const bubbleScale = Math.min((minDist - 20) / bubbleMax, 1.0);
+                                            const bubbleScale = Math.min(((minDist - 20) / bubbleMax) * 1.45, 1.45);
                                             // Visible image bounds within bubble (object-fit: contain)
                                             const bubbleAspect = bulleW / bulleH;
                                             let arrowXMin = 0, arrowXMax = 100, arrowYMin = 0, arrowYMax = 100;
@@ -4712,7 +4744,13 @@ function App() {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {pfGroups.map(g => {
+                                                        {pfGroups.filter(g => {
+                                                            // Comme dans TrafficTable : si "tous les groupes" n'est pas coché,
+                                                            // n'afficher que les groupes VL/V ou ceux qui ont des données trafic
+                                                            if (g.type === 'VL' || g.type === 'V') return true;
+                                                            const td = getTrafficData(g.id);
+                                                            return !!td.trafficVol;
+                                                        }).map(g => {
                                                             const td = getTrafficData(g.id);
                                                             const trafficVol = parseTrafficVol(td.trafficVol);
                                                             const coef = g.laneCoef || 1;
