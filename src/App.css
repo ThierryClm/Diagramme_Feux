@@ -1439,7 +1439,9 @@
 /* Abréviations fines et lisibles à l'impression */
 .print-diagram-content .bar-label,
 .print-diagram-content .ouverture-anticipee-label,
-.print-diagram-content .adaptatif-label {
+.print-diagram-content .adaptatif-label,
+.print-diagram-content .escamotage-label,
+.print-diagram-content .point-repos-label {
     font-weight: normal !important;
     text-shadow: none !important;
     color: #000 !important;

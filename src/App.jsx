@@ -4300,15 +4300,18 @@ function App() {
                                 })()}
 
                                 {printType === 'dossier' && (() => {
-                                    // A4 paysage marges 10mm: 297-20=277mm = ~1047px à 96dpi
+                                    // A4 paysage marges 10mm: largeur utile réelle mesurée ~1200px
+                                    // (277mm théorique = 1047px à 96dpi, mais le rendu navigateur est plus large)
                                     // Sidebar TimelineDiagram réelle = 325px (sans commentaires/remarques masqués)
-                                    const dossierPrintWidth = 1047;
+                                    const dossierPrintWidth = 1200;
                                     const dossierSidebarReal = 325;
-                                    // PPS pour remplir exactement la largeur disponible
-                                    const dossierPPS = (dossierPrintWidth - dossierSidebarReal) / cycleLength;
-                                    // Largeur réelle du composant rendu
-                                    const dossierRenderedWidth = dossierSidebarReal + (cycleLength * dossierPPS);
-                                    const dossierScale = dossierRenderedWidth > dossierPrintWidth ? dossierPrintWidth / dossierRenderedWidth : 1;
+                                    const availableWidth = dossierPrintWidth - dossierSidebarReal; // 875px
+                                    const refCycle = 120; // Cycle de référence pour l'échelle homogène
+                                    // Cycle ≤ 120s: échelle fixe (homogénéité entre dossiers)
+                                    // Cycle > 120s: ratio pour remplir la largeur de la page
+                                    const basePPS = cycleLength <= refCycle
+                                        ? availableWidth / refCycle
+                                        : availableWidth / cycleLength;
 
                                     // Fonctions de calcul trafic (dupliquées de TrafficTable)
                                     const getTotalGreenTime = (groupId, mainGreenTime) => {
@@ -4543,44 +4546,65 @@ function App() {
 
                                         {/* 5-8. Pour chaque PF coché : diagramme + conditions micro + trafic/capacité + variables micro */}
                                         {pfTabs.filter(pf => dossierSections[`diagram_${pf.id}`]).map(pf => {
+                                            // Durée de cycle propre au PF (ou globale si PF actif)
+                                            const pfCycleLength = pf.id === activePFId ? cycleLength : (pf.cycleLength || cycleLength);
                                             // Appliquer les données diagramme du PF aux groupes
                                             const pfGroups = pf.id === activePFId
                                                 ? groups
                                                 : groups.map(g => {
-                                                    const pfDiag = pf.diagram?.find(d => d.id === g.id);
-                                                    return pfDiag ? { ...g, offset: pfDiag.offset, durations: pfDiag.durations, minGreen: pfDiag.minGreen } : g;
+                                                    const pfDiag = pf.diagram?.find(d => d.groupId === g.id);
+                                                    return pfDiag ? {
+                                                        ...g,
+                                                        offset: pfDiag.offset !== undefined ? pfDiag.offset : g.offset,
+                                                        durations: { ...g.durations, green: pfDiag.greenDuration !== undefined ? pfDiag.greenDuration : g.durations.green },
+                                                        da: pfDiag.da !== undefined ? pfDiag.da : g.da,
+                                                        phaseFlag: pfDiag.phaseFlag !== undefined ? pfDiag.phaseFlag : g.phaseFlag
+                                                    } : g;
                                                 });
                                             const pfActionData = pf.id === activePFId ? actionData : (pf.data || []);
                                             const pfMicroFields = pf.id === activePFId ? microCustomFields : (pf.microCustomFields || []);
-                                            // Calcul du scale combiné (largeur + hauteur)
+                                            // PPS de base pour ce PF (basé sur son propre cycleLength)
+                                            const pfBasePPS = pfCycleLength <= refCycle
+                                                ? availableWidth / refCycle
+                                                : availableWidth / pfCycleLength;
+                                            // Calcul du scale optimisé pour remplir la page
                                             const diagramPageHeight = 648;
                                             // Sans le titre interne (display:none): RULER_HEIGHT(50) + 1px border + groups*31 + 30px grid-bottom + SVG labels/flèches en bas + marge
                                             const diagramRenderedHeight = 50 + 1 + pfGroups.length * 31 + 90;
-                                            const heightScale = diagramRenderedHeight > diagramPageHeight ? diagramPageHeight / diagramRenderedHeight : 1;
-                                            const combinedScale = Math.min(dossierScale, heightScale);
+
+                                            // Zoom 15% pour agrandir les lignes, limité par la hauteur de page
+                                            const rowZoom = 1.15;
+                                            const maxScale = diagramPageHeight / diagramRenderedHeight;
+                                            const combinedScale = Math.min(rowZoom, maxScale);
+                                            // Ajuster PPS pour maintenir la largeur visuelle prévue
+                                            const targetWidth = pfCycleLength <= refCycle
+                                                ? dossierSidebarReal + pfCycleLength * pfBasePPS // largeur prévue pour cycle court
+                                                : dossierPrintWidth; // pleine largeur pour cycle long
+                                            const pfPPS = (targetWidth / combinedScale - dossierSidebarReal) / pfCycleLength;
                                             return (
                                         <Fragment key={pf.id}>
                                         {/* Diagramme */}
                                         <div className="print-dossier-section print-dossier-diagram">
-                                            <h3>Diagramme du plan de feu : {pf.name} — Cycle : {cycleLength}s</h3>
+                                            <h3>Diagramme du plan de feu : {pf.name} — Cycle : {pfCycleLength}s</h3>
                                             <div style={{
                                                 height: `${Math.ceil(diagramRenderedHeight * combinedScale)}px`,
                                                 overflow: 'hidden',
                                                 background: '#fff'
                                             }}>
                                                 <div className="print-diagram-content dossier-diagram-content" style={{
-                                                    transform: combinedScale < 1 ? `scale(${combinedScale.toFixed(3)})` : 'none',
+                                                    width: `${Math.ceil(dossierSidebarReal + pfCycleLength * pfPPS)}px`,
+                                                    transform: combinedScale !== 1 ? `scale(${combinedScale.toFixed(3)})` : 'none',
                                                     transformOrigin: 'top left'
                                                 }}>
                                                     <TimelineDiagram
                                                         groups={pfGroups}
                                                         globalTime={0}
                                                         onGroupClick={() => {}}
-                                                        pixelsPerSecond={dossierPPS}
+                                                        pixelsPerSecond={pfPPS}
                                                         conflicts={[]}
                                                         conflictMatrix={conflictMatrix}
                                                         updateGroupParams={() => {}}
-                                                        cycleLength={cycleLength}
+                                                        cycleLength={pfCycleLength}
                                                         actionData={pfActionData}
                                                         updateActionRow={() => {}}
                                                         startDrag={() => {}}
