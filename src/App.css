@@ -1436,9 +1436,13 @@
     /* Les barres gardent leurs couleurs */
 }
 
-/* Abréviations sans gras à l'impression */
-.print-diagram-content .bar-label {
+/* Abréviations fines et lisibles à l'impression */
+.print-diagram-content .bar-label,
+.print-diagram-content .ouverture-anticipee-label,
+.print-diagram-content .adaptatif-label {
     font-weight: normal !important;
+    text-shadow: none !important;
+    color: #000 !important;
 }
 
 /* Texte noir pour l'impression */
@@ -2713,7 +2717,7 @@
         height: calc(100vh - 7mm) !important;
         display: flex !important;
         flex-direction: column !important;
-        overflow: visible !important;
+        overflow: hidden !important;
     }
 
     body.print-dossier .print-dossier-section h3 {
@@ -2911,34 +2915,30 @@
         border-color: #999 !important;
         box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
     }
-    body.print-dossier .dossier-phasage-content .phase-bubble {
-        overflow: visible !important;
-    }
     body.print-dossier .dossier-phasage-content .phase-bubble-label {
         background: rgba(255,255,255,0.95) !important;
         border-color: #666 !important;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
-        /* Contre-scaler le label pour compenser le scale de la bulle */
-        transform: scale(calc(1 / var(--bubble-scale, 1))) !important;
-        transform-origin: bottom right !important;
+        box-shadow: none !important;
+        padding: 2px 5px !important;
     }
-    body.print-dossier .dossier-phasage-content .phase-bubble-label.label-top-left {
-        transform-origin: top left !important;
+    /* Label bas-droite : remonter à l'intérieur de la bulle pour ne pas dépasser la page */
+    body.print-dossier .dossier-phasage-content .phase-bubble-label.label-bottom-right {
+        bottom: 20px !important;
+        right: 10px !important;
     }
     body.print-dossier .dossier-phasage-content .phase-number {
         color: #333 !important;
-        font-size: 1em !important;
+        font-size: 1.2em !important;
     }
     body.print-dossier .dossier-phasage-content .phase-time-display {
         color: #666 !important;
-        font-size: 0.9em !important;
+        font-size: 1.1em !important;
     }
     body.print-dossier .dossier-phasage-content .phase-bubble-image {
         background: #fff !important;
     }
-    body.print-dossier .dossier-phasage-content .ellipse-outline ellipse {
-        stroke: rgba(0,0,0,0.12) !important;
-        stroke-width: 0.3 !important;
+    body.print-dossier .dossier-phasage-content .ellipse-outline {
+        display: none !important;
     }
     body.print-dossier .dossier-phasage-content .connecting-arrows path {
         stroke: rgba(100,60,160,0.5) !important;

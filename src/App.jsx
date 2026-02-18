@@ -4674,24 +4674,15 @@ function App() {
                                             const bsf = bulleCount === 2 ? 1.2 : bulleCount === 5 ? 0.9 : bulleCount === 6 ? 0.8 : 1.0;
                                             const bulleW = 570 * bsf;
                                             const bulleH = 456 * bsf;
-                                            // Ellipse config (same as PhasageBulle, -20% pour impression)
-                                            const rX = (bulleCount === 2 ? 22 : bulleCount === 3 ? 23 : bulleCount === 5 ? 27 : bulleCount === 6 ? 29 : 26) * 0.8;
-                                            const rY = (bulleCount === 2 ? 25 : bulleCount === 3 ? 30 : bulleCount === 5 ? 34 : bulleCount === 6 ? 36 : 32) * 0.8;
+                                            // Ellipse config pour positionnement (réduit pour rapprocher du centre)
+                                            const rX = (bulleCount === 2 ? 22 : bulleCount === 3 ? 23 : bulleCount === 5 ? 27 : bulleCount === 6 ? 29 : 26) * 0.45;
+                                            const rY = (bulleCount === 2 ? 25 : bulleCount === 3 ? 30 : bulleCount === 5 ? 34 : bulleCount === 6 ? 36 : 32) * 0.45;
                                             const startAngle = (bulleCount === 2 || bulleCount === 3) ? -Math.PI / 2 : Math.PI;
                                             // Image ratio: hide ellipse if very elongated
                                             const imgRatio = imageNaturalDims.width / imageNaturalDims.height;
                                             const hideOvals = imgRatio > 1.5 || imgRatio < (1 / 1.5);
-                                            // Page area (A4 landscape minus margins)
-                                            const pageW = 1040;
-                                            const availH = 650;
-                                            // Min distance between adjacent bubble centers (at page container size)
-                                            const angleStep = (2 * Math.PI) / bulleCount;
-                                            const dxAdj = (rX / 100) * pageW * (Math.cos(startAngle) - Math.cos(startAngle + angleStep));
-                                            const dyAdj = (rY / 100) * availH * (Math.sin(startAngle) - Math.sin(startAngle + angleStep));
-                                            const minDist = Math.sqrt(dxAdj * dxAdj + dyAdj * dyAdj);
-                                            // Scale bubbles so they don't touch (with gap)
-                                            const bubbleMax = Math.max(bulleW, bulleH);
-                                            const bubbleScale = Math.min(((minDist - 20) / bubbleMax) * 1.45, 1.45);
+                                            // Taille fixe des bulles (découplée de la distance inter-bulles)
+                                            const bubbleScale = 0.80;
                                             // Visible image bounds within bubble (object-fit: contain)
                                             const bubbleAspect = bulleW / bulleH;
                                             let arrowXMin = 0, arrowXMax = 100, arrowYMin = 0, arrowYMax = 100;
