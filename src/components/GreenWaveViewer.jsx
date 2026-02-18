@@ -421,6 +421,14 @@ const GreenWaveViewer = ({ isOpen, onClose, intersections, folderName }) => {
                             );
                         })}
 
+                        {/* Clip path pour tronquer les bandes passantes à gauche de l'axe Y */}
+                        <defs>
+                            <clipPath id="bandwidth-clip-viewer">
+                                <rect x={PADDING_LEFT} y={0} width={diagramWidth - PADDING_LEFT} height={diagramHeight} />
+                            </clipPath>
+                        </defs>
+
+                        <g clipPath="url(#bandwidth-clip-viewer)">
                         {/* Ascending bandwidth corridor (bottom to top) - inscribed in bars */}
                         {bandwidthData?.ascending && intersections && (() => {
                             const sortedByDist = [...intersections].sort((a, b) => a.distance - b.distance);
@@ -429,7 +437,7 @@ const GreenWaveViewer = ({ isOpen, onClose, intersections, folderName }) => {
                             const barHeight = 8;
 
                             const elements = [];
-                            for (let cycle = 0; cycle < 2; cycle++) {
+                            for (let cycle = -1; cycle < 2; cycle++) {
                                 const cycleOffset = cycle * cycleLength;
                                 const bandStartAtBottom = start + cycleOffset;
                                 const bandEndAtBottom = bandStartAtBottom + width;
@@ -514,7 +522,7 @@ const GreenWaveViewer = ({ isOpen, onClose, intersections, folderName }) => {
                             const barHeight = 8;
 
                             const elements = [];
-                            for (let cycle = 0; cycle < 2; cycle++) {
+                            for (let cycle = -1; cycle < 2; cycle++) {
                                 const cycleOffset = cycle * cycleLength;
                                 const bandStartAtTop = start + cycleOffset;
                                 const bandEndAtTop = bandStartAtTop + width;
@@ -522,6 +530,7 @@ const GreenWaveViewer = ({ isOpen, onClose, intersections, folderName }) => {
                                 // Draw bandwidth segment at each intersection (inscribed in bar)
                                 // Process from top to bottom
                                 const sortedTopToBottom = [...sortedByDist].reverse();
+
                                 sortedTopToBottom.forEach((intersection, idx) => {
                                     const group = intersection.groups.find(g => g.id === intersection.selectedGroup1);
                                     if (!group) return;
@@ -592,6 +601,7 @@ const GreenWaveViewer = ({ isOpen, onClose, intersections, folderName }) => {
                             }
                             return elements;
                         })()}
+                        </g>
 
                         {/* X Axis (Time) */}
                         <line

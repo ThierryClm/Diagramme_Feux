@@ -1789,6 +1789,14 @@ const GreenWavePage = () => {
                         );
                     })}
 
+                    {/* Clip path pour tronquer les bandes passantes à gauche de l'axe Y */}
+                    <defs>
+                        <clipPath id="bandwidth-clip">
+                            <rect x={PADDING_LEFT} y={0} width={diagramWidth - PADDING_LEFT} height={diagramHeight} />
+                        </clipPath>
+                    </defs>
+
+                    <g clipPath="url(#bandwidth-clip)">
                     {/* Ascending bandwidth corridor (bottom to top) - as polygon surface with segments */}
                     {bandwidthData?.ascending?.segments && intersections && (() => {
                         // Sort by distanceG2 for ascending (Group 2)
@@ -1803,7 +1811,7 @@ const GreenWavePage = () => {
                         segments.forEach((segment, segIdx) => {
                             const { startIdx, endIdx, width, start, refDistance } = segment;
 
-                            for (let cycle = 0; cycle < 2; cycle++) {
+                            for (let cycle = -1; cycle < 2; cycle++) {
                                 const cycleOffset = cycle * cycleLength;
                                 const bandStartAtRef = start + cycleOffset + speedLineOffsetUp;
                                 const bandEndAtRef = bandStartAtRef + width;
@@ -1872,7 +1880,7 @@ const GreenWavePage = () => {
                         segments.forEach((segment, segIdx) => {
                             const { startIdx, endIdx, width, start, refDistance } = segment;
 
-                            for (let cycle = 0; cycle < 2; cycle++) {
+                            for (let cycle = -1; cycle < 2; cycle++) {
                                 const cycleOffset = cycle * cycleLength;
                                 const bandStartAtRef = start + cycleOffset + speedLineOffsetDown;
                                 const bandEndAtRef = bandStartAtRef + width;
@@ -1927,6 +1935,7 @@ const GreenWavePage = () => {
 
                         return elements;
                     })()}
+                    </g>
 
                     {/* X Axis (Time) */}
                     <line
