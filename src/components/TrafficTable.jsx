@@ -41,9 +41,9 @@ const TrafficTable = ({
 
     const handleAddDataset = useCallback(() => {
         const defaultName = `${activeTrafficDataset} - copie`;
-        const name = prompt('Nom du nouveau jeu de données :', defaultName);
+        const name = prompt('Nom du nouveau jeu de données (17 car. max) :', defaultName.slice(0, 17));
         if (name && name.trim()) {
-            const trimmed = name.trim();
+            const trimmed = name.trim().slice(0, 17);
             if (trafficDatasetNames.includes(trimmed)) {
                 alert('Ce nom de jeu de données existe déjà.');
                 return;

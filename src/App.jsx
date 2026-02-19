@@ -3366,6 +3366,8 @@ function App() {
                         </ul>
                         <p><strong>Surbrillance interactive :</strong> Le survol des champs Coef, Trafic, V.Utile, Cap.U, Retard ou File d'attente met en surbrillance la barre correspondante dans le diagramme.</p>
                         <p><strong>Jeux de données :</strong> La listbox "Associé à" permet de basculer entre plusieurs jeux de données trafic (HPM, HPS, etc.). Chaque jeu de données conserve ses propres valeurs de trafic.</p>
+                        <p><strong>Jeux de données personnalisés :</strong> Survolez le sélecteur "Associé à" et appuyez sur la touche <em>+</em> pour créer un nouveau jeu de données personnalisé (17 caractères max). Le nom est prérempli à partir du jeu actif. Les jeux personnalisés sont sauvegardés dans le projet et dans le stockage local.</p>
+                        <p><strong>Association PF / jeu de données :</strong> Chaque onglet PF mémorise le jeu de données trafic sélectionné. Lorsque vous changez d'onglet PF, le jeu de données associé est automatiquement restauré. Cette association est sauvegardée dans le projet.</p>
                         <p><strong>Bouton Coller :</strong> Si le jeu de données sélectionné est vide, un bouton "Coller..." apparaît pour copier les données depuis un autre jeu de données.</p>
                         <p><strong>Code couleur Cap.U :</strong></p>
                         <ul>

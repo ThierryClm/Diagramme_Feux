@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import './ActionTable.css';
 
 // Auto-resize textarea helper
@@ -95,6 +96,54 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     const startYRef = useRef(0);
     const startHeightRef = useRef(0);
     const panelResizeStartY = useRef(0);
+
+    // Detached window state
+    const [detachedWindow, setDetachedWindow] = useState(null);
+    const detachedContainerRef = useRef(null);
+
+    const handleDetach = useCallback(() => {
+        if (detachedWindow) {
+            detachedWindow.focus();
+            return;
+        }
+        const newWin = window.open('', '', 'width=1200,height=600');
+        if (!newWin) return;
+
+        // Write a proper HTML document to avoid "about:blank" in the title bar
+        newWin.document.open();
+        newWin.document.write('<!DOCTYPE html><html><head><title>Conditions de micro-r\u00e9gulation</title></head><body></body></html>');
+        newWin.document.close();
+
+        // Copy stylesheets
+        const headEl = newWin.document.head;
+        document.querySelectorAll('style, link[rel="stylesheet"]').forEach(node => {
+            headEl.appendChild(node.cloneNode(true));
+        });
+        // Dark background
+        newWin.document.body.style.cssText = 'background:#1e1e1e;color:#eee;margin:0;padding:12px;font-family:inherit;';
+
+        const container = newWin.document.createElement('div');
+        container.className = 'action-table-container';
+        container.style.cssText = 'height:calc(100vh - 24px);display:flex;flex-direction:column;';
+        newWin.document.body.appendChild(container);
+
+        detachedContainerRef.current = container;
+        setDetachedWindow(newWin);
+
+        newWin.addEventListener('beforeunload', () => {
+            detachedContainerRef.current = null;
+            setDetachedWindow(null);
+        });
+    }, [detachedWindow]);
+
+    // Cleanup: close detached window on unmount
+    useEffect(() => {
+        return () => {
+            if (detachedWindow && !detachedWindow.closed) {
+                detachedWindow.close();
+            }
+        };
+    }, [detachedWindow]);
 
     // Handle separator resize
     const handleSeparatorMouseDown = useCallback((e) => {
@@ -299,226 +348,69 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         Object.values(textareaRefs.current).forEach(autoResizeTextarea);
     }, [actionData]);
 
+    // Shared table JSX builder (used in main view and portal)
+    const renderTableContent = () => (
+        <div className="action-table-scroll">
+        <table className="action-table">
+            <thead>
+                <tr className="header-group">
+                    <th rowSpan="2" title="Groupe Fonctionnel - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('gf', 'asc')}>GF ↕</th>
+                    <th rowSpan="2" title="Action - Cliquer pour trier (alphabétique)" className="sortable" onClick={() => handleSort('action', 'asc')}>Action ↕</th>
+                    <th rowSpan="2" title="Description (30 car.)">Description</th>
+                    <th rowSpan="2" title="Début - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('deb', 'asc')}>Déb ↕</th>
+                    <th rowSpan="2">Fin</th>
+                    <th rowSpan="2">Abrv</th>
+                    <th rowSpan="2" title="Action Micro (60 car.)">Action_Micro</th>
+                    <th colSpan="2" className="header-grouped">Plage</th>
+                    <th colSpan="4" className="header-grouped">Action GF</th>
+                </tr>
+                <tr className="header-sub">
+                    <th>1</th><th>2</th><th>1</th><th>2</th><th>3</th><th>4</th>
+                </tr>
+            </thead>
+            <tbody>
+                {visibleRows.map((row) => (
+                    <tr key={row.id} className={hoveredActionId === row.id ? 'row-highlighted' : ''} onMouseEnter={() => isRowFilled(row) && setHoveredActionId(row.id)} onMouseLeave={() => setHoveredActionId(null)}>
+                        <td><input type="number" min="0" max={maxGroup} className="input-gf" value={row.gf} onChange={(e) => handleGroupFieldChange(row.id, 'gf', e.target.value)} /></td>
+                        <td><select className="input-action" value={row.action} onChange={(e) => handleActionChange(row.id, e.target.value, row)}>{ACTION_OPTIONS.map((opt) => (<option key={opt} value={opt}>{opt || '—'}</option>))}</select></td>
+                        <td><input type="text" maxLength="30" className="input-desc" value={row.description} onChange={(e) => updateActionRow(row.id, 'description', e.target.value)} /></td>
+                        <td><input type="text" inputMode="numeric" pattern="[0-9]*" className="input-time-xs" value={row.deb} onChange={(e) => { const val = e.target.value.replace(/[^0-9]/g, ''); updateActionRow(row.id, 'deb', val); }} /></td>
+                        <td><input type="text" inputMode="numeric" pattern="[0-9]*" className={`input-time-xs ${FIN_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.fin} onChange={(e) => { const val = e.target.value.replace(/[^0-9]/g, ''); updateActionRow(row.id, 'fin', val); }} disabled={FIN_DISABLED_ACTIONS.includes(row.action)} /></td>
+                        <td><input type="text" maxLength="10" className="input-abrv" value={row.abrv || ''} onChange={(e) => updateActionRow(row.id, 'abrv', e.target.value)} /></td>
+                        <td><div className="micro-highlight-container"><div className="micro-highlight-backdrop" aria-hidden="true">{(row.micro || '').split(/(\b\w*(?:DA|TPPh|AVert|TMAB)\w*\b|[{}\[\]()]|\b(?:et|ou)\b)/g).map((part, i) => /DA|TPPh|AVert|TMAB/.test(part) ? <span key={i} className="micro-keyword">{part}</span> : /^[{}\[\]()]$/.test(part) || /^(et|ou)$/.test(part) ? <span key={i} className="micro-bold">{part}</span> : part)}</div><textarea ref={(el) => { textareaRefs.current[row.id] = el; autoResizeTextarea(el); }} className="input-micro micro-has-backdrop" value={row.micro || ''} onChange={(e) => { updateActionRow(row.id, 'micro', e.target.value); autoResizeTextarea(e.target); }} rows={1} /></div></td>
+                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${PLAGE_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.plage1} onChange={(e) => handleGroupFieldChange(row.id, 'plage1', e.target.value)} disabled={PLAGE_DISABLED_ACTIONS.includes(row.action)} /></td>
+                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${PLAGE_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.plage2} onChange={(e) => handleGroupFieldChange(row.id, 'plage2', e.target.value)} disabled={PLAGE_DISABLED_ACTIONS.includes(row.action)} /></td>
+                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${GF_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.actGf1} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action)} /></td>
+                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`} value={row.actGf1Gf2} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf2', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)} /></td>
+                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`} value={row.actGf1Gf3} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf3', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)} /></td>
+                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`} value={row.actGf1Gf4} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf4', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)} /></td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+        </div>
+    );
+
+    const renderVariablesMicro = () => (
+        <div style={{ padding: '8px 0' }}>
+            <h3>Variables micro</h3>
+            <div className="custom-fields-list">
+                {microCustomFields.map((field, index) => (
+                    <input key={index} type="text" maxLength={60} className="custom-field-input" value={field} onChange={(e) => updateMicroCustomField && updateMicroCustomField(index, e.target.value)} placeholder={`Variable ${index + 1}`} />
+                ))}
+            </div>
+        </div>
+    );
+
     return (
+        <>
         <div className="action-table-container">
             {/* Top section: Conditions de micro-régulation */}
             <div className="action-table-top-section">
-                <h3>Conditions de micro-régulation</h3>
-                <div className="action-table-scroll">
-                <table className="action-table">
-                    <thead>
-                        <tr className="header-group">
-                            <th
-                                rowSpan="2"
-                                title="Groupe Fonctionnel - Cliquer pour trier (croissant)"
-                                className="sortable"
-                                onClick={() => handleSort('gf', 'asc')}
-                            >
-                                GF ↕
-                            </th>
-                            <th
-                                rowSpan="2"
-                                title="Action - Cliquer pour trier (alphabétique)"
-                                className="sortable"
-                                onClick={() => handleSort('action', 'asc')}
-                            >
-                                Action ↕
-                            </th>
-                            <th rowSpan="2" title="Description (30 car.)">Description</th>
-                            <th
-                                rowSpan="2"
-                                title="Début - Cliquer pour trier (croissant)"
-                                className="sortable"
-                                onClick={() => handleSort('deb', 'asc')}
-                            >
-                                Déb ↕
-                            </th>
-                            <th rowSpan="2">Fin</th>
-                            <th rowSpan="2">Abrv</th>
-                            <th rowSpan="2" title="Action Micro (60 car.)">Action_Micro</th>
-                            <th colSpan="2" className="header-grouped">Plage</th>
-                            <th colSpan="4" className="header-grouped">Action GF</th>
-                        </tr>
-                        <tr className="header-sub">
-                            <th>1</th>
-                            <th>2</th>
-                            <th>1</th>
-                            <th>2</th>
-                            <th>3</th>
-                            <th>4</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {visibleRows.map((row) => (
-                            <tr
-                                key={row.id}
-                                className={hoveredActionId === row.id ? 'row-highlighted' : ''}
-                                onMouseEnter={() => isRowFilled(row) && setHoveredActionId(row.id)}
-                                onMouseLeave={() => setHoveredActionId(null)}
-                            >
-                                <td>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max={maxGroup}
-                                        className="input-gf"
-                                        value={row.gf}
-                                        onChange={(e) => handleGroupFieldChange(row.id, 'gf', e.target.value)}
-                                    />
-                                </td>
-                                <td>
-                                    <select
-                                        className="input-action"
-                                        value={row.action}
-                                        onChange={(e) => handleActionChange(row.id, e.target.value, row)}
-                                    >
-                                        {ACTION_OPTIONS.map((opt) => (
-                                            <option key={opt} value={opt}>{opt || '—'}</option>
-                                        ))}
-                                    </select>
-                                </td>
-                                <td>
-                                    <input
-                                        type="text"
-                                        maxLength="30"
-                                        className="input-desc"
-                                        value={row.description}
-                                        onChange={(e) => updateActionRow(row.id, 'description', e.target.value)}
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        pattern="[0-9]*"
-                                        className="input-time-xs"
-                                        value={row.deb}
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace(/[^0-9]/g, '');
-                                            updateActionRow(row.id, 'deb', val);
-                                        }}
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        pattern="[0-9]*"
-                                        className={`input-time-xs ${FIN_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
-                                        value={row.fin}
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace(/[^0-9]/g, '');
-                                            updateActionRow(row.id, 'fin', val);
-                                        }}
-                                        disabled={FIN_DISABLED_ACTIONS.includes(row.action)}
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="text"
-                                        maxLength="10"
-                                        className="input-abrv"
-                                        value={row.abrv || ''}
-                                        onChange={(e) => updateActionRow(row.id, 'abrv', e.target.value)}
-                                    />
-                                </td>
-                                <td>
-                                    <div className="micro-highlight-container">
-                                        <div className="micro-highlight-backdrop" aria-hidden="true">
-                                            {(row.micro || '').split(/(\b\w*(?:DA|TPPh|AVert|TMAB)\w*\b|[{}\[\]()]|\b(?:et|ou)\b)/g).map((part, i) =>
-                                                /DA|TPPh|AVert|TMAB/.test(part)
-                                                    ? <span key={i} className="micro-keyword">{part}</span>
-                                                    : /^[{}\[\]()]$/.test(part) || /^(et|ou)$/.test(part)
-                                                        ? <span key={i} className="micro-bold">{part}</span>
-                                                        : part
-                                            )}
-                                        </div>
-                                        <textarea
-                                            ref={(el) => {
-                                                textareaRefs.current[row.id] = el;
-                                                autoResizeTextarea(el);
-                                            }}
-                                            className="input-micro micro-has-backdrop"
-                                            value={row.micro || ''}
-                                            onChange={(e) => {
-                                                updateActionRow(row.id, 'micro', e.target.value);
-                                                autoResizeTextarea(e.target);
-                                            }}
-                                            rows={1}
-                                        />
-                                    </div>
-                                </td>
-                                <td>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max={maxGroup}
-                                        className={`input-small ${PLAGE_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
-                                        value={row.plage1}
-                                        onChange={(e) => handleGroupFieldChange(row.id, 'plage1', e.target.value)}
-                                        disabled={PLAGE_DISABLED_ACTIONS.includes(row.action)}
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max={maxGroup}
-                                        className={`input-small ${PLAGE_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
-                                        value={row.plage2}
-                                        onChange={(e) => handleGroupFieldChange(row.id, 'plage2', e.target.value)}
-                                        disabled={PLAGE_DISABLED_ACTIONS.includes(row.action)}
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max={maxGroup}
-                                        className={`input-small ${GF_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`}
-                                        value={row.actGf1}
-                                        onChange={(e) => handleGroupFieldChange(row.id, 'actGf1', e.target.value)}
-                                        disabled={GF_DISABLED_ACTIONS.includes(row.action)}
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max={maxGroup}
-                                        className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`}
-                                        value={row.actGf1Gf2}
-                                        onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf2', e.target.value)}
-                                        disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)}
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max={maxGroup}
-                                        className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`}
-                                        value={row.actGf1Gf3}
-                                        onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf3', e.target.value)}
-                                        disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)}
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max={maxGroup}
-                                        className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`}
-                                        value={row.actGf1Gf4}
-                                        onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf4', e.target.value)}
-                                        disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)}
-                                    />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                </div>
+                <h3>Conditions de micro-régulation
+                    <button className="detach-btn" onClick={handleDetach} title="Ouvrir dans une fenêtre séparée" disabled={!!detachedWindow}>Incruster</button>
+                </h3>
+                {renderTableContent()}
             </div>
 
             {/* Resizable horizontal separator */}
@@ -559,6 +451,17 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                 />
             )}
         </div>
+
+        {/* Portal: detached window content */}
+        {detachedWindow && !detachedWindow.closed && detachedContainerRef.current && ReactDOM.createPortal(
+            <>
+                <h3 style={{ color: '#eee', margin: '0 0 8px 0', fontSize: '1rem' }}>Conditions de micro-régulation</h3>
+                {renderTableContent()}
+                {renderVariablesMicro()}
+            </>,
+            detachedContainerRef.current
+        )}
+        </>
     );
 };
 
