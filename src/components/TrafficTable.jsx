@@ -14,6 +14,7 @@ const TrafficTable = ({
     trafficDatasetNames,
     setHoveredVUtile,
     copyTrafficDataset,
+    addCustomTrafficDataset,
     actionData = [],
     simulationSelectedActions = []
 }) => {
@@ -21,6 +22,8 @@ const TrafficTable = ({
     const [showAllGroups, setShowAllGroups] = useState(false);
     const [tooltipGroupId, setTooltipGroupId] = useState(null);
     const tooltipTimerRef = useRef(null);
+    const [datasetTooltip, setDatasetTooltip] = useState(false);
+    const datasetTooltipTimerRef = useRef(null);
 
     const handleTrafficMouseEnter = useCallback((groupId) => {
         tooltipTimerRef.current = setTimeout(() => {
@@ -35,6 +38,50 @@ const TrafficTable = ({
         }
         setTooltipGroupId(null);
     }, []);
+
+    const handleAddDataset = useCallback(() => {
+        const defaultName = `${activeTrafficDataset} - copie`;
+        const name = prompt('Nom du nouveau jeu de données :', defaultName);
+        if (name && name.trim()) {
+            const trimmed = name.trim();
+            if (trafficDatasetNames.includes(trimmed)) {
+                alert('Ce nom de jeu de données existe déjà.');
+                return;
+            }
+            addCustomTrafficDataset(trimmed);
+            setActiveTrafficDataset(trimmed);
+        }
+    }, [activeTrafficDataset, trafficDatasetNames, addCustomTrafficDataset, setActiveTrafficDataset]);
+
+    const datasetHoveredRef = useRef(false);
+
+    const handleDatasetMouseEnter = useCallback(() => {
+        datasetHoveredRef.current = true;
+        datasetTooltipTimerRef.current = setTimeout(() => {
+            setDatasetTooltip(true);
+        }, 5000);
+    }, []);
+
+    const handleDatasetMouseLeave = useCallback(() => {
+        datasetHoveredRef.current = false;
+        if (datasetTooltipTimerRef.current) {
+            clearTimeout(datasetTooltipTimerRef.current);
+            datasetTooltipTimerRef.current = null;
+        }
+        setDatasetTooltip(false);
+    }, []);
+
+    // Écouter la touche "+" globalement, déclencher l'ajout si le sélecteur est survolé
+    React.useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (datasetHoveredRef.current && (e.key === '+' || e.key === '=')) {
+                e.preventDefault();
+                handleAddDataset();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleAddDataset]);
 
     // Determine which groups are inhibited by selected simulation actions
     // (Escamotage de phase, Fermeture anticipée, Adaptatif vertical)
@@ -250,7 +297,7 @@ const TrafficTable = ({
                     />
                     Tous les Grp
                 </label>
-                <div className="traffic-dataset-group">
+                <div className="traffic-dataset-group" onMouseEnter={handleDatasetMouseEnter} onMouseLeave={handleDatasetMouseLeave}>
                     <span className="traffic-dataset-label">Associé à</span>
                     <select
                         className="traffic-dataset-selector"
@@ -261,6 +308,11 @@ const TrafficTable = ({
                             <option key={ds} value={ds}>{ds}</option>
                         ))}
                     </select>
+                    {datasetTooltip && (
+                        <div className="traffic-dataset-tooltip">
+                            Appuyez sur + pour ajouter un jeu de données personnalisé
+                        </div>
+                    )}
                 </div>
             </div>
             <table className="traffic-table">

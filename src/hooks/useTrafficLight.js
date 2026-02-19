@@ -752,7 +752,7 @@ export const useTrafficLight = () => {
                     return migrated;
                 });
                 setPfTabs(migratedPfTabs);
-                if (data.activePFId) setActivePFId(data.activePFId);
+                if (data.activePFId) setActivePFIdRaw(data.activePFId);
             } else if (data.actionData) {
                 // Handle old format for backward compatibility
                 const groupCount = data.groups ? data.groups.length : 0;
@@ -775,7 +775,7 @@ export const useTrafficLight = () => {
                     conflictMatrix: initialMatrix,
                     remarques: ''
                 }]);
-                setActivePFId(1);
+                setActivePFIdRaw(1);
             }
 
             // Load intersection image and arrows
@@ -803,6 +803,8 @@ export const useTrafficLight = () => {
             if (data.activeTrafficDataset) {
                 setActiveTrafficDataset(data.activeTrafficDataset);
             }
+            setCustomTrafficDatasetNames(data.customTrafficDatasetNames || []);
+            setPfTrafficDatasetMap(data.pfTrafficDatasetMap || {});
 
             // Load dependency gap (default to 20 if not present)
             setDependencyGap(data.dependencyGap !== undefined ? data.dependencyGap : 20);
@@ -959,10 +961,10 @@ export const useTrafficLight = () => {
             // Handle new pfTabs format or old actionData format
             if (state.pfTabs && Array.isArray(state.pfTabs) && state.pfTabs.length > 0) {
                 setPfTabs(state.pfTabs);
-                setActivePFId(state.activePFId || 1);
+                setActivePFIdRaw(state.activePFId || 1);
             } else if (state.actionData && Array.isArray(state.actionData)) {
                 setPfTabs([{ id: 1, name: 'PF1', data: state.actionData }]);
-                setActivePFId(1);
+                setActivePFIdRaw(1);
             } else {
                 // Réinitialiser avec un PF vide (structure inline pour éviter dépendance)
                 const emptyRow = (id) => ({
@@ -971,7 +973,7 @@ export const useTrafficLight = () => {
                     actGf1: '', actGf1Gf2: '', actGf1Gf3: '', actGf1Gf4: ''
                 });
                 setPfTabs([{ id: 1, name: 'PF1', data: Array.from({ length: 20 }, (_, i) => emptyRow(i + 1)) }]);
-                setActivePFId(1);
+                setActivePFIdRaw(1);
             }
 
             // Load traffic datasets if provided
@@ -985,6 +987,8 @@ export const useTrafficLight = () => {
             if (state.activeTrafficDataset) {
                 setActiveTrafficDataset(state.activeTrafficDataset);
             }
+            setCustomTrafficDatasetNames(state.customTrafficDatasetNames || []);
+            setPfTrafficDatasetMap(state.pfTrafficDatasetMap || {});
 
             // Load intersection image and arrows
             if (state.intersectionImage !== undefined) {
@@ -1054,11 +1058,13 @@ export const useTrafficLight = () => {
             actGf1: '', actGf1Gf2: '', actGf1Gf3: '', actGf1Gf4: ''
         });
         setPfTabs([{ id: 1, name: 'PF1', data: Array.from({ length: 30 }, (_, i) => emptyRow(i + 1)) }]);
-        setActivePFId(1);
+        setActivePFIdRaw(1);
 
         // Reset traffic datasets
         setTrafficDatasets({});
         setActiveTrafficDataset('HPM');
+        setCustomTrafficDatasetNames([]);
+        setPfTrafficDatasetMap({});
 
         // Reset intersection image and arrows
         setIntersectionImage(null);
@@ -1096,6 +1102,8 @@ export const useTrafficLight = () => {
         intersectionArrows,
         trafficDatasets,
         activeTrafficDataset,
+        customTrafficDatasetNames,
+        pfTrafficDatasetMap,
         dependencyGap,
         biCarrefourSeparator,
         externalLinks
@@ -1129,7 +1137,7 @@ export const useTrafficLight = () => {
     // Multiple PF (Plans de Feux) support
     const [pfTabs, setPfTabs] = useState(() => [{ id: 1, name: 'PF1', data: createEmptyActionData(), remarques: '' }]);
 
-    const [activePFId, setActivePFId] = useState(1);
+    const [activePFId, setActivePFIdRaw] = useState(1);
 
     // Simulation mode state (not persisted - resets on page load)
     const [simulationEnabled, setSimulationEnabled] = useState(false);
@@ -1142,7 +1150,36 @@ export const useTrafficLight = () => {
     const [imageContrast, setImageContrast] = useState(100);
 
     // Traffic datasets state (HPM, HPS, HC, Estimation, Projection)
-    const [activeTrafficDataset, setActiveTrafficDataset] = useState('HPM');
+    const [activeTrafficDataset, setActiveTrafficDataset] = useState(() => {
+        return safeLocalStorage.getItem('trafficActiveDataset') || 'HPM';
+    });
+    const [customTrafficDatasetNames, setCustomTrafficDatasetNames] = useState(() => {
+        try {
+            const saved = safeLocalStorage.getItem('customTrafficDatasetNames');
+            return saved ? JSON.parse(saved) : [];
+        } catch { return []; }
+    });
+
+    // Mapping PF id → dataset actif (choix conservé par PF)
+    const [pfTrafficDatasetMap, setPfTrafficDatasetMap] = useState(() => {
+        try {
+            const saved = safeLocalStorage.getItem('pfTrafficDatasetMap');
+            return saved ? JSON.parse(saved) : {};
+        } catch { return {}; }
+    });
+
+    // Ref pour accéder au mapping PF→dataset à jour dans le wrapper setActivePFId
+    const pfTrafficDatasetMapRef = useRef(pfTrafficDatasetMap);
+    pfTrafficDatasetMapRef.current = pfTrafficDatasetMap;
+
+    // Wrapper qui restaure le dataset trafic mémorisé pour le PF cible
+    const setActivePFId = useCallback((pfId) => {
+        setActivePFIdRaw(pfId);
+        const savedDataset = pfTrafficDatasetMapRef.current[pfId];
+        if (savedDataset) {
+            setActiveTrafficDataset(savedDataset);
+        }
+    }, []);
 
     // Initialize traffic datasets with empty data for all groups
     const createInitialTrafficDatasets = (groupCount) => {
@@ -1214,15 +1251,13 @@ export const useTrafficLight = () => {
         ));
     }, [activePFId]);
 
-    // Dynamic traffic dataset names based on PF tabs (+ Projection at the end)
+    // Dynamic traffic dataset names based on PF tabs (+ Projection at the end) + custom datasets
     const trafficDatasetNames = useMemo(() => {
-        if (pfTabs && pfTabs.length > 0) {
-            // Use PF tab names + "Projection" at the end
-            return [...pfTabs.map(pf => pf.name), 'Projection'];
-        }
-        // Fallback to default if no PF tabs
-        return TRAFFIC_DATASETS;
-    }, [pfTabs]);
+        const base = pfTabs && pfTabs.length > 0
+            ? [...pfTabs.map(pf => pf.name), 'Projection']
+            : TRAFFIC_DATASETS;
+        return [...base, ...customTrafficDatasetNames];
+    }, [pfTabs, customTrafficDatasetNames]);
 
     // Computed Conflicts
     const conflicts = useMemo(() => {
@@ -1526,6 +1561,8 @@ export const useTrafficLight = () => {
             imageContrast,
             trafficDatasets,
             activeTrafficDataset,
+            customTrafficDatasetNames,
+            pfTrafficDatasetMap,
             dependencyGap,
             biCarrefourSeparator,
             externalLinks
@@ -1791,7 +1828,19 @@ export const useTrafficLight = () => {
     useEffect(() => {
         safeLocalStorage.setItem('trafficDatasets', JSON.stringify(trafficDatasets));
         safeLocalStorage.setItem('trafficActiveDataset', activeTrafficDataset);
-    }, [trafficDatasets, activeTrafficDataset]);
+        safeLocalStorage.setItem('customTrafficDatasetNames', JSON.stringify(customTrafficDatasetNames));
+        safeLocalStorage.setItem('pfTrafficDatasetMap', JSON.stringify(pfTrafficDatasetMap));
+    }, [trafficDatasets, activeTrafficDataset, customTrafficDatasetNames, pfTrafficDatasetMap]);
+
+    // Mémoriser le choix du dataset pour le PF courant
+    useEffect(() => {
+        if (activePFId && activeTrafficDataset) {
+            setPfTrafficDatasetMap(prev => {
+                if (prev[activePFId] === activeTrafficDataset) return prev;
+                return { ...prev, [activePFId]: activeTrafficDataset };
+            });
+        }
+    }, [activeTrafficDataset, activePFId]);
 
     // Auto-save current project to cache (debounced)
     const autoSaveTimerRef = useRef(null);
@@ -1888,6 +1937,20 @@ export const useTrafficLight = () => {
         });
     }, []);
 
+    const addCustomTrafficDataset = useCallback((name) => {
+        if (!name || trafficDatasetNames.includes(name)) return;
+        setCustomTrafficDatasetNames(prev => [...prev, name]);
+        // Initialiser les données vides pour ce nouveau jeu
+        setTrafficDatasets(prev => {
+            const newDatasets = { ...prev };
+            newDatasets[name] = {};
+            groups.forEach(g => {
+                newDatasets[name][g.id] = createEmptyTrafficData();
+            });
+            return newDatasets;
+        });
+    }, [trafficDatasetNames, groups]);
+
     // Ensure traffic datasets have entries for all groups when group count changes
     useEffect(() => {
         setTrafficDatasets(prev => {
@@ -1974,7 +2037,7 @@ export const useTrafficLight = () => {
         setConflictMatrix(previousState.conflictMatrix);
         if (previousState.pfTabs) {
             setPfTabs(previousState.pfTabs);
-            setActivePFId(previousState.activePFId);
+            setActivePFIdRaw(previousState.activePFId);
         } else if (previousState.actionData) {
             // Handle old history format
             setPfTabs(prev => prev.map(pf =>
@@ -2019,7 +2082,7 @@ export const useTrafficLight = () => {
         setConflictMatrix(nextState.conflictMatrix);
         if (nextState.pfTabs) {
             setPfTabs(nextState.pfTabs);
-            setActivePFId(nextState.activePFId);
+            setActivePFIdRaw(nextState.activePFId);
         }
         setCycleLength(nextState.cycleLength);
         setIntersectionName(nextState.intersectionName);
@@ -2390,6 +2453,8 @@ export const useTrafficLight = () => {
         updateTrafficData,
         getTrafficData,
         trafficDatasetNames,
-        copyTrafficDataset
+        copyTrafficDataset,
+        addCustomTrafficDataset,
+        pfTrafficDatasetMap
     };
 };

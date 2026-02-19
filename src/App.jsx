@@ -94,6 +94,8 @@ function App() {
         getTrafficData,
         trafficDatasetNames,
         copyTrafficDataset,
+        addCustomTrafficDataset,
+        pfTrafficDatasetMap,
         dependencyGap,
         setDependencyGap,
         biCarrefourSeparator,
@@ -482,15 +484,18 @@ function App() {
         }
     }, [phasageBulleEnabled, intersectionArrows]);
 
-    // Synchronize traffic dataset with active PF tab
+    // Synchronize traffic dataset with active PF tab (only when no saved mapping)
     useEffect(() => {
         if (pfTabs && pfTabs.length > 0 && activePFId) {
+            // Si une association PF→dataset est sauvegardée, le wrapper setActivePFId s'en charge
+            if (pfTrafficDatasetMap[activePFId]) return;
+            // Sinon, fallback : associer au nom du PF si c'est un dataset connu
             const activePF = pfTabs.find(pf => pf.id === activePFId);
             if (activePF && trafficDatasetNames.includes(activePF.name)) {
                 setActiveTrafficDataset(activePF.name);
             }
         }
-    }, [activePFId, pfTabs, trafficDatasetNames, setActiveTrafficDataset]);
+    }, [activePFId, pfTabs, trafficDatasetNames, setActiveTrafficDataset, pfTrafficDatasetMap]);
 
     // Toggle group visibility in phasage bulle
     const togglePhasageBulleGroup = (groupId) => {
@@ -2533,6 +2538,7 @@ function App() {
                                     trafficDatasetNames={trafficDatasetNames}
                                     setHoveredVUtile={setHoveredVUtile}
                                     copyTrafficDataset={copyTrafficDataset}
+                                    addCustomTrafficDataset={addCustomTrafficDataset}
                                     actionData={actionData}
                                     simulationSelectedActions={simulationSelectedActions}
                                 />
@@ -2639,10 +2645,6 @@ function App() {
                                     setSimulationEnabled(false);
                                     setPhasageBulleEnabled(false);
                                     setActivePFId(pf.id);
-                                    // Sync traffic dataset if tab name matches a dataset
-                                    if (TRAFFIC_DATASETS.includes(pf.name)) {
-                                        setActiveTrafficDataset(pf.name);
-                                    }
                                 }}
                                 onDoubleClick={(e) => {
                                     e.stopPropagation();
@@ -4744,7 +4746,7 @@ function App() {
                                         {/* Données de trafic et calcul de capacité pour ce PF */}
                                         {dossierSections[`traficCapacite_${pf.id}`] && (
                                             <div className="print-dossier-section print-dossier-traffic">
-                                                <h3>Données de trafic et calcul de capacité - {pf.name}</h3>
+                                                <h3>Données de trafic et calcul de capacité - {pf.name}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Données de trafic : {pfTrafficDatasetMap[pf.id] || (trafficDatasetNames.includes(pf.name) ? pf.name : activeTrafficDataset)}</h3>
                                                 <table className="dossier-traffic-table">
                                                     <thead>
                                                         <tr>

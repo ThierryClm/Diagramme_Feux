@@ -23,7 +23,7 @@
     align-items: center;
     padding: 0.5rem;
     border-bottom: 1px solid #333;
-    gap: 1rem;
+    gap: 0.5rem;
 }
 
 .traffic-all-groups-checkbox {
@@ -44,6 +44,7 @@
     display: flex;
     align-items: center;
     gap: 0;
+    position: relative;
 }
 
 .traffic-dataset-label {
@@ -64,6 +65,7 @@
     padding: 4px 8px;
     font-size: 0.85rem;
     cursor: pointer;
+    min-width: 110px;
 }
 
 .traffic-dataset-selector:hover {
@@ -74,6 +76,22 @@
     outline: none;
     border-color: #4ecdc4;
     box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2);
+}
+
+.traffic-dataset-tooltip {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: #333;
+    color: #eee;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .traffic-table {
