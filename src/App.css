@@ -30,6 +30,11 @@
     font-weight: bold;
 }
 
+.input-name:read-only {
+    cursor: default;
+    border-bottom-style: dotted;
+}
+
 .input-name:focus {
     outline: none;
     border-color: #aaa;
@@ -1723,6 +1728,55 @@
 .print-dossier-title p {
     margin: 0;
     color: #666;
+}
+
+/* Logos page de titre */
+.dossier-title-logos {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.dossier-title-logo-left,
+.dossier-title-logo-right {
+    flex: 0 0 100px;
+    display: flex;
+    align-items: center;
+}
+
+.dossier-title-logo-left {
+    justify-content: flex-start;
+}
+
+.dossier-title-logo-right {
+    justify-content: flex-end;
+}
+
+.dossier-title-logos h2 {
+    flex: 1;
+    text-align: center;
+    margin: 0;
+}
+
+.dossier-logo-large {
+    max-height: 60px;
+    max-width: 100px;
+    object-fit: contain;
+}
+
+/* Petits logos dans les en-têtes de sections */
+.dossier-header-logos {
+    float: right;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.dossier-header-logos img {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
 }
 
 .print-dossier-image {

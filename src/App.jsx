@@ -16,6 +16,7 @@ import PhasageBulle from './components/PhasageBulle';
 import LoginModal from './components/LoginModal';
 import UserManagerModal from './components/UserManagerModal';
 import ExternalLinksModal from './components/ExternalLinksModal';
+import PropertiesPanel from './components/PropertiesPanel';
 import { calculateSimulatedDiagram } from './utils/simulationCalculator';
 import { importExcelFile } from './utils/excelImporter';
 
@@ -101,7 +102,14 @@ function App() {
         biCarrefourSeparator,
         setBiCarrefourSeparator,
         externalLinks,
-        setExternalLinks
+        setExternalLinks,
+        projectProperties,
+        updateProjectProperty,
+        projectName,
+        setProjectName,
+        appCommunes,
+        appMoaLogos,
+        appMoeLogos
     } = useTrafficLight();
 
     // Filter conflicts to exclude those managed by SELECTED Escamotage actions (in simulation mode)
@@ -911,7 +919,7 @@ function App() {
     const handleSaveFileWithPicker = useCallback(async () => {
         if (!window.showSaveFilePicker) {
             // Fallback pour navigateurs sans File System Access API
-            const name = prompt('Nom du projet:', intersectionName || 'Mon projet');
+            const name = prompt('Nom du projet:', projectName || intersectionName || 'Mon projet');
             if (name) {
                 saveProject(name);
             }
@@ -920,7 +928,7 @@ function App() {
 
         try {
             const options = {
-                suggestedName: `${intersectionName || 'projet'}.json`,
+                suggestedName: `${projectName || intersectionName || 'projet'}.json`,
                 types: [{
                     description: 'Fichier Projet JSON',
                     accept: { 'application/json': ['.json'] }
@@ -1000,7 +1008,7 @@ function App() {
                 alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
             }
         }
-    }, [intersectionName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle, addRecentDirectory, recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]);
+    }, [intersectionName, projectName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle, addRecentDirectory, recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]);
 
     // Enregistrer un fichier dans un répertoire récent
     const handleSaveFileToRecentDir = useCallback(async (dirIndex) => {
@@ -1014,7 +1022,7 @@ function App() {
             if (!dirInfo) return;
 
             const options = {
-                suggestedName: `${intersectionName || 'projet'}.json`,
+                suggestedName: `${projectName || intersectionName || 'projet'}.json`,
                 types: [{
                     description: 'Fichier Projet JSON',
                     accept: { 'application/json': ['.json'] }
@@ -1094,7 +1102,7 @@ function App() {
                 alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
             }
         }
-    }, [recentSaveDirs, intersectionName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject, recentOpenDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]);
+    }, [recentSaveDirs, intersectionName, projectName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject, recentOpenDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]);
 
     // Get all saved green waves (sorted by most recent first)
     const getSavedGreenWaves = () => {
@@ -2236,9 +2244,9 @@ function App() {
                     <input
                         className="input-name"
                         type="text"
-                        value={intersectionName}
-                        onChange={(e) => setIntersectionName(e.target.value)}
-                        placeholder="Nom du Carrefour"
+                        value={projectName || 'Nouveau projet'}
+                        readOnly
+                        title="Nom du projet (défini lors de la sauvegarde)"
                     />
                     <label>
                         GFx
@@ -2446,6 +2454,15 @@ function App() {
                         <>
                             <div className="sidebar-tabs">
                                 <button
+                                    className={`tab-btn ${activeTab === 'properties' ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setActiveTab('properties');
+                                        setSidebarWidth(450);
+                                    }}
+                                >
+                                    Propriétés
+                                </button>
+                                <button
                                     className={`tab-btn ${activeTab === 'config' ? 'active' : ''}`}
                                     onClick={() => {
                                         setActiveTab('config');
@@ -2481,6 +2498,20 @@ function App() {
                                     Trafic
                                 </button>
                             </div>
+
+                            {activeTab === 'properties' && (
+                                <div onMouseEnter={() => { helpZoneRef.current = 'properties'; }}>
+                                    <PropertiesPanel
+                                        intersectionName={intersectionName}
+                                        setIntersectionName={setIntersectionName}
+                                        projectProperties={projectProperties}
+                                        updateProjectProperty={updateProjectProperty}
+                                        appCommunes={appCommunes}
+                                        appMoaLogos={appMoaLogos}
+                                        appMoeLogos={appMoeLogos}
+                                    />
+                                </div>
+                            )}
 
                             {activeTab === 'config' && (
                                 <>
@@ -4388,11 +4419,26 @@ function App() {
                                         return parseInt(String(val).replace(/c$/i, '')) || 0;
                                     };
 
+                                    const dossierSmallLogos = (projectProperties.logoMoa || projectProperties.logoMoe) ? (
+                                        <span className="dossier-header-logos">
+                                            {projectProperties.logoMoa && <img src={projectProperties.logoMoa} alt="" />}
+                                            {projectProperties.logoMoe && <img src={projectProperties.logoMoe} alt="" />}
+                                        </span>
+                                    ) : null;
+
                                     return (
                                     <div className="print-preview-dossier">
-                                        {/* 1. Titre du projet */}
+                                        {/* 1. Titre du projet avec logos */}
                                         <div className="print-dossier-section print-dossier-title">
-                                            <h2>{intersectionName || 'Sans titre'}</h2>
+                                            <div className="dossier-title-logos">
+                                                <div className="dossier-title-logo-left">
+                                                    {projectProperties.logoMoa && <img src={projectProperties.logoMoa} alt="" className="dossier-logo-large" />}
+                                                </div>
+                                                <h2>{intersectionName || 'Sans titre'}</h2>
+                                                <div className="dossier-title-logo-right">
+                                                    {projectProperties.logoMoe && <img src={projectProperties.logoMoe} alt="" className="dossier-logo-large" />}
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {/* 2. Plan du carrefour */}
@@ -4503,7 +4549,7 @@ function App() {
                                         {/* 4. Matrice */}
                                         {dossierSections.matrice && (
                                         <div className="print-dossier-section print-dossier-matrix">
-                                            <h3>Matrice des temps interverts</h3>
+                                            <h3>Matrice des temps interverts{dossierSmallLogos}</h3>
                                             <table className="preview-matrix-table">
                                                 <thead>
                                                     <tr>
@@ -4589,7 +4635,7 @@ function App() {
                                         <Fragment key={pf.id}>
                                         {/* Diagramme */}
                                         <div className="print-dossier-section print-dossier-diagram">
-                                            <h3>Diagramme du plan de feu : {pf.name} — Cycle : {pfCycleLength}s</h3>
+                                            <h3>Diagramme du plan de feu : {pf.name} — Cycle : {pfCycleLength}s{dossierSmallLogos}</h3>
                                             <div style={{
                                                 height: `${Math.ceil(diagramRenderedHeight * combinedScale)}px`,
                                                 overflow: 'hidden',
@@ -4638,7 +4684,7 @@ function App() {
                                         {/* Conditions micro pour ce PF */}
                                         {dossierSections[`conditionsMicro_${pf.id}`] && pfActionData.filter(row => row.gf || row.action || row.description || row.deb !== '' || row.fin !== '').length > 0 && (
                                             <div className="print-dossier-section print-dossier-actions">
-                                                <h3>Conditions de micro-régulation - {pf.name}</h3>
+                                                <h3>Conditions de micro-régulation - {pf.name}{dossierSmallLogos}</h3>
                                                 <table className="print-actions-table">
                                                     <thead>
                                                         <tr>
@@ -4685,7 +4731,7 @@ function App() {
                                         {/* Variables micro pour ce PF */}
                                         {dossierSections[`variablesMicro_${pf.id}`] && pfMicroFields.some(f => f && f.trim()) && (
                                             <div className="print-dossier-section print-dossier-variables">
-                                                <h3>Variables micro - {pf.name}</h3>
+                                                <h3>Variables micro - {pf.name}{dossierSmallLogos}</h3>
                                                 <div className="dossier-variables-list">
                                                     {pfMicroFields.map((field, index) => (
                                                         field && field.trim() ? (
@@ -4725,7 +4771,7 @@ function App() {
                                             }
                                             return (
                                             <div className="print-dossier-section print-dossier-phasage dossier-phasage-centered">
-                                                <h3>Phasage bulle - {pf.name}</h3>
+                                                <h3>Phasage bulle - {pf.name}{dossierSmallLogos}</h3>
                                                 <div className={`dossier-phasage-content ${hideOvals ? 'phasage-hide-ovals' : ''}`}
                                                     style={{ '--bubble-scale': bubbleScale.toFixed(3) }}>
                                                     <PhasageBulle
@@ -4748,7 +4794,7 @@ function App() {
                                         {/* Données de trafic et calcul de capacité pour ce PF */}
                                         {dossierSections[`traficCapacite_${pf.id}`] && (
                                             <div className="print-dossier-section print-dossier-traffic">
-                                                <h3>Données de trafic et calcul de capacité - {pf.name}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Données de trafic : {pfTrafficDatasetMap[pf.id] || (trafficDatasetNames.includes(pf.name) ? pf.name : activeTrafficDataset)}</h3>
+                                                <h3>Données de trafic et calcul de capacité - {pf.name}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Données de trafic : {pfTrafficDatasetMap[pf.id] || (trafficDatasetNames.includes(pf.name) ? pf.name : activeTrafficDataset)}{dossierSmallLogos}</h3>
                                                 <table className="dossier-traffic-table">
                                                     <thead>
                                                         <tr>

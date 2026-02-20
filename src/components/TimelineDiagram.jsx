@@ -849,7 +849,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         <span className="col-label col-da">DA</span>
                         <span className="col-label col-time">Déb</span>
                         <span className="col-label col-time">Fin</span>
-                        <span className="col-label col-time">Dur</span>
+                        <span className="col-label col-time">Durée</span>
                     </div>
 
                     {groups.map(g => {
@@ -911,7 +911,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         value={g.da || ''}
                                         onChange={(e) => updateGroupParams(g.id, { da: e.target.value.slice(0, 2) })}
                                         onClick={(e) => e.stopPropagation()}
-                                        title="DA (Délai d'approche)"
+                                        title="Code trajet"
                                         maxLength={2}
                                         placeholder=""
                                     />
@@ -927,7 +927,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             onChange={(e) => !simulationResult && handleStartChange(g.id, e.target.value)}
                                             readOnly={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
-                                            title="Début"
                                             placeholder=""
                                             style={simulationResult ? { cursor: 'default', background: 'transparent', border: 'none' } : undefined}
                                         />
@@ -938,7 +937,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             onChange={(e) => !simulationResult && handleEndChange(g.id, e.target.value, start)}
                                             readOnly={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
-                                            title="Fin"
                                             style={simulationResult
                                                 ? { color: duration < g.minGreen ? '#ff4d4d' : 'inherit', cursor: 'default', background: 'transparent', border: 'none' }
                                                 : { color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }
@@ -951,7 +949,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             value={hasValue && duration > 0 ? duration : ''}
                                             readOnly
                                             onClick={(e) => e.stopPropagation()}
-                                            title="Durée (calculée automatiquement)"
+                                            title="Durée"
                                             style={{
                                                 color: duration < g.minGreen ? '#ff4d4d' : 'inherit',
                                                 cursor: 'default',

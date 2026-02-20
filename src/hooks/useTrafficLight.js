@@ -99,6 +99,13 @@ const ensureLocalStorageSpace = () => {
 // Traffic dataset types
 export const TRAFFIC_DATASETS = ['HPM', 'HPS', 'HC', 'Estimation', 'Projection'];
 
+const DEFAULT_PROJECT_PROPERTIES = {
+    commune: '', idCommune: '', idCarrefour: '',
+    moa: '', moe: '', bureauEtudes: '', auteur: '',
+    logoMoa: '', logoMoe: '',
+    dateCreation: '', dateModification: '', numeroDossier: '', phaseEtude: '', commentaires: ''
+};
+
 // Create empty traffic data for a group (only trafficVol varies by dataset)
 const createEmptyTrafficData = () => ({
     trafficVol: 0
@@ -110,6 +117,44 @@ export const useTrafficLight = () => {
     const [dependencyGap, setDependencyGap] = useState(20);
     const [biCarrefourSeparator, setBiCarrefourSeparator] = useState(null);
     const [externalLinks, setExternalLinks] = useState([]);
+    const [projectProperties, setProjectProperties] = useState(() => {
+        try {
+            const saved = safeLocalStorage.getItem('trafficProjectProperties');
+            if (saved) {
+                const parsed = { ...DEFAULT_PROJECT_PROPERTIES, ...JSON.parse(saved) };
+                // Nettoyer les anciennes URLs blob (invalides après rechargement)
+                if (parsed.logoMoa && !parsed.logoMoa.startsWith('data:')) parsed.logoMoa = '';
+                if (parsed.logoMoe && !parsed.logoMoe.startsWith('data:')) parsed.logoMoe = '';
+                return parsed;
+            }
+            return { ...DEFAULT_PROJECT_PROPERTIES };
+        } catch { return { ...DEFAULT_PROJECT_PROPERTIES }; }
+    });
+    const updateProjectProperty = useCallback((field, value) => {
+        setProjectProperties(prev => ({ ...prev, [field]: value }));
+    }, []);
+    // Registres globaux de l'application (partagés entre projets)
+    const [appCommunes, setAppCommunes] = useState(() => {
+        try {
+            const saved = safeLocalStorage.getItem('trafficAppCommunes');
+            return saved ? JSON.parse(saved) : [];
+        } catch { return []; }
+    });
+    const [appMoaLogos, setAppMoaLogos] = useState(() => {
+        try {
+            const saved = safeLocalStorage.getItem('trafficAppMoaLogos');
+            return saved ? JSON.parse(saved) : {};
+        } catch { return {}; }
+    });
+    const [appMoeLogos, setAppMoeLogos] = useState(() => {
+        try {
+            const saved = safeLocalStorage.getItem('trafficAppMoeLogos');
+            return saved ? JSON.parse(saved) : {};
+        } catch { return {}; }
+    });
+    // Nom du projet (clé de sauvegarde), indépendant du nom du carrefour
+    const [projectName, setProjectName] = useState(null);
+    const currentProjectNameRef = useRef(null);
     const [globalTime, setGlobalTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
 
@@ -620,8 +665,11 @@ export const useTrafficLight = () => {
             }
             const data = JSON.parse(raw);
 
-            // Batch updates - use project name as intersection name
-            setIntersectionName(name);
+            // Mémoriser le nom du projet (clé de sauvegarde)
+            currentProjectNameRef.current = name;
+            setProjectName(name);
+            // Restaurer le nom du carrefour depuis les données, sinon utiliser le nom du projet
+            setIntersectionName(data.intersectionName || name);
 
             // Migrate and validate groups structure for old projects
             if (data.groups) {
@@ -809,6 +857,7 @@ export const useTrafficLight = () => {
             // Load dependency gap (default to 20 if not present)
             setDependencyGap(data.dependencyGap !== undefined ? data.dependencyGap : 20);
             setBiCarrefourSeparator(data.biCarrefourSeparator !== undefined ? data.biCarrefourSeparator : null);
+            setProjectProperties(data.projectProperties ? { ...DEFAULT_PROJECT_PROPERTIES, ...data.projectProperties } : { ...DEFAULT_PROJECT_PROPERTIES });
 
             // Reset simulation state when loading a project
             setSimulationEnabled(false);
@@ -925,7 +974,11 @@ export const useTrafficLight = () => {
     // Load full state (for duplication)
     const loadFullState = (state) => {
         try {
-            // Toujours mettre à jour le nom (avec valeur par défaut si absent)
+            // Mettre à jour le nom du projet (clé de sauvegarde / nom du fichier)
+            const loadedName = state.intersectionName || "Nouveau Carrefour";
+            currentProjectNameRef.current = loadedName;
+            setProjectName(loadedName);
+            // Toujours mettre à jour le nom du carrefour
             setIntersectionName(state.intersectionName || "Nouveau Carrefour");
 
             // Toujours mettre à jour les groupes (avec valeur par défaut si absent)
@@ -1012,6 +1065,8 @@ export const useTrafficLight = () => {
                 setImageContrast(100);
             }
 
+            setProjectProperties(state.projectProperties ? { ...DEFAULT_PROJECT_PROPERTIES, ...state.projectProperties } : { ...DEFAULT_PROJECT_PROPERTIES });
+
             // Reset simulation state when loading full state
             setSimulationEnabled(false);
             setSimulationSelectedActions([]);
@@ -1040,7 +1095,9 @@ export const useTrafficLight = () => {
 
     // Reset to a new empty project (8 groups, 60s cycle)
     const resetToNewProject = () => {
-        // Reset intersection name
+        // Reset project name and intersection name
+        currentProjectNameRef.current = null;
+        setProjectName(null);
         setIntersectionName("Nouveau Carrefour");
 
         // Reset to 8 groups with 60s cycle
@@ -1079,6 +1136,9 @@ export const useTrafficLight = () => {
         // Reset external links
         setExternalLinks([]);
 
+        // Reset project properties
+        setProjectProperties({ ...DEFAULT_PROJECT_PROPERTIES, dateCreation: new Date().toISOString().split('T')[0] });
+
         // Reset simulation state
         setSimulationEnabled(false);
         setSimulationSelectedActions([]);
@@ -1106,7 +1166,8 @@ export const useTrafficLight = () => {
         pfTrafficDatasetMap,
         dependencyGap,
         biCarrefourSeparator,
-        externalLinks
+        externalLinks,
+        projectProperties
         // Note: simulation state is NOT included (per user request)
     });
 
@@ -1548,6 +1609,8 @@ export const useTrafficLight = () => {
             return false;
         }
 
+        currentProjectNameRef.current = name;
+        setProjectName(name);
         const projectData = {
             intersectionName,
             groups,
@@ -1565,9 +1628,40 @@ export const useTrafficLight = () => {
             pfTrafficDatasetMap,
             dependencyGap,
             biCarrefourSeparator,
-            externalLinks
+            externalLinks,
+            projectProperties: { ...projectProperties, dateModification: new Date().toISOString() }
             // Note: simulation state is NOT saved with project (per user request)
         };
+        // Mettre à jour la date de modification dans l'état
+        setProjectProperties(prev => ({ ...prev, dateModification: new Date().toISOString() }));
+
+        // Mettre à jour les registres globaux (communes, MOA→logo)
+        const commune = projectProperties.commune?.trim();
+        if (commune) {
+            setAppCommunes(prev => {
+                const updated = prev.includes(commune) ? prev : [...prev, commune].sort((a, b) => a.localeCompare(b, 'fr'));
+                safeLocalStorage.setItem('trafficAppCommunes', JSON.stringify(updated));
+                return updated;
+            });
+        }
+        const moaName = projectProperties.moa?.trim();
+        const moaLogo = projectProperties.logoMoa;
+        if (moaName && moaLogo) {
+            setAppMoaLogos(prev => {
+                const updated = { ...prev, [moaName]: moaLogo };
+                safeLocalStorage.setItem('trafficAppMoaLogos', JSON.stringify(updated));
+                return updated;
+            });
+        }
+        const moeName = projectProperties.moe?.trim();
+        const moeLogo = projectProperties.logoMoe;
+        if (moeName && moeLogo) {
+            setAppMoeLogos(prev => {
+                const updated = { ...prev, [moeName]: moeLogo };
+                safeLocalStorage.setItem('trafficAppMoeLogos', JSON.stringify(updated));
+                return updated;
+            });
+        }
 
         // Check if resulting JSON is valid and not too small (likely corrupted)
         const jsonData = JSON.stringify(projectData);
@@ -1633,7 +1727,7 @@ export const useTrafficLight = () => {
             }
             return false;
         }
-    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, externalLinks]);
+    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, externalLinks, projectProperties]);
 
     // Save pfTabs to localStorage
     useEffect(() => {
@@ -1832,6 +1926,11 @@ export const useTrafficLight = () => {
         safeLocalStorage.setItem('pfTrafficDatasetMap', JSON.stringify(pfTrafficDatasetMap));
     }, [trafficDatasets, activeTrafficDataset, customTrafficDatasetNames, pfTrafficDatasetMap]);
 
+    // Save project properties to localStorage
+    useEffect(() => {
+        safeLocalStorage.setItem('trafficProjectProperties', JSON.stringify(projectProperties));
+    }, [projectProperties]);
+
     // Mémoriser le choix du dataset pour le PF courant
     useEffect(() => {
         if (activePFId && activeTrafficDataset) {
@@ -1849,7 +1948,7 @@ export const useTrafficLight = () => {
         if (isInitialLoadRef.current || isLoadingProjectRef.current) return;
 
         // Skip if no project name
-        if (!intersectionName || intersectionName === 'Nouveau Carrefour') return;
+        if (!currentProjectNameRef.current) return;
 
         // Debounce: save after 2 seconds of inactivity
         if (autoSaveTimerRef.current) {
@@ -1859,6 +1958,7 @@ export const useTrafficLight = () => {
         autoSaveTimerRef.current = setTimeout(() => {
             try {
                 const projectData = {
+                    intersectionName,
                     groups,
                     cycleLength,
                     conflictMatrix,
@@ -1872,15 +1972,16 @@ export const useTrafficLight = () => {
                     activeTrafficDataset,
                     dependencyGap,
                     biCarrefourSeparator,
+                    projectProperties,
                     savedAt: new Date().toISOString()
                 };
                 const jsonData = JSON.stringify(projectData);
 
                 // Save project
-                safeLocalStorage.setItem(`traffic_project_${intersectionName}`, jsonData);
+                safeLocalStorage.setItem(`traffic_project_${currentProjectNameRef.current}`, jsonData);
 
                 // Update order and clean up old projects
-                updateProjectOrder(intersectionName);
+                updateProjectOrder(currentProjectNameRef.current);
             } catch (e) {
                 console.warn('Auto-save failed:', e);
             }
@@ -1891,7 +1992,7 @@ export const useTrafficLight = () => {
                 clearTimeout(autoSaveTimerRef.current);
             }
         };
-    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, intersectionName]);
+    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, intersectionName, projectProperties]);
 
     // Update traffic data for a specific group in the active dataset
     const updateTrafficData = useCallback((groupId, field, value) => {
@@ -2455,6 +2556,16 @@ export const useTrafficLight = () => {
         trafficDatasetNames,
         copyTrafficDataset,
         addCustomTrafficDataset,
-        pfTrafficDatasetMap
+        pfTrafficDatasetMap,
+        // Project properties
+        projectProperties,
+        updateProjectProperty,
+        // Project name (save key, displayed in header)
+        projectName,
+        setProjectName,
+        // App-wide registries
+        appCommunes,
+        appMoaLogos,
+        appMoeLogos
     };
 };
