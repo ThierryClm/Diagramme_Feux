@@ -1753,10 +1753,20 @@
     justify-content: flex-end;
 }
 
-.dossier-title-logos h2 {
+.dossier-title-center {
     flex: 1;
     text-align: center;
+}
+
+.dossier-title-center h2 {
     margin: 0;
+}
+
+.dossier-title-commune {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    margin: 6px 0 0 0;
 }
 
 .dossier-logo-large {
@@ -1779,20 +1789,75 @@
     object-fit: contain;
 }
 
-.print-dossier-image {
-    text-align: left;
+/* Section plan + propriétés côte à côte */
+.dossier-image-props-headers {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 6px;
+}
+
+.dossier-image-props-h3-left {
+    flex: 1;
+    margin: 0;
+}
+
+.dossier-image-props-h3-right {
+    flex: 0 0 250px;
+    margin: 0;
+    padding-left: 20px;
+}
+
+.dossier-image-props-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.dossier-image-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.dossier-props-col {
+    flex: 0 0 250px;
+}
+
+.dossier-props-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    color: #000;
+}
+
+.dossier-props-table td {
+    padding: 3px 6px;
+    vertical-align: top;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.dossier-props-table td:first-child {
+    font-weight: bold;
+    white-space: nowrap;
+    width: 110px;
+    color: #333;
+}
+
+.dossier-props-comment {
+    white-space: pre-wrap;
+    max-height: 80px;
+    overflow: hidden;
 }
 
 .dossier-image-container {
     position: relative;
     display: inline-block;
-    max-height: 500px;
+    max-height: 720px;
     overflow: visible;
 }
 
 .dossier-carrefour-img {
     max-width: 100%;
-    max-height: 480px;
+    max-height: 691px;
     height: auto;
     display: block;
 }

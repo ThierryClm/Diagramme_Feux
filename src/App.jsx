@@ -2810,6 +2810,8 @@ function App() {
                                 initialCount={phasageBulleCount}
                                 hoveredGroupId={hoveredPhasageGroupId}
                                 setHoveredGroupId={setHoveredPhasageGroupId}
+                                imageBrightness={imageBrightness}
+                                imageContrast={imageContrast}
                             />
                         ) : simulationEnabled ? (
                             <IntersectionImage
@@ -4428,23 +4430,33 @@ function App() {
 
                                     return (
                                     <div className="print-preview-dossier">
-                                        {/* 1. Titre du projet avec logos */}
+                                        {/* 1. Titre du projet avec logos et informations */}
                                         <div className="print-dossier-section print-dossier-title">
                                             <div className="dossier-title-logos">
                                                 <div className="dossier-title-logo-left">
                                                     {projectProperties.logoMoa && <img src={projectProperties.logoMoa} alt="" className="dossier-logo-large" />}
                                                 </div>
-                                                <h2>{intersectionName || 'Sans titre'}</h2>
+                                                <div className="dossier-title-center">
+                                                    <h2>Carrefour {intersectionName || 'Sans titre'}</h2>
+                                                    <p className="dossier-title-commune">
+                                                        {projectProperties.commune ? `Commune de ${projectProperties.commune}` : (projectName || '')}
+                                                    </p>
+                                                </div>
                                                 <div className="dossier-title-logo-right">
                                                     {projectProperties.logoMoe && <img src={projectProperties.logoMoe} alt="" className="dossier-logo-large" />}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* 2. Plan du carrefour */}
+                                        {/* 2. Plan du carrefour + Propriétés du projet */}
                                         {dossierSections.image && (
-                                        <div className="print-dossier-section print-dossier-image">
-                                            <h3>Plan du carrefour</h3>
+                                        <div className="print-dossier-section print-dossier-image-props">
+                                            <div className="dossier-image-props-headers">
+                                                <h3 className="dossier-image-props-h3-left">Plan du carrefour</h3>
+                                                <h3 className="dossier-image-props-h3-right">Propriétés du projet</h3>
+                                            </div>
+                                            <div className="dossier-image-props-row">
+                                            <div className="dossier-image-col">
                                             {intersectionImage ? (
                                                 <div className="dossier-image-container">
                                                     <img
@@ -4512,6 +4524,27 @@ function App() {
                                             ) : (
                                                 <p className="dossier-no-image">(Pas d'image)</p>
                                             )}
+                                            </div>
+                                            <div className="dossier-props-col">
+                                                <table className="dossier-props-table">
+                                                    <tbody>
+                                                        {projectProperties.idCommune && <tr><td>Id. commune</td><td>{projectProperties.idCommune}</td></tr>}
+                                                        {projectProperties.idCarrefour && <tr><td>Id. carrefour</td><td>{projectProperties.idCarrefour}</td></tr>}
+                                                        {projectProperties.numeroDossier && <tr><td>N° dossier</td><td>{projectProperties.numeroDossier}</td></tr>}
+                                                        {projectProperties.phaseEtude && <tr><td>Phase d'étude</td><td>{
+                                                            ({ESQ:'Esquisse',AVP:'Avant-projet',PRO:'Projet',DCE:'Consultation',ACT:'Assistance',EXE:'Exécution',DOE:'Dossier ouvrage'})[projectProperties.phaseEtude] || projectProperties.phaseEtude
+                                                        }</td></tr>}
+                                                        {projectProperties.moa && <tr><td>Maître d'ouvrage</td><td>{projectProperties.moa}</td></tr>}
+                                                        {projectProperties.moe && <tr><td>Concepteur</td><td>{projectProperties.moe}</td></tr>}
+                                                        {projectProperties.bureauEtudes && <tr><td>Entreprise</td><td>{projectProperties.bureauEtudes}</td></tr>}
+                                                        {projectProperties.auteur && <tr><td>Auteur</td><td>{projectProperties.auteur}</td></tr>}
+                                                        {projectProperties.dateCreation && <tr><td>Date de création</td><td>{new Date(projectProperties.dateCreation).toLocaleDateString('fr-FR')}</td></tr>}
+                                                        {projectProperties.dateModification && <tr><td>Dernière modif.</td><td>{new Date(projectProperties.dateModification).toLocaleString('fr-FR')}</td></tr>}
+                                                        {projectProperties.commentaires && <tr><td>Commentaires</td><td className="dossier-props-comment">{projectProperties.commentaires}</td></tr>}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            </div>
                                         </div>
                                         )}
 
@@ -4785,6 +4818,8 @@ function App() {
                                                         planName={pf.name}
                                                         initialTimes={pf.phasageBulleTimes || [0, 15, 30, 45, 60, 75]}
                                                         initialCount={bulleCount}
+                                                        imageBrightness={imageBrightness}
+                                                        imageContrast={imageContrast}
                                                     />
                                                 </div>
                                             </div>

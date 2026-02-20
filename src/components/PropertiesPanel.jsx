@@ -155,7 +155,7 @@ const PropertiesPanel = ({ intersectionName, setIntersectionName, projectPropert
                     />
                 </div>
                 <div className="property-field">
-                    <label>Installateur</label>
+                    <label>Entreprise</label>
                     <input type="text" value={projectProperties.bureauEtudes} onChange={(e) => updateProjectProperty('bureauEtudes', e.target.value)} />
                 </div>
                 <div className="property-field">

@@ -14,7 +14,9 @@ const PhasageBulle = ({
     initialTimes = [0, 15, 30, 45, 60, 75],
     initialCount = 4,
     hoveredGroupId = null,
-    setHoveredGroupId = () => {}
+    setHoveredGroupId = () => {},
+    imageBrightness = 100,
+    imageContrast = 100
 }) => {
     // Number of phases to display (2-6)
     const [phaseCount, setPhaseCount] = useState(initialCount);
@@ -334,7 +336,7 @@ const PhasageBulle = ({
                     >
                         {intersectionImage ? (
                             <div className="phase-image-wrapper">
-                                <img src={intersectionImage} alt="" className="phase-img" />
+                                <img src={intersectionImage} alt="" className="phase-img" style={{ filter: `brightness(${imageBrightness}%) contrast(${imageContrast}%)` }} />
                                 {intersectionArrows.map(arrow => {
                                     const groupInfo = getGroupInfo(arrow.groupId);
                                     const rotation = arrow.rotation || 0;
