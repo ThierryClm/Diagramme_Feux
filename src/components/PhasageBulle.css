@@ -66,6 +66,22 @@
     border-color: #777;
 }
 
+.phasage-slider-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #aaa;
+    font-size: 0.8em;
+    white-space: nowrap;
+}
+
+.phasage-slider {
+    width: 80px;
+    height: 4px;
+    cursor: pointer;
+    accent-color: #3498db;
+}
+
 .phasage-info {
     color: #888;
     font-size: 0.9em;

@@ -16,7 +16,11 @@ const PhasageBulle = ({
     hoveredGroupId = null,
     setHoveredGroupId = () => {},
     imageBrightness = 100,
-    imageContrast = 100
+    imageContrast = 100,
+    initialBubbleScale = 100,
+    initialEllipseScale = 100,
+    onBubbleScaleChange,
+    onEllipseScaleChange
 }) => {
     // Number of phases to display (2-6)
     const [phaseCount, setPhaseCount] = useState(initialCount);
@@ -24,10 +28,22 @@ const PhasageBulle = ({
     // Phase times - use initial times from props
     const [phaseTimes, setPhaseTimes] = useState(initialTimes);
 
+    // Scale factors for bubbles and ellipse (50% to 150%)
+    const [bubbleScaleUser, setBubbleScaleUser] = useState(initialBubbleScale);
+    const [ellipseScaleUser, setEllipseScaleUser] = useState(initialEllipseScale);
+
     // Sync state when props change (from configuration modal)
     useEffect(() => {
         setPhaseCount(initialCount);
     }, [initialCount]);
+
+    useEffect(() => {
+        setBubbleScaleUser(initialBubbleScale);
+    }, [initialBubbleScale]);
+
+    useEffect(() => {
+        setEllipseScaleUser(initialEllipseScale);
+    }, [initialEllipseScale]);
 
     useEffect(() => {
         setPhaseTimes(initialTimes);
@@ -260,15 +276,18 @@ const PhasageBulle = ({
     };
 
     // Calculate position on ellipse for each phase
+    const ellipseFactor = ellipseScaleUser / 100;
     const getPhasePosition = (index, total) => {
         const { radiusX, radiusY, startAngle } = getEllipseConfig(total);
+        const rx = radiusX * ellipseFactor;
+        const ry = radiusY * ellipseFactor;
 
         // Calculate angle step and position (clockwise)
         const angleStep = (2 * Math.PI) / total;
         const angle = startAngle + angleStep * index;
 
-        const x = 50 + radiusX * Math.cos(angle);
-        const y = 50 + radiusY * Math.sin(angle);
+        const x = 50 + rx * Math.cos(angle);
+        const y = 50 + ry * Math.sin(angle);
 
         return { x, y, angle };
     };
@@ -276,7 +295,7 @@ const PhasageBulle = ({
     // Get ellipse radii for SVG outline (uses same config)
     const getEllipseRadii = (count) => {
         const config = getEllipseConfig(count);
-        return { radiusX: config.radiusX, radiusY: config.radiusY };
+        return { radiusX: config.radiusX * ellipseFactor, radiusY: config.radiusY * ellipseFactor };
     };
 
     // Get scale factor based on number of phases
@@ -297,7 +316,7 @@ const PhasageBulle = ({
     const ARROW_SIZE_RATIO = 0.192;
 
     // Calculate scaled sizes
-    const scaleFactor = getScaleFactor(phaseCount);
+    const scaleFactor = getScaleFactor(phaseCount) * (bubbleScaleUser / 100);
     const bubbleWidth = Math.round(BASE_BUBBLE_WIDTH * scaleFactor);
     const bubbleHeight = Math.round(BASE_BUBBLE_HEIGHT * scaleFactor);
     // Arrow size proportional to bubble height (same ratio as IntersectionImage)
@@ -308,8 +327,8 @@ const PhasageBulle = ({
         const time = phaseTimes[index];
         const position = getPhasePosition(index, phaseCount);
         const isSideLabel = (courant) => courant === 'Piéton' || courant === 'Cycle';
-        // Phase 1 always has label at top-left, others based on vertical position
-        const isLabelTopLeft = index === 0 || position.y < 50;
+        // Phase 1 always top-left, phases 3-4 (index 2-3) always bottom-right, others based on vertical position
+        const isLabelTopLeft = index === 0 ? true : (index === 2 || index === 3) ? false : position.y < 50;
 
         return (
             <div
@@ -401,6 +420,14 @@ const PhasageBulle = ({
                             ))}
                         </select>
                     </label>
+                    <label className="phasage-slider-label">
+                        Bulles
+                        <input type="range" min="50" max="150" value={bubbleScaleUser} onChange={(e) => { const v = parseInt(e.target.value); setBubbleScaleUser(v); onBubbleScaleChange?.(v); }} className="phasage-slider" />
+                    </label>
+                    <label className="phasage-slider-label">
+                        Ellipse
+                        <input type="range" min="50" max="150" value={ellipseScaleUser} onChange={(e) => { const v = parseInt(e.target.value); setEllipseScaleUser(v); onEllipseScaleChange?.(v); }} className="phasage-slider" />
+                    </label>
                     <span className="phasage-info">Cycle: {cycleLength}s</span>
                 </div>
             </div>
@@ -442,7 +469,9 @@ const PhasageBulle = ({
                         </marker>
                     </defs>
                     {Array.from({ length: phaseCount }, (_, i) => {
-                        const { radiusX, radiusY, startAngle } = getEllipseConfig(phaseCount);
+                        const { radiusX: baseRX, radiusY: baseRY, startAngle } = getEllipseConfig(phaseCount);
+                        const radiusX = baseRX * ellipseFactor;
+                        const radiusY = baseRY * ellipseFactor;
                         const angleStep = (2 * Math.PI) / phaseCount;
 
                         // Current and next angles

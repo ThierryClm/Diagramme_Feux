@@ -56,6 +56,10 @@ function App() {
         phasageBulleTimes,
         setPhasageBulleCount,
         setPhasageBulleTimes,
+        phasageBubbleScale,
+        phasageEllipseScale,
+        setPhasageBubbleScale,
+        setPhasageEllipseScale,
         pfTabs,
         activePFId,
         setActivePFId,
@@ -2812,6 +2816,10 @@ function App() {
                                 setHoveredGroupId={setHoveredPhasageGroupId}
                                 imageBrightness={imageBrightness}
                                 imageContrast={imageContrast}
+                                initialBubbleScale={phasageBubbleScale}
+                                initialEllipseScale={phasageEllipseScale}
+                                onBubbleScaleChange={setPhasageBubbleScale}
+                                onEllipseScaleChange={setPhasageEllipseScale}
                             />
                         ) : simulationEnabled ? (
                             <IntersectionImage
@@ -4504,9 +4512,9 @@ function App() {
                                                                     className="dossier-gf-label pieton"
                                                                     style={{ left: `${cx}%`, top: `${cy}%` }}
                                                                 >
-                                                                    <svg viewBox="0 0 20 18" width="20" height="18">
-                                                                        <polygon points="10,1 1,17 19,17" fill="rgba(255,255,255,0.85)" stroke="#000" strokeWidth="1"/>
-                                                                        <text x="10" y="15" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#000">{gId}</text>
+                                                                    <svg viewBox="0 0 26 24" width="26" height="24">
+                                                                        <polygon points="13,1 1,23 25,23" fill="rgba(255,255,255,0.85)" stroke="#000" strokeWidth="1"/>
+                                                                        <text x="13" y="20" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#000">{gId}</text>
                                                                     </svg>
                                                                 </div>
                                                             ) : (
@@ -4820,6 +4828,8 @@ function App() {
                                                         initialCount={bulleCount}
                                                         imageBrightness={imageBrightness}
                                                         imageContrast={imageContrast}
+                                                        initialBubbleScale={pf.phasageBubbleScale ?? 100}
+                                                        initialEllipseScale={pf.phasageEllipseScale ?? 100}
                                                     />
                                                 </div>
                                             </div>

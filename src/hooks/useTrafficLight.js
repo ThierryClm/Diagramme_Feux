@@ -1312,6 +1312,34 @@ export const useTrafficLight = () => {
         ));
     }, [activePFId]);
 
+    // Get phasage bulle scale factors for active PF
+    const phasageBubbleScale = useMemo(() => {
+        const activePF = pfTabs.find(pf => pf.id === activePFId);
+        return activePF?.phasageBubbleScale ?? 100;
+    }, [pfTabs, activePFId]);
+
+    const phasageEllipseScale = useMemo(() => {
+        const activePF = pfTabs.find(pf => pf.id === activePFId);
+        return activePF?.phasageEllipseScale ?? 100;
+    }, [pfTabs, activePFId]);
+
+    // Update phasage bulle scale factors for active PF
+    const setPhasageBubbleScale = useCallback((scale) => {
+        setPfTabs(prev => prev.map(pf =>
+            pf.id === activePFId
+                ? { ...pf, phasageBubbleScale: scale }
+                : pf
+        ));
+    }, [activePFId]);
+
+    const setPhasageEllipseScale = useCallback((scale) => {
+        setPfTabs(prev => prev.map(pf =>
+            pf.id === activePFId
+                ? { ...pf, phasageEllipseScale: scale }
+                : pf
+        ));
+    }, [activePFId]);
+
     // Dynamic traffic dataset names based on PF tabs (+ Projection at the end) + custom datasets
     const trafficDatasetNames = useMemo(() => {
         const base = pfTabs && pfTabs.length > 0
@@ -2508,6 +2536,10 @@ export const useTrafficLight = () => {
         phasageBulleTimes,
         setPhasageBulleCount,
         setPhasageBulleTimes,
+        phasageBubbleScale,
+        phasageEllipseScale,
+        setPhasageBubbleScale,
+        setPhasageEllipseScale,
         // PF (Plans de Feux) management
         pfTabs,
         activePFId,

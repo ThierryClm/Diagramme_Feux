@@ -1722,7 +1722,7 @@
 }
 
 .print-dossier-title h2 {
-    margin: 0 0 4px 0;
+    margin: 0;
 }
 
 .print-dossier-title p {
@@ -1735,7 +1735,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 2px;
 }
 
 .dossier-title-logo-left,
@@ -1766,7 +1766,7 @@
     font-size: 20px;
     font-weight: bold;
     color: #333;
-    margin: 6px 0 0 0;
+    margin: 2px 0 0 0;
 }
 
 .dossier-logo-large {
@@ -1867,11 +1867,11 @@
     transform: translate(-50%, -50%);
     background: rgba(255, 255, 255, 0.85);
     color: #000;
-    font-size: 12px;
+    font-size: 16px;
     font-weight: bold;
-    padding: 0 2px;
+    padding: 1px 4px;
     border: 1px solid #333;
-    border-radius: 2px;
+    border-radius: 3px;
     z-index: 10;
     line-height: 1.2;
 }
