@@ -19,8 +19,10 @@ const PhasageBulle = ({
     imageContrast = 100,
     initialBubbleScale = 100,
     initialEllipseScale = 100,
+    initialBubbleRatio = 100,
     onBubbleScaleChange,
-    onEllipseScaleChange
+    onEllipseScaleChange,
+    onBubbleRatioChange
 }) => {
     // Number of phases to display (2-6)
     const [phaseCount, setPhaseCount] = useState(initialCount);
@@ -31,6 +33,7 @@ const PhasageBulle = ({
     // Scale factors for bubbles and ellipse (50% to 150%)
     const [bubbleScaleUser, setBubbleScaleUser] = useState(initialBubbleScale);
     const [ellipseScaleUser, setEllipseScaleUser] = useState(initialEllipseScale);
+    const [bubbleRatioUser, setBubbleRatioUser] = useState(initialBubbleRatio);
 
     // Sync state when props change (from configuration modal)
     useEffect(() => {
@@ -44,6 +47,10 @@ const PhasageBulle = ({
     useEffect(() => {
         setEllipseScaleUser(initialEllipseScale);
     }, [initialEllipseScale]);
+
+    useEffect(() => {
+        setBubbleRatioUser(initialBubbleRatio);
+    }, [initialBubbleRatio]);
 
     useEffect(() => {
         setPhaseTimes(initialTimes);
@@ -277,6 +284,7 @@ const PhasageBulle = ({
 
     // Calculate position on ellipse for each phase
     const ellipseFactor = ellipseScaleUser / 100;
+    const ratioFactor = bubbleRatioUser / 100;
     const getPhasePosition = (index, total) => {
         const { radiusX, radiusY, startAngle } = getEllipseConfig(total);
         const rx = radiusX * ellipseFactor;
@@ -319,6 +327,9 @@ const PhasageBulle = ({
     const scaleFactor = getScaleFactor(phaseCount) * (bubbleScaleUser / 100);
     const bubbleWidth = Math.round(BASE_BUBBLE_WIDTH * scaleFactor);
     const bubbleHeight = Math.round(BASE_BUBBLE_HEIGHT * scaleFactor);
+    // Elliptical clip dimensions controlled by H/L ratio (image stays fixed inside)
+    const clipWidth = Math.round(bubbleWidth / Math.sqrt(ratioFactor));
+    const clipHeight = Math.round(bubbleHeight * Math.sqrt(ratioFactor));
     // Arrow size proportional to bubble height (same ratio as IntersectionImage)
     const arrowSize = Math.round(bubbleHeight * ARROW_SIZE_RATIO);
 
@@ -344,8 +355,11 @@ const PhasageBulle = ({
                     <span className="phase-number">Phase {index + 1}</span>
                     <span className="phase-time-display">Seconde {time}</span>
                 </div>
-                {/* Image bubble */}
-                <div className="phase-bubble-content">
+                {/* Image bubble - clip container changes shape with ratio, image stays fixed */}
+                <div className="phase-bubble-content" style={{
+                    width: `${clipWidth}px`,
+                    height: `${clipHeight}px`
+                }}>
                     <div
                         className="phase-bubble-image"
                         style={{
@@ -423,6 +437,10 @@ const PhasageBulle = ({
                     <label className="phasage-slider-label">
                         Bulles
                         <input type="range" min="50" max="150" value={bubbleScaleUser} onChange={(e) => { const v = parseInt(e.target.value); setBubbleScaleUser(v); onBubbleScaleChange?.(v); }} className="phasage-slider" />
+                    </label>
+                    <label className="phasage-slider-label">
+                        H/L
+                        <input type="range" min="50" max="150" value={bubbleRatioUser} onChange={(e) => { const v = parseInt(e.target.value); setBubbleRatioUser(v); onBubbleRatioChange?.(v); }} className="phasage-slider" />
                     </label>
                     <label className="phasage-slider-label">
                         Ellipse

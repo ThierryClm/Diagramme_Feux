@@ -60,6 +60,8 @@ function App() {
         phasageEllipseScale,
         setPhasageBubbleScale,
         setPhasageEllipseScale,
+        phasageBubbleRatio,
+        setPhasageBubbleRatio,
         pfTabs,
         activePFId,
         setActivePFId,
@@ -2818,8 +2820,10 @@ function App() {
                                 imageContrast={imageContrast}
                                 initialBubbleScale={phasageBubbleScale}
                                 initialEllipseScale={phasageEllipseScale}
+                                initialBubbleRatio={phasageBubbleRatio}
                                 onBubbleScaleChange={setPhasageBubbleScale}
                                 onEllipseScaleChange={setPhasageEllipseScale}
+                                onBubbleRatioChange={setPhasageBubbleRatio}
                             />
                         ) : simulationEnabled ? (
                             <IntersectionImage
@@ -4830,6 +4834,7 @@ function App() {
                                                         imageContrast={imageContrast}
                                                         initialBubbleScale={pf.phasageBubbleScale ?? 100}
                                                         initialEllipseScale={pf.phasageEllipseScale ?? 100}
+                                                        initialBubbleRatio={pf.phasageBubbleRatio ?? 100}
                                                     />
                                                 </div>
                                             </div>

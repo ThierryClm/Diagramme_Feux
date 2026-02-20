@@ -127,12 +127,15 @@
 
 .phase-bubble-content {
     position: relative;
-    background: #2a2a2a;
+    background: #1a1a1a;
     border: 2px solid #555;
     border-radius: 50%;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
     transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .phase-bubble-content:hover {
@@ -187,6 +190,7 @@
     height: 456px;
     position: relative;
     background: #1a1a1a;
+    flex-shrink: 0;
 }
 
 .phase-image-wrapper {

@@ -1340,6 +1340,20 @@ export const useTrafficLight = () => {
         ));
     }, [activePFId]);
 
+    // Get/set phasage bulle ratio for active PF
+    const phasageBubbleRatio = useMemo(() => {
+        const activePF = pfTabs.find(pf => pf.id === activePFId);
+        return activePF?.phasageBubbleRatio ?? 100;
+    }, [pfTabs, activePFId]);
+
+    const setPhasageBubbleRatio = useCallback((ratio) => {
+        setPfTabs(prev => prev.map(pf =>
+            pf.id === activePFId
+                ? { ...pf, phasageBubbleRatio: ratio }
+                : pf
+        ));
+    }, [activePFId]);
+
     // Dynamic traffic dataset names based on PF tabs (+ Projection at the end) + custom datasets
     const trafficDatasetNames = useMemo(() => {
         const base = pfTabs && pfTabs.length > 0
@@ -2540,6 +2554,8 @@ export const useTrafficLight = () => {
         phasageEllipseScale,
         setPhasageBubbleScale,
         setPhasageEllipseScale,
+        phasageBubbleRatio,
+        setPhasageBubbleRatio,
         // PF (Plans de Feux) management
         pfTabs,
         activePFId,
