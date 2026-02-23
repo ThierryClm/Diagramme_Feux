@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -866,11 +866,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         // Show both values if either is non-zero (and not escamoted during simulation)
                         const hasValue = !isSimEscamoted && (start > 0 || end > 0);
 
+                        const isLabelHighlighted = hoveredArrowGroupId === g.id;
                         return (
                             <div
                                 key={g.id}
                                 className="row-label-container"
-                                style={biCarrefourSeparator != null && g.id === biCarrefourSeparator ? { borderBottom: '1px solid white' } : undefined}
+                                style={{ ...(isLabelHighlighted ? { backgroundColor: hoveredArrowGroupSaturated ? 'rgba(231, 76, 60, 0.25)' : 'rgba(100, 150, 255, 0.2)' } : {}), ...(biCarrefourSeparator != null && g.id === biCarrefourSeparator ? { borderBottom: '1px solid white' } : {}) }}
                                 tabIndex={0}
                                 onClick={() => onGroupClick(g)}
                                 onKeyDown={(e) => handlePhaseFlagKeyDown(e, g.id, g.phaseFlag)}
@@ -1052,13 +1053,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const cyclesToRender = Math.ceil(TIME_WINDOW / totalDuration) + 1;
 
                             const isHighlightedByArrow = hoveredArrowGroupId === group.id;
+                            const arrowHighlightClass = isHighlightedByArrow ? (hoveredArrowGroupSaturated ? 'arrow-highlighted arrow-saturated' : 'arrow-highlighted') : '';
 
                             return (
                                 <div
                                     key={group.id}
                                     className={`timeline-row-track ${isConflict ? 'row-conflict' : ''}`}
                                     onClick={() => onGroupClick(group)}
-                                    style={{ backgroundColor: isConflict ? 'rgba(231, 76, 60, 0.1)' : 'transparent', ...(biCarrefourSeparator != null && group.id === biCarrefourSeparator ? { borderBottom: '1px solid white' } : {}) }}
+                                    style={{ backgroundColor: isHighlightedByArrow ? (hoveredArrowGroupSaturated ? 'rgba(231, 76, 60, 0.25)' : 'rgba(100, 150, 255, 0.2)') : (isConflict ? 'rgba(231, 76, 60, 0.1)' : 'transparent'), ...(biCarrefourSeparator != null && group.id === biCarrefourSeparator ? { borderBottom: '1px solid white' } : {}) }}
                                     onMouseEnter={() => setHoveredGroupId(group.id)}
                                     onMouseLeave={() => {
                                         setHoveredGroupId(null);
@@ -1095,10 +1097,28 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const orangeEnd = (greenEnd + orangeDur) % currentCycleLen;
                                         const orangeWrapsAround = (isPedestrian || isCyclist) && (greenEnd + orangeDur > currentCycleLen);
 
+                                        // V.Utile overlay (capacity color on first green seconds) - available for ALL cases
+                                        const showVUtileOverlay = hoveredVUtile && hoveredVUtile.groupId === group.id;
+                                        const vUtileSec = showVUtileOverlay ? Math.min(hoveredVUtile.vUtile, greenDuration) : 0;
+                                        const getCapacityColorClass = (value) => {
+                                            if (value === null || value === undefined) return '';
+                                            if (value < 76) return 'vutile-green';
+                                            if (value <= 85) return 'vutile-orange';
+                                            if (value <= 100) return 'vutile-red';
+                                            return 'vutile-black';
+                                        };
+                                        const vUtileColorClass = showVUtileOverlay ? getCapacityColorClass(hoveredVUtile.capacityValue) : '';
+                                        const vUtileTitle = showVUtileOverlay ? `V.Utile: ${hoveredVUtile.vUtile}s (${hoveredVUtile.capacityValue}%)` : '';
+
                                         if (greenWrapsAround) {
                                             // Green bar wraps around
-                                            const firstPartWidth = (currentCycleLen - offset) * pixelsPerSecond;
-                                            const secondPartWidth = ((offset + greenDuration) % currentCycleLen) * pixelsPerSecond;
+                                            const firstPartSec = currentCycleLen - offset;
+                                            const secondPartSec = (offset + greenDuration) % currentCycleLen;
+                                            const firstPartWidth = firstPartSec * pixelsPerSecond;
+                                            const secondPartWidth = secondPartSec * pixelsPerSecond;
+                                            // V.Utile split across the two green parts
+                                            const vUtileFirstSec = Math.min(vUtileSec, firstPartSec);
+                                            const vUtileSecondSec = Math.max(0, vUtileSec - firstPartSec);
 
                                             // Check if orange also wraps
                                             if (orangeWrapsAround) {
@@ -1109,7 +1129,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     <React.Fragment>
                                                         {/* First part: from offset to end of cycle */}
                                                         <div
-                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
+                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                             style={{ left: `${offset * pixelsPerSecond}px` }}
                                                         >
                                                             <div
@@ -1118,14 +1138,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                 title="Glisser pour modifier le début"
                                                             />
                                                             <div className="phase-bar green" style={{ width: `${firstPartWidth}px` }}></div>
+                                                            {showVUtileOverlay && vUtileFirstSec > 0 && (
+                                                                <div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileFirstSec * pixelsPerSecond}px` }} title={vUtileTitle} />
+                                                            )}
                                                         </div>
                                                         {/* Second part: green from 0 + orange first part to end of cycle */}
                                                         <div
-                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
+                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                             style={{ left: '0px' }}
                                                         >
                                                             <div className="phase-bar green" style={{ width: `${secondPartWidth}px` }}></div>
                                                             <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeFirstPartWidth}px` }}></div>
+                                                            {showVUtileOverlay && vUtileSecondSec > 0 && (
+                                                                <div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileSecondSec * pixelsPerSecond}px` }} title={vUtileTitle} />
+                                                            )}
                                                             <div
                                                                 className="drag-handle drag-handle-end"
                                                                 onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
@@ -1135,7 +1161,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         </div>
                                                         {/* Third part: orange continuation at start of cycle */}
                                                         <div
-                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
+                                                            className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                             style={{ left: '0px' }}
                                                         >
                                                             <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeSecondPartWidth}px` }}></div>
@@ -1148,7 +1174,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 <React.Fragment>
                                                     {/* First part: from offset to end of cycle */}
                                                     <div
-                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                         style={{ left: `${offset * pixelsPerSecond}px` }}
                                                     >
                                                         <div
@@ -1157,14 +1183,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             title="Glisser pour modifier le début"
                                                         />
                                                         <div className="phase-bar green" style={{ width: `${firstPartWidth}px` }}></div>
+                                                        {showVUtileOverlay && vUtileFirstSec > 0 && (
+                                                            <div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileFirstSec * pixelsPerSecond}px` }} title={vUtileTitle} />
+                                                        )}
                                                     </div>
                                                     {/* Second part: from start of cycle to end */}
                                                     <div
-                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                         style={{ left: '0px' }}
                                                     >
                                                         <div className="phase-bar green" style={{ width: `${secondPartWidth}px` }}></div>
                                                         <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
+                                                        {showVUtileOverlay && vUtileSecondSec > 0 && (
+                                                            <div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileSecondSec * pixelsPerSecond}px` }} title={vUtileTitle} />
+                                                        )}
                                                         <div
                                                             className="drag-handle drag-handle-end"
                                                             onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
@@ -1182,12 +1214,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (orangeWrapsAround) {
                                             const orangeFirstPartWidth = (currentCycleLen - greenEnd) * pixelsPerSecond;
                                             const orangeSecondPartWidth = orangeEnd * pixelsPerSecond;
+                                            const vUtileWidthPx = vUtileSec * pixelsPerSecond;
 
                                             return (
                                                 <React.Fragment>
                                                     {/* Main part: green + first part of orange */}
                                                     <div
-                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                         style={{ left: `${offset * pixelsPerSecond}px` }}
                                                     >
                                                         <div
@@ -1197,6 +1230,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         />
                                                         <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
                                                         <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeFirstPartWidth}px` }}></div>
+                                                        {showVUtileOverlay && vUtileSec > 0 && (
+                                                            <div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileWidthPx}px` }} title={vUtileTitle} />
+                                                        )}
                                                         <div
                                                             className="drag-handle drag-handle-end"
                                                             onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
@@ -1206,7 +1242,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     </div>
                                                     {/* Orange continuation at start of cycle */}
                                                     <div
-                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
+                                                        className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                         style={{ left: '0px' }}
                                                     >
                                                         <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeSecondPartWidth}px` }}></div>
@@ -1216,20 +1252,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         }
 
                                         // Normal case: neither wraps
-                                        const showVUtileOverlay = hoveredVUtile && hoveredVUtile.groupId === group.id;
-                                        const vUtileWidth = showVUtileOverlay ? Math.min(hoveredVUtile.vUtile, greenDuration) * pixelsPerSecond : 0;
-                                        // Get capacity color class for V.Utile overlay
-                                        const getCapacityColorClass = (value) => {
-                                            if (value === null || value === undefined) return '';
-                                            if (value < 76) return 'vutile-green';
-                                            if (value <= 85) return 'vutile-orange';
-                                            if (value <= 100) return 'vutile-red';
-                                            return 'vutile-black';
-                                        };
-                                        const vUtileColorClass = showVUtileOverlay ? getCapacityColorClass(hoveredVUtile.capacityValue) : '';
                                         return (
                                             <div
-                                                className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${isHighlightedByArrow ? 'arrow-highlighted' : ''}`}
+                                                className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                 style={{ left: `${offset * pixelsPerSecond}px` }}
                                             >
                                                 <div
@@ -1239,11 +1264,11 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 />
                                                 <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
                                                 <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
-                                                {showVUtileOverlay && (
+                                                {showVUtileOverlay && vUtileSec > 0 && (
                                                     <div
                                                         className={`vutile-overlay ${vUtileColorClass}`}
-                                                        style={{ width: `${vUtileWidth}px` }}
-                                                        title={`V.Utile: ${hoveredVUtile.vUtile}s (${hoveredVUtile.capacityValue}%)`}
+                                                        style={{ width: `${vUtileSec * pixelsPerSecond}px` }}
+                                                        title={vUtileTitle}
                                                     />
                                                 )}
                                                 <div

@@ -192,6 +192,7 @@ function App() {
     const [isPlayingSimulation, setIsPlayingSimulation] = useState(false);
     const [simulationCurrentTime, setSimulationCurrentTime] = useState(0);
     const [hoveredArrowGroupId, setHoveredArrowGroupId] = useState(null);
+    const [hoveredArrowGroupSaturated, setHoveredArrowGroupSaturated] = useState(false);
     const [hoveredConflict, setHoveredConflict] = useState(null); // {from, to} for conflict hover
     const [hoveredDiagramTime, setHoveredDiagramTime] = useState(null); // Time position when hovering diagram
 
@@ -789,9 +790,9 @@ function App() {
             }
 
             // Charger les données du projet
-            const projectName = file.name.replace(/\.json$/i, '');
+            const projName = file.name.replace(/\.json$/i, '');
             loadFullState({
-                intersectionName: projectName,
+                projectName: projName,
                 ...data
             });
 
@@ -884,9 +885,9 @@ function App() {
                 // getParent n'est pas toujours disponible
             }
 
-            const projectName = file.name.replace(/\.json$/i, '');
+            const projName = file.name.replace(/\.json$/i, '');
             loadFullState({
-                intersectionName: projectName,
+                projectName: projName,
                 ...data
             });
 
@@ -925,7 +926,7 @@ function App() {
     const handleSaveFileWithPicker = useCallback(async () => {
         if (!window.showSaveFilePicker) {
             // Fallback pour navigateurs sans File System Access API
-            const name = prompt('Nom du projet:', projectName || intersectionName || 'Mon projet');
+            const name = prompt('Nom du projet:', projectName || 'Mon projet');
             if (name) {
                 saveProject(name);
             }
@@ -934,7 +935,7 @@ function App() {
 
         try {
             const options = {
-                suggestedName: `${projectName || intersectionName || 'projet'}.json`,
+                suggestedName: `${projectName || 'projet'}.json`,
                 types: [{
                     description: 'Fichier Projet JSON',
                     accept: { 'application/json': ['.json'] }
@@ -1028,7 +1029,7 @@ function App() {
             if (!dirInfo) return;
 
             const options = {
-                suggestedName: `${projectName || intersectionName || 'projet'}.json`,
+                suggestedName: `${projectName || 'projet'}.json`,
                 types: [{
                     description: 'Fichier Projet JSON',
                     accept: { 'application/json': ['.json'] }
@@ -1460,6 +1461,7 @@ function App() {
                     const file = importedHTMFiles.find(f => f.id === fileId);
                     if (file && file.data) {
                         loadFullState({
+                            projectName: file.name,
                             intersectionName: file.name,
                             groups: file.data.groups || [],
                             cycleLength: file.data.cycleLength || cycleLength
@@ -1721,6 +1723,7 @@ function App() {
 
             // Load the imported data
             loadFullState({
+                projectName: importedData.intersectionName,
                 intersectionName: importedData.intersectionName,
                 groups: importedData.groups,
                 cycleLength: importedData.cycleLength,
@@ -1801,6 +1804,7 @@ function App() {
             const importedData = await importExcelFile(file);
 
             loadFullState({
+                projectName: importedData.intersectionName,
                 intersectionName: importedData.intersectionName,
                 groups: importedData.groups,
                 cycleLength: importedData.cycleLength,
@@ -1850,6 +1854,7 @@ function App() {
 
                 // Load the imported data
                 loadFullState({
+                    projectName: importedData.intersectionName,
                     intersectionName: importedData.intersectionName,
                     groups: importedData.groups,
                     cycleLength: importedData.cycleLength,
@@ -1930,9 +1935,10 @@ function App() {
                         }
 
                         // Load the imported data
-                        const projectName = importFile.name.replace(/\.csv$/i, '');
+                        const csvProjName = importFile.name.replace(/\.csv$/i, '');
                         loadFullState({
-                            intersectionName: projectName,
+                            projectName: csvProjName,
+                            intersectionName: csvProjName,
                             groups: importedGroups,
                             cycleLength: cycleLength
                         });
@@ -2079,6 +2085,7 @@ function App() {
 
                 // Load the data as a new project
                 loadFullState({
+                    projectName: fileName,
                     intersectionName: fileName,
                     groups: parsedGroups,
                     cycleLength: cycleLength
@@ -2250,9 +2257,10 @@ function App() {
                     <input
                         className="input-name"
                         type="text"
-                        value={projectName || 'Nouveau projet'}
-                        readOnly
-                        title="Nom du projet (défini lors de la sauvegarde)"
+                        value={projectName || ''}
+                        onChange={(e) => setProjectName(e.target.value)}
+                        placeholder="Nom du projet"
+                        title="Nom du projet (utilisé pour la sauvegarde)"
                     />
                     <label>
                         GFx
@@ -2572,6 +2580,7 @@ function App() {
                                     updateGroupParams={updateGroupParams}
                                     setHoveredGroupId={setHoveredArrowGroupId}
                                     hoveredGroupId={hoveredArrowGroupId}
+                                    setHoveredGroupSaturated={setHoveredArrowGroupSaturated}
                                     trafficDatasetNames={trafficDatasetNames}
                                     setHoveredVUtile={setHoveredVUtile}
                                     copyTrafficDataset={copyTrafficDataset}
@@ -2767,6 +2776,7 @@ function App() {
                                 setIsPlayingSimulation={setIsPlayingSimulation}
                                 setSimulationCurrentTime={setSimulationCurrentTime}
                                 hoveredArrowGroupId={hoveredArrowGroupId}
+                                hoveredArrowGroupSaturated={hoveredArrowGroupSaturated}
                                 hoveredConflict={hoveredConflict}
                                 setHoveredGroupId={setHoveredArrowGroupId}
                                 setHoveredDiagramTime={setHoveredDiagramTime}

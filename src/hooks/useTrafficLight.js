@@ -668,8 +668,8 @@ export const useTrafficLight = () => {
             // Mémoriser le nom du projet (clé de sauvegarde)
             currentProjectNameRef.current = name;
             setProjectName(name);
-            // Restaurer le nom du carrefour depuis les données, sinon utiliser le nom du projet
-            setIntersectionName(data.intersectionName || name);
+            // Restaurer le nom du carrefour depuis les données (indépendant du nom du projet)
+            if (data.intersectionName) setIntersectionName(data.intersectionName);
 
             // Migrate and validate groups structure for old projects
             if (data.groups) {
@@ -975,10 +975,11 @@ export const useTrafficLight = () => {
     const loadFullState = (state) => {
         try {
             // Mettre à jour le nom du projet (clé de sauvegarde / nom du fichier)
-            const loadedName = state.intersectionName || "Nouveau Carrefour";
-            currentProjectNameRef.current = loadedName;
-            setProjectName(loadedName);
-            // Toujours mettre à jour le nom du carrefour
+            // Utiliser state.projectName si fourni, sinon null
+            const loadedProjectName = state.projectName || null;
+            currentProjectNameRef.current = loadedProjectName;
+            setProjectName(loadedProjectName);
+            // Restaurer le nom du carrefour (indépendant du nom du projet)
             setIntersectionName(state.intersectionName || "Nouveau Carrefour");
 
             // Toujours mettre à jour les groupes (avec valeur par défaut si absent)
@@ -1152,6 +1153,7 @@ export const useTrafficLight = () => {
 
     // Get full state (for saving/duplication)
     const getFullState = () => ({
+        projectName,
         intersectionName,
         groups,
         cycleLength,
@@ -1654,6 +1656,7 @@ export const useTrafficLight = () => {
         currentProjectNameRef.current = name;
         setProjectName(name);
         const projectData = {
+            projectName: name,
             intersectionName,
             groups,
             cycleLength,

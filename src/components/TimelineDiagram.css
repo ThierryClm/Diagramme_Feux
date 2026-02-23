@@ -960,6 +960,14 @@
     filter: brightness(1.2);
 }
 
+/* Phase bar highlighted - saturated (capacity > 100%) */
+.cycle-block.arrow-saturated .phase-bar {
+    box-shadow: 0 0 10px 3px rgba(231, 76, 60, 0.9), 0 0 16px 6px rgba(231, 76, 60, 0.5);
+    filter: brightness(1.3);
+    height: 24px !important;
+    margin-top: -4px;
+}
+
 /* V.Utile overlay - shows used green time when hovering V.Utile cell */
 .vutile-overlay {
     position: absolute;

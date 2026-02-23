@@ -11,6 +11,7 @@ const TrafficTable = ({
     updateGroupParams,
     setHoveredGroupId,
     hoveredGroupId,
+    setHoveredGroupSaturated,
     trafficDatasetNames,
     setHoveredVUtile,
     copyTrafficDataset,
@@ -363,8 +364,17 @@ const TrafficTable = ({
                             <tr
                                 key={g.id}
                                 className={`${hoveredGroupId === g.id ? 'row-highlighted' : ''} ${isInhibited ? 'row-inhibited' : ''}`}
-                                onMouseEnter={() => setHoveredGroupId && setHoveredGroupId(g.id)}
-                                onMouseLeave={() => setHoveredGroupId && setHoveredGroupId(null)}
+                                onMouseEnter={() => {
+                                    setHoveredGroupId && setHoveredGroupId(g.id);
+                                    if (setHoveredGroupSaturated) {
+                                        const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
+                                        const numericVol = parseTrafficVol(trafficData.trafficVol);
+                                        const vUtile = isInhibited ? null : calculateVUtile(numericVol, g.laneCoef);
+                                        const cap = isInhibited ? null : calculateCapacity(totalGreen, vUtile).value;
+                                        setHoveredGroupSaturated(cap != null && cap > 100);
+                                    }
+                                }}
+                                onMouseLeave={() => { setHoveredGroupId && setHoveredGroupId(null); setHoveredGroupSaturated && setHoveredGroupSaturated(false); }}
                             >
                                 <td className="col-id">{g.id}</td>
                                 <td className="col-name-readonly">{g.name}</td>
