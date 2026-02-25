@@ -1562,10 +1562,10 @@ export const useTrafficLight = () => {
         const currentData = JSON.parse(JSON.stringify(actionData));
         const currentPF = pfTabs.find(pf => pf.id === activePFId);
         const currentRemarques = currentPF?.remarques || '';
-        setPfTabs(prev => [...prev, { id: nextId, name: newName, data: currentData, remarques: currentRemarques }]);
+        setPfTabs(prev => [...prev, { id: nextId, name: newName, data: currentData, remarques: currentRemarques, conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix)) }]);
         setActivePFId(nextId);
         return nextId;
-    }, [pfTabs, actionData, activePFId]);
+    }, [pfTabs, actionData, activePFId, conflictMatrix]);
 
     // Delete a PF (cannot delete if only one remains)
     const deletePF = useCallback((pfId) => {
@@ -1793,12 +1793,44 @@ export const useTrafficLight = () => {
     // Synchronize current conflict matrix with active PF tab
     // Use a ref to prevent infinite loops
     const lastSyncedMatrixRef = useRef(null);
+    const prevActivePFIdForMatrixSyncRef = useRef(activePFId);
     useEffect(() => {
         // Skip during initial load
         if (isInitialLoadRef.current) return;
 
-        // Only sync if we have a valid active PF and the matrix has changed
         const matrixKey = JSON.stringify(conflictMatrix);
+
+        // When PF just changed: don't save to the new PF — let the reverse sync
+        // load the new PF's matrix first. Save pending edits to the OLD PF only
+        // if we've been actively syncing (lastSyncedMatrixRef !== null), to avoid
+        // corrupting old PFs on first run after project load.
+        if (prevActivePFIdForMatrixSyncRef.current !== activePFId) {
+            const oldPFId = prevActivePFIdForMatrixSyncRef.current;
+            prevActivePFIdForMatrixSyncRef.current = activePFId;
+
+            // Save any unsaved matrix changes to the OLD PF
+            // (skip on first run after init — lastSyncedMatrixRef is still null)
+            if (lastSyncedMatrixRef.current !== null && lastSyncedMatrixRef.current !== matrixKey) {
+                setPfTabs(prevTabs => {
+                    const tabIndex = prevTabs.findIndex(pf => pf.id === oldPFId);
+                    if (tabIndex === -1) return prevTabs;
+                    const currentPfMatrix = prevTabs[tabIndex].conflictMatrix;
+                    if (JSON.stringify(currentPfMatrix) === matrixKey) return prevTabs;
+                    const newTabs = [...prevTabs];
+                    newTabs[tabIndex] = {
+                        ...newTabs[tabIndex],
+                        conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix))
+                    };
+                    return newTabs;
+                });
+            }
+            // Reset sync ref so that the next render (after reverse sync loads
+            // the new PF's matrix) will pick it up correctly
+            lastSyncedMatrixRef.current = null;
+            return;
+        }
+
+        // Normal case: save matrix to active PF when it changes
         if (lastSyncedMatrixRef.current === matrixKey) {
             return; // Already synced this matrix
         }
@@ -1826,6 +1858,7 @@ export const useTrafficLight = () => {
 
     // Synchronize current groups (diagram data) with active PF tab
     const lastSyncedGroupsRef = useRef(null);
+    const prevActivePFIdForGroupsSyncRef = useRef(activePFId);
     useEffect(() => {
         // Skip during initial load
         if (isInitialLoadRef.current) return;
@@ -1841,6 +1874,34 @@ export const useTrafficLight = () => {
             phaseFlag: g.phaseFlag || ''
         }));
         const groupsKey = JSON.stringify(diagramData);
+
+        // When PF just changed: don't save to the new PF — let the reverse sync
+        // load the new PF's data first. Save pending edits to the OLD PF only
+        // if we've been actively syncing (lastSyncedGroupsRef !== null).
+        if (prevActivePFIdForGroupsSyncRef.current !== activePFId) {
+            const oldPFId = prevActivePFIdForGroupsSyncRef.current;
+            prevActivePFIdForGroupsSyncRef.current = activePFId;
+
+            // Save any unsaved group changes to the OLD PF
+            // (skip on first run after init — lastSyncedGroupsRef is still null)
+            if (lastSyncedGroupsRef.current !== null && lastSyncedGroupsRef.current !== groupsKey) {
+                setPfTabs(prevTabs => {
+                    const tabIndex = prevTabs.findIndex(pf => pf.id === oldPFId);
+                    if (tabIndex === -1) return prevTabs;
+                    const currentPfDiagram = prevTabs[tabIndex].diagram;
+                    if (JSON.stringify(currentPfDiagram) === groupsKey) return prevTabs;
+                    const newTabs = [...prevTabs];
+                    newTabs[tabIndex] = {
+                        ...newTabs[tabIndex],
+                        diagram: diagramData,
+                        cycleLength: cycleLength
+                    };
+                    return newTabs;
+                });
+            }
+            lastSyncedGroupsRef.current = null;
+            return;
+        }
 
         if (lastSyncedGroupsRef.current === groupsKey) {
             return; // Already synced
@@ -1924,7 +1985,7 @@ export const useTrafficLight = () => {
                     const currentSize = prevMatrix.length;
                     const pfMatrixSize = activePF.conflictMatrix.length;
 
-                    // Create a new matrix with the current size
+                    // Create a new matrix with the current size, filled with empty values
                     const resizedMatrix = Array.from({ length: currentSize }, (_, r) => {
                         const row = new Array(currentSize).fill('');
                         for (let c = 0; c < currentSize; c++) {
