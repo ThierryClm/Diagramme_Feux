@@ -5085,6 +5085,50 @@ function App() {
                                 }}
                             >
                                 <img src={intersectionImage} alt="Carrefour" style={{ filter: `brightness(${imageBrightness}%) contrast(${imageContrast}%)` }} />
+                                {/* Group numbers */}
+                                {(() => {
+                                    const showNums = JSON.parse(localStorage.getItem('intersection_showGroupNumbers') ?? 'true');
+                                    if (!showNums) return null;
+                                    const groupMap = {};
+                                    intersectionArrows.forEach(arrow => {
+                                        if (!arrow.groupId) return;
+                                        const group = groups.find(g => g.id === arrow.groupId);
+                                        const courant = group?.courant || '';
+                                        let px = arrow.x;
+                                        let py = arrow.y;
+                                        if (courant === 'TàD' || courant === 'TàG') {
+                                            const sc = arrow.scale || 1;
+                                            const svgSize = 96 * sc;
+                                            const dxSvg = courant === 'TàD' ? -8 : 8;
+                                            const dySvg = 2;
+                                            const dxPx = (dxSvg / 32) * svgSize;
+                                            const dyPx = (dySvg / 32) * svgSize;
+                                            const rotRad = (arrow.rotation || 0) * Math.PI / 180;
+                                            px += (dxPx * Math.cos(rotRad) - dyPx * Math.sin(rotRad)) / 750 * 100;
+                                            py += (dxPx * Math.sin(rotRad) + dyPx * Math.cos(rotRad)) / 530 * 100;
+                                        }
+                                        if (!groupMap[arrow.groupId]) groupMap[arrow.groupId] = [];
+                                        groupMap[arrow.groupId].push({ x: px, y: py });
+                                    });
+                                    return Object.entries(groupMap).map(([gId, pts]) => {
+                                        const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+                                        const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+                                        const g = groups.find(gr => gr.id === Number(gId));
+                                        const isPieton = (g?.courant || '') === 'Piéton';
+                                        return isPieton ? (
+                                            <div key={`fgnum-${gId}`} className="group-number-centroid pieton" style={{ left: `${cx}%`, top: `${cy}%` }}>
+                                                <svg viewBox="0 0 20 18" width="20" height="18">
+                                                    <polygon points="10,1 1,17 19,17" fill="rgba(255,255,255,0.7)" stroke="#000" strokeWidth="1"/>
+                                                    <text x="10" y="15" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#000">{gId}</text>
+                                                </svg>
+                                            </div>
+                                        ) : (
+                                            <div key={`fgnum-${gId}`} className="group-number-centroid" style={{ left: `${cx}%`, top: `${cy}%` }}>
+                                                {gId}
+                                            </div>
+                                        );
+                                    });
+                                })()}
                                 {intersectionArrows.map(arrow => {
                                     const group = groups.find(g => g.id === arrow.groupId);
                                     const courant = group?.courant || '';

@@ -555,6 +555,28 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         simulationFilter.has(action.id)
     ) : [];
 
+    // Precompute shifted zone ranges for brace truncation (SELECTED/checked zones only - simulation mode)
+    const braceZoneRanges = [];
+    selectedEscamotageDePhase.forEach(a => {
+        const zDeb = parseInt(a.deb) || 0;
+        const zFin = parseInt(a.fin) || 0;
+        const shifted = getShiftedActionPosition(zDeb, zFin, null, 'Escamotage de phase');
+        if (!shifted.hidden) {
+            braceZoneRanges.push({ deb: shifted.deb, fin: shifted.fin, rawDeb: zDeb, rawFin: zFin });
+        }
+    });
+    selectedAdaptatifVertical.forEach(a => {
+        const zDeb = parseInt(a.deb) || 0;
+        const zFin = parseInt(a.fin) || 0;
+        const plage1 = parseInt(a.plage1) || 0;
+        const plage2 = parseInt(a.plage2) || 0;
+        const avPlage = (plage1 > 0 && plage2 > 0) ? { plage1, plage2 } : null;
+        const shifted = getShiftedActionPosition(zDeb, zFin, null, 'Adaptatif vertical', avPlage);
+        if (!shifted.hidden) {
+            braceZoneRanges.push({ deb: shifted.deb, fin: shifted.fin, rawDeb: zDeb, rawFin: zFin, plage1, plage2, isPartial: !!avPlage });
+        }
+    });
+
     // Get all "Signal aide conduite" actions
     // In simulation mode: show overlay when action is UNCHECKED (inverted logic)
     const signaActions = actionData.filter(action => {
@@ -1420,20 +1442,55 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const isHighlighted = hoveredActionId === action.id;
 
                                         // For Fermeture anticipée: calculate brace start position
-                                        // Uses shifted deb/fin (accounting for adaptatif vertical / escamotage de phase contraction)
+                                        // Si l'adaptatif vertical décale la fin de vert, l'accolade se décale du même delta
+                                        // Si la fin de vert n'est pas décalée, l'accolade reste à sa position d'origine
                                         let fermetureStartPos = deb; // Default to shifted deb
+                                        let fermetureEndPos = fin; // Default to shifted fin
                                         if (action.action === 'Fermeture anticipée' && simGroup) {
                                             const originalGreenEnd = group.offset + group.durations.green;
                                             const simulatedGreenEnd = simGroup.simulatedOffset + simGroup.simulatedGreen;
-                                            if (originalGreenEnd === simulatedGreenEnd) {
-                                                // Green end didn't change - use shifted deb position
-                                                fermetureStartPos = deb;
-                                            } else {
-                                                // Green end changed - shift origDeb by the same amount
-                                                const endShift = simulatedGreenEnd - originalGreenEnd;
-                                                const calculatedPos = ((origDeb + endShift) % effectiveCycleLength + effectiveCycleLength) % effectiveCycleLength;
-                                                // If calculated position > shifted fin, move the brace; otherwise keep shifted deb
-                                                fermetureStartPos = calculatedPos > fin ? calculatedPos : deb;
+                                            if (originalGreenEnd !== simulatedGreenEnd) {
+                                                // Vérifier si l'accolade chevauche une zone (début avant, fin dans la zone)
+                                                let straddlesZone = null;
+                                                for (const zone of braceZoneRanges) {
+                                                    if (zone.isPartial) {
+                                                        const gId = parseInt(group.id);
+                                                        if (gId < zone.plage1 || gId > zone.plage2) continue;
+                                                    }
+                                                    if (origDeb < zone.rawDeb && origFin > zone.rawDeb && origFin <= zone.rawFin) {
+                                                        straddlesZone = zone;
+                                                        break;
+                                                    }
+                                                }
+
+                                                if (straddlesZone) {
+                                                    // Début avant la zone : ne pas décaler, tronquer la fin au deb de la zone
+                                                    fermetureEndPos = straddlesZone.deb;
+                                                } else {
+                                                    // Position relative à la fin de vert simulée
+                                                    const simGreenEnd = simulatedGreenEnd % effectiveCycleLength;
+                                                    fermetureStartPos = ((simGreenEnd + (origDeb - originalGreenEnd)) % effectiveCycleLength + effectiveCycleLength) % effectiveCycleLength;
+                                                    fermetureEndPos = ((simGreenEnd + (origFin - originalGreenEnd)) % effectiveCycleLength + effectiveCycleLength) % effectiveCycleLength;
+                                                }
+                                            }
+                                        }
+                                        // Tronquer l'accolade si elle chevauche une zone Escamotage/Adaptatif
+                                        if (action.action === 'Fermeture anticipée') {
+                                            for (const zone of braceZoneRanges) {
+                                                // Adaptatif partiel : n'affecte que les groupes dans la plage
+                                                if (zone.isPartial) {
+                                                    const gId = parseInt(group.id);
+                                                    if (gId < zone.plage1 || gId > zone.plage2) continue;
+                                                }
+                                                if (zone.deb < zone.fin && fermetureStartPos < fermetureEndPos) {
+                                                    if (fermetureStartPos < zone.deb && fermetureEndPos > zone.deb) {
+                                                        // Début accolade < début zone : tronquer la fin au début de la zone
+                                                        fermetureEndPos = zone.deb;
+                                                    } else if (fermetureStartPos >= zone.deb && fermetureStartPos < zone.fin) {
+                                                        // Début accolade dans la zone : pousser le début après la zone
+                                                        fermetureStartPos = zone.fin;
+                                                    }
+                                                }
                                             }
                                         }
                                         const fermetureLeftPos = fermetureStartPos * pixelsPerSecond;
@@ -1531,7 +1588,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     // Use the pre-calculated fermetureStartPos (same as abbreviation)
                                                     // This ensures brace and abbreviation are always at the same position
                                                     const braceStart = fermetureStartPos;
-                                                    const braceEnd = fin; // Use action's fin value (supports Seconde lucarne)
+                                                    const braceEnd = fermetureEndPos; // Use truncated fin (accounting for zone overlap)
                                                     // Validate: brace should have positive duration
                                                     // If braceEnd == braceStart, skip rendering
                                                     const normalDuration = braceEnd >= braceStart
