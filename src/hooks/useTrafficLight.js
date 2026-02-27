@@ -2479,95 +2479,95 @@ export const useTrafficLight = () => {
     // Insert time at a given position for a given duration
     const insertTime = useCallback((startSecond, duration) => {
         saveToHistory();
+        // Increase cycle length first
+        setCycleLength(prev => prev + duration);
+        // Shift group offsets and green ends (extend green if it spans the insertion point)
         setGroups(currentGroups => {
             return currentGroups.map(g => {
                 const offset = g.offset;
-                // If group starts at or after the insertion point, shift it
-                if (offset >= startSecond) {
+                const greenEnd = offset + (g.durations?.green || 0);
+                const shiftOffset = offset > startSecond;
+                const shiftEnd = greenEnd > startSecond;
+                if (shiftOffset && shiftEnd) {
+                    // Both start and end are after insertion: shift offset, green stays same
+                    return { ...g, offset: offset + duration };
+                } else if (!shiftOffset && shiftEnd) {
+                    // Start before, end after: extend green duration
                     return {
                         ...g,
-                        offset: offset + duration
+                        durations: { ...g.durations, green: g.durations.green + duration }
                     };
                 }
                 return g;
             });
         });
-        // Also shift action data Déb/Fin
+        // Shift action data (conditions de micro-régulation) Déb/Fin
         setActionData(currentData => {
             return currentData.map(row => {
                 const newRow = { ...row };
                 if (newRow.deb !== '' && newRow.deb !== undefined) {
                     const deb = parseInt(newRow.deb);
-                    if (deb >= startSecond) {
+                    if (!isNaN(deb) && deb > startSecond) {
                         newRow.deb = (deb + duration).toString();
                     }
                 }
                 if (newRow.fin !== '' && newRow.fin !== undefined) {
                     const fin = parseInt(newRow.fin);
-                    if (fin >= startSecond) {
+                    if (!isNaN(fin) && fin > startSecond) {
                         newRow.fin = (fin + duration).toString();
                     }
                 }
                 return newRow;
             });
         });
-        // Increase cycle length
-        setCycleLength(prev => prev + duration);
     }, [saveToHistory]);
 
     // Reduce time at a given position for a given duration
     // Décale toutes les valeurs (groupes et actions) > startSecond de -duration
     const reduceTime = useCallback((startSecond, duration) => {
         saveToHistory();
+        // Réduire le cycle en premier
+        setCycleLength(prev => Math.max(1, prev - duration));
         // Décaler les offsets et/ou durées des groupes
         setGroups(currentGroups => {
             return currentGroups.map(g => {
                 const offset = g.offset;
-                const greenDuration = g.durations?.green || 0;
-                const endOfGreen = offset + greenDuration;
+                const greenEnd = offset + (g.durations?.green || 0);
+                const shiftOffset = offset > startSecond;
+                const shiftEnd = greenEnd > startSecond;
 
-                // Si le début (offset) est > startSecond, décaler l'offset
-                if (offset > startSecond) {
+                if (shiftOffset && shiftEnd) {
+                    // Début et fin après le point de réduction : décaler l'offset
+                    return { ...g, offset: Math.max(0, offset - duration) };
+                } else if (!shiftOffset && shiftEnd) {
+                    // Début avant, fin après : réduire la durée de vert
                     return {
                         ...g,
-                        offset: Math.max(0, offset - duration)
-                    };
-                }
-                // Si le début <= startSecond mais la fin > startSecond, réduire la durée green
-                else if (endOfGreen > startSecond) {
-                    const newGreenDuration = Math.max(0, greenDuration - duration);
-                    return {
-                        ...g,
-                        durations: {
-                            ...g.durations,
-                            green: newGreenDuration
-                        }
+                        durations: { ...g.durations, green: Math.max(0, g.durations.green - duration) }
                     };
                 }
                 return g;
             });
         });
-        // Also shift action data Déb/Fin - décaler toutes les valeurs > startSecond
+        // Décaler les Déb/Fin des conditions de micro-régulation
         setActionData(currentData => {
             return currentData.map(row => {
                 const newRow = { ...row };
                 if (newRow.deb !== '' && newRow.deb !== undefined) {
                     const deb = parseInt(newRow.deb);
-                    if (deb > startSecond) {
+                    if (!isNaN(deb) && deb > startSecond) {
                         newRow.deb = Math.max(0, deb - duration).toString();
                     }
                 }
                 if (newRow.fin !== '' && newRow.fin !== undefined) {
                     const fin = parseInt(newRow.fin);
-                    if (fin > startSecond) {
+                    if (!isNaN(fin) && fin > startSecond) {
                         newRow.fin = Math.max(0, fin - duration).toString();
                     }
                 }
                 return newRow;
             });
         });
-        // Decrease cycle length
-        setCycleLength(prev => Math.max(1, prev - duration));
     }, [saveToHistory]);
 
     return {

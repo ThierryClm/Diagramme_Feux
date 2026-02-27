@@ -4,23 +4,27 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: transparent;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: flex-start;
     z-index: 1000;
+    pointer-events: none;
 }
 
 .external-links-modal {
+    pointer-events: auto;
     background: #2c2c2c;
-    border-radius: 8px;
+    border-radius: 4px;
     min-width: 700px;
     max-width: 900px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     font-size: 0.85em;
+    margin-top: 28px;
+    margin-left: 160px;
 }
 
 .external-links-header {

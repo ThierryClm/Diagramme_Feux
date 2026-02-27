@@ -158,7 +158,22 @@
     gap: 8px;
 }
 
-/* Phasage bulle modal - positioned left, no transparency */
+/* Modales menu - overlay transparent, positionnées près du menu */
+.modal-overlay.modal-menu-overlay {
+    background: transparent;
+    justify-content: flex-start;
+    align-items: flex-start;
+    pointer-events: none;
+}
+
+.modal-overlay.modal-menu-overlay .modal-content {
+    pointer-events: auto;
+    margin-top: 28px;
+    margin-left: 160px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    border-radius: 4px;
+}
+
 .modal-overlay.modal-phasage-bulle-overlay {
     background: transparent;
     justify-content: flex-start;

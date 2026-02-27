@@ -2883,7 +2883,7 @@ function App() {
             </main>
 
             {/* Modal Ouvrir */}
-            <Modal isOpen={openModal} onClose={() => setOpenModal(false)} title="Ouvrir un projet">
+            <Modal isOpen={openModal} onClose={() => setOpenModal(false)} title="Ouvrir un projet" overlayClassName="modal-menu-overlay">
                 {getAllSaves().length > 0 ? (
                     <>
                         <div className="project-list-container">
@@ -2949,7 +2949,7 @@ function App() {
             </Modal>
 
             {/* Modal Glisser */}
-            <Modal isOpen={slideModal} onClose={() => setSlideModal(false)} title="Glisser le diagramme">
+            <Modal isOpen={slideModal} onClose={() => setSlideModal(false)} title="Glisser le diagramme" overlayClassName="modal-menu-overlay">
                 <div className="form-row">
                     <label>
                         Du groupe :
@@ -3007,7 +3007,7 @@ function App() {
             </Modal>
 
             {/* Modal Inserer */}
-            <Modal isOpen={insertModal} onClose={() => setInsertModal(false)} title="Insérer une plage">
+            <Modal isOpen={insertModal} onClose={() => setInsertModal(false)} title="Insérer une plage" overlayClassName="modal-menu-overlay">
                 <div className="form-row">
                     <label>
                         À partir de la seconde :
@@ -3046,7 +3046,7 @@ function App() {
             </Modal>
 
             {/* Modal Réduire */}
-            <Modal isOpen={reduceModal} onClose={() => setReduceModal(false)} title="Réduire une plage">
+            <Modal isOpen={reduceModal} onClose={() => setReduceModal(false)} title="Réduire une plage" overlayClassName="modal-menu-overlay">
                 <div className="form-row">
                     <label>
                         À partir de la seconde :
@@ -3906,7 +3906,7 @@ function App() {
             />
 
             {/* Modal Déplacer un groupe */}
-            <Modal isOpen={moveGroupModal} onClose={() => setMoveGroupModal(false)} title="Déplacer un groupe de feu">
+            <Modal isOpen={moveGroupModal} onClose={() => setMoveGroupModal(false)} title="Déplacer un groupe de feu" overlayClassName="modal-menu-overlay">
                 <div className="form-row">
                     <label>
                         Groupe à déplacer :
@@ -3962,7 +3962,7 @@ function App() {
             </Modal>
 
             {/* Modal Bi-Carrefour */}
-            <Modal isOpen={biCarrefourModal} onClose={() => setBiCarrefourModal(false)} title="Intégrer un bi-Carrefour">
+            <Modal isOpen={biCarrefourModal} onClose={() => setBiCarrefourModal(false)} title="Intégrer un bi-Carrefour" overlayClassName="modal-menu-overlay">
                 <div className="form-row">
                     <label>
                         Caler l'intégration après le groupe de feu :
