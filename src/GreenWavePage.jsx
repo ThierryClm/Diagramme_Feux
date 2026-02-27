@@ -312,60 +312,102 @@ const GreenWavePage = () => {
         }
     };
 
-    // Load data from localStorage on mount
+    // Appliquer les settings chargés
+    const applySettings = useCallback((settings) => {
+        if (!settings) return;
+        if (settings.name) setGreenWaveName(settings.name);
+        if (settings.speedUp) setSpeedUp(settings.speedUp);
+        else if (settings.speed) setSpeedUp(settings.speed);
+        if (settings.speedDown) setSpeedDown(settings.speedDown);
+        else if (settings.speed) setSpeedDown(settings.speed);
+        if (settings.pixelsPerSecond) setPixelsPerSecond(settings.pixelsPerSecond);
+        if (settings.pixelsPerMeter) setPixelsPerMeter(settings.pixelsPerMeter);
+        if (settings.speedLineOffsetUp !== undefined) setSpeedLineOffsetUp(settings.speedLineOffsetUp);
+        if (settings.speedLineOffsetDown !== undefined) setSpeedLineOffsetDown(settings.speedLineOffsetDown);
+        if (settings.showSpeedLines !== undefined) setShowSpeedLines(settings.showSpeedLines);
+        if (settings.pfParams) setPfParams(settings.pfParams);
+        if (settings.displayCycles) setDisplayCycles(settings.displayCycles);
+        if (settings.name) document.title = `Onde Verte - ${settings.name}`;
+    }, []);
+
+    // Load data on mount — sessionStorage par défaut, IndexedDB si &idb=1
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const greenWaveId = urlParams.get('id');
-        if (greenWaveId) {
-            // Load intersections data
-            const savedData = localStorage.getItem(`greenwave_${greenWaveId}`);
+        if (!greenWaveId) return;
+
+        const useIDB = urlParams.has('idb');
+
+        if (!useIDB) {
+            // Lecture depuis sessionStorage
+            const savedData = sessionStorage.getItem(`greenwave_${greenWaveId}`);
             if (savedData) {
                 try {
                     const data = JSON.parse(savedData);
                     setIntersections(data);
-                    // Set document title
                     document.title = `Onde Verte - ${data.length} carrefours`;
                 } catch (e) {
                     console.error('Failed to load green wave data', e);
                 }
             }
-
-            // Load settings if available (from saved green wave)
-            const savedSettings = localStorage.getItem(`greenwave_settings_${greenWaveId}`);
+            const savedSettings = sessionStorage.getItem(`greenwave_settings_${greenWaveId}`);
             if (savedSettings) {
                 try {
-                    const settings = JSON.parse(savedSettings);
-                    if (settings.name) setGreenWaveName(settings.name);
-                    if (settings.speedUp) setSpeedUp(settings.speedUp);
-                    else if (settings.speed) setSpeedUp(settings.speed); // Backward compatibility
-                    if (settings.speedDown) setSpeedDown(settings.speedDown);
-                    else if (settings.speed) setSpeedDown(settings.speed); // Backward compatibility
-                    if (settings.pixelsPerSecond) setPixelsPerSecond(settings.pixelsPerSecond);
-                    if (settings.pixelsPerMeter) setPixelsPerMeter(settings.pixelsPerMeter);
-                    if (settings.speedLineOffsetUp !== undefined) setSpeedLineOffsetUp(settings.speedLineOffsetUp);
-                    if (settings.speedLineOffsetDown !== undefined) setSpeedLineOffsetDown(settings.speedLineOffsetDown);
-                    if (settings.showSpeedLines !== undefined) setShowSpeedLines(settings.showSpeedLines);
-                    // Load pfParams if available
-                    if (settings.pfParams) {
-                        setPfParams(settings.pfParams);
-                    }
-                    // Load displayCycles if available
-                    if (settings.displayCycles) {
-                        setDisplayCycles(settings.displayCycles);
-                    }
-                    // Update title with name
-                    if (settings.name) {
-                        document.title = `Onde Verte - ${settings.name}`;
-                    }
+                    applySettings(JSON.parse(savedSettings));
                 } catch (e) {
                     console.error('Failed to load green wave settings', e);
                 }
-            // Nettoyer les données temporaires après chargement
-            localStorage.removeItem(`greenwave_${greenWaveId}`);
-            localStorage.removeItem(`greenwave_settings_${greenWaveId}`);
             }
+        } else {
+            // Lecture depuis IndexedDB (fallback gros fichiers)
+            const loadFromIDB = async () => {
+                try {
+                    const db = await new Promise((resolve, reject) => {
+                        const request = indexedDB.open('DiagrammeFeux_GreenWave', 1);
+                        request.onerror = () => reject(request.error);
+                        request.onsuccess = () => resolve(request.result);
+                        request.onupgradeneeded = (event) => {
+                            const db2 = event.target.result;
+                            if (!db2.objectStoreNames.contains('data')) {
+                                db2.createObjectStore('data');
+                            }
+                        };
+                    });
+
+                    const getData = (key) => new Promise((resolve, reject) => {
+                        const tx = db.transaction(['data'], 'readonly');
+                        const store = tx.objectStore('data');
+                        const req = store.get(key);
+                        req.onsuccess = () => resolve(req.result);
+                        req.onerror = () => reject(req.error);
+                    });
+
+                    const deleteData = (key) => new Promise((resolve, reject) => {
+                        const tx = db.transaction(['data'], 'readwrite');
+                        const store = tx.objectStore('data');
+                        const req = store.delete(key);
+                        req.onsuccess = () => resolve();
+                        req.onerror = () => reject(req.error);
+                    });
+
+                    const data = await getData(`greenwave_${greenWaveId}`);
+                    if (data) {
+                        setIntersections(data);
+                        document.title = `Onde Verte - ${data.length} carrefours`;
+                    }
+
+                    const settings = await getData(`greenwave_settings_${greenWaveId}`);
+                    if (settings) applySettings(settings);
+
+                    await deleteData(`greenwave_${greenWaveId}`);
+                    await deleteData(`greenwave_settings_${greenWaveId}`);
+                } catch (e) {
+                    console.error('Failed to load green wave data from IndexedDB', e);
+                }
+            };
+            loadFromIDB();
         }
-    }, []);
+    }, [applySettings]);
 
     // Calculate the maximum values for axes
     const { maxTime, maxDistance, cycleLength } = useMemo(() => {

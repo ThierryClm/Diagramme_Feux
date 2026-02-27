@@ -1504,22 +1504,51 @@ function App() {
         }
     };
 
+    // IndexedDB pour données greenwave (localStorage trop limité en taille)
+    const openGreenWaveDB = useCallback(() => {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('DiagrammeFeux_GreenWave', 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('data')) {
+                    db.createObjectStore('data');
+                }
+            };
+        });
+    }, []);
+
+    const saveGreenWaveToIDB = useCallback(async (key, value) => {
+        const db = await openGreenWaveDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(['data'], 'readwrite');
+            const store = tx.objectStore('data');
+            const request = store.put(value, key);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }, [openGreenWaveDB]);
+
     // Handle green wave creation - opens in new tab
-    const handleCreateGreenWave = (intersections) => {
-        // Generate unique ID
+    const handleCreateGreenWave = async (intersections) => {
         const greenWaveId = Date.now().toString();
+        let useIDB = false;
 
-        // Save data to localStorage (sessionStorage n'est pas partagé entre onglets)
-        localStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(intersections));
+        try {
+            sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(intersections));
+        } catch (e) {
+            // Quota dépassé : fallback IndexedDB
+            await saveGreenWaveToIDB(`greenwave_${greenWaveId}`, intersections);
+            useIDB = true;
+        }
 
-        // Open new tab with green wave page
-        window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
-
+        window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}${useIDB ? '&idb=1' : ''}`, '_blank');
         setCreateGreenWaveModal(false);
     };
 
     // Handle opening a saved green wave
-    const handleOpenSavedGreenWave = () => {
+    const handleOpenSavedGreenWave = async () => {
         if (!selectedGreenWave) return;
 
         try {
@@ -1529,27 +1558,37 @@ function App() {
                 const greenWaveData = greenWaves[selectedGreenWave];
 
                 if (greenWaveData && greenWaveData.intersections) {
-                    // Generate unique ID
                     const greenWaveId = Date.now().toString();
+                    let useIDB = false;
 
-                    // Save data to localStorage (sessionStorage n'est pas partagé entre onglets)
-                    localStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
+                    try {
+                        sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
+                        sessionStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
+                            name: selectedGreenWave,
+                            speed: greenWaveData.speed,
+                            speedUp: greenWaveData.speedUp,
+                            speedDown: greenWaveData.speedDown,
+                            speedLineOffsetUp: greenWaveData.speedLineOffsetUp,
+                            speedLineOffsetDown: greenWaveData.speedLineOffsetDown,
+                            pixelsPerSecond: greenWaveData.pixelsPerSecond,
+                            pixelsPerMeter: greenWaveData.pixelsPerMeter
+                        }));
+                    } catch (e) {
+                        await saveGreenWaveToIDB(`greenwave_${greenWaveId}`, greenWaveData.intersections);
+                        await saveGreenWaveToIDB(`greenwave_settings_${greenWaveId}`, {
+                            name: selectedGreenWave,
+                            speed: greenWaveData.speed,
+                            speedUp: greenWaveData.speedUp,
+                            speedDown: greenWaveData.speedDown,
+                            speedLineOffsetUp: greenWaveData.speedLineOffsetUp,
+                            speedLineOffsetDown: greenWaveData.speedLineOffsetDown,
+                            pixelsPerSecond: greenWaveData.pixelsPerSecond,
+                            pixelsPerMeter: greenWaveData.pixelsPerMeter
+                        });
+                        useIDB = true;
+                    }
 
-                    // Also save additional settings
-                    localStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
-                        name: selectedGreenWave,
-                        speed: greenWaveData.speed, // Backward compatibility
-                        speedUp: greenWaveData.speedUp,
-                        speedDown: greenWaveData.speedDown,
-                        speedLineOffsetUp: greenWaveData.speedLineOffsetUp,
-                        speedLineOffsetDown: greenWaveData.speedLineOffsetDown,
-                        pixelsPerSecond: greenWaveData.pixelsPerSecond,
-                        pixelsPerMeter: greenWaveData.pixelsPerMeter
-                    }));
-
-                    // Open new tab with green wave page
-                    window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
-
+                    window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}${useIDB ? '&idb=1' : ''}`, '_blank');
                     setOpenGreenWaveModal(false);
                     setSelectedGreenWave(null);
                 }
@@ -1598,29 +1637,43 @@ function App() {
             }
 
             if (greenWaveData && greenWaveData.intersections) {
-                // Generate unique ID
                 const greenWaveId = Date.now().toString();
+                let useIDB = false;
 
-                // Save data to localStorage (sessionStorage n'est pas partagé entre onglets)
-                localStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
+                try {
+                    sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
+                    sessionStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
+                        name: greenWaveData.name || file.name.replace(/\.json$/i, ''),
+                        speed: greenWaveData.speed,
+                        speedUp: greenWaveData.speedUp,
+                        speedDown: greenWaveData.speedDown,
+                        speedLineOffsetUp: greenWaveData.speedLineOffsetUp,
+                        speedLineOffsetDown: greenWaveData.speedLineOffsetDown,
+                        showSpeedLines: greenWaveData.showSpeedLines,
+                        pfParams: greenWaveData.pfParams,
+                        pixelsPerSecond: greenWaveData.pixelsPerSecond,
+                        pixelsPerMeter: greenWaveData.pixelsPerMeter,
+                        displayCycles: greenWaveData.displayCycles
+                    }));
+                } catch (e) {
+                    await saveGreenWaveToIDB(`greenwave_${greenWaveId}`, greenWaveData.intersections);
+                    await saveGreenWaveToIDB(`greenwave_settings_${greenWaveId}`, {
+                        name: greenWaveData.name || file.name.replace(/\.json$/i, ''),
+                        speed: greenWaveData.speed,
+                        speedUp: greenWaveData.speedUp,
+                        speedDown: greenWaveData.speedDown,
+                        speedLineOffsetUp: greenWaveData.speedLineOffsetUp,
+                        speedLineOffsetDown: greenWaveData.speedLineOffsetDown,
+                        showSpeedLines: greenWaveData.showSpeedLines,
+                        pfParams: greenWaveData.pfParams,
+                        pixelsPerSecond: greenWaveData.pixelsPerSecond,
+                        pixelsPerMeter: greenWaveData.pixelsPerMeter,
+                        displayCycles: greenWaveData.displayCycles
+                    });
+                    useIDB = true;
+                }
 
-                // Also save additional settings
-                localStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
-                    name: greenWaveData.name || file.name.replace(/\.json$/i, ''),
-                    speed: greenWaveData.speed,
-                    speedUp: greenWaveData.speedUp,
-                    speedDown: greenWaveData.speedDown,
-                    speedLineOffsetUp: greenWaveData.speedLineOffsetUp,
-                    speedLineOffsetDown: greenWaveData.speedLineOffsetDown,
-                    showSpeedLines: greenWaveData.showSpeedLines,
-                    pfParams: greenWaveData.pfParams,
-                    pixelsPerSecond: greenWaveData.pixelsPerSecond,
-                    pixelsPerMeter: greenWaveData.pixelsPerMeter,
-                    displayCycles: greenWaveData.displayCycles
-                }));
-
-                // Open new tab with green wave page
-                window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
+                window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}${useIDB ? '&idb=1' : ''}`, '_blank');
             } else {
                 alert('Le fichier ne contient pas de données d\'onde verte valides.');
             }
