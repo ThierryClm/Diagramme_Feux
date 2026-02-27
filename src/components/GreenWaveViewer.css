@@ -223,7 +223,7 @@
     padding: 12px 20px;
     border-top: 1px solid #444;
     background: #333;
-    justify-content: center;
+    justify-content: flex-start;
     flex-shrink: 0;
 }
 
@@ -594,3 +594,47 @@
     background: #388E3C;
     transform: translateY(-1px);
 }
+
+/* ========== Green wave print (same pattern as dossier print in App.css) ========== */
+@media print {
+    html:has(body.print-greenwave) {
+        background: white !important;
+        background-color: white !important;
+    }
+
+    body.print-greenwave {
+        page: gw-page;
+        background: white !important;
+        background-color: white !important;
+    }
+
+    @page gw-page {
+        size: A4 landscape;
+        margin: 10mm;
+    }
+
+    /* Hide ALL app content and remove from layout to avoid extra blank pages */
+    body.print-greenwave #root {
+        display: none !important;
+    }
+
+    /* Show only the print area and its children */
+    body.print-greenwave #gw-print-area,
+    body.print-greenwave #gw-print-area * {
+        visibility: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    body.print-greenwave #gw-print-area {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: white !important;
+        padding: 8px !important;
+        overflow: hidden !important;
+    }
+}
+
