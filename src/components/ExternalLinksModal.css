@@ -9,11 +9,9 @@
     align-items: flex-start;
     justify-content: flex-start;
     z-index: 1000;
-    pointer-events: none;
 }
 
 .external-links-modal {
-    pointer-events: auto;
     background: #2c2c2c;
     border-radius: 4px;
     min-width: 700px;

@@ -163,11 +163,9 @@
     background: transparent;
     justify-content: flex-start;
     align-items: flex-start;
-    pointer-events: none;
 }
 
 .modal-overlay.modal-menu-overlay .modal-content {
-    pointer-events: auto;
     margin-top: 28px;
     margin-left: 160px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);

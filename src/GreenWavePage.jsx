@@ -312,13 +312,13 @@ const GreenWavePage = () => {
         }
     };
 
-    // Load data from sessionStorage on mount
+    // Load data from localStorage on mount
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const greenWaveId = urlParams.get('id');
         if (greenWaveId) {
             // Load intersections data
-            const savedData = sessionStorage.getItem(`greenwave_${greenWaveId}`);
+            const savedData = localStorage.getItem(`greenwave_${greenWaveId}`);
             if (savedData) {
                 try {
                     const data = JSON.parse(savedData);
@@ -331,7 +331,7 @@ const GreenWavePage = () => {
             }
 
             // Load settings if available (from saved green wave)
-            const savedSettings = sessionStorage.getItem(`greenwave_settings_${greenWaveId}`);
+            const savedSettings = localStorage.getItem(`greenwave_settings_${greenWaveId}`);
             if (savedSettings) {
                 try {
                     const settings = JSON.parse(savedSettings);
@@ -360,6 +360,9 @@ const GreenWavePage = () => {
                 } catch (e) {
                     console.error('Failed to load green wave settings', e);
                 }
+            // Nettoyer les données temporaires après chargement
+            localStorage.removeItem(`greenwave_${greenWaveId}`);
+            localStorage.removeItem(`greenwave_settings_${greenWaveId}`);
             }
         }
     }, []);

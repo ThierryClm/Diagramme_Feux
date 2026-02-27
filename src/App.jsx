@@ -1336,22 +1336,25 @@ function App() {
                 break;
             case 'printDossier':
                 // Ouvrir le dialog de sélection des sections
-                // PF validés (color) cochés par défaut, les autres décochés
-                setDossierSections({
-                    image: true,
-                    gfNumbers: true,
-                    formulaire: true,
-                    matrice: true,
-                    ...Object.fromEntries(pfTabs.flatMap(pf => {
-                        const checked = !!pf.color;
-                        return [
-                            [`diagram_${pf.id}`, checked],
-                            [`conditionsMicro_${pf.id}`, checked],
-                            [`variablesMicro_${pf.id}`, checked],
-                            [`phasageBulle_${pf.id}`, checked],
-                            [`traficCapacite_${pf.id}`, checked],
-                        ];
-                    })),
+                // Initialiser uniquement si vide (premier accès), sinon conserver les choix
+                setDossierSections(prev => {
+                    if (Object.keys(prev).length > 0) return prev;
+                    return {
+                        image: true,
+                        gfNumbers: true,
+                        formulaire: true,
+                        matrice: true,
+                        ...Object.fromEntries(pfTabs.flatMap(pf => {
+                            const checked = !!pf.color;
+                            return [
+                                [`diagram_${pf.id}`, checked],
+                                [`conditionsMicro_${pf.id}`, checked],
+                                [`variablesMicro_${pf.id}`, checked],
+                                [`phasageBulle_${pf.id}`, checked],
+                                [`traficCapacite_${pf.id}`, checked],
+                            ];
+                        })),
+                    };
                 });
                 setDossierDialog(true);
                 break;
@@ -1506,11 +1509,11 @@ function App() {
         // Generate unique ID
         const greenWaveId = Date.now().toString();
 
-        // Save data to sessionStorage
-        sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(intersections));
+        // Save data to localStorage (sessionStorage n'est pas partagé entre onglets)
+        localStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(intersections));
 
         // Open new tab with green wave page
-        window.open(`${window.location.origin}/?greenwave&id=${greenWaveId}`, '_blank');
+        window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
 
         setCreateGreenWaveModal(false);
     };
@@ -1529,11 +1532,11 @@ function App() {
                     // Generate unique ID
                     const greenWaveId = Date.now().toString();
 
-                    // Save data to sessionStorage
-                    sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
+                    // Save data to localStorage (sessionStorage n'est pas partagé entre onglets)
+                    localStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
 
                     // Also save additional settings
-                    sessionStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
+                    localStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
                         name: selectedGreenWave,
                         speed: greenWaveData.speed, // Backward compatibility
                         speedUp: greenWaveData.speedUp,
@@ -1545,7 +1548,7 @@ function App() {
                     }));
 
                     // Open new tab with green wave page
-                    window.open(`${window.location.origin}/?greenwave&id=${greenWaveId}`, '_blank');
+                    window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
 
                     setOpenGreenWaveModal(false);
                     setSelectedGreenWave(null);
@@ -1598,11 +1601,11 @@ function App() {
                 // Generate unique ID
                 const greenWaveId = Date.now().toString();
 
-                // Save data to sessionStorage
-                sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
+                // Save data to localStorage (sessionStorage n'est pas partagé entre onglets)
+                localStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
 
                 // Also save additional settings
-                sessionStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
+                localStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
                     name: greenWaveData.name || file.name.replace(/\.json$/i, ''),
                     speed: greenWaveData.speed,
                     speedUp: greenWaveData.speedUp,
@@ -1617,7 +1620,7 @@ function App() {
                 }));
 
                 // Open new tab with green wave page
-                window.open(`${window.location.origin}/?greenwave&id=${greenWaveId}`, '_blank');
+                window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
             } else {
                 alert('Le fichier ne contient pas de données d\'onde verte valides.');
             }
@@ -4065,7 +4068,7 @@ function App() {
 
             {/* Dialog sélection sections dossier */}
             {dossierDialog && (
-                <div className="modal-overlay" onClick={() => setDossierDialog(false)}>
+                <div className="modal-overlay modal-menu-overlay" onClick={() => setDossierDialog(false)}>
                     <div className="modal-content dossier-dialog" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>Imprimer le dossier</h3>
