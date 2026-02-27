@@ -1,11 +1,14 @@
+/* Grid container: title+button row 1, table row 2, separator row 3, variables row 4, resize row 5 */
+/* Column 1 = table width (max-content), Column 2 = remaining space (button left-aligned) */
 .action-table-container {
     background: #1e1e1e;
     border-top: 1px solid #333;
     padding: 1rem;
     overflow: hidden;
     margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, max-content) 1fr;
+    grid-template-rows: auto 1fr auto auto auto;
     height: 100%;
     box-sizing: border-box;
 }
@@ -16,8 +19,12 @@
     color: #eee;
 }
 
+.action-table-title {
+    grid-column: 1;
+    grid-row: 1;
+}
+
 .detach-btn {
-    float: right;
     font-size: 0.75rem;
     padding: 2px 10px;
     background: #444;
@@ -25,7 +32,10 @@
     border: 1px solid #666;
     border-radius: 3px;
     cursor: pointer;
-    margin-left: 12px;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    justify-self: start;
 }
 .detach-btn:hover:not(:disabled) {
     background: #00897B;
@@ -36,20 +46,19 @@
     cursor: default;
 }
 
-/* Top section for conditions de micro-régulation */
-.action-table-top-section {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 100px;
-    overflow: hidden;
+.action-table-container .action-table-scroll {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 0;
+    overflow: auto;
 }
 
 /* Bottom section for variables micro */
 .action-table-bottom-section {
+    grid-column: 1;
+    grid-row: 4;
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
     overflow-y: auto;
     overflow-x: hidden;
     padding-top: 0.5rem;
@@ -62,10 +71,11 @@
 
 /* Resizable horizontal separator */
 .action-table-separator-horizontal {
+    grid-column: 1;
+    grid-row: 3;
     height: 6px;
     background: #333;
     cursor: row-resize;
-    flex-shrink: 0;
     transition: background 0.15s ease;
 }
 
@@ -384,10 +394,11 @@
 
 /* Bottom panel resize handle */
 .action-table-panel-resize {
+    grid-column: 1 / -1;
+    grid-row: 5;
     height: 8px;
     background: linear-gradient(to bottom, #333 0%, #444 50%, #333 100%);
     cursor: row-resize;
-    flex-shrink: 0;
     transition: background 0.15s ease;
     position: relative;
 }

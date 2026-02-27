@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
-const DEFAULT_CYCLE = 100;
+const DEFAULT_CYCLE = 75;
 const MAX_HISTORY_SIZE = 50;
 
 // Safe localStorage helper to prevent QuotaExceededError crashes
@@ -1094,17 +1094,17 @@ export const useTrafficLight = () => {
         }
     };
 
-    // Reset to a new empty project (8 groups, 60s cycle)
+    // Reset to a new empty project (8 groups, 75s cycle)
     const resetToNewProject = () => {
         // Reset project name and intersection name
         currentProjectNameRef.current = null;
         setProjectName(null);
         setIntersectionName("Nouveau Carrefour");
 
-        // Reset to 8 groups with 60s cycle
+        // Reset to 8 groups with 75s cycle
         const newGroups = Array.from({ length: 8 }, (_, i) => createGroup(i + 1));
         setGroups(newGroups);
-        setCycleLength(60);
+        setCycleLength(75);
 
         // Reset conflict matrix (8x8)
         setConflictMatrix(Array.from({ length: 8 }, () => Array(8).fill('')));

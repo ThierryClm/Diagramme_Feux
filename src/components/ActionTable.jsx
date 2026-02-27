@@ -405,13 +405,9 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     return (
         <>
         <div className="action-table-container">
-            {/* Top section: Conditions de micro-régulation */}
-            <div className="action-table-top-section">
-                <h3>Conditions de micro-régulation
-                    <button className="detach-btn" onClick={handleDetach} title="Ouvrir dans une fenêtre séparée" disabled={!!detachedWindow}>Incruster</button>
-                </h3>
-                {renderTableContent()}
-            </div>
+            <h3 className="action-table-title">Conditions de micro-régulation</h3>
+            <button className="detach-btn" onClick={handleDetach} title="Ouvrir dans une fenêtre séparée" disabled={!!detachedWindow}>Incruster</button>
+            {renderTableContent()}
 
             {/* Resizable horizontal separator */}
             <div
