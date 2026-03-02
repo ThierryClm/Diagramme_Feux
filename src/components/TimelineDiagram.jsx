@@ -906,7 +906,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 >
                                     <span
                                         className="label-name"
-                                        title={g.name}
+                                        onMouseEnter={(e) => {
+                                            const el = e.currentTarget;
+                                            el.title = el.scrollWidth > el.clientWidth ? g.name : '';
+                                        }}
                                         style={{
                                             backgroundColor:
                                                 (g.type === 'VL' || g.type === 'V') ? 'rgba(100, 180, 255, 0.25)' :

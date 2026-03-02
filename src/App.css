@@ -133,6 +133,16 @@
     background: rgba(46, 204, 113, 0.45);
 }
 
+.validate-btn.invalidated {
+    background: rgba(231, 76, 60, 0.3);
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+.validate-btn.invalidated:hover {
+    background: rgba(231, 76, 60, 0.45);
+}
+
 .status-bar {
     font-weight: bold;
     font-size: 0.9rem;
@@ -878,6 +888,18 @@
     background: rgba(76, 175, 80, 0.35);
     border-color: #4CAF50;
     color: #4CAF50;
+}
+
+.pf-tab.pf-invalidated {
+    background: rgba(231, 76, 60, 0.25);
+    border-color: #e74c3c;
+    color: #f88;
+}
+
+.pf-tab.pf-invalidated.active {
+    background: rgba(231, 76, 60, 0.35);
+    border-color: #e74c3c;
+    color: #e74c3c;
 }
 
 .pf-tab[draggable="true"] {

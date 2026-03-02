@@ -2416,18 +2416,25 @@ function App() {
                         </div>
                     ) : (
                         <button
-                            className={`toggle-btn validate-btn ${pfTabs.find(pf => pf.id === activePFId)?.color ? 'validated' : ''}`}
-                            onClick={() => {
+                            className={`toggle-btn validate-btn ${pfTabs.find(pf => pf.id === activePFId)?.color === '#4CAF50' ? 'validated' : ''} ${pfTabs.find(pf => pf.id === activePFId)?.color === '#e74c3c' ? 'invalidated' : ''}`}
+                            onClick={(e) => {
                                 const activePF = pfTabs.find(pf => pf.id === activePFId);
-                                if (activePF?.color) {
+                                if (e.ctrlKey && !activePF?.color) {
+                                    // Ctrl+clic depuis neutre → invalidé (rouge)
+                                    setPFColor(activePFId, '#e74c3c');
+                                } else if (activePF?.color) {
+                                    // Clic simple sur validé ou invalidé → neutre
                                     setPFColor(activePFId, null);
                                 } else {
+                                    // Clic simple sur neutre → validé (vert)
                                     setPFColor(activePFId, '#4CAF50');
                                 }
                             }}
-                            title={pfTabs.find(pf => pf.id === activePFId)?.color ? "Cliquez pour invalider ce plan de feux" : "Cliquez pour valider ce plan de feux"}
+                            title="Clic: valider / Ctrl+clic: invalider"
                         >
-                            {pfTabs.find(pf => pf.id === activePFId)?.color ? 'Validé' : 'Valider'}
+                            {pfTabs.find(pf => pf.id === activePFId)?.color === '#e74c3c' ? 'Invalidé'
+                            : pfTabs.find(pf => pf.id === activePFId)?.color === '#4CAF50' ? 'Validé'
+                            : 'Valider'}
                         </button>
                     )}
                 </div>
@@ -2718,7 +2725,7 @@ function App() {
                         {pfTabs.map((pf, index) => (
                             <div
                                 key={pf.id}
-                                className={`pf-tab ${activePFId === pf.id && !simulationEnabled && !phasageBulleEnabled ? 'active' : ''} ${draggedTabIndex === index ? 'dragging' : ''} ${pf.color ? 'pf-validated' : ''}`}
+                                className={`pf-tab ${activePFId === pf.id && !simulationEnabled && !phasageBulleEnabled ? 'active' : ''} ${draggedTabIndex === index ? 'dragging' : ''} ${pf.color === '#4CAF50' ? 'pf-validated' : ''} ${pf.color === '#e74c3c' ? 'pf-invalidated' : ''}`}
                                 style={{}}
                                 draggable="true"
                                 onDragStart={(e) => {

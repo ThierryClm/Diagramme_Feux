@@ -447,7 +447,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
 
         {/* Floating panel: conditions de micro-régulation */}
         {showFloatingConditions && (
-            <div className="floating-panel" style={{ left: conditionsPos.x, top: conditionsPos.y, width: 1125, height: 390 }}>
+            <div className="floating-panel" style={{ left: conditionsPos.x, top: conditionsPos.y, width: 1135, height: 390 }}>
                 <div className="floating-panel-titlebar" onMouseDown={(e) => handlePanelDragStart(e, setConditionsPos, conditionsDragRef)}>
                     <span>Conditions de micro-régulation</span>
                     <button className="floating-panel-close" onClick={() => setShowFloatingConditions(false)}>&times;</button>
