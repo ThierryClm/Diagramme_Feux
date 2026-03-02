@@ -14,7 +14,9 @@ const MenuBar = ({
     hasPermission = () => true,
     onManageUsers,
     biCarrefourSeparator = null,
-    layoutOptions = {}
+    layoutOptions = {},
+    pixelsPerSecond = 10,
+    onPixelsPerSecondChange
 }) => {
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -179,6 +181,14 @@ const MenuBar = ({
                 { label: 'Commentaires du diagramme', action: 'toggleComments', toggle: true, checked: layoutOptions.showComments },
                 { label: 'Remarques du diagramme', action: 'toggleRemarks', toggle: true, checked: layoutOptions.showRemarks },
                 { type: 'separator' },
+                {
+                    label: 'Dilatation du diagramme',
+                    type: 'submenu',
+                    submenuId: 'dilatation',
+                    submenu: [
+                        { type: 'slider', label: 'Zoom', min: 4, max: 20, value: pixelsPerSecond, unit: 'px/s', sliderId: 'pixelsPerSecond' }
+                    ]
+                },
                 { label: 'Affichage blanc sur fond noir', action: 'toggleDarkMode', toggle: true, checked: layoutOptions.darkMode }
             ]
         },
@@ -244,6 +254,28 @@ const MenuBar = ({
             return (
                 <div key={subIdx} className="menu-header">
                     {subItem.label}
+                </div>
+            );
+        }
+
+        if (subItem.type === 'slider') {
+            return (
+                <div key={subIdx} className="menu-slider-item" onClick={(e) => e.stopPropagation()}>
+                    <span className="menu-slider-label">{subItem.label}</span>
+                    <input
+                        type="range"
+                        min={subItem.min}
+                        max={subItem.max}
+                        value={subItem.value}
+                        onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (subItem.sliderId === 'pixelsPerSecond' && onPixelsPerSecondChange) {
+                                onPixelsPerSecondChange(val);
+                            }
+                        }}
+                        className="menu-slider-input"
+                    />
+                    <span className="menu-slider-value">{subItem.value}{subItem.unit}</span>
                 </div>
             );
         }

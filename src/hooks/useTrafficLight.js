@@ -871,7 +871,7 @@ export const useTrafficLight = () => {
                 isLoadingProjectRef.current = false;
             }, 3000);
 
-            return true;
+            return data;
         } catch (e) {
             console.error("Load failed", e);
             isLoadingProjectRef.current = false;

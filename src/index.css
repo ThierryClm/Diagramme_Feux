@@ -508,8 +508,21 @@ body.light-mode .modal-content {
 }
 
 body.light-mode .modal-header {
-    background: #e0e0e0;
-    color: #222;
+    background: #555;
+    color: #fff;
+    border-bottom-color: #666;
+}
+
+body.light-mode .modal-header h3 {
+    color: #fff;
+}
+
+body.light-mode .modal-close {
+    color: #ccc;
+}
+
+body.light-mode .modal-close:hover {
+    color: #fff;
 }
 
 body.light-mode .modal-body {

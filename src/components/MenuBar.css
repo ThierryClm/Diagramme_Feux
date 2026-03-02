@@ -158,3 +158,31 @@
     text-transform: uppercase;
     pointer-events: none;
 }
+
+/* Slider item in submenu */
+.menu-slider-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    white-space: nowrap;
+}
+
+.menu-slider-label {
+    color: #ccc;
+    font-size: 0.85em;
+}
+
+.menu-slider-input {
+    width: 80px;
+    height: 4px;
+    cursor: pointer;
+    accent-color: #4ecdc4;
+}
+
+.menu-slider-value {
+    color: #4ecdc4;
+    font-size: 0.85em;
+    min-width: 40px;
+    text-align: right;
+}

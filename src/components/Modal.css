@@ -106,8 +106,13 @@
     color: #fff;
 }
 
-.modal-btn-primary:hover {
+.modal-btn-primary:hover:not(:disabled) {
     background: #3a8eef;
+}
+
+.modal-btn-primary:disabled {
+    opacity: 0.4;
+    cursor: default;
 }
 
 .modal-btn-secondary {
@@ -182,6 +187,29 @@
     margin-right: 10px;
 }
 
+/* Compact modals (Glisser, Insérer, Réduire) */
+.modal-overlay.modal-compact-overlay .modal-content {
+    min-width: 220px;
+}
+
+.modal-overlay.modal-compact-overlay .modal-body {
+    padding: 8px 14px;
+}
+
+.modal-overlay.modal-compact-overlay .form-row {
+    margin-bottom: 6px;
+}
+
+.modal-overlay.modal-compact-overlay .form-row label {
+    font-size: 0.88em;
+    gap: 6px;
+}
+
+.modal-overlay.modal-compact-overlay .modal-actions {
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
 .modal-overlay.modal-phasage-bulle-overlay {
     background: transparent;
     justify-content: flex-start;
@@ -193,4 +221,13 @@
 .modal-overlay.modal-phasage-bulle-overlay .modal-content {
     pointer-events: auto;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    min-width: 250px;
+}
+
+.modal-overlay.modal-phasage-bulle-overlay .modal-body {
+    padding: 10px 16px;
+}
+
+.modal-overlay.modal-phasage-bulle-overlay .modal-actions {
+    padding: 8px 16px;
 }

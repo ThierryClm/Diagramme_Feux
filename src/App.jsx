@@ -549,10 +549,13 @@ function App() {
     const [slideValue, setSlideValue] = useState(0);
     const [slideFromGroup, setSlideFromGroup] = useState(1);
     const [slideToGroup, setSlideToGroup] = useState(1);
+    const [slideTouched, setSlideTouched] = useState(false);
     const [insertStart, setInsertStart] = useState(0);
     const [insertDuration, setInsertDuration] = useState(5);
+    const [insertTouched, setInsertTouched] = useState(false);
     const [reduceStart, setReduceStart] = useState(0);
     const [reduceDuration, setReduceDuration] = useState(5);
+    const [reduceTouched, setReduceTouched] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
@@ -577,11 +580,13 @@ function App() {
     // Bi-carrefour modal states
     const [biCarrefourModal, setBiCarrefourModal] = useState(false);
     const [biCarrefourGroupId, setBiCarrefourGroupId] = useState('');
+    const [biCarrefourTouched, setBiCarrefourTouched] = useState(false);
 
     // Move group modal states
     const [moveGroupModal, setMoveGroupModal] = useState(false);
     const [groupToMove, setGroupToMove] = useState('');
     const [moveAfterGroup, setMoveAfterGroup] = useState('0'); // '0' means at the beginning
+    const [moveGroupTouched, setMoveGroupTouched] = useState(false);
 
     // Imported HTM files state
     const [importedHTMFiles, setImportedHTMFiles] = useState(() => {
@@ -821,6 +826,13 @@ function App() {
                 setFloatingPosition(data.floatingPosition);
             }
 
+            // Décocher commentaires/remarques s'il n'y en a pas dans le projet
+            const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
+            setShowComments(!!hasComments);
+            const pfList = data.pfTabs || [];
+            const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
+            setShowRemarks(!!hasRemarks);
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier:', e);
@@ -915,6 +927,13 @@ function App() {
             if (data.floatingPosition !== undefined) {
                 setFloatingPosition(data.floatingPosition);
             }
+
+            // Décocher commentaires/remarques s'il n'y en a pas dans le projet
+            const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
+            setShowComments(!!hasComments);
+            const pfList = data.pfTabs || [];
+            const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
+            setShowRemarks(!!hasRemarks);
 
         } catch (e) {
             if (e.name !== 'AbortError') {
@@ -1381,6 +1400,7 @@ function App() {
                 if (groups.length > 1) {
                     setGroupToMove(groups[0]?.id?.toString() || '');
                     setMoveAfterGroup('0');
+                    setMoveGroupTouched(false);
                     setMoveGroupModal(true);
                 } else {
                     alert('Il faut au moins 2 groupes pour effectuer un déplacement.');
@@ -1389,6 +1409,7 @@ function App() {
             case 'biCarrefour':
                 if (groups.length > 1) {
                     setBiCarrefourGroupId(groups[0]?.id?.toString() || '');
+                    setBiCarrefourTouched(false);
                     setBiCarrefourModal(true);
                 } else {
                     alert('Il faut au moins 2 groupes pour intégrer un bi-carrefour.');
@@ -1401,16 +1422,19 @@ function App() {
                 setSlideValue(0);
                 setSlideFromGroup(groups[0]?.id || 1);
                 setSlideToGroup(groups[groups.length - 1]?.id || 1);
+                setSlideTouched(false);
                 setSlideModal(true);
                 break;
             case 'insert':
                 setInsertStart(0);
                 setInsertDuration(5);
+                setInsertTouched(false);
                 setInsertModal(true);
                 break;
             case 'reduce':
                 setReduceStart(0);
                 setReduceDuration(5);
+                setReduceTouched(false);
                 setReduceModal(true);
                 break;
             case 'options':
@@ -1702,9 +1726,16 @@ function App() {
     // Handle project selection from open modal
     const handleOpenProject = () => {
         if (selectedProject) {
-            loadProject(selectedProject);
+            const data = loadProject(selectedProject);
             setOpenModal(false);
             setSelectedProject(null);
+            if (data && typeof data === 'object') {
+                const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
+                setShowComments(!!hasComments);
+                const pfList = data.pfTabs || [];
+                const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
+                setShowRemarks(!!hasRemarks);
+            }
         }
     };
 
@@ -2322,6 +2353,8 @@ function App() {
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
                     layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode }}
+                    pixelsPerSecond={pixelsPerSecond}
+                    onPixelsPerSecondChange={setPixelsPerSecond}
                 />
             <header className="app-header" onMouseEnter={() => { helpZoneRef.current = 'interface'; }}>
                 <div className="header-inputs">
@@ -2362,17 +2395,6 @@ function App() {
                             }}
                             className="input-count"
                         />
-                    </label>
-                    <label style={{ marginLeft: '1rem', color: '#aaa', fontSize: '0.9em' }}>
-                        Zoom:
-                        <input
-                            type="range"
-                            min="4" max="20"
-                            value={pixelsPerSecond}
-                            onChange={(e) => setPixelsPerSecond(parseInt(e.target.value))}
-                            style={{ verticalAlign: 'middle', margin: '0 5px', width: '55px' }}
-                        />
-                        {pixelsPerSecond}px/s
                     </label>
                 </div>
 
@@ -2976,9 +2998,16 @@ function App() {
                                             onClick={() => setSelectedProject(project.name)}
                                             onDoubleClick={() => {
                                                 setSelectedProject(project.name);
-                                                loadProject(project.name);
+                                                const data = loadProject(project.name);
                                                 setOpenModal(false);
                                                 setSelectedProject(null);
+                                                if (data && typeof data === 'object') {
+                                                    const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
+                                                    setShowComments(!!hasComments);
+                                                    const pfList = data.pfTabs || [];
+                                                    const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
+                                                    setShowRemarks(!!hasRemarks);
+                                                }
                                             }}
                                         >
                                             <span className="project-icon"></span>
@@ -3017,14 +3046,15 @@ function App() {
             </Modal>
 
             {/* Modal Glisser */}
-            <Modal isOpen={slideModal} onClose={() => setSlideModal(false)} title="Glisser le diagramme" overlayClassName="modal-menu-overlay">
+            <Modal isOpen={slideModal} onClose={() => setSlideModal(false)} title="Glisser le diagramme" overlayClassName="modal-menu-overlay modal-compact-overlay">
                 <div className="form-row">
                     <label>
                         Du groupe :
                         <select
                             value={slideFromGroup}
-                            onChange={(e) => setSlideFromGroup(parseInt(e.target.value))}
+                            onChange={(e) => { setSlideFromGroup(parseInt(e.target.value)); setSlideTouched(true); }}
                             style={{ marginLeft: '10px', padding: '5px' }}
+                            title="Premier groupe de la plage à décaler"
                         >
                             {groups.map((g) => (
                                 <option key={g.id} value={g.id}>
@@ -3039,8 +3069,9 @@ function App() {
                         Au groupe :
                         <select
                             value={slideToGroup}
-                            onChange={(e) => setSlideToGroup(parseInt(e.target.value))}
+                            onChange={(e) => { setSlideToGroup(parseInt(e.target.value)); setSlideTouched(true); }}
                             style={{ marginLeft: '10px', padding: '5px' }}
+                            title="Dernier groupe de la plage à décaler"
                         >
                             {groups.map((g) => (
                                 <option key={g.id} value={g.id}>
@@ -3056,26 +3087,23 @@ function App() {
                         <input
                             type="number"
                             value={slideValue}
-                            onChange={(e) => setSlideValue(parseInt(e.target.value) || 0)}
+                            onChange={(e) => { setSlideValue(parseInt(e.target.value) || 0); setSlideTouched(true); }}
+                            title="Positif : décale vers la droite / Négatif : décale vers la gauche"
                         />
                     </label>
-                    <p style={{ color: '#888', fontSize: '0.85em', marginTop: '8px' }}>
-                        Valeur positive : décale vers la droite<br />
-                        Valeur négative : décale vers la gauche
-                    </p>
                 </div>
                 <div className="modal-actions">
                     <button className="modal-btn modal-btn-secondary" onClick={() => setSlideModal(false)}>
                         Annuler
                     </button>
-                    <button className="modal-btn modal-btn-primary" onClick={handleSlide}>
+                    <button className="modal-btn modal-btn-primary" onClick={handleSlide} disabled={!slideTouched}>
                         Appliquer
                     </button>
                 </div>
             </Modal>
 
             {/* Modal Inserer */}
-            <Modal isOpen={insertModal} onClose={() => setInsertModal(false)} title="Insérer une plage" overlayClassName="modal-menu-overlay">
+            <Modal isOpen={insertModal} onClose={() => setInsertModal(false)} title="Insérer une plage" overlayClassName="modal-menu-overlay modal-compact-overlay">
                 <div className="form-row">
                     <label>
                         À partir de la seconde :
@@ -3084,37 +3112,35 @@ function App() {
                             min="0"
                             max={cycleLength}
                             value={insertStart}
-                            onChange={(e) => setInsertStart(parseInt(e.target.value) || 0)}
+                            onChange={(e) => { setInsertStart(parseInt(e.target.value) || 0); setInsertTouched(true); }}
+                            title={`Les groupes après cette seconde seront décalés. Cycle: ${cycleLength}s`}
                         />
                     </label>
                 </div>
                 <div className="form-row">
                     <label>
-                        Durée à insérer (secondes) :
+                        Durée à insérer (s) :
                         <input
                             type="number"
                             min="1"
                             value={insertDuration}
-                            onChange={(e) => setInsertDuration(parseInt(e.target.value) || 1)}
+                            onChange={(e) => { setInsertDuration(parseInt(e.target.value) || 1); setInsertTouched(true); }}
+                            title={`Le cycle passera de ${cycleLength}s à ${cycleLength + insertDuration}s`}
                         />
                     </label>
                 </div>
-                <p style={{ color: '#888', fontSize: '0.85em', marginTop: '8px' }}>
-                    Tous les groupes commençant après la seconde {insertStart} seront décalés de {insertDuration}s.<br />
-                    La durée du cycle passera de {cycleLength}s à {cycleLength + insertDuration}s.
-                </p>
                 <div className="modal-actions">
                     <button className="modal-btn modal-btn-secondary" onClick={() => setInsertModal(false)}>
                         Annuler
                     </button>
-                    <button className="modal-btn modal-btn-primary" onClick={handleInsert}>
+                    <button className="modal-btn modal-btn-primary" onClick={handleInsert} disabled={!insertTouched}>
                         Insérer
                     </button>
                 </div>
             </Modal>
 
             {/* Modal Réduire */}
-            <Modal isOpen={reduceModal} onClose={() => setReduceModal(false)} title="Réduire une plage" overlayClassName="modal-menu-overlay">
+            <Modal isOpen={reduceModal} onClose={() => setReduceModal(false)} title="Réduire une plage" overlayClassName="modal-menu-overlay modal-compact-overlay">
                 <div className="form-row">
                     <label>
                         À partir de la seconde :
@@ -3123,31 +3149,29 @@ function App() {
                             min="0"
                             max={cycleLength - 1}
                             value={reduceStart}
-                            onChange={(e) => setReduceStart(parseInt(e.target.value) || 0)}
+                            onChange={(e) => { setReduceStart(parseInt(e.target.value) || 0); setReduceTouched(true); }}
+                            title={`Les groupes après cette position seront décalés. Cycle: ${cycleLength}s`}
                         />
                     </label>
                 </div>
                 <div className="form-row">
                     <label>
-                        Durée à supprimer (secondes) :
+                        Durée à supprimer (s) :
                         <input
                             type="number"
                             min="1"
                             max={cycleLength - reduceStart}
                             value={reduceDuration}
-                            onChange={(e) => setReduceDuration(parseInt(e.target.value) || 1)}
+                            onChange={(e) => { setReduceDuration(parseInt(e.target.value) || 1); setReduceTouched(true); }}
+                            title={`Le cycle passera de ${cycleLength}s à ${Math.max(1, cycleLength - reduceDuration)}s`}
                         />
                     </label>
                 </div>
-                <p style={{ color: '#888', fontSize: '0.85em', marginTop: '8px' }}>
-                    Tous les groupes commençant après la seconde {reduceStart + reduceDuration} seront décalés de -{reduceDuration}s.<br />
-                    La durée du cycle passera de {cycleLength}s à {Math.max(1, cycleLength - reduceDuration)}s.
-                </p>
                 <div className="modal-actions">
                     <button className="modal-btn modal-btn-secondary" onClick={() => setReduceModal(false)}>
                         Annuler
                     </button>
-                    <button className="modal-btn modal-btn-primary" onClick={handleReduce}>
+                    <button className="modal-btn modal-btn-primary" onClick={handleReduce} disabled={!reduceTouched}>
                         Réduire
                     </button>
                 </div>
@@ -3974,14 +3998,15 @@ function App() {
             />
 
             {/* Modal Déplacer un groupe */}
-            <Modal isOpen={moveGroupModal} onClose={() => setMoveGroupModal(false)} title="Déplacer un groupe de feu" overlayClassName="modal-menu-overlay">
+            <Modal isOpen={moveGroupModal} onClose={() => setMoveGroupModal(false)} title="Déplacer un groupe de feu" overlayClassName="modal-menu-overlay modal-compact-overlay">
                 <div className="form-row">
                     <label>
                         Groupe à déplacer :
                         <select
                             value={groupToMove}
-                            onChange={(e) => setGroupToMove(e.target.value)}
+                            onChange={(e) => { setGroupToMove(e.target.value); setMoveGroupTouched(true); }}
                             style={{ marginLeft: '10px', padding: '5px' }}
+                            title="Sélectionnez le groupe à repositionner"
                         >
                             {groups.map((g) => (
                                 <option key={g.id} value={g.id}>
@@ -3991,13 +4016,14 @@ function App() {
                         </select>
                     </label>
                 </div>
-                <div className="form-row" style={{ marginTop: '15px' }}>
+                <div className="form-row">
                     <label>
                         Insérer après :
                         <select
                             value={moveAfterGroup}
-                            onChange={(e) => setMoveAfterGroup(e.target.value)}
+                            onChange={(e) => { setMoveAfterGroup(e.target.value); setMoveGroupTouched(true); }}
                             style={{ marginLeft: '10px', padding: '5px' }}
+                            title="Met à jour la matrice, le diagramme et le tableau des actions"
                         >
                             <option value="0">Au début (première position)</option>
                             {groups
@@ -4010,15 +4036,13 @@ function App() {
                         </select>
                     </label>
                 </div>
-                <p style={{ color: '#888', fontSize: '0.85em', marginTop: '15px' }}>
-                    Cette action met à jour l'ordre des groupes dans la matrice, le diagramme et le tableau des actions.
-                </p>
                 <div className="modal-actions">
                     <button className="modal-btn modal-btn-secondary" onClick={() => setMoveGroupModal(false)}>
                         Annuler
                     </button>
                     <button
                         className="modal-btn modal-btn-primary"
+                        disabled={!moveGroupTouched}
                         onClick={() => {
                             moveGroupToPosition(parseInt(groupToMove), parseInt(moveAfterGroup));
                             setMoveGroupModal(false);
@@ -4030,14 +4054,15 @@ function App() {
             </Modal>
 
             {/* Modal Bi-Carrefour */}
-            <Modal isOpen={biCarrefourModal} onClose={() => setBiCarrefourModal(false)} title="Intégrer un bi-Carrefour" overlayClassName="modal-menu-overlay">
+            <Modal isOpen={biCarrefourModal} onClose={() => setBiCarrefourModal(false)} title="Intégrer un bi-Carrefour" overlayClassName="modal-menu-overlay modal-compact-overlay">
                 <div className="form-row">
                     <label>
-                        Caler l'intégration après le groupe de feu :
+                        Séparation après le groupe :
                         <select
                             value={biCarrefourGroupId}
-                            onChange={(e) => setBiCarrefourGroupId(e.target.value)}
+                            onChange={(e) => { setBiCarrefourGroupId(e.target.value); setBiCarrefourTouched(true); }}
                             style={{ marginLeft: '10px', padding: '5px' }}
+                            title="Une ligne de séparation sera affichée dans la matrice et le diagramme après ce groupe"
                         >
                             {groups.slice(0, -1).map((g) => (
                                 <option key={g.id} value={g.id}>
@@ -4047,15 +4072,13 @@ function App() {
                         </select>
                     </label>
                 </div>
-                <p style={{ color: '#888', fontSize: '0.85em', marginTop: '15px' }}>
-                    Une ligne blanche de séparation sera affichée dans la matrice et le diagramme après le groupe choisi.
-                </p>
                 <div className="modal-actions">
                     <button className="modal-btn modal-btn-secondary" onClick={() => setBiCarrefourModal(false)}>
                         Annuler
                     </button>
                     <button
                         className="modal-btn modal-btn-primary"
+                        disabled={!biCarrefourTouched}
                         onClick={() => {
                             setBiCarrefourSeparator(parseInt(biCarrefourGroupId));
                             setBiCarrefourModal(false);
@@ -4069,7 +4092,7 @@ function App() {
             {/* Modal Phasage bulle - Configuration des instants */}
             <Modal isOpen={phasageBulleModal} onClose={() => setPhasageBulleModal(false)} title="Configuration du phasage bulle" overlayClassName="modal-phasage-bulle-overlay">
                 <div className="phasage-config">
-                    <div className="form-row">
+                    <div className="form-row" style={{ marginBottom: '6px' }}>
                         <label>
                             Nombre de phases :
                             <select
@@ -4083,9 +4106,9 @@ function App() {
                             </select>
                         </label>
                     </div>
-                    <div style={{ marginTop: '15px' }}>
-                        <p style={{ color: '#aaa', marginBottom: '10px' }}>Instants des phases (en secondes) :</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: '8px' }}>
+                    <div style={{ marginTop: '8px' }}>
+                        <p style={{ color: '#aaa', marginBottom: '4px' }}>Instants des phases (en secondes) :</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: '3px 8px' }}>
                             {Array.from({ length: phasageBulleCount }, (_, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                                     <span style={{ color: '#dc4edc', fontWeight: 'bold' }}>P{i + 1}:</span>
@@ -4106,7 +4129,7 @@ function App() {
                             ))}
                         </div>
                     </div>
-                    <p style={{ color: '#888', fontSize: '0.85em', marginTop: '15px' }}>
+                    <p style={{ color: '#888', fontSize: '0.85em', marginTop: '8px' }}>
                         Cycle: {cycleLength}s. Les phases seront affichées dans l'onglet "Phasage bulle".
                     </p>
                 </div>
