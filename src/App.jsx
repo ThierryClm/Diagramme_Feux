@@ -2348,7 +2348,14 @@ function App() {
                             onBlur={() => {
                                 const newCount = parseInt(groupCountInput);
                                 if (!isNaN(newCount) && newCount >= 1 && newCount <= 32 && newCount !== groups.length) {
-                                    setGroupCount(newCount);
+                                    const msg = newCount < groups.length
+                                        ? `Réduire de ${groups.length} à ${newCount} groupes de feu supprimera les paramètres des groupes supprimés sur l'ensemble des plans de feu.\n\nConfirmer ?`
+                                        : `L'ajout de groupes de feux s'appliquera pour l'ensemble des plans de feu.\n\nConfirmer ?`;
+                                    if (window.confirm(msg)) {
+                                        setGroupCount(newCount);
+                                    } else {
+                                        setGroupCountInput(groups.length.toString());
+                                    }
                                 } else {
                                     setGroupCountInput(groups.length.toString());
                                 }

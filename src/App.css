@@ -887,7 +887,7 @@
 .pf-tab.pf-validated.active {
     background: rgba(76, 175, 80, 0.35);
     border-color: #4CAF50;
-    color: #4CAF50;
+    color: #fff;
 }
 
 .pf-tab.pf-invalidated {
@@ -899,7 +899,7 @@
 .pf-tab.pf-invalidated.active {
     background: rgba(231, 76, 60, 0.35);
     border-color: #e74c3c;
-    color: #e74c3c;
+    color: #fff;
 }
 
 .pf-tab[draggable="true"] {
