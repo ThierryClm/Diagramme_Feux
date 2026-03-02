@@ -544,6 +544,8 @@ function App() {
     const helpZoneRef = useRef(null);
     const [importModal, setImportModal] = useState(false);
     const [darkMode, setDarkMode] = useState(true);
+    const [showComments, setShowComments] = useState(true);
+    const [showRemarks, setShowRemarks] = useState(true);
     const [slideValue, setSlideValue] = useState(0);
     const [slideFromGroup, setSlideFromGroup] = useState(1);
     const [slideToGroup, setSlideToGroup] = useState(1);
@@ -1439,6 +1441,18 @@ function App() {
             case 'credit':
                 alert('Diagramme de Feux\n\nDéveloppé avec React + Vite\n2024');
                 break;
+            case 'toggleParameters':
+                setSidebarVisible(v => !v);
+                break;
+            case 'toggleComments':
+                setShowComments(v => !v);
+                break;
+            case 'toggleRemarks':
+                setShowRemarks(v => !v);
+                break;
+            case 'toggleDarkMode':
+                setDarkMode(v => !v);
+                break;
             case 'externalLinks':
                 setShowExternalLinksModal(true);
                 break;
@@ -2307,6 +2321,7 @@ function App() {
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode }}
                 />
             <header className="app-header" onMouseEnter={() => { helpZoneRef.current = 'interface'; }}>
                 <div className="header-inputs">
@@ -2352,24 +2367,9 @@ function App() {
                         />
                         {pixelsPerSecond}px/s
                     </label>
-                    <button
-                        className={`toggle-btn ${!sidebarVisible ? 'active' : ''}`}
-                        onClick={() => setSidebarVisible(!sidebarVisible)}
-                        title={sidebarVisible ? "Masquer le panneau de configuration" : "Afficher le panneau de configuration"}
-                        style={{ marginLeft: '1rem' }}
-                    >
-                        {sidebarVisible ? '◀ Paramètre' : '▶ Paramètre'}
-                    </button>
                 </div>
 
                 <div className="header-actions">
-                    <button
-                        className={`toggle-btn ${!darkMode ? 'active' : ''}`}
-                        onClick={() => setDarkMode(!darkMode)}
-                        title="Basculer fond noir / blanc"
-                    >
-                        N/B
-                    </button>
                     <button
                         className="undo-btn"
                         onClick={undo}
@@ -2415,8 +2415,8 @@ function App() {
                             {activeConflicts.length} CONFLITS !
                         </div>
                     ) : (
-                        <div
-                            className="status-ok status-clickable"
+                        <button
+                            className={`toggle-btn validate-btn ${pfTabs.find(pf => pf.id === activePFId)?.color ? 'validated' : ''}`}
                             onClick={() => {
                                 const activePF = pfTabs.find(pf => pf.id === activePFId);
                                 if (activePF?.color) {
@@ -2428,7 +2428,7 @@ function App() {
                             title={pfTabs.find(pf => pf.id === activePFId)?.color ? "Cliquez pour invalider ce plan de feux" : "Cliquez pour valider ce plan de feux"}
                         >
                             {pfTabs.find(pf => pf.id === activePFId)?.color ? 'Validé' : 'Valider'}
-                        </div>
+                        </button>
                     )}
                 </div>
 
@@ -2718,12 +2718,8 @@ function App() {
                         {pfTabs.map((pf, index) => (
                             <div
                                 key={pf.id}
-                                className={`pf-tab ${activePFId === pf.id && !simulationEnabled && !phasageBulleEnabled ? 'active' : ''} ${draggedTabIndex === index ? 'dragging' : ''}`}
-                                style={pf.color ? {
-                                    borderTopColor: pf.color,
-                                    borderTopWidth: '3px',
-                                    borderTopStyle: 'solid'
-                                } : {}}
+                                className={`pf-tab ${activePFId === pf.id && !simulationEnabled && !phasageBulleEnabled ? 'active' : ''} ${draggedTabIndex === index ? 'dragging' : ''} ${pf.color ? 'pf-validated' : ''}`}
+                                style={{}}
                                 draggable="true"
                                 onDragStart={(e) => {
                                     setDraggedTabIndex(index);
@@ -2844,6 +2840,8 @@ function App() {
                                 cycleLengthInput={cycleLengthInput}
                                 setCycleLengthInput={setCycleLengthInput}
                                 setCycleLength={setCycleLength}
+                                showComments={showComments}
+                                showRemarks={showRemarks}
                             />
                         </div>
                     )}

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -806,7 +806,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             <h3 className="diagram-title">
                 <span>Diagramme{planName ? ` : simulation du plan de feu ${planName}` : ''}</span>
                 {setCycleLengthInput && (
-                    <label className="cycle-input-label" style={{ marginLeft: '50px', fontSize: '14px', fontWeight: 'normal', color: '#fff' }}>
+                    <label className="cycle-input-label" style={{ marginLeft: '50px', fontSize: '14px', fontWeight: 'normal' }}>
                         Cycle:
                         <input
                             type="number"
@@ -4066,7 +4066,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                 </div>
 
                 {/* Comments column - not printable */}
-                <div className="timeline-comments no-print">
+                {showComments && <div className="timeline-comments no-print">
                     {/* Header for comments */}
                     <div className="comments-header">
                         <span>Commentaire</span>
@@ -4138,10 +4138,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             />
                         </div>
                     ))}
-                </div>
+                </div>}
 
                 {/* Remarques column - not printable */}
-                {(() => {
+                {showRemarks && (() => {
                     // Calculate max characters based on available height
                     // Each group row is 30px, font line is ~17px, ~35 chars per line
                     const linesAvailable = Math.max(1, Math.floor((groups.length * 30 - 16) / 17));

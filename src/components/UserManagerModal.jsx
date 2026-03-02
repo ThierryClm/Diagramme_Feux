@@ -105,7 +105,7 @@ const UserManagerModal = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Gestion des utilisateurs">
+        <Modal isOpen={isOpen} onClose={onClose} title="Gestion des utilisateurs" overlayClassName="modal-menu-overlay modal-users-overlay">
             <div className="user-manager">
                 {error && <div className="user-manager-error">{error}</div>}
                 {success && <div className="user-manager-success">{success}</div>}

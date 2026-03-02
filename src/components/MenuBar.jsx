@@ -13,7 +13,8 @@ const MenuBar = ({
     currentUser = null,
     hasPermission = () => true,
     onManageUsers,
-    biCarrefourSeparator = null
+    biCarrefourSeparator = null,
+    layoutOptions = {}
 }) => {
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -171,6 +172,16 @@ const MenuBar = ({
                 { label: 'Fermer', action: 'close' }
             ]
         },
+        miseEnPage: {
+            label: 'Mise en page',
+            items: [
+                { label: 'Affichage des paramètres', action: 'toggleParameters', toggle: true, checked: layoutOptions.showParameters },
+                { label: 'Commentaires du diagramme', action: 'toggleComments', toggle: true, checked: layoutOptions.showComments },
+                { label: 'Remarques du diagramme', action: 'toggleRemarks', toggle: true, checked: layoutOptions.showRemarks },
+                { type: 'separator' },
+                { label: 'Affichage blanc sur fond noir', action: 'toggleDarkMode', toggle: true, checked: layoutOptions.darkMode }
+            ]
+        },
         diagramme: {
             label: 'Diagramme',
             items: [
@@ -212,17 +223,15 @@ const MenuBar = ({
             label: 'A propos',
             items: [
                 { label: 'Aide', action: 'help' },
-                { label: 'Crédit', action: 'credit' }
+                { label: 'Crédit', action: 'credit' },
+                ...(currentUser?.isAdmin ? [
+                    { type: 'separator' },
+                    { label: 'Utilisateurs', type: 'submenu', submenuId: 'utilisateurs', submenu: [
+                        { label: 'Gérer les utilisateurs...', action: 'manageUsers' }
+                    ]}
+                ] : [])
             ]
-        },
-        ...(currentUser?.isAdmin ? {
-            utilisateurs: {
-                label: 'Utilisateurs',
-                items: [
-                    { label: 'Gérer les utilisateurs...', action: 'manageUsers' }
-                ]
-            }
-        } : {})
+        }
     };
 
     // Render submenu item (for Options submenu)
@@ -295,6 +304,20 @@ const MenuBar = ({
                         </div>
                     )}
                 </div>
+            );
+        }
+
+        if (item.toggle) {
+            return (
+                <button
+                    key={idx}
+                    className={`menu-item ${item.checked ? 'checked' : ''}`}
+                    onClick={() => handleItemClick(item.action)}
+                    onMouseEnter={() => setOpenSubmenu(null)}
+                >
+                    <span className="checkmark">{item.checked ? '✓' : '\u00A0\u00A0'}</span>
+                    {item.label}
+                </button>
             );
         }
 

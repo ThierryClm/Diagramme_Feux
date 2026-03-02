@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
 import './ActionTable.css';
 
 // Auto-resize textarea helper
@@ -76,7 +75,7 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = ['', '', '', ''], updateMicroCustomField, onResizePanel }) => {
+const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel }) => {
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
 
@@ -97,53 +96,51 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     const startHeightRef = useRef(0);
     const panelResizeStartY = useRef(0);
 
-    // Detached window state
-    const [detachedWindow, setDetachedWindow] = useState(null);
-    const detachedContainerRef = useRef(null);
+    // Floating panel state (conditions de micro-régulation)
+    const [showFloatingConditions, setShowFloatingConditions] = useState(false);
+    const [conditionsPos, setConditionsPos] = useState({ x: 100, y: 80 });
+    const conditionsDragRef = useRef(null);
+
+    // Floating panel state (variables micro)
+    const [showFloatingVariables, setShowFloatingVariables] = useState(false);
+    const [variablesPos, setVariablesPos] = useState({ x: 150, y: 120 });
+    const variablesDragRef = useRef(null);
+
+    // Compute visible micro fields: filled fields + 1 empty, max 30
+    const visibleMicroFields = useMemo(() => {
+        const lastFilledIndex = microCustomFields.reduce((acc, f, i) => f !== '' ? i : acc, -1);
+        // Show all filled fields + 1 empty field (min 1 field shown)
+        const count = Math.min(Math.max(lastFilledIndex + 2, 1), 30);
+        return microCustomFields.slice(0, count);
+    }, [microCustomFields]);
 
     const handleDetach = useCallback(() => {
-        if (detachedWindow) {
-            detachedWindow.focus();
-            return;
-        }
-        const newWin = window.open('', '', 'width=1200,height=600');
-        if (!newWin) return;
+        setShowFloatingConditions(prev => !prev);
+    }, []);
 
-        // Write a proper HTML document to avoid "about:blank" in the title bar
-        newWin.document.open();
-        newWin.document.write('<!DOCTYPE html><html><head><title>Conditions de micro-r\u00e9gulation</title></head><body></body></html>');
-        newWin.document.close();
+    const handleDetachVariables = useCallback(() => {
+        setShowFloatingVariables(prev => !prev);
+    }, []);
 
-        // Copy stylesheets
-        const headEl = newWin.document.head;
-        document.querySelectorAll('style, link[rel="stylesheet"]').forEach(node => {
-            headEl.appendChild(node.cloneNode(true));
-        });
-        // Dark background
-        newWin.document.body.style.cssText = 'background:#1e1e1e;color:#eee;margin:0;padding:12px;font-family:inherit;';
+    // Drag handler for floating panels
+    const handlePanelDragStart = useCallback((e, setPos, dragRef) => {
+        e.preventDefault();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const panel = e.target.closest('.floating-panel');
+        const startLeft = panel.offsetLeft;
+        const startTop = panel.offsetTop;
 
-        const container = newWin.document.createElement('div');
-        container.className = 'action-table-container';
-        container.style.cssText = 'height:calc(100vh - 24px);display:flex;flex-direction:column;';
-        newWin.document.body.appendChild(container);
-
-        detachedContainerRef.current = container;
-        setDetachedWindow(newWin);
-
-        newWin.addEventListener('beforeunload', () => {
-            detachedContainerRef.current = null;
-            setDetachedWindow(null);
-        });
-    }, [detachedWindow]);
-
-    // Cleanup: close detached window on unmount
-    useEffect(() => {
-        return () => {
-            if (detachedWindow && !detachedWindow.closed) {
-                detachedWindow.close();
-            }
+        const onMove = (ev) => {
+            setPos({ x: startLeft + ev.clientX - startX, y: startTop + ev.clientY - startY });
         };
-    }, [detachedWindow]);
+        const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    }, []);
 
     // Handle separator resize
     const handleSeparatorMouseDown = useCallback((e) => {
@@ -391,52 +388,52 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         </div>
     );
 
-    const renderVariablesMicro = () => (
-        <div style={{ padding: '8px 0' }}>
-            <h3>Variables micro</h3>
-            <div className="custom-fields-list">
-                {microCustomFields.map((field, index) => (
-                    <input key={index} type="text" maxLength={60} className="custom-field-input" value={field} onChange={(e) => updateMicroCustomField && updateMicroCustomField(index, e.target.value)} placeholder={`Variable ${index + 1}`} />
-                ))}
-            </div>
+    const renderVariablesMicroFields = (fields) => (
+        <div className="custom-fields-list">
+            {fields.map((field, index) => (
+                <input key={index} type="text" maxLength={60} className="custom-field-input" value={field} onChange={(e) => updateMicroCustomField && updateMicroCustomField(index, e.target.value)} placeholder={`Variable ${index + 1}`} />
+            ))}
         </div>
     );
 
     return (
         <>
-        <div className="action-table-container">
-            <h3 className="action-table-title">Conditions de micro-régulation</h3>
-            <button className="detach-btn" onClick={handleDetach} title="Ouvrir dans une fenêtre séparée" disabled={!!detachedWindow}>Incruster</button>
-            {renderTableContent()}
+        <div className={`action-table-container ${showFloatingConditions ? 'conditions-detached' : ''} ${showFloatingVariables ? 'variables-detached' : ''}`}>
+            {!showFloatingConditions && (
+                <>
+                    <div className="action-table-title-row">
+                        <h3 className="action-table-title">Conditions de micro-régulation</h3>
+                        <button className="detach-btn" onClick={handleDetach} title="Ouvrir dans un panneau flottant">Incruster</button>
+                    </div>
+                    {renderTableContent()}
+                </>
+            )}
 
             {/* Resizable horizontal separator */}
-            <div
-                className={`action-table-separator-horizontal ${isResizing ? 'resizing' : ''}`}
-                onMouseDown={handleSeparatorMouseDown}
-                title="Glissez pour redimensionner la section Variables micro"
-            />
+            {!showFloatingConditions && !showFloatingVariables && (
+                <div
+                    className={`action-table-separator-horizontal ${isResizing ? 'resizing' : ''}`}
+                    onMouseDown={handleSeparatorMouseDown}
+                    title="Glissez pour redimensionner la section Variables micro"
+                />
+            )}
 
-            {/* Bottom section: Variables micro */}
-            <div className="action-table-bottom-section" style={{
-                height: variablesHeight > 0 ? `${variablesHeight}px` : '0px',
-                overflow: variablesHeight < 50 ? 'hidden' : 'auto',
-                padding: variablesHeight < 20 ? '0' : undefined
-            }}>
-                <h3>Variables micro</h3>
-                <div className="custom-fields-list">
-                    {microCustomFields.map((field, index) => (
-                        <input
-                            key={index}
-                            type="text"
-                            maxLength={60}
-                            className="custom-field-input"
-                            value={field}
-                            onChange={(e) => updateMicroCustomField && updateMicroCustomField(index, e.target.value)}
-                            placeholder={`Variable ${index + 1}`}
-                        />
-                    ))}
+            {/* Bottom section: Variables micro - title row with button */}
+            {!showFloatingVariables && (
+                <div className="action-table-bottom-section" style={{
+                    height: showFloatingConditions ? 'auto' : (variablesHeight > 0 ? `${variablesHeight}px` : '0px'),
+                    flex: showFloatingConditions ? 1 : undefined,
+                    padding: variablesHeight < 20 && !showFloatingConditions ? '0' : undefined
+                }}>
+                    <div className="variables-micro-header">
+                        <h3>Variables micro</h3>
+                        <button className="detach-btn" onClick={handleDetachVariables} title="Ouvrir dans un panneau flottant">Incruster</button>
+                    </div>
+                    <div className="variables-micro-scroll" style={{ overflow: variablesHeight < 50 && !showFloatingConditions ? 'hidden' : 'auto' }}>
+                        {renderVariablesMicroFields(visibleMicroFields)}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Bottom resize handle to expand/shrink panel */}
             {onResizePanel && (
@@ -448,14 +445,30 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
             )}
         </div>
 
-        {/* Portal: detached window content */}
-        {detachedWindow && !detachedWindow.closed && detachedContainerRef.current && ReactDOM.createPortal(
-            <>
-                <h3 style={{ color: '#eee', margin: '0 0 8px 0', fontSize: '1rem' }}>Conditions de micro-régulation</h3>
-                {renderTableContent()}
-                {renderVariablesMicro()}
-            </>,
-            detachedContainerRef.current
+        {/* Floating panel: conditions de micro-régulation */}
+        {showFloatingConditions && (
+            <div className="floating-panel" style={{ left: conditionsPos.x, top: conditionsPos.y, width: 1125, height: 390 }}>
+                <div className="floating-panel-titlebar" onMouseDown={(e) => handlePanelDragStart(e, setConditionsPos, conditionsDragRef)}>
+                    <span>Conditions de micro-régulation</span>
+                    <button className="floating-panel-close" onClick={() => setShowFloatingConditions(false)}>&times;</button>
+                </div>
+                <div className="floating-panel-body">
+                    {renderTableContent()}
+                </div>
+            </div>
+        )}
+
+        {/* Floating panel: variables micro */}
+        {showFloatingVariables && (
+            <div className="floating-panel" style={{ left: variablesPos.x, top: variablesPos.y, width: 510, height: 290 }}>
+                <div className="floating-panel-titlebar" onMouseDown={(e) => handlePanelDragStart(e, setVariablesPos, variablesDragRef)}>
+                    <span>Variables micro</span>
+                    <button className="floating-panel-close" onClick={() => setShowFloatingVariables(false)}>&times;</button>
+                </div>
+                <div className="floating-panel-body">
+                    {renderVariablesMicroFields(visibleMicroFields)}
+                </div>
+            </div>
         )}
         </>
     );

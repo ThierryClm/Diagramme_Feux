@@ -1264,24 +1264,30 @@ export const useTrafficLight = () => {
         return activePF ? activePF.data : createEmptyActionData();
     }, [pfTabs, activePFId]);
 
-    // Get current microCustomFields based on active PF (4 fields for modification notes)
+    // Get current microCustomFields based on active PF (up to 30 fields)
+    const MAX_MICRO_FIELDS = 30;
     const microCustomFields = useMemo(() => {
         const activePF = pfTabs.find(pf => pf.id === activePFId);
-        return activePF?.microCustomFields || ['', '', '', ''];
+        const fields = activePF?.microCustomFields || [];
+        // Ensure array has up to MAX_MICRO_FIELDS slots
+        const padded = [...fields];
+        while (padded.length < MAX_MICRO_FIELDS) padded.push('');
+        return padded.slice(0, MAX_MICRO_FIELDS);
     }, [pfTabs, activePFId]);
 
     // Update microCustomFields for the active PF
     const updateMicroCustomField = useCallback((index, value) => {
-        setPfTabs(prev => prev.map(pf =>
-            pf.id === activePFId
-                ? {
-                    ...pf,
-                    microCustomFields: (pf.microCustomFields || ['', '', '', '']).map((f, i) =>
-                        i === index ? value : f
-                    )
-                }
-                : pf
-        ));
+        setPfTabs(prev => prev.map(pf => {
+            if (pf.id !== activePFId) return pf;
+            const current = pf.microCustomFields || [];
+            const padded = [...current];
+            while (padded.length < MAX_MICRO_FIELDS) padded.push('');
+            padded[index] = value;
+            // Trim trailing empty strings to keep storage lean
+            let lastFilled = padded.length - 1;
+            while (lastFilled >= 0 && padded[lastFilled] === '') lastFilled--;
+            return { ...pf, microCustomFields: padded.slice(0, lastFilled + 1) };
+        }));
     }, [activePFId]);
 
     // Get phasage bulle count for active PF

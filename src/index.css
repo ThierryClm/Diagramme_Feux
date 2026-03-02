@@ -365,6 +365,23 @@ body.light-mode .input-remarques {
     border-color: #999;
 }
 
+/* PropertiesPanel: logo boxes fond blanc */
+body.light-mode .logo-box {
+    background: #fff;
+    border-color: #999;
+}
+
+/* Cycle label et input en noir */
+body.light-mode .cycle-input-label {
+    color: #000;
+}
+
+body.light-mode .cycle-input-label .input-count {
+    background: #fff;
+    color: #000;
+    border-color: #999;
+}
+
 /* ActionTable (Table d'actions) */
 body.light-mode .action-table-container {
     background: #f5f5f5;
@@ -436,6 +453,52 @@ body.light-mode .action-table textarea:focus {
 
 body.light-mode .action-table td {
     border-color: #bbb;
+}
+
+/* Floating panels (Incruster) */
+body.light-mode .floating-panel {
+    background: #f5f5f5;
+    border: 5px solid #333;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+body.light-mode .floating-panel-titlebar {
+    background: #e0e0e0;
+    color: #222;
+}
+
+body.light-mode .floating-panel-close {
+    color: #666;
+}
+
+body.light-mode .floating-panel-body {
+    background: #f5f5f5;
+    color: #222;
+}
+
+/* Séparateur horizontal, bouton Incruster */
+body.light-mode .action-table-separator-horizontal {
+    background: #ccc;
+}
+
+body.light-mode .detach-btn {
+    background: #ddd;
+    color: #333;
+    border-color: #aaa;
+}
+
+body.light-mode .detach-btn:hover:not(:disabled) {
+    background: #00897B;
+    color: #fff;
+}
+
+body.light-mode .custom-field-input:focus {
+    background: #fff;
+    border-color: #888;
+}
+
+body.light-mode .custom-field-input::placeholder {
+    color: #999;
 }
 
 /* Modal */

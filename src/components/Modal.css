@@ -172,6 +172,16 @@
     border-radius: 4px;
 }
 
+/* Modale utilisateurs - positionnée à droite, près du menu A propos */
+.modal-overlay.modal-users-overlay {
+    justify-content: flex-end;
+}
+
+.modal-overlay.modal-users-overlay .modal-content {
+    margin-left: auto;
+    margin-right: 10px;
+}
+
 .modal-overlay.modal-phasage-bulle-overlay {
     background: transparent;
     justify-content: flex-start;
