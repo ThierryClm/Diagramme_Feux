@@ -124,9 +124,10 @@
 .phase-flag-indicator {
     position: absolute;
     right: 1px;
-    top: 0;
+    top: -1px;
     color: #fff;
-    font-size: 0.70em;
+    font-size: 0.90em;
+    font-weight: bold;
     line-height: 1;
     pointer-events: none;
 }

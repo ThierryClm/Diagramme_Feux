@@ -1937,6 +1937,17 @@
     overflow: hidden;
 }
 
+/* Bande passante : trait pointillé plus fin dans les diagrammes imprimés (aperçu + dossier) */
+.print-diagram-content .debut-bande-arrows line,
+.print-diagram-content .fin-bande-arrows line {
+    stroke-width: 0.3 !important;
+    stroke-dasharray: 2,8 !important;
+}
+.print-diagram-content .debut-bande-arrows polygon,
+.print-diagram-content .fin-bande-arrows polygon {
+    opacity: 0.7 !important;
+}
+
 /* Dossier: matrice texte noir sur fond blanc */
 .print-dossier-matrix .preview-matrix-table {
     color: #000;
@@ -2914,15 +2925,15 @@
         display: none !important;
     }
 
-    /* Bande passante : tracés plus discrets en impression (très discontinu) */
+    /* Bande passante : trait pointillé plus fin en impression */
     body.print-dossier .debut-bande-arrows line,
     body.print-dossier .fin-bande-arrows line {
+        stroke-width: 0.3 !important;
         stroke-dasharray: 2,8 !important;
-        opacity: 0.5 !important;
     }
     body.print-dossier .debut-bande-arrows polygon,
     body.print-dossier .fin-bande-arrows polygon {
-        opacity: 0.5 !important;
+        opacity: 0.7 !important;
     }
 
     /* Labels en bas du diagramme (repos, bts, instant co) visibles en noir */
