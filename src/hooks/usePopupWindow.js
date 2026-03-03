@@ -2,10 +2,52 @@ import { useRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
 /**
+ * Shared registry of all open popup windows.
+ * Allows coordinated focus management across multiple popups.
+ */
+const openPopups = new Set();
+let isBringingToFront = false;
+
+function bringAllPopupsToFront(except) {
+    if (isBringingToFront || openPopups.size === 0) return;
+    isBringingToFront = true;
+    // Focus all popups except 'except' first, then 'except' last (so it stays on top)
+    openPopups.forEach(p => {
+        if (p !== except && !p.closed) p.focus();
+    });
+    if (except && !except.closed) except.focus();
+    setTimeout(() => { isBringingToFront = false; }, 300);
+}
+
+// Install shared listeners on the main window (once)
+let mainListenerInstalled = false;
+function installMainListener() {
+    if (mainListenerInstalled) return;
+    mainListenerInstalled = true;
+
+    const bringPopupsIfAllowed = () => {
+        if (openPopups.size === 0) return;
+        setTimeout(() => {
+            // Don't steal focus from interactive elements (inputs, textareas, selects)
+            const ae = document.activeElement;
+            if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT' || ae.isContentEditable)) return;
+            bringAllPopupsToFront(null);
+        }, 50);
+    };
+
+    // When main window regains focus from outside (alt-tab, taskbar)
+    window.addEventListener('focus', bringPopupsIfAllowed);
+
+    // When user clicks inside the main window (covers tab switches, buttons, etc.)
+    document.addEventListener('mousedown', bringPopupsIfAllowed);
+}
+
+/**
  * Custom hook to manage a window.open() popup that renders React content.
  * - Copies all stylesheets from the parent window
  * - Handles popup close detection
  * - Syncs light/dark mode
+ * - Keeps all popups on top via shared registry
  */
 const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
     const popupRef = useRef(null);
@@ -32,6 +74,8 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
             }
 
             popupRef.current = popup;
+            openPopups.add(popup);
+            installMainListener();
 
             // Set title
             popup.document.title = title;
@@ -77,6 +121,11 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
             // Create React root
             rootRef.current = createRoot(container);
 
+            // When this popup gains focus, bring all other popups to front too
+            popup.addEventListener('focus', () => {
+                setTimeout(() => bringAllPopupsToFront(popup), 50);
+            });
+
             // Detect popup close
             intervalRef.current = setInterval(() => {
                 if (popup.closed) {
@@ -84,14 +133,18 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
                     intervalRef.current = null;
                     rootRef.current = null;
                     popupRef.current = null;
+                    openPopups.delete(popup);
                     onClose();
                 }
             }, 300);
 
         } else {
             // Close popup if open
-            if (popupRef.current && !popupRef.current.closed) {
-                popupRef.current.close();
+            if (popupRef.current) {
+                openPopups.delete(popupRef.current);
+                if (!popupRef.current.closed) {
+                    popupRef.current.close();
+                }
             }
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
@@ -129,8 +182,11 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (popupRef.current && !popupRef.current.closed) {
-                popupRef.current.close();
+            if (popupRef.current) {
+                openPopups.delete(popupRef.current);
+                if (!popupRef.current.closed) {
+                    popupRef.current.close();
+                }
             }
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);

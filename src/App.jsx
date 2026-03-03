@@ -3037,7 +3037,7 @@ function App() {
                         flex: diagramHeight !== null ? '1' : '0 0 auto',
                         overflow: (phasageBulleEnabled || simulationEnabled) ? 'auto' : 'hidden'
                     }}>
-                        {phasageBulleEnabled ? (
+                        <div style={{ display: phasageBulleEnabled ? 'contents' : 'none' }}>
                             <PhasageBulle
                                 key={phasageBulleVersion}
                                 groups={groups}
@@ -3062,7 +3062,8 @@ function App() {
                                 onEllipseScaleChange={setPhasageEllipseScale}
                                 onBubbleRatioChange={setPhasageBubbleRatio}
                             />
-                        ) : simulationEnabled ? (
+                        </div>
+                        <div style={{ display: simulationEnabled && !phasageBulleEnabled ? 'contents' : 'none' }}>
                             <IntersectionImage
                                 groups={groups}
                                 imageData={intersectionImage}
@@ -3091,7 +3092,8 @@ function App() {
                                 imageContrast={imageContrast}
                                 setImageContrast={setImageContrast}
                             />
-                        ) : (
+                        </div>
+                        <div style={{ display: !phasageBulleEnabled && !simulationEnabled ? 'contents' : 'none' }}>
                             <ActionTable
                                 actionData={actionData}
                                 updateActionRow={updateActionRow}
@@ -3104,7 +3106,7 @@ function App() {
                                 updateMicroCustomField={updateMicroCustomField}
                                 onResizePanel={handleActionPanelResize}
                             />
-                        )}
+                        </div>
                     </div>
                 </section>
             </main>
