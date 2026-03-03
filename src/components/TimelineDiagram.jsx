@@ -3378,8 +3378,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={cycleEndX}
                                                 y2={intermediateY}
                                                 stroke="#00cc00"
-                                                strokeWidth="0.5"
-                                                strokeDasharray="4,3"
+                                                strokeWidth="0.3"
+                                                strokeDasharray="4,4"
                                             />
                                             {/* Second segment: from start of cycle to end */}
                                             <line
@@ -3388,8 +3388,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={endX}
                                                 y2={endY}
                                                 stroke="#00cc00"
-                                                strokeWidth="0.5"
-                                                strokeDasharray="4,3"
+                                                strokeWidth="0.3"
+                                                strokeDasharray="4,4"
                                             />
                                             {/* Arrow head at end */}
                                             <polygon
@@ -3429,8 +3429,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             x2={endX}
                                             y2={endY}
                                             stroke="#00cc00"
-                                            strokeWidth="0.5"
-                                            strokeDasharray="4,3"
+                                            strokeWidth="0.3"
+                                            strokeDasharray="4,4"
                                         />
                                         {/* Arrow head at end */}
                                         <polygon
@@ -3511,8 +3511,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={cycleEndX}
                                                 y2={intermediateY}
                                                 stroke="#00cc00"
-                                                strokeWidth="0.5"
-                                                strokeDasharray="4,3"
+                                                strokeWidth="0.3"
+                                                strokeDasharray="4,4"
                                             />
                                             {/* Second segment: from start of cycle to end */}
                                             <line
@@ -3521,8 +3521,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={endX}
                                                 y2={endY}
                                                 stroke="#00cc00"
-                                                strokeWidth="0.5"
-                                                strokeDasharray="4,3"
+                                                strokeWidth="0.3"
+                                                strokeDasharray="4,4"
                                             />
                                             {/* Arrow head at end */}
                                             <polygon
@@ -3562,8 +3562,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             x2={endX}
                                             y2={endY}
                                             stroke="#00cc00"
-                                            strokeWidth="0.5"
-                                            strokeDasharray="4,3"
+                                            strokeWidth="0.3"
+                                            strokeDasharray="4,4"
                                         />
                                         {/* Arrow head at end */}
                                         <polygon

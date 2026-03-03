@@ -882,6 +882,9 @@
 }
 
 .debut-bande-arrows line {
+    stroke: #00cc00;
+    stroke-width: 0.3;
+    stroke-dasharray: 4,4;
     transition: stroke-width 0.15s ease;
 }
 
@@ -900,6 +903,9 @@
 }
 
 .fin-bande-arrows line {
+    stroke: #00cc00;
+    stroke-width: 0.3;
+    stroke-dasharray: 4,4;
     transition: stroke-width 0.15s ease;
 }
 

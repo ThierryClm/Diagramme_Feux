@@ -1937,15 +1937,23 @@
     overflow: hidden;
 }
 
-/* Bande passante : trait pointillé plus fin dans les diagrammes imprimés (aperçu + dossier) */
+/* Bande passante : trait pointillé vert fin dans les diagrammes imprimés (aperçu + dossier) */
 .print-diagram-content .debut-bande-arrows line,
 .print-diagram-content .fin-bande-arrows line {
+    stroke: #00cc00 !important;
     stroke-width: 0.3 !important;
-    stroke-dasharray: 2,8 !important;
+    stroke-dasharray: 2,2 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
 }
 .print-diagram-content .debut-bande-arrows polygon,
 .print-diagram-content .fin-bande-arrows polygon {
+    fill: #00cc00 !important;
     opacity: 0.7 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
 }
 
 /* Dossier: matrice texte noir sur fond blanc */
@@ -2564,6 +2572,25 @@
         color-adjust: exact !important;
     }
 
+    /* Bande passante : trait pointillé vert fin en impression diagramme */
+    body.print-diagram .debut-bande-arrows line,
+    body.print-diagram .fin-bande-arrows line {
+        stroke: #00cc00 !important;
+        stroke-width: 0.3 !important;
+        stroke-dasharray: 2,2 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+    body.print-diagram .debut-bande-arrows polygon,
+    body.print-diagram .fin-bande-arrows polygon {
+        fill: #00cc00 !important;
+        opacity: 0.7 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
     /* Bordures noires */
     body.print-diagram .timeline-container {
         border: 1px solid black !important;
@@ -2925,15 +2952,23 @@
         display: none !important;
     }
 
-    /* Bande passante : trait pointillé plus fin en impression */
+    /* Bande passante : trait pointillé vert fin en impression */
     body.print-dossier .debut-bande-arrows line,
     body.print-dossier .fin-bande-arrows line {
+        stroke: #00cc00 !important;
         stroke-width: 0.3 !important;
-        stroke-dasharray: 2,8 !important;
+        stroke-dasharray: 2,2 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
     }
     body.print-dossier .debut-bande-arrows polygon,
     body.print-dossier .fin-bande-arrows polygon {
+        fill: #00cc00 !important;
         opacity: 0.7 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
     }
 
     /* Labels en bas du diagramme (repos, bts, instant co) visibles en noir */
