@@ -682,8 +682,9 @@ const IntersectionImage = ({
                         <button
                             className="upload-btn floating-btn"
                             onClick={onShowFloatingImage}
+                            title="Ouvrir dans une fenêtre séparée"
                         >
-                            Incruster image
+                            Détacher image
                         </button>
                     )}
                     <div className="upload-btn-container" ref={imageMenuRef}>

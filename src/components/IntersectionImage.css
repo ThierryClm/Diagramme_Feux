@@ -768,33 +768,7 @@
     padding: 0;
 }
 
-/* Floating image modal */
-.floating-image-modal {
-    position: fixed;
-    z-index: 99999;
-    background: #2a2a2a;
-    border: 1px solid #555;
-    border-radius: 6px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
-}
-
-.floating-image-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: #3a3a4a;
-    cursor: move;
-    user-select: none;
-}
-
-.floating-image-header span {
-    color: #eee;
-    font-size: 0.85em;
-    font-weight: 500;
-}
-
+/* Floating image popup styles */
 .floating-header-buttons {
     display: flex;
     align-items: center;

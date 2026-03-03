@@ -457,52 +457,21 @@
     color: #999;
 }
 
-/* Floating panels (non-modal, draggable) */
-.floating-panel {
-    position: fixed;
-    z-index: 1000;
-    background: #1e1e1e;
-    border: 5px solid #ccc;
-    border-radius: 6px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+/* Popup window content wrapper */
+.popup-content-wrapper {
+    padding: 12px;
+    height: 100%;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
-.floating-panel-titlebar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 12px;
-    background: #333;
-    color: #eee;
-    font-size: 0.9rem;
-    font-weight: bold;
-    cursor: move;
-    user-select: none;
-    flex-shrink: 0;
-}
-
-.floating-panel-close {
-    background: none;
-    border: none;
-    color: #aaa;
-    font-size: 1.3em;
-    cursor: pointer;
-    padding: 0 4px;
-    line-height: 1;
-}
-
-.floating-panel-close:hover {
-    color: #fff;
-    background: #e74c3c;
-    border-radius: 3px;
-}
-
-.floating-panel-body {
+.popup-content-wrapper .action-table-scroll {
     flex: 1;
     min-height: 0;
     overflow: auto;
-    padding: 12px;
+}
+
+.popup-content-wrapper .custom-fields-list {
+    padding: 4px;
 }

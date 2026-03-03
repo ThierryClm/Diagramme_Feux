@@ -18,6 +18,7 @@ import UserManagerModal from './components/UserManagerModal';
 import ExternalLinksModal from './components/ExternalLinksModal';
 import PropertiesPanel from './components/PropertiesPanel';
 import { calculateSimulatedDiagram } from './utils/simulationCalculator';
+import usePopupWindow from './hooks/usePopupWindow';
 import { importExcelFile } from './utils/excelImporter';
 
 import './components/GroupTable.css';
@@ -201,16 +202,6 @@ function App() {
         const saved = localStorage.getItem('floating_image_visible');
         return saved === 'true';
     });
-    const [floatingPosition, setFloatingPosition] = useState(() => {
-        try {
-            const saved = localStorage.getItem('floating_image_position');
-            return saved ? JSON.parse(saved) : { x: 100, y: 100 };
-        } catch {
-            return { x: 100, y: 100 };
-        }
-    });
-    const [isFloatingDragging, setIsFloatingDragging] = useState(false);
-    const floatingDragOffset = useRef({ x: 0, y: 0 });
     const [floatingCrop, setFloatingCrop] = useState(() => {
         try {
             const saved = localStorage.getItem('floating_image_crop');
@@ -288,16 +279,21 @@ function App() {
     }, [showFloatingImage]);
 
     useEffect(() => {
-        localStorage.setItem('floating_image_position', JSON.stringify(floatingPosition));
-    }, [floatingPosition]);
-
-    useEffect(() => {
         localStorage.setItem('floating_image_crop', JSON.stringify(floatingCrop));
     }, [floatingCrop]);
 
     useEffect(() => {
         localStorage.setItem('floating_image_zoom', floatingZoom.toString());
     }, [floatingZoom]);
+
+    // Popup window for floating image
+    const floatingImagePopup = usePopupWindow({
+        isOpen: showFloatingImage && !!intersectionImage,
+        onClose: () => setShowFloatingImage(false),
+        title: 'Image du carrefour',
+        width: Math.round((750 - floatingCrop.left - floatingCrop.right) * floatingZoom) + 40,
+        height: Math.round((530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom) + 120
+    });
 
     // Handle resize drag
     const handleResizeStart = useCallback((e) => {
@@ -335,39 +331,6 @@ function App() {
             document.body.style.userSelect = '';
         };
     }, [isResizing, handleResizeMove, handleResizeEnd]);
-
-    // Handle floating image drag
-    const handleFloatingMouseDown = useCallback((e) => {
-        if (e.target.classList.contains('floating-close-btn')) return;
-        setIsFloatingDragging(true);
-        floatingDragOffset.current = {
-            x: e.clientX - floatingPosition.x,
-            y: e.clientY - floatingPosition.y
-        };
-    }, [floatingPosition]);
-
-    useEffect(() => {
-        if (!isFloatingDragging) return;
-
-        const handleMouseMove = (e) => {
-            setFloatingPosition({
-                x: e.clientX - floatingDragOffset.current.x,
-                y: e.clientY - floatingDragOffset.current.y
-            });
-        };
-
-        const handleMouseUp = () => {
-            setIsFloatingDragging(false);
-        };
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-
-        return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isFloatingDragging]);
 
     // Floating legend drag handling
     const handleLegendMouseDown = useCallback((e) => {
@@ -821,11 +784,6 @@ function App() {
                 setFloatingZoom(data.floatingZoom);
             }
 
-            // Restaurer la position de l'image flottante si présente
-            if (data.floatingPosition !== undefined) {
-                setFloatingPosition(data.floatingPosition);
-            }
-
             // Décocher commentaires/remarques s'il n'y en a pas dans le projet
             const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
             setShowComments(!!hasComments);
@@ -923,11 +881,6 @@ function App() {
                 setFloatingZoom(data.floatingZoom);
             }
 
-            // Restaurer la position de l'image flottante si présente
-            if (data.floatingPosition !== undefined) {
-                setFloatingPosition(data.floatingPosition);
-            }
-
             // Décocher commentaires/remarques s'il n'y en a pas dans le projet
             const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
             setShowComments(!!hasComments);
@@ -977,7 +930,6 @@ function App() {
                 diagramHeight: diagramHeight,
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
-                floatingPosition: floatingPosition,
                 // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
                     open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
@@ -1072,7 +1024,6 @@ function App() {
                 diagramHeight: diagramHeight,
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
-                floatingPosition: floatingPosition,
                 // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
                     open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
@@ -2325,6 +2276,191 @@ function App() {
         }
     };
 
+    // Render floating image content into popup window
+    useEffect(() => {
+        if (!showFloatingImage || !intersectionImage) return;
+
+        const showNums = JSON.parse(localStorage.getItem('intersection_showGroupNumbers') ?? 'true');
+
+        // Compute group number centroids
+        const groupMap = {};
+        intersectionArrows.forEach(arrow => {
+            if (!arrow.groupId) return;
+            const group = groups.find(g => g.id === arrow.groupId);
+            const courant = group?.courant || '';
+            let px = arrow.x;
+            let py = arrow.y;
+            if (courant === 'TàD' || courant === 'TàG') {
+                const sc = arrow.scale || 1;
+                const svgSize = 96 * sc;
+                const dxSvg = courant === 'TàD' ? -8 : 8;
+                const dySvg = 2;
+                const dxPx = (dxSvg / 32) * svgSize;
+                const dyPx = (dySvg / 32) * svgSize;
+                const rotRad = (arrow.rotation || 0) * Math.PI / 180;
+                px += (dxPx * Math.cos(rotRad) - dyPx * Math.sin(rotRad)) / 750 * 100;
+                py += (dxPx * Math.sin(rotRad) + dyPx * Math.cos(rotRad)) / 530 * 100;
+            }
+            if (!groupMap[arrow.groupId]) groupMap[arrow.groupId] = [];
+            groupMap[arrow.groupId].push({ x: px, y: py });
+        });
+
+        // Use simulation time when playing, otherwise use hovered time
+        const activeTime = (simulationEnabled && isPlayingSimulation)
+            ? simulationCurrentTime
+            : hoveredDiagramTime;
+
+        floatingImagePopup.renderToPopup(
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <div style={{ padding: '6px 12px', background: '#2a2a2a', borderBottom: '1px solid #444', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    <div className="floating-zoom-control">
+                        <button className="floating-zoom-btn" onClick={() => setFloatingZoom(z => Math.max(0.3, z - 0.1))} title="Réduire">−</button>
+                        <span className="floating-zoom-value">{Math.round(floatingZoom * 100)}%</span>
+                        <button className="floating-zoom-btn" onClick={() => setFloatingZoom(z => Math.min(2, z + 0.1))} title="Agrandir">+</button>
+                    </div>
+                    <button
+                        className={`floating-crop-btn ${showCropControls ? 'active' : ''}`}
+                        onClick={() => setShowCropControls(!showCropControls)}
+                        title="Rogner l'image"
+                    >
+                        ✂
+                    </button>
+                </div>
+                {showCropControls && (
+                    <div className="floating-crop-controls">
+                        <div className="crop-control">
+                            <label>Haut</label>
+                            <input type="range" min="0" max="250" value={floatingCrop.top} onChange={(e) => setFloatingCrop(prev => ({ ...prev, top: parseInt(e.target.value) }))} />
+                            <span>{floatingCrop.top}px</span>
+                        </div>
+                        <div className="crop-control">
+                            <label>Bas</label>
+                            <input type="range" min="0" max="250" value={floatingCrop.bottom} onChange={(e) => setFloatingCrop(prev => ({ ...prev, bottom: parseInt(e.target.value) }))} />
+                            <span>{floatingCrop.bottom}px</span>
+                        </div>
+                        <div className="crop-control">
+                            <label>Gauche</label>
+                            <input type="range" min="0" max="350" value={floatingCrop.left} onChange={(e) => setFloatingCrop(prev => ({ ...prev, left: parseInt(e.target.value) }))} />
+                            <span>{floatingCrop.left}px</span>
+                        </div>
+                        <div className="crop-control">
+                            <label>Droite</label>
+                            <input type="range" min="0" max="350" value={floatingCrop.right} onChange={(e) => setFloatingCrop(prev => ({ ...prev, right: parseInt(e.target.value) }))} />
+                            <span>{floatingCrop.right}px</span>
+                        </div>
+                        <button className="crop-reset-btn" onClick={() => setFloatingCrop({ top: 0, bottom: 0, left: 0, right: 0 })}>Réinitialiser</button>
+                    </div>
+                )}
+                <div className="floating-image-content" style={{ flex: 1, overflow: 'auto' }}>
+                    <div
+                        className="floating-image-wrapper"
+                        style={{
+                            width: (750 - floatingCrop.left - floatingCrop.right) * floatingZoom,
+                            height: (530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom
+                        }}
+                    >
+                        <div
+                            className="floating-image-inner"
+                            style={{
+                                marginTop: -floatingCrop.top,
+                                marginLeft: -floatingCrop.left,
+                                width: 750,
+                                height: 530,
+                                transform: `scale(${floatingZoom})`,
+                                transformOrigin: 'top left'
+                            }}
+                        >
+                            <img src={intersectionImage} alt="Carrefour" style={{ filter: `brightness(${imageBrightness}%) contrast(${imageContrast}%)` }} />
+                            {showNums && Object.entries(groupMap).map(([gId, pts]) => {
+                                const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+                                const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+                                const g = groups.find(gr => gr.id === Number(gId));
+                                const isPieton = (g?.courant || '') === 'Piéton';
+                                return isPieton ? (
+                                    <div key={`fgnum-${gId}`} className="group-number-centroid pieton" style={{ left: `${cx}%`, top: `${cy}%` }}>
+                                        <svg viewBox="0 0 20 18" width="20" height="18">
+                                            <polygon points="10,1 1,17 19,17" fill="rgba(255,255,255,0.7)" stroke="#000" strokeWidth="1"/>
+                                            <text x="10" y="15" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#000">{gId}</text>
+                                        </svg>
+                                    </div>
+                                ) : (
+                                    <div key={`fgnum-${gId}`} className="group-number-centroid" style={{ left: `${cx}%`, top: `${cy}%` }}>
+                                        {gId}
+                                    </div>
+                                );
+                            })}
+                            {intersectionArrows.map(arrow => {
+                                const group = groups.find(g => g.id === arrow.groupId);
+                                const courant = group?.courant || '';
+                                const rotation = arrow.rotation || 0;
+                                const scale = arrow.scale || 1;
+                                const arrowLength = arrow.length || 1;
+                                const turnLength = arrow.turnLength || 1;
+                                const isHovered = hoveredArrowGroupId === arrow.groupId;
+
+                                let arrowColor = '#000000';
+                                if (activeTime !== null && group) {
+                                    const isSimPlaying = simulationEnabled && isPlayingSimulation;
+                                    const simGroup = isSimPlaying ? simulationResult?.simulatedGroups?.find(g => g.id === arrow.groupId) : null;
+                                    const offset = simGroup ? (simGroup.simulatedOffset ?? group.offset) : (group.offset || 0);
+                                    const greenDuration = simGroup ? (simGroup.simulatedGreen ?? group.durations?.green ?? 0) : (group.durations?.green || 0);
+                                    const orangeDuration = group.durations?.orange || 0;
+                                    const cycle = isSimPlaying ? (simulationResult?.simulatedCycleLength || cycleLength || 100) : (cycleLength || 100);
+
+                                    const secondeLucarneAction = actionData.find(action =>
+                                        action.action === 'Seconde lucarne' &&
+                                        action.gf === String(arrow.groupId) &&
+                                        action.deb !== '' && action.fin !== ''
+                                    );
+
+                                    let isInSecondeLucarne = false;
+                                    if (secondeLucarneAction) {
+                                        const slDeb = parseInt(secondeLucarneAction.deb) || 0;
+                                        const slFin = parseInt(secondeLucarneAction.fin) || 0;
+                                        const normalizedTime = activeTime % cycle;
+                                        if (slDeb <= slFin) {
+                                            isInSecondeLucarne = normalizedTime >= slDeb && normalizedTime < slFin;
+                                        } else {
+                                            isInSecondeLucarne = normalizedTime >= slDeb || normalizedTime < slFin;
+                                        }
+                                    }
+
+                                    if (isInSecondeLucarne) {
+                                        arrowColor = '#00aa00';
+                                    } else {
+                                        let relativeTime = (activeTime - offset + cycle) % cycle;
+                                        if (relativeTime < greenDuration) {
+                                            arrowColor = '#00cc00';
+                                        } else if (relativeTime < greenDuration + orangeDuration) {
+                                            arrowColor = '#ff9900';
+                                        } else {
+                                            arrowColor = '#cc0000';
+                                        }
+                                    }
+                                }
+
+                                return (
+                                    <div
+                                        key={arrow.id}
+                                        className={`floating-arrow-marker ${isHovered ? 'hovered' : ''}`}
+                                        style={{ left: `${arrow.x}%`, top: `${arrow.y}%` }}
+                                    >
+                                        <div className="arrow-symbol" style={{ transform: `rotate(${rotation}deg) scale(${scale})` }}>
+                                            {renderFloatingArrowSVG(courant, arrowColor, arrowLength, turnLength)}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }, [showFloatingImage, intersectionImage, floatingCrop, floatingZoom, showCropControls,
+        intersectionArrows, groups, hoveredArrowGroupId, hoveredDiagramTime,
+        simulationEnabled, isPlayingSimulation, simulationCurrentTime, simulationResult,
+        actionData, cycleLength, imageBrightness, imageContrast, floatingImagePopup.renderToPopup]);
+
     // Afficher l'écran de connexion si non authentifié
     if (!isAuthenticated) {
         return (
@@ -2870,6 +3006,7 @@ function App() {
                                 setHoveredDiagramTime={setHoveredDiagramTime}
                                 hoveredVUtile={hoveredVUtile}
                                 planName={simulationEnabled ? (pfTabs.find(pf => pf.id === activePFId)?.name || '') : ''}
+                                activePFName={pfTabs.find(pf => pf.id === activePFId)?.name || ''}
                                 remarques={currentRemarques}
                                 updateRemarques={updatePFRemarques}
                                 biCarrefourSeparator={biCarrefourSeparator}
@@ -5054,262 +5191,6 @@ function App() {
                 links={externalLinks}
                 onLinksChange={setExternalLinks}
             />
-
-            {/* Floating image modal (persists across tab changes) */}
-            {showFloatingImage && intersectionImage && (
-                <div
-                    className="floating-image-modal"
-                    style={{
-                        left: floatingPosition.x,
-                        top: floatingPosition.y
-                    }}
-                >
-                    <div
-                        className="floating-image-header"
-                        onMouseDown={handleFloatingMouseDown}
-                    >
-                        <span>Image du carrefour</span>
-                        <div className="floating-header-buttons">
-                            <div className="floating-zoom-control">
-                                <button
-                                    className="floating-zoom-btn"
-                                    onClick={() => setFloatingZoom(z => Math.max(0.3, z - 0.1))}
-                                    title="Réduire"
-                                >
-                                    −
-                                </button>
-                                <span className="floating-zoom-value">{Math.round(floatingZoom * 100)}%</span>
-                                <button
-                                    className="floating-zoom-btn"
-                                    onClick={() => setFloatingZoom(z => Math.min(2, z + 0.1))}
-                                    title="Agrandir"
-                                >
-                                    +
-                                </button>
-                            </div>
-                            <button
-                                className={`floating-crop-btn ${showCropControls ? 'active' : ''}`}
-                                onClick={() => setShowCropControls(!showCropControls)}
-                                title="Rogner l'image"
-                            >
-                                ✂
-                            </button>
-                            <button
-                                className="floating-close-btn"
-                                onClick={() => setShowFloatingImage(false)}
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    </div>
-                    {showCropControls && (
-                        <div className="floating-crop-controls">
-                            <div className="crop-control">
-                                <label>Haut</label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="250"
-                                    value={floatingCrop.top}
-                                    onChange={(e) => setFloatingCrop(prev => ({ ...prev, top: parseInt(e.target.value) }))}
-                                />
-                                <span>{floatingCrop.top}px</span>
-                            </div>
-                            <div className="crop-control">
-                                <label>Bas</label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="250"
-                                    value={floatingCrop.bottom}
-                                    onChange={(e) => setFloatingCrop(prev => ({ ...prev, bottom: parseInt(e.target.value) }))}
-                                />
-                                <span>{floatingCrop.bottom}px</span>
-                            </div>
-                            <div className="crop-control">
-                                <label>Gauche</label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="350"
-                                    value={floatingCrop.left}
-                                    onChange={(e) => setFloatingCrop(prev => ({ ...prev, left: parseInt(e.target.value) }))}
-                                />
-                                <span>{floatingCrop.left}px</span>
-                            </div>
-                            <div className="crop-control">
-                                <label>Droite</label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="350"
-                                    value={floatingCrop.right}
-                                    onChange={(e) => setFloatingCrop(prev => ({ ...prev, right: parseInt(e.target.value) }))}
-                                />
-                                <span>{floatingCrop.right}px</span>
-                            </div>
-                            <button
-                                className="crop-reset-btn"
-                                onClick={() => setFloatingCrop({ top: 0, bottom: 0, left: 0, right: 0 })}
-                            >
-                                Réinitialiser
-                            </button>
-                        </div>
-                    )}
-                    <div className="floating-image-content">
-                        <div
-                            className="floating-image-wrapper"
-                            style={{
-                                width: (750 - floatingCrop.left - floatingCrop.right) * floatingZoom,
-                                height: (530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom
-                            }}
-                        >
-                            <div
-                                className="floating-image-inner"
-                                style={{
-                                    marginTop: -floatingCrop.top,
-                                    marginLeft: -floatingCrop.left,
-                                    width: 750,
-                                    height: 530,
-                                    transform: `scale(${floatingZoom})`,
-                                    transformOrigin: 'top left'
-                                }}
-                            >
-                                <img src={intersectionImage} alt="Carrefour" style={{ filter: `brightness(${imageBrightness}%) contrast(${imageContrast}%)` }} />
-                                {/* Group numbers */}
-                                {(() => {
-                                    const showNums = JSON.parse(localStorage.getItem('intersection_showGroupNumbers') ?? 'true');
-                                    if (!showNums) return null;
-                                    const groupMap = {};
-                                    intersectionArrows.forEach(arrow => {
-                                        if (!arrow.groupId) return;
-                                        const group = groups.find(g => g.id === arrow.groupId);
-                                        const courant = group?.courant || '';
-                                        let px = arrow.x;
-                                        let py = arrow.y;
-                                        if (courant === 'TàD' || courant === 'TàG') {
-                                            const sc = arrow.scale || 1;
-                                            const svgSize = 96 * sc;
-                                            const dxSvg = courant === 'TàD' ? -8 : 8;
-                                            const dySvg = 2;
-                                            const dxPx = (dxSvg / 32) * svgSize;
-                                            const dyPx = (dySvg / 32) * svgSize;
-                                            const rotRad = (arrow.rotation || 0) * Math.PI / 180;
-                                            px += (dxPx * Math.cos(rotRad) - dyPx * Math.sin(rotRad)) / 750 * 100;
-                                            py += (dxPx * Math.sin(rotRad) + dyPx * Math.cos(rotRad)) / 530 * 100;
-                                        }
-                                        if (!groupMap[arrow.groupId]) groupMap[arrow.groupId] = [];
-                                        groupMap[arrow.groupId].push({ x: px, y: py });
-                                    });
-                                    return Object.entries(groupMap).map(([gId, pts]) => {
-                                        const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
-                                        const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
-                                        const g = groups.find(gr => gr.id === Number(gId));
-                                        const isPieton = (g?.courant || '') === 'Piéton';
-                                        return isPieton ? (
-                                            <div key={`fgnum-${gId}`} className="group-number-centroid pieton" style={{ left: `${cx}%`, top: `${cy}%` }}>
-                                                <svg viewBox="0 0 20 18" width="20" height="18">
-                                                    <polygon points="10,1 1,17 19,17" fill="rgba(255,255,255,0.7)" stroke="#000" strokeWidth="1"/>
-                                                    <text x="10" y="15" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#000">{gId}</text>
-                                                </svg>
-                                            </div>
-                                        ) : (
-                                            <div key={`fgnum-${gId}`} className="group-number-centroid" style={{ left: `${cx}%`, top: `${cy}%` }}>
-                                                {gId}
-                                            </div>
-                                        );
-                                    });
-                                })()}
-                                {intersectionArrows.map(arrow => {
-                                    const group = groups.find(g => g.id === arrow.groupId);
-                                    const courant = group?.courant || '';
-                                    const groupType = group?.type || '';
-                                    const rotation = arrow.rotation || 0;
-                                    const scale = arrow.scale || 1;
-                                    const arrowLength = arrow.length || 1;
-                                    const turnLength = arrow.turnLength || 1;
-                                    const isHovered = hoveredArrowGroupId === arrow.groupId;
-
-                                    // Calculate arrow color based on diagram time position or simulation
-                                    let arrowColor = '#000000'; // Default: BLACK
-
-                                    // Use simulation time when playing, otherwise use hovered time
-                                    const activeTime = (simulationEnabled && isPlayingSimulation)
-                                        ? simulationCurrentTime
-                                        : hoveredDiagramTime;
-
-                                    if (activeTime !== null && group) {
-                                        // Use simulated values only during simulation playback
-                                        const isSimPlaying = simulationEnabled && isPlayingSimulation;
-                                        const simGroup = isSimPlaying ? simulationResult?.simulatedGroups?.find(g => g.id === arrow.groupId) : null;
-                                        const offset = simGroup ? (simGroup.simulatedOffset ?? group.offset) : (group.offset || 0);
-                                        const greenDuration = simGroup ? (simGroup.simulatedGreen ?? group.durations?.green ?? 0) : (group.durations?.green || 0);
-                                        const orangeDuration = group.durations?.orange || 0;
-                                        const cycle = isSimPlaying ? (simulationResult?.simulatedCycleLength || cycleLength || 100) : (cycleLength || 100);
-
-                                        // Check for "Seconde lucarne" action for this group
-                                        const secondeLucarneAction = actionData.find(action =>
-                                            action.action === 'Seconde lucarne' &&
-                                            action.gf === String(arrow.groupId) &&
-                                            action.deb !== '' &&
-                                            action.fin !== ''
-                                        );
-
-                                        // Check if time is in seconde lucarne period
-                                        let isInSecondeLucarne = false;
-                                        if (secondeLucarneAction) {
-                                            const slDeb = parseInt(secondeLucarneAction.deb) || 0;
-                                            const slFin = parseInt(secondeLucarneAction.fin) || 0;
-                                            const normalizedTime = activeTime % cycle;
-                                            if (slDeb <= slFin) {
-                                                isInSecondeLucarne = normalizedTime >= slDeb && normalizedTime < slFin;
-                                            } else {
-                                                // Wrap-around case
-                                                isInSecondeLucarne = normalizedTime >= slDeb || normalizedTime < slFin;
-                                            }
-                                        }
-
-                                        if (isInSecondeLucarne) {
-                                            arrowColor = '#00aa00'; // Dark green for Seconde lucarne
-                                        } else {
-                                            // Normalize time relative to group offset
-                                            let relativeTime = (activeTime - offset + cycle) % cycle;
-
-                                            if (relativeTime < greenDuration) {
-                                                arrowColor = '#00cc00'; // Green phase
-                                            } else if (relativeTime < greenDuration + orangeDuration) {
-                                                arrowColor = '#ff9900'; // Orange phase
-                                            } else {
-                                                arrowColor = '#cc0000'; // Red phase
-                                            }
-                                        }
-                                    }
-
-                                    return (
-                                        <div
-                                            key={arrow.id}
-                                            className={`floating-arrow-marker ${isHovered ? 'hovered' : ''}`}
-                                            style={{
-                                                left: `${arrow.x}%`,
-                                                top: `${arrow.y}%`
-                                            }}
-                                        >
-                                            <div
-                                                className="arrow-symbol"
-                                                style={{
-                                                    transform: `rotate(${rotation}deg) scale(${scale})`
-                                                }}
-                                            >
-                                                {renderFloatingArrowSVG(courant, arrowColor, arrowLength, turnLength)}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Floating legend window (non-modal) */}
             {showFloatingLegend && (

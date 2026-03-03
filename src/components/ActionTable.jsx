@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import usePopupWindow from '../hooks/usePopupWindow';
 import './ActionTable.css';
 
 // Auto-resize textarea helper
@@ -96,15 +97,11 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     const startHeightRef = useRef(0);
     const panelResizeStartY = useRef(0);
 
-    // Floating panel state (conditions de micro-régulation)
+    // Popup window state (conditions de micro-régulation)
     const [showFloatingConditions, setShowFloatingConditions] = useState(false);
-    const [conditionsPos, setConditionsPos] = useState({ x: 100, y: 80 });
-    const conditionsDragRef = useRef(null);
 
-    // Floating panel state (variables micro)
+    // Popup window state (variables micro)
     const [showFloatingVariables, setShowFloatingVariables] = useState(false);
-    const [variablesPos, setVariablesPos] = useState({ x: 150, y: 120 });
-    const variablesDragRef = useRef(null);
 
     // Compute visible micro fields: filled fields + 1 empty, max 30
     const visibleMicroFields = useMemo(() => {
@@ -122,25 +119,22 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         setShowFloatingVariables(prev => !prev);
     }, []);
 
-    // Drag handler for floating panels
-    const handlePanelDragStart = useCallback((e, setPos, dragRef) => {
-        e.preventDefault();
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const panel = e.target.closest('.floating-panel');
-        const startLeft = panel.offsetLeft;
-        const startTop = panel.offsetTop;
+    // Popup windows
+    const conditionsPopup = usePopupWindow({
+        isOpen: showFloatingConditions,
+        onClose: () => setShowFloatingConditions(false),
+        title: 'Conditions de micro-régulation',
+        width: 1135,
+        height: 420
+    });
 
-        const onMove = (ev) => {
-            setPos({ x: startLeft + ev.clientX - startX, y: startTop + ev.clientY - startY });
-        };
-        const onUp = () => {
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-    }, []);
+    const variablesPopup = usePopupWindow({
+        isOpen: showFloatingVariables,
+        onClose: () => setShowFloatingVariables(false),
+        title: 'Variables micro',
+        width: 510,
+        height: 320
+    });
 
     // Handle separator resize
     const handleSeparatorMouseDown = useCallback((e) => {
@@ -396,14 +390,34 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         </div>
     );
 
+    // Render content into popup windows when open
+    useEffect(() => {
+        if (showFloatingConditions) {
+            conditionsPopup.renderToPopup(
+                <div className="popup-content-wrapper">
+                    {renderTableContent()}
+                </div>
+            );
+        }
+    }, [showFloatingConditions, visibleRows, actionData, hoveredActionId, conditionsPopup.renderToPopup]);
+
+    useEffect(() => {
+        if (showFloatingVariables) {
+            variablesPopup.renderToPopup(
+                <div className="popup-content-wrapper">
+                    {renderVariablesMicroFields(visibleMicroFields)}
+                </div>
+            );
+        }
+    }, [showFloatingVariables, visibleMicroFields, variablesPopup.renderToPopup]);
+
     return (
-        <>
         <div className={`action-table-container ${showFloatingConditions ? 'conditions-detached' : ''} ${showFloatingVariables ? 'variables-detached' : ''}`}>
             {!showFloatingConditions && (
                 <>
                     <div className="action-table-title-row">
                         <h3 className="action-table-title">Conditions de micro-régulation</h3>
-                        <button className="detach-btn" onClick={handleDetach} title="Ouvrir dans un panneau flottant">Incruster</button>
+                        <button className="detach-btn" onClick={handleDetach} title="Ouvrir dans une fenêtre séparée">Détacher</button>
                     </div>
                     {renderTableContent()}
                 </>
@@ -427,7 +441,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                 }}>
                     <div className="variables-micro-header">
                         <h3>Variables micro</h3>
-                        <button className="detach-btn" onClick={handleDetachVariables} title="Ouvrir dans un panneau flottant">Incruster</button>
+                        <button className="detach-btn" onClick={handleDetachVariables} title="Ouvrir dans une fenêtre séparée">Détacher</button>
                     </div>
                     <div className="variables-micro-scroll" style={{ overflow: variablesHeight < 50 && !showFloatingConditions ? 'hidden' : 'auto' }}>
                         {renderVariablesMicroFields(visibleMicroFields)}
@@ -444,33 +458,6 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                 />
             )}
         </div>
-
-        {/* Floating panel: conditions de micro-régulation */}
-        {showFloatingConditions && (
-            <div className="floating-panel" style={{ left: conditionsPos.x, top: conditionsPos.y, width: 1135, height: 390 }}>
-                <div className="floating-panel-titlebar" onMouseDown={(e) => handlePanelDragStart(e, setConditionsPos, conditionsDragRef)}>
-                    <span>Conditions de micro-régulation</span>
-                    <button className="floating-panel-close" onClick={() => setShowFloatingConditions(false)}>&times;</button>
-                </div>
-                <div className="floating-panel-body">
-                    {renderTableContent()}
-                </div>
-            </div>
-        )}
-
-        {/* Floating panel: variables micro */}
-        {showFloatingVariables && (
-            <div className="floating-panel" style={{ left: variablesPos.x, top: variablesPos.y, width: 510, height: 290 }}>
-                <div className="floating-panel-titlebar" onMouseDown={(e) => handlePanelDragStart(e, setVariablesPos, variablesDragRef)}>
-                    <span>Variables micro</span>
-                    <button className="floating-panel-close" onClick={() => setShowFloatingVariables(false)}>&times;</button>
-                </div>
-                <div className="floating-panel-body">
-                    {renderVariablesMicroFields(visibleMicroFields)}
-                </div>
-            </div>
-        )}
-        </>
     );
 };
 
