@@ -509,6 +509,9 @@ function App() {
     const [darkMode, setDarkMode] = useState(true);
     const [showComments, setShowComments] = useState(true);
     const [showRemarks, setShowRemarks] = useState(true);
+    const [showGroupNamesForm, setShowGroupNamesForm] = useState(true);
+    const [showGroupNamesMatrix, setShowGroupNamesMatrix] = useState(true);
+    const [showGroupNamesDiagram, setShowGroupNamesDiagram] = useState(true);
     const [slideValue, setSlideValue] = useState(0);
     const [slideFromGroup, setSlideFromGroup] = useState(1);
     const [slideToGroup, setSlideToGroup] = useState(1);
@@ -1427,6 +1430,15 @@ function App() {
                 break;
             case 'toggleDarkMode':
                 setDarkMode(v => !v);
+                break;
+            case 'toggleGroupNamesForm':
+                setShowGroupNamesForm(v => !v);
+                break;
+            case 'toggleGroupNamesMatrix':
+                setShowGroupNamesMatrix(v => !v);
+                break;
+            case 'toggleGroupNamesDiagram':
+                setShowGroupNamesDiagram(v => !v);
                 break;
             case 'externalLinks':
                 setShowExternalLinksModal(true);
@@ -2488,7 +2500,7 @@ function App() {
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                 />
@@ -2762,6 +2774,7 @@ function App() {
                                         groups={groups}
                                         updateGroupParams={updateGroupParams}
                                         cycleLength={cycleLength}
+                                        showGroupNames={showGroupNamesForm}
                                     />
                                     </div>
                                     <div style={{ marginTop: '2rem' }} onMouseEnter={() => { helpZoneRef.current = 'matrice'; }}>
@@ -2775,6 +2788,7 @@ function App() {
                                             pfTabs={pfTabs}
                                             biCarrefourSeparator={biCarrefourSeparator}
                                             onCellHover={setHoveredConflict}
+                                            showGroupNames={showGroupNamesMatrix}
                                         />
                                     </div>
                                 </>
@@ -2792,6 +2806,7 @@ function App() {
                                     pfTabs={pfTabs}
                                     biCarrefourSeparator={biCarrefourSeparator}
                                     onCellHover={setHoveredConflict}
+                                    showGroupNames={showGroupNamesMatrix}
                                 />
                                 </div>
                             )}
@@ -3015,6 +3030,7 @@ function App() {
                                 setCycleLength={setCycleLength}
                                 showComments={showComments}
                                 showRemarks={showRemarks}
+                                showGroupNames={showGroupNamesDiagram}
                             />
                         </div>
                     )}

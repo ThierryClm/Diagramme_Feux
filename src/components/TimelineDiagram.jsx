@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -899,37 +899,39 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 onKeyDown={(e) => handlePhaseFlagKeyDown(e, g.id, g.phaseFlag)}
                             >
                                 <span className="label-id">{g.id}</span>
-                                <div
-                                    className="label-name-wrapper"
-                                    onMouseEnter={() => handleNameMouseEnter(g.id)}
-                                    onMouseLeave={handleNameMouseLeave}
-                                >
-                                    <span
-                                        className="label-name"
-                                        onMouseEnter={(e) => {
-                                            const el = e.currentTarget;
-                                            el.title = el.scrollWidth > el.clientWidth ? g.name : '';
-                                        }}
-                                        style={{
-                                            backgroundColor:
-                                                (g.type === 'VL' || g.type === 'V') ? 'rgba(100, 180, 255, 0.25)' :
-                                                (g.type === 'TC' || g.type === 'B') ? 'rgba(148, 0, 211, 0.1)' :
-                                                (g.type === 'Piéton' || g.type === 'P') ? 'rgba(0, 255, 0, 0.1)' :
-                                                (g.type === 'Cycliste' || g.type === 'CY') ? 'rgba(255, 255, 0, 0.1)' :
-                                                'transparent'
-                                        }}
+                                {showGroupNames && (
+                                    <div
+                                        className="label-name-wrapper"
+                                        onMouseEnter={() => handleNameMouseEnter(g.id)}
+                                        onMouseLeave={handleNameMouseLeave}
                                     >
-                                        {g.name || '-'}
-                                        {g.phaseFlag && (
-                                            <span className="phase-flag-indicator">{g.phaseFlag}</span>
+                                        <span
+                                            className="label-name"
+                                            onMouseEnter={(e) => {
+                                                const el = e.currentTarget;
+                                                el.title = el.scrollWidth > el.clientWidth ? g.name : '';
+                                            }}
+                                            style={{
+                                                backgroundColor:
+                                                    (g.type === 'VL' || g.type === 'V') ? 'rgba(100, 180, 255, 0.25)' :
+                                                    (g.type === 'TC' || g.type === 'B') ? 'rgba(148, 0, 211, 0.1)' :
+                                                    (g.type === 'Piéton' || g.type === 'P') ? 'rgba(0, 255, 0, 0.1)' :
+                                                    (g.type === 'Cycliste' || g.type === 'CY') ? 'rgba(255, 255, 0, 0.1)' :
+                                                    'transparent'
+                                            }}
+                                        >
+                                            {g.name || '-'}
+                                            {g.phaseFlag && (
+                                                <span className="phase-flag-indicator">{g.phaseFlag}</span>
+                                            )}
+                                        </span>
+                                        {phaseFlagTooltipId === g.id && (
+                                            <div className="phase-flag-tooltip">
+                                                Alt+A : aiguillage, Alt+E : escamotage
+                                            </div>
                                         )}
-                                    </span>
-                                    {phaseFlagTooltipId === g.id && (
-                                        <div className="phase-flag-tooltip">
-                                            Alt+A : aiguillage, Alt+E : escamotage
-                                        </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                                 {(g.type === 'V' || g.type === 'B') ? (
                                     <input
                                         type="text"

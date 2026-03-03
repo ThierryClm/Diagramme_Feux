@@ -1,7 +1,7 @@
 import React from 'react';
 import './GroupTable.css';
 
-const GroupTable = ({ groups, updateGroupParams, cycleLength }) => {
+const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = true }) => {
 
     const handleStartChange = (id, value) => {
         updateGroupParams(id, { offset: parseInt(value) || 0 });
@@ -42,7 +42,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength }) => {
                 <thead>
                     <tr>
                         <th>Grp</th>
-                        <th>Nom</th>
+                        {showGroupNames && <th>Nom</th>}
                         <th>Type</th>
                         <th>Courant</th>
                         <th>Mini</th>
@@ -59,14 +59,16 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength }) => {
                             <tr key={g.id}>
                                 <td className="col-id">{g.id}</td>
                                 {/* Name Input */}
-                                <td>
-                                    <input
-                                        type="text"
-                                        className="input-name-cell"
-                                        value={g.name}
-                                        onChange={(e) => updateGroupParams(g.id, { name: e.target.value })}
-                                    />
-                                </td>
+                                {showGroupNames && (
+                                    <td>
+                                        <input
+                                            type="text"
+                                            className="input-name-cell"
+                                            value={g.name}
+                                            onChange={(e) => updateGroupParams(g.id, { name: e.target.value })}
+                                        />
+                                    </td>
+                                )}
                                 {/* Type Selection */}
                                 <td>
                                     <select

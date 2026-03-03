@@ -181,6 +181,10 @@ const MenuBar = ({
                 { label: 'Commentaires du diagramme', action: 'toggleComments', toggle: true, checked: layoutOptions.showComments },
                 { label: 'Remarques du diagramme', action: 'toggleRemarks', toggle: true, checked: layoutOptions.showRemarks },
                 { type: 'separator' },
+                { label: 'Noms GF dans le formulaire', action: 'toggleGroupNamesForm', toggle: true, checked: layoutOptions.showGroupNamesForm },
+                { label: 'Noms GF dans la matrice', action: 'toggleGroupNamesMatrix', toggle: true, checked: layoutOptions.showGroupNamesMatrix },
+                { label: 'Noms GF dans les diagrammes', action: 'toggleGroupNamesDiagram', toggle: true, checked: layoutOptions.showGroupNamesDiagram },
+                { type: 'separator' },
                 {
                     label: 'Dilatation du diagramme',
                     type: 'submenu',

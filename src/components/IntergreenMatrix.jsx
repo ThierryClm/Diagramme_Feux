@@ -54,7 +54,7 @@ const MatrixInput = ({ value, onChange, className }) => {
     );
 };
 
-const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover }) => {
+const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover, showGroupNames = true }) => {
 
     // Bi-carrefour separator index
     const separatorIdx = biCarrefourSeparator != null ? groups.findIndex(g => g.id === biCarrefourSeparator) : -1;
@@ -367,7 +367,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                     <thead>
                         <tr>
                             <th>/</th>
-                            <th className="col-name-header">Nom</th>
+                            {showGroupNames && <th className="col-name-header">Nom</th>}
                             {indices.map(i => <th key={i} className={`col-index-header${separatorIdx >= 0 && (i - 1) === separatorIdx ? ' matrix-bi-sep-right' : ''}`}>{i}</th>)}
                         </tr>
                     </thead>
@@ -375,9 +375,11 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                         {conflictMatrix.map((row, fromIdx) => (
                             <tr key={fromIdx}>
                                 <td className={`row-header${separatorIdx >= 0 && fromIdx === separatorIdx ? ' matrix-bi-sep-bottom' : ''}`}>{fromIdx + 1}</td>
-                                <td className={`row-name${separatorIdx >= 0 && fromIdx === separatorIdx ? ' matrix-bi-sep-bottom' : ''}`}>
-                                    {groups && groups[fromIdx] ? groups[fromIdx].name : '-'}
-                                </td>
+                                {showGroupNames && (
+                                    <td className={`row-name${separatorIdx >= 0 && fromIdx === separatorIdx ? ' matrix-bi-sep-bottom' : ''}`}>
+                                        {groups && groups[fromIdx] ? groups[fromIdx].name : '-'}
+                                    </td>
+                                )}
                                 {row.map((val, toIdx) => {
                                     const hasInsufficientDelay = isDelayInsufficient(fromIdx, toIdx);
                                     const hasAsymmetry = isAsymmetric(fromIdx, toIdx);
