@@ -119,6 +119,16 @@ function App() {
         appMoeLogos
     } = useTrafficLight();
 
+    // Update yellow/orange duration for VL and B groups when horsAgglomeration changes
+    useEffect(() => {
+        const orangeValue = projectProperties.horsAgglomeration ? 5 : 3;
+        groups.forEach(g => {
+            if ((g.type === 'V' || g.type === 'VL' || g.type === 'B' || g.type === 'TC') && g.durations.orange !== orangeValue) {
+                updateGroupParams(g.id, { durations: { orange: orangeValue } });
+            }
+        });
+    }, [projectProperties.horsAgglomeration]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // Filter conflicts to exclude those managed by SELECTED Escamotage actions (in simulation mode)
     const filteredConflicts = useMemo(() => {
         if (!simulationEnabled || !simulationSelectedActions || simulationSelectedActions.length === 0) {
@@ -398,6 +408,17 @@ function App() {
     const handleDiagramResizeEnd = useCallback(() => {
         setIsResizingDiagram(false);
     }, []);
+
+    // On first load with no saved height, reduce diagram by 120px to show more action table
+    useEffect(() => {
+        if (diagramHeight === null && diagramAreaRef.current) {
+            const panel = diagramAreaRef.current.querySelector('.diagram-panel');
+            if (panel) {
+                const h = panel.offsetHeight;
+                if (h > 200) setDiagramHeight(h - 120);
+            }
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Reset diagram height to auto (full diagram visible)
     const resetDiagramHeight = useCallback(() => {
@@ -2444,7 +2465,7 @@ function App() {
                                         if (relativeTime < greenDuration) {
                                             arrowColor = '#00cc00';
                                         } else if (relativeTime < greenDuration + orangeDuration) {
-                                            arrowColor = '#ff9900';
+                                            arrowColor = '#ffff00';
                                         } else {
                                             arrowColor = '#cc0000';
                                         }

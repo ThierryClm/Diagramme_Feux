@@ -114,6 +114,17 @@ const PropertiesPanel = ({ intersectionName, setIntersectionName, projectPropert
                     <input type="number" min="0" max="255" value={projectProperties.idCarrefour || ''} onChange={(e) => handleIntField('idCarrefour', e.target.value)} />
                 </div>
                 <div className="property-field">
+                    <label htmlFor="horsAgglomeration">Hors agglomération</label>
+                    <input
+                        type="checkbox"
+                        id="horsAgglomeration"
+                        checked={!!projectProperties.horsAgglomeration}
+                        onChange={(e) => updateProjectProperty('horsAgglomeration', e.target.checked)}
+                        title="Hors agglomération : le temps de jaune des groupes VL et Bus passe à 5 secondes"
+                        style={{ width: '18px', height: '18px', flex: '0 0 auto', cursor: 'pointer', accentColor: '#3498db' }}
+                    />
+                </div>
+                <div className="property-field">
                     <label>Numéro de dossier</label>
                     <input type="text" value={projectProperties.numeroDossier} onChange={(e) => updateProjectProperty('numeroDossier', e.target.value)} />
                 </div>

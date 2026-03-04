@@ -144,13 +144,12 @@ const MenuBar = ({
         fichier: {
             label: 'Fichier',
             items: [
-                { label: 'Nouveau', action: 'new', disabled: !hasPermission('canModifyDiagram') },
                 ...(recentOpenDirs.length > 0 ? [{
-                    label: 'Ouvrir...',
+                    label: 'Ouvrir un projet...',
                     type: 'submenu',
                     submenuId: 'openRecent',
                     submenu: recentOpenDirsSubmenu
-                }] : [{ label: 'Ouvrir...', action: 'open' }]),
+                }] : [{ label: 'Ouvrir un projet...', action: 'open' }]),
                 { label: 'Ouvrir depuis le local storage...', action: 'openLocalStorage' },
                 ...(recentSaveDirs.length > 0 ? [{
                     label: 'Sauvegarder...',
@@ -169,7 +168,7 @@ const MenuBar = ({
                 }] : [{ label: 'Importer Excel...', action: 'import', disabled: !hasPermission('canImportExcel') }]),
                 { label: 'Liens externes...', action: 'externalLinks' },
                 { type: 'separator' },
-                { label: 'Imprimer le dossier...', action: 'printDossier' },
+                { label: 'Imprimer le projet...', action: 'printDossier' },
                 { type: 'separator' },
                 { label: 'Fermer', action: 'close' }
             ]
@@ -199,7 +198,7 @@ const MenuBar = ({
         diagramme: {
             label: 'Diagramme',
             items: [
-                { label: 'Dupliquer le diagramme', action: 'duplicate', disabled: !hasPermission('canDuplicate') },
+                { label: 'Dupliquer le diagramme actif', action: 'duplicate', disabled: !hasPermission('canDuplicate') },
                 { label: 'Supprimer le diagramme actif', action: 'deleteActiveDiagram', disabled: !hasPermission('canModifyDiagram') },
                 { label: 'Déplacer un groupe de feu...', action: 'moveGroup', disabled: !hasPermission('canModifyDiagram') },
                 biCarrefourSeparator

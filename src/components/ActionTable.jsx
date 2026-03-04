@@ -83,7 +83,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     // Horizontal separator position (height of variables micro section)
     const [variablesHeight, setVariablesHeight] = useState(() => {
         const saved = localStorage.getItem('action_table_variables_height');
-        const defaultHeight = 180;
+        const defaultHeight = 130;
         if (saved) {
             const parsed = parseInt(saved);
             // Clamp saved value to valid range (0-400)

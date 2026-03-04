@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
-const DEFAULT_CYCLE = 75;
+const DEFAULT_CYCLE = 60;
 const MAX_HISTORY_SIZE = 50;
 
 // Safe localStorage helper to prevent QuotaExceededError crashes
@@ -100,7 +100,7 @@ const ensureLocalStorageSpace = () => {
 export const TRAFFIC_DATASETS = ['HPM', 'HPS', 'HC', 'Estimation', 'Projection'];
 
 const DEFAULT_PROJECT_PROPERTIES = {
-    commune: '', idCommune: '', idCarrefour: '',
+    commune: '', idCommune: '', idCarrefour: '', horsAgglomeration: false,
     moa: '', moe: '', bureauEtudes: '', auteur: '',
     logoMoa: '', logoMoe: '',
     dateCreation: '', dateModification: '', numeroDossier: '', phaseEtude: '', commentaires: ''
