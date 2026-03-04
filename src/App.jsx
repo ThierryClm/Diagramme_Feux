@@ -207,6 +207,17 @@ function App() {
     const [hoveredConflict, setHoveredConflict] = useState(null); // {from, to} for conflict hover
     const [hoveredDiagramTime, setHoveredDiagramTime] = useState(null); // Time position when hovering diagram
 
+    // Track whether project has been modified (for "Nouveau projet" menu)
+    const [projectModified, setProjectModified] = useState(false);
+    const projectModifiedSkip = useRef(true);
+    useEffect(() => {
+        if (projectModifiedSkip.current) {
+            projectModifiedSkip.current = false;
+            return;
+        }
+        setProjectModified(true);
+    }, [groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
+
     // Floating image state (persists across tab changes and page reloads)
     const [showFloatingImage, setShowFloatingImage] = useState(() => {
         const saved = localStorage.getItem('floating_image_visible');
@@ -792,6 +803,7 @@ function App() {
 
             // Mémoriser le chemin du projet
             setCurrentProjectPath(file.name);
+            setProjectModified(true);
 
             // Restaurer la hauteur du diagramme si présente
             if (data.diagramHeight !== undefined) {
@@ -889,6 +901,7 @@ function App() {
 
             // Mémoriser le chemin du projet
             setCurrentProjectPath(file.name);
+            setProjectModified(true);
 
             // Restaurer la hauteur du diagramme si présente
             if (data.diagramHeight !== undefined) {
@@ -1002,6 +1015,7 @@ function App() {
 
             // Mémoriser le chemin du projet
             setCurrentProjectPath(fileHandle.name);
+            setProjectModified(true);
 
             // Sauvegarder aussi dans localStorage pour cohérence
             saveProject(savedName);
@@ -1095,6 +1109,7 @@ function App() {
 
             // Mémoriser le chemin du projet
             setCurrentProjectPath(fileHandle.name);
+            setProjectModified(true);
 
             // Sauvegarder aussi dans localStorage pour cohérence
             saveProject(savedName);
@@ -1318,6 +1333,8 @@ function App() {
                     setGroupCountInput('8');
                     setCycleLengthInput('60');
                     setCurrentProjectPath('');
+                    setProjectModified(false);
+                    projectModifiedSkip.current = true;
                 }
                 break;
             case 'open':
@@ -1339,6 +1356,7 @@ function App() {
                         image: true,
                         gfNumbers: true,
                         formulaire: true,
+                        securiteMatrix: false,
                         matrice: true,
                         ...Object.fromEntries(pfTabs.flatMap(pf => {
                             const checked = !!pf.color;
@@ -2521,7 +2539,7 @@ function App() {
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                 />
@@ -4357,6 +4375,11 @@ function App() {
                                 Formulaire
                             </label>
                             <label>
+                                <input type="checkbox" checked={dossierSections.securiteMatrix || false}
+                                    onChange={e => setDossierSections(s => ({...s, securiteMatrix: e.target.checked}))} />
+                                Matrice de sécurité
+                            </label>
+                            <label>
                                 <input type="checkbox" checked={dossierSections.matrice || false}
                                     onChange={e => setDossierSections(s => ({...s, matrice: e.target.checked}))} />
                                 Matrice des temps intervers
@@ -4868,7 +4891,70 @@ function App() {
                                         </div>
                                         )}
 
-                                        {/* 4. Matrice */}
+                                        {/* 4a. Matrice de sécurité */}
+                                        {dossierSections.securiteMatrix && (
+                                        <div className="print-dossier-section print-dossier-matrix">
+                                            <h3>Matrice de sécurité{dossierSmallLogos}</h3>
+                                            <table className="preview-matrix-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th></th>
+                                                        {groups.map(g => (
+                                                            <th key={g.id}>{g.id}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {(() => {
+                                                        const pf1Matrix = pfTabs?.find(pf => pf.id === 1)?.conflictMatrix || null;
+                                                        const isComparing = activePFId !== 1 && pf1Matrix && pf1Matrix.length > 0;
+                                                        return groups.map((fromGroup, fromIdx) => (
+                                                        <tr key={fromGroup.id}>
+                                                            <td className="row-header">{fromGroup.id}</td>
+                                                            {groups.map((toGroup, toIdx) => {
+                                                                const rawVal = fromIdx !== toIdx ? (conflictMatrix[fromIdx]?.[toIdx] || '') : '';
+                                                                let val = '';
+                                                                if (rawVal !== '' && rawVal != null) {
+                                                                    const numVal = parseInt(rawVal);
+                                                                    if (!isNaN(numVal)) {
+                                                                        const fromType = fromGroup.type;
+                                                                        const isVehicle = (fromType === 'V' || fromType === 'VL' || fromType === 'B' || fromType === 'TC');
+                                                                        val = isVehicle ? Math.max(0, numVal - (fromGroup.durations?.orange || 0)) : numVal;
+                                                                    }
+                                                                }
+                                                                let color = null;
+                                                                if (isComparing && fromIdx !== toIdx && val !== '') {
+                                                                    const pf1RawVal = pf1Matrix[fromIdx]?.[toIdx];
+                                                                    if (pf1RawVal !== '' && pf1RawVal != null) {
+                                                                        const pf1Num = parseInt(pf1RawVal);
+                                                                        if (!isNaN(pf1Num)) {
+                                                                            const fromType = fromGroup.type;
+                                                                            const isVehicle = (fromType === 'V' || fromType === 'VL' || fromType === 'B' || fromType === 'TC');
+                                                                            const ref = isVehicle ? Math.max(0, pf1Num - (fromGroup.durations?.orange || 0)) : pf1Num;
+                                                                            if (val > ref) color = '#f44336';
+                                                                            else if (val < ref) color = '#4caf50';
+                                                                        }
+                                                                    }
+                                                                }
+                                                                return (
+                                                                <td
+                                                                    key={toGroup.id}
+                                                                    className={fromIdx === toIdx ? 'diagonal' : ''}
+                                                                    style={color ? { color, fontWeight: 'bold' } : undefined}
+                                                                >
+                                                                    {val}
+                                                                </td>
+                                                                );
+                                                            })}
+                                                        </tr>
+                                                        ));
+                                                    })()}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        )}
+
+                                        {/* 4b. Matrice des temps interverts */}
                                         {dossierSections.matrice && (
                                         <div className="print-dossier-section print-dossier-matrix">
                                             <h3>Matrice des temps interverts{dossierSmallLogos}</h3>
@@ -5067,18 +5153,14 @@ function App() {
                                         {/* Phasage bulle pour ce PF (si image + flèches existent) */}
                                         {dossierSections[`phasageBulle_${pf.id}`] && intersectionArrows.length > 0 && intersectionImage && (() => {
                                             const bulleCount = pf.phasageBulleCount || 4;
-                                            const bsf = bulleCount === 2 ? 1.2 : bulleCount === 5 ? 0.9 : bulleCount === 6 ? 0.8 : 1.0;
+                                            const bulleCycleLength = pf.id === activePFId ? cycleLength : (pf.cycleLength || cycleLength);
+                                            const userBubbleScale = pf.phasageBubbleScale ?? 100;
+                                            const bsf = (bulleCount === 2 ? 1.2 : bulleCount === 5 ? 0.9 : bulleCount === 6 ? 0.8 : 1.0) * (userBubbleScale / 100);
                                             const bulleW = 570 * bsf;
                                             const bulleH = 456 * bsf;
-                                            // Ellipse config pour positionnement (réduit pour rapprocher du centre)
-                                            const rX = (bulleCount === 2 ? 22 : bulleCount === 3 ? 23 : bulleCount === 5 ? 27 : bulleCount === 6 ? 29 : 26) * 0.45;
-                                            const rY = (bulleCount === 2 ? 25 : bulleCount === 3 ? 30 : bulleCount === 5 ? 34 : bulleCount === 6 ? 36 : 32) * 0.45;
-                                            const startAngle = (bulleCount === 2 || bulleCount === 3) ? -Math.PI / 2 : Math.PI;
                                             // Image ratio: hide ellipse if very elongated
                                             const imgRatio = imageNaturalDims.width / imageNaturalDims.height;
                                             const hideOvals = imgRatio > 1.5 || imgRatio < (1 / 1.5);
-                                            // Taille fixe des bulles (découplée de la distance inter-bulles)
-                                            const bubbleScale = 0.80;
                                             // Visible image bounds within bubble (object-fit: contain)
                                             const bubbleAspect = bulleW / bulleH;
                                             let arrowXMin = 0, arrowXMax = 100, arrowYMin = 0, arrowYMax = 100;
@@ -5094,11 +5176,10 @@ function App() {
                                             return (
                                             <div className="print-dossier-section print-dossier-phasage dossier-phasage-centered">
                                                 <h3>Phasage bulle - {pf.name}{dossierSmallLogos}</h3>
-                                                <div className={`dossier-phasage-content ${hideOvals ? 'phasage-hide-ovals' : ''}`}
-                                                    style={{ '--bubble-scale': bubbleScale.toFixed(3) }}>
+                                                <div className={`dossier-phasage-content ${hideOvals ? 'phasage-hide-ovals' : ''}`}>
                                                     <PhasageBulle
                                                         groups={pfGroups}
-                                                        cycleLength={cycleLength}
+                                                        cycleLength={bulleCycleLength}
                                                         intersectionImage={intersectionImage}
                                                         intersectionArrows={intersectionArrows.filter(a => a.x >= arrowXMin && a.x <= arrowXMax && a.y >= arrowYMin && a.y <= arrowYMax)}
                                                         actionData={pfActionData}
@@ -5109,7 +5190,7 @@ function App() {
                                                         initialCount={bulleCount}
                                                         imageBrightness={imageBrightness}
                                                         imageContrast={imageContrast}
-                                                        initialBubbleScale={pf.phasageBubbleScale ?? 100}
+                                                        initialBubbleScale={userBubbleScale}
                                                         initialEllipseScale={pf.phasageEllipseScale ?? 100}
                                                         initialBubbleRatio={pf.phasageBubbleRatio ?? 100}
                                                     />

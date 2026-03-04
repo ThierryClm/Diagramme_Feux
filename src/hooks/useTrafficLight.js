@@ -1101,10 +1101,10 @@ export const useTrafficLight = () => {
         setProjectName(null);
         setIntersectionName("Nouveau Carrefour");
 
-        // Reset to 8 groups with 75s cycle
+        // Reset to 8 groups with default cycle
         const newGroups = Array.from({ length: 8 }, (_, i) => createGroup(i + 1));
         setGroups(newGroups);
-        setCycleLength(75);
+        setCycleLength(DEFAULT_CYCLE);
 
         // Reset conflict matrix (8x8)
         setConflictMatrix(Array.from({ length: 8 }, () => Array(8).fill('')));
@@ -1880,6 +1880,8 @@ export const useTrafficLight = () => {
             phaseFlag: g.phaseFlag || ''
         }));
         const groupsKey = JSON.stringify(diagramData);
+        // Include cycleLength in sync key so that cycle-only changes are saved
+        const syncKey = groupsKey + '|' + cycleLength;
 
         // When PF just changed: don't save to the new PF — let the reverse sync
         // load the new PF's data first. Save pending edits to the OLD PF only
@@ -1890,12 +1892,12 @@ export const useTrafficLight = () => {
 
             // Save any unsaved group changes to the OLD PF
             // (skip on first run after init — lastSyncedGroupsRef is still null)
-            if (lastSyncedGroupsRef.current !== null && lastSyncedGroupsRef.current !== groupsKey) {
+            if (lastSyncedGroupsRef.current !== null && lastSyncedGroupsRef.current !== syncKey) {
                 setPfTabs(prevTabs => {
                     const tabIndex = prevTabs.findIndex(pf => pf.id === oldPFId);
                     if (tabIndex === -1) return prevTabs;
                     const currentPfDiagram = prevTabs[tabIndex].diagram;
-                    if (JSON.stringify(currentPfDiagram) === groupsKey) return prevTabs;
+                    if (JSON.stringify(currentPfDiagram) === groupsKey && prevTabs[tabIndex].cycleLength === cycleLength) return prevTabs;
                     const newTabs = [...prevTabs];
                     newTabs[tabIndex] = {
                         ...newTabs[tabIndex],
@@ -1909,18 +1911,18 @@ export const useTrafficLight = () => {
             return;
         }
 
-        if (lastSyncedGroupsRef.current === groupsKey) {
+        if (lastSyncedGroupsRef.current === syncKey) {
             return; // Already synced
         }
-        lastSyncedGroupsRef.current = groupsKey;
+        lastSyncedGroupsRef.current = syncKey;
 
         setPfTabs(prevTabs => {
             const tabIndex = prevTabs.findIndex(pf => pf.id === activePFId);
             if (tabIndex === -1) return prevTabs;
 
-            // Check if diagram actually changed
+            // Check if diagram or cycleLength actually changed
             const currentPfDiagram = prevTabs[tabIndex].diagram;
-            if (JSON.stringify(currentPfDiagram) === groupsKey) {
+            if (JSON.stringify(currentPfDiagram) === groupsKey && prevTabs[tabIndex].cycleLength === cycleLength) {
                 return prevTabs; // No change needed
             }
 

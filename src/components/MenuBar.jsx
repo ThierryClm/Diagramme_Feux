@@ -144,6 +144,7 @@ const MenuBar = ({
         fichier: {
             label: 'Fichier',
             items: [
+                { label: 'Nouveau projet', action: 'new', disabled: !layoutOptions.projectModified },
                 ...(recentOpenDirs.length > 0 ? [{
                     label: 'Ouvrir un projet...',
                     type: 'submenu',
