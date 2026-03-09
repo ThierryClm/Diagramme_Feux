@@ -1006,6 +1006,20 @@
     border-color: #dc4edc;
 }
 
+/* Panneau flottant configuration phasage bulle */
+.phasage-config-panel {
+    position: absolute;
+    top: 50px;
+    left: 10px;
+    z-index: 100;
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    color: #ccc;
+}
+
 /* Project list styles for Open modal */
 .project-list-container {
     max-height: 300px;
@@ -1974,6 +1988,16 @@
     color: #000;
 }
 
+.print-dossier-matrix .preview-matrix-table td.row-name,
+.print-dossier-matrix .preview-matrix-table th.col-name-header {
+    background: #f0f0f0;
+    color: #000;
+    text-align: left;
+    font-size: 0.65rem;
+    white-space: nowrap;
+    padding: 1px 4px;
+}
+
 .print-dossier-matrix .preview-matrix-table td.diagonal {
     background: #e0e0e0;
 }
@@ -2934,7 +2958,7 @@
     body.print-dossier .print-dossier-remarques {
         background: white !important;
         color: #000 !important;
-        font-size: 11px;
+        font-size: 14px;
         padding: 4px 8px;
         margin-top: 2px;
     }
@@ -3182,27 +3206,27 @@
 }
 
 .phasage-bulle-sidebar .sidebar-header {
-    padding-bottom: 1rem;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid #555;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .phasage-bulle-sidebar .sidebar-header h3 {
-    margin: 0 0 0.25rem 0;
+    margin: 0 0 0.15rem 0;
     color: #dc4edc;
-    font-size: 1.1em;
+    font-size: 0.9em;
 }
 
 .phasage-bulle-sidebar .sidebar-subtitle {
     margin: 0;
     color: #aaa;
-    font-size: 0.85em;
+    font-size: 0.75em;
 }
 
 .phasage-group-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     flex: 1;
     overflow-y: auto;
     padding-right: 4px;
@@ -3211,8 +3235,8 @@
 .phasage-group-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
+    gap: 5px;
+    padding: 4px 8px;
     background: #3a3a3a;
     border: 1px solid #555;
     border-radius: 6px;
@@ -3243,8 +3267,8 @@
 
 .phasage-group-item input[type="checkbox"] {
     accent-color: #dc4edc;
-    width: 16px;
-    height: 16px;
+    width: 13px;
+    height: 13px;
     cursor: pointer;
 }
 
@@ -3255,13 +3279,14 @@
 .phasage-group-id {
     font-weight: bold;
     color: #dc4edc;
-    min-width: 40px;
+    min-width: 30px;
+    font-size: 0.8em;
 }
 
 .phasage-group-name {
     flex: 1;
     color: #e0e0e0;
-    font-size: 0.9em;
+    font-size: 0.75em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3270,8 +3295,8 @@
 
 .phasage-group-courant {
     color: #aaa;
-    font-size: 0.85em;
-    padding: 2px 6px;
+    font-size: 0.75em;
+    padding: 1px 4px;
     background: #444;
     border-radius: 3px;
     min-width: 50px;
@@ -3280,16 +3305,16 @@
 
 .phasage-no-arrow-hint {
     color: #888;
-    font-size: 1em;
+    font-size: 0.8em;
     margin-left: auto;
 }
 
 .phasage-group-actions {
     display: flex;
-    gap: 8px;
-    padding-top: 1rem;
+    gap: 6px;
+    padding-top: 0.5rem;
     border-top: 1px solid #555;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
 .phasage-btn-select-all,

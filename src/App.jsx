@@ -2672,8 +2672,8 @@ function App() {
 
             <main className="split-view" ref={splitViewRef}>
                 <aside className="sidebar" style={{
-                    width: sidebarVisible ? `${sidebarWidth}px` : '0px',
-                    minWidth: sidebarVisible ? '300px' : '0px',
+                    width: sidebarVisible ? `${phasageBulleEnabled ? Math.min(sidebarWidth, 350) : sidebarWidth}px` : '0px',
+                    minWidth: sidebarVisible ? (phasageBulleEnabled ? '200px' : '300px') : '0px',
                     padding: sidebarVisible ? '1rem' : '0',
                     overflow: 'hidden'
                 }}>
@@ -2944,7 +2944,7 @@ function App() {
                         {pfTabs.map((pf, index) => (
                             <div
                                 key={pf.id}
-                                className={`pf-tab ${activePFId === pf.id && !simulationEnabled && !phasageBulleEnabled ? 'active' : ''} ${draggedTabIndex === index ? 'dragging' : ''} ${pf.color === '#4CAF50' ? 'pf-validated' : ''} ${pf.color === '#e74c3c' ? 'pf-invalidated' : ''}`}
+                                className={`pf-tab ${activePFId === pf.id ? 'active' : ''} ${draggedTabIndex === index ? 'dragging' : ''} ${pf.color === '#4CAF50' ? 'pf-validated' : ''} ${pf.color === '#e74c3c' ? 'pf-invalidated' : ''}`}
                                 style={{}}
                                 draggable="true"
                                 onDragStart={(e) => {
@@ -3092,7 +3092,7 @@ function App() {
                         flex: diagramHeight !== null ? '1' : '0 0 auto',
                         overflow: (phasageBulleEnabled || simulationEnabled) ? 'auto' : 'hidden'
                     }}>
-                        <div style={{ display: phasageBulleEnabled ? 'contents' : 'none' }}>
+                        <div style={{ display: phasageBulleEnabled ? 'block' : 'none', position: 'relative', height: '100%' }}>
                             <PhasageBulle
                                 key={phasageBulleVersion}
                                 groups={groups}
@@ -3117,6 +3117,62 @@ function App() {
                                 onEllipseScaleChange={setPhasageEllipseScale}
                                 onBubbleRatioChange={setPhasageBubbleRatio}
                             />
+                            {/* Panneau de configuration flottant en haut à gauche */}
+                            {phasageBulleModal && (
+                                <div className="phasage-config-panel">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85em' }}>
+                                            Phases :
+                                            <select
+                                                value={phasageBulleCount}
+                                                onChange={(e) => setPhasageBulleCount(parseInt(e.target.value))}
+                                                style={{ padding: '3px' }}
+                                            >
+                                                {[2, 3, 4, 5, 6].map(n => (
+                                                    <option key={n} value={n}>{n}</option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                        <span style={{ color: '#888', fontSize: '0.85em' }}>Cycle : {cycleLength}s</span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: '3px 6px', justifyContent: 'start' }}>
+                                        {Array.from({ length: phasageBulleCount }, (_, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                                <span style={{ color: '#dc4edc', fontWeight: 'bold', fontSize: '0.85em' }}>P{i + 1}:</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max={cycleLength - 1}
+                                                    value={phasageBulleTimes[i] || 0}
+                                                    onChange={(e) => {
+                                                        const newTimes = [...phasageBulleTimes];
+                                                        newTimes[i] = Math.max(0, Math.min(cycleLength - 1, parseInt(e.target.value) || 0));
+                                                        setPhasageBulleTimes(newTimes);
+                                                    }}
+                                                    style={{ width: '30px', padding: '2px', textAlign: 'center' }}
+                                                />
+                                                <span style={{ color: '#888', fontSize: '0.85em' }}>s</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '6px', marginTop: '8px', justifyContent: 'flex-end' }}>
+                                        <button className="modal-btn modal-btn-secondary" style={{ padding: '3px 10px', fontSize: '0.85em' }} onClick={() => {
+                                            setPhasageBulleModal(false);
+                                            setPhasageBulleEnabled(false);
+                                        }}>
+                                            Annuler
+                                        </button>
+                                        <button className="modal-btn modal-btn-primary" style={{ padding: '3px 10px', fontSize: '0.85em' }} onClick={() => {
+                                            setPhasageBulleModal(false);
+                                            setPhasageBulleEnabled(true);
+                                            setSimulationEnabled(false);
+                                            setPhasageBulleVersion(v => v + 1);
+                                        }}>
+                                            OK
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div style={{ display: simulationEnabled && !phasageBulleEnabled ? 'contents' : 'none' }}>
                             <IntersectionImage
@@ -4283,70 +4339,7 @@ function App() {
                 </div>
             </Modal>
 
-            {/* Modal Phasage bulle - Configuration des instants */}
-            <Modal isOpen={phasageBulleModal} onClose={() => setPhasageBulleModal(false)} title="Configuration du phasage bulle" overlayClassName="modal-phasage-bulle-overlay">
-                <div className="phasage-config">
-                    <div className="form-row" style={{ marginBottom: '6px' }}>
-                        <label>
-                            Nombre de phases :
-                            <select
-                                value={phasageBulleCount}
-                                onChange={(e) => setPhasageBulleCount(parseInt(e.target.value))}
-                                style={{ marginLeft: '10px', padding: '5px' }}
-                            >
-                                {[2, 3, 4, 5, 6].map(n => (
-                                    <option key={n} value={n}>{n}</option>
-                                ))}
-                            </select>
-                        </label>
-                    </div>
-                    <div style={{ marginTop: '8px' }}>
-                        <p style={{ color: '#aaa', marginBottom: '4px' }}>Instants des phases (en secondes) :</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: '3px 8px' }}>
-                            {Array.from({ length: phasageBulleCount }, (_, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                    <span style={{ color: '#dc4edc', fontWeight: 'bold' }}>P{i + 1}:</span>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max={cycleLength - 1}
-                                        value={phasageBulleTimes[i] || 0}
-                                        onChange={(e) => {
-                                            const newTimes = [...phasageBulleTimes];
-                                            newTimes[i] = Math.max(0, Math.min(cycleLength - 1, parseInt(e.target.value) || 0));
-                                            setPhasageBulleTimes(newTimes);
-                                        }}
-                                        style={{ width: '40px', padding: '3px', textAlign: 'center' }}
-                                    />
-                                    <span style={{ color: '#888' }}>s</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <p style={{ color: '#888', fontSize: '0.85em', marginTop: '8px' }}>
-                        Cycle: {cycleLength}s. Les phases seront affichées dans l'onglet "Phasage bulle".
-                    </p>
-                </div>
-                <div className="modal-actions">
-                    <button className="modal-btn modal-btn-secondary" onClick={() => {
-                        setPhasageBulleModal(false);
-                        setPhasageBulleEnabled(false);
-                    }}>
-                        Annuler
-                    </button>
-                    <button
-                        className="modal-btn modal-btn-primary"
-                        onClick={() => {
-                            setPhasageBulleModal(false);
-                            setPhasageBulleEnabled(true);
-                            setSimulationEnabled(false);
-                            setPhasageBulleVersion(v => v + 1);
-                        }}
-                    >
-                        OK
-                    </button>
-                </div>
-            </Modal>
+            {/* Modal Phasage bulle supprimé - remplacé par panneau flottant dans la zone phasage bulle */}
 
             {/* Dialog sélection sections dossier */}
             {dossierDialog && (
@@ -4899,6 +4892,7 @@ function App() {
                                                 <thead>
                                                     <tr>
                                                         <th></th>
+                                                        <th className="col-name-header">Nom</th>
                                                         {groups.map(g => (
                                                             <th key={g.id}>{g.id}</th>
                                                         ))}
@@ -4911,6 +4905,7 @@ function App() {
                                                         return groups.map((fromGroup, fromIdx) => (
                                                         <tr key={fromGroup.id}>
                                                             <td className="row-header">{fromGroup.id}</td>
+                                                            <td className="row-name">{fromGroup.name || ''}</td>
                                                             {groups.map((toGroup, toIdx) => {
                                                                 const rawVal = fromIdx !== toIdx ? (conflictMatrix[fromIdx]?.[toIdx] || '') : '';
                                                                 let val = '';
@@ -4962,6 +4957,7 @@ function App() {
                                                 <thead>
                                                     <tr>
                                                         <th></th>
+                                                        <th className="col-name-header">Nom</th>
                                                         {groups.map(g => (
                                                             <th key={g.id}>{g.id}</th>
                                                         ))}
@@ -4974,6 +4970,7 @@ function App() {
                                                         return groups.map((fromGroup, fromIdx) => (
                                                         <tr key={fromGroup.id}>
                                                             <td className="row-header">{fromGroup.id}</td>
+                                                            <td className="row-name">{fromGroup.name || ''}</td>
                                                             {groups.map((toGroup, toIdx) => {
                                                                 const val = fromIdx !== toIdx ? (conflictMatrix[fromIdx]?.[toIdx] || '') : '';
                                                                 let color = null;

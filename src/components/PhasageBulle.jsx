@@ -422,18 +422,6 @@ const PhasageBulle = ({
                     )}
                 </div>
                 <div className="phasage-controls">
-                    <label className="phase-count-label">
-                        Nombre de phases:
-                        <select
-                            value={phaseCount}
-                            onChange={(e) => setPhaseCount(parseInt(e.target.value))}
-                            className="phase-count-select"
-                        >
-                            {[2, 3, 4, 5, 6].map(n => (
-                                <option key={n} value={n}>{n}</option>
-                            ))}
-                        </select>
-                    </label>
                     <label className="phasage-slider-label">
                         Bulles
                         <input type="range" min="50" max="150" value={bubbleScaleUser} onChange={(e) => { const v = parseInt(e.target.value); setBubbleScaleUser(v); onBubbleScaleChange?.(v); }} className="phasage-slider" />
