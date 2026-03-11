@@ -3479,6 +3479,7 @@ function App() {
                     <section className="help-section">
                         <h4>Présentation</h4>
                         <p>Application de conception de diagrammes de feux de signalisation pour carrefours à feux.</p>
+                        <p>Elle permet de concevoir, visualiser et valider les plans de feux d'un carrefour à feux tricolores. L'application couvre l'ensemble du processus : définition des groupes de feux et de leurs paramètres temporels (vert, orange, rouge), saisie de la matrice des temps de dégagement entre groupes conflictuels, configuration des actions de micro-régulation (adaptatif, escamotage, fermeture anticipée, ouverture anticipée), gestion des données de trafic et de capacité, et coordination des feux sur un axe via l'outil onde verte. Elle génère un dossier imprimable complet incluant le formulaire, les matrices, les diagrammes, le phasage bulle et les conditions de micro-régulation pour chaque plan de feu.</p>
                         <p>Chaque modification se répercute instantanément sur l'ensemble de l'interface : ajustez un temps de vert dans le formulaire et le diagramme se redessine en temps réel ; déplacez une barre directement sur le diagramme et les valeurs du formulaire suivent ; modifiez la matrice des temps interverts et la détection des conflits se met à jour immédiatement. Cette interactivité permanente entre le formulaire, le diagramme, la matrice et le tableau des actions vous offre une vision globale et cohérente à chaque instant.</p>
                         <p>Le glisser-déposer des barres, la surbrillance croisée entre le tableau des actions et le diagramme, les flèches de dépendance, le calcul automatique des conflits et des données trafic : tout est pensé pour vous accompagner dans la mise au point de vos plans de feux, de la première esquisse jusqu'à la validation finale.</p>
                     </section>
@@ -3581,7 +3582,7 @@ function App() {
                             <li><strong>Escamotage de phase :</strong> Phase pouvant être supprimée (rectangle gris transparent sur toute la hauteur).</li>
                             <li><strong>Escamotage :</strong> Escamotage lié à un groupe spécifique. Définissez GF (source) et Action GF 1 (cible) pour afficher les flèches de dépendance. Si les valeurs Déb et Fin sont renseignées, le rectangle hachuré est positionné sur cette plage au lieu de la phase verte par défaut du groupe, ce qui permet de cibler une seconde lucarne.</li>
                             <li><strong>Ouverture anticipée :</strong> Anticipation du passage au vert (barre hachurée verte).</li>
-                            <li><strong>Fermeture anticipée :</strong> Anticipation du passage au rouge (accolade orange sous la barre).</li>
+                            <li><strong>Fermeture anticipée :</strong> Anticipation du passage au rouge (accolade orange sous la barre). En ajoutant un ou plusieurs groupes de feux dans Action GF, on réalise de fait des glissements.</li>
                             <li><strong>Signal aide conduite :</strong> Signal d'information conducteur (orange clignotant + bleu fixe).</li>
                             <li><strong>Début/Fin de bande passante :</strong> Ligne discontinue affichant la synchronisation à l'ouverture ou à la fermeture entre 2 groupes de feu.</li>
                             <li><strong>Priorité piétons :</strong> Action pour la priorité aux piétons.</li>
@@ -3802,12 +3803,12 @@ function App() {
                     <section className="help-section">
                         <h4>Sauvegarde et projets</h4>
                         <ul>
-                            <li><strong>Sauvegarde automatique :</strong> Les données sont sauvegardées automatiquement dans le navigateur</li>
-                            <li><strong>Projets nommés :</strong> Utilisez l'onglet Projets pour sauvegarder et charger des configurations</li>
-                            <li><strong>Export :</strong> Menu Fichier → Exporter pour télécharger un fichier JSON</li>
-                            <li><strong>Import JSON :</strong> Menu Fichier → Importer pour charger un fichier JSON</li>
-                            <li><strong>Répertoires récents :</strong> Les menus "Ouvrir", "Importer Excel" et "Charger image" proposent les 5 derniers répertoires utilisés</li>
-                            <li><strong>Sauvegarde complète :</strong> Chaque plan de feux (PF) conserve sa propre matrice de dégagement et ses données de diagramme</li>
+                            <li><strong>Sauvegarde automatique :</strong> Les données sont sauvegardées automatiquement dans le navigateur (local storage)</li>
+                            <li><strong>Nouveau projet :</strong> Menu Fichier → Nouveau projet réinitialise l'application (actif uniquement si le projet a été modifié)</li>
+                            <li><strong>Ouvrir un projet :</strong> Menu Fichier → Ouvrir un projet permet de charger un fichier JSON depuis le disque. Les répertoires récents sont proposés en sous-menu.</li>
+                            <li><strong>Ouvrir depuis le local storage :</strong> Menu Fichier → Ouvrir depuis le local storage permet de charger un projet précédemment sauvegardé dans le navigateur</li>
+                            <li><strong>Sauvegarder :</strong> Menu Fichier → Sauvegarder exporte le projet au format JSON sur le disque. Les répertoires récents sont proposés en sous-menu.</li>
+                            <li><strong>Importer Excel :</strong> Menu Fichier → Importer Excel charge les données depuis un fichier Excel (.xlsx). Les répertoires récents sont proposés en sous-menu.</li>
                         </ul>
                         <h5 style={{ marginTop: '15px', marginBottom: '10px', color: '#aaa' }}>Sécurité de la sauvegarde</h5>
                         <p>L'application inclut des protections contre la perte de données :</p>
@@ -3846,9 +3847,11 @@ function App() {
                         <ul>
                             <li><strong>Sections globales</strong> (niveau principal) :
                                 <ul>
-                                    <li><em>Image du carrefour :</em> Photo ou schéma du carrefour avec les flèches des groupes</li>
+                                    <li><em>Image du carrefour :</em> Photo ou schéma du carrefour avec les flèches des groupes de feux</li>
+                                    <li><em>Numéros de GF :</em> Affiche les numéros des groupes de feux sur l'image (option disponible si l'image contient des flèches)</li>
                                     <li><em>Formulaire :</em> Tableau des groupes avec leurs paramètres (type, courant, durées)</li>
-                                    <li><em>Matrice des temps interverts :</em> Matrice de dégagement entre groupes conflictuels</li>
+                                    <li><em>Matrice de sécurité :</em> Matrice globale des temps de dégagement entre groupes de feux, tous plans de feux confondus</li>
+                                    <li><em>Matrice des temps interverts :</em> Matrice de dégagement entre groupes conflictuels pour le plan de feu actif</li>
                                 </ul>
                             </li>
                             <li><strong>Sections par plan de feu</strong> (une ligne par PF) :
@@ -3861,8 +3864,9 @@ function App() {
                             <li><strong>Sous-options par PF</strong> (indentées sous chaque PF) :
                                 <ul>
                                     <li><em>Conditions de micro-régulation :</em> Tableau des actions de micro-régulation du PF</li>
-                                    <li><em>Données de trafic et capacité :</em> Tableau des données trafic associées au PF</li>
                                     <li><em>Variables micro :</em> Variables personnalisées de micro-régulation du PF</li>
+                                    <li><em>Phasage bulle :</em> Représentation graphique des phases du PF sous forme de bulles sur l'image du carrefour (disponible si l'image et les flèches existent)</li>
+                                    <li><em>Données de trafic et capacité :</em> Tableau des données trafic associées au PF</li>
                                 </ul>
                             </li>
                         </ul>
@@ -3870,8 +3874,8 @@ function App() {
                         <p>Le dossier est structuré comme suit :</p>
                         <ul>
                             <li><strong>Page de titre :</strong> Nom du carrefour</li>
-                            <li><strong>Sections globales :</strong> Image, formulaire et matrice (si cochées)</li>
-                            <li><strong>Pour chaque PF coché :</strong> Diagramme du plan de feu, suivi de ses conditions de micro-régulation, données de trafic/capacité et variables micro (selon les sous-options cochées)</li>
+                            <li><strong>Sections globales :</strong> Image du carrefour, formulaire, matrice de sécurité et matrice des temps interverts (si cochées)</li>
+                            <li><strong>Pour chaque PF coché :</strong> Diagramme du plan de feu, suivi de ses conditions de micro-régulation, variables micro, phasage bulle et données de trafic/capacité (selon les sous-options cochées)</li>
                             <li><strong>Pied de page :</strong> Nom du fichier projet et date d'impression sur chaque page</li>
                         </ul>
                         <h5 style={{ marginTop: '12px', marginBottom: '8px', color: '#aaa' }}>Paramètres d'impression recommandés</h5>
@@ -3964,21 +3968,33 @@ function App() {
                         <h4>Tableau des données saisies</h4>
                         <ul>
                             <li><strong>Ordre :</strong> Réorganisez les carrefours avec les boutons ↑ et ↓</li>
-                            <li><strong>Carrefour :</strong> Nom du projet (lecture seule)</li>
-                            <li><strong>PF :</strong> Sélection individuelle du plan de feu</li>
-                            <li><strong>Cycle :</strong> Durée du cycle (surligné en rouge si différent du cycle de référence)</li>
-                            <li><strong>GF Montant / Descendant :</strong> Sélection du groupe de feux et de la distance pour chaque sens</li>
+                            <li><strong>Carrefour :</strong> Nom du projet (lecture seule, issu du projet sauvegardé)</li>
+                            <li><strong>PF :</strong> Sélection individuelle du plan de feu pour chaque carrefour</li>
+                            <li><strong>Cycle :</strong> Durée du cycle (surligné en rouge si différent du cycle de référence, c'est-à-dire du cycle le plus fréquent)</li>
+                            <li><strong>GF Montant :</strong> Groupe de feux et distance (en mètres) pour le sens montant</li>
+                            <li><strong>GF Descendant :</strong> Groupe de feux et distance (en mètres) pour le sens descendant</li>
                             <li><strong>Ajouter :</strong> Le bouton "+" permet d'ajouter de nouveaux carrefours à la liste</li>
                         </ul>
                     </section>
 
                     <section className="help-section">
-                        <h4>Sauvegarde et impression</h4>
+                        <h4>Barre d'outils</h4>
                         <ul>
-                            <li><strong>Enregistrer :</strong> Sauvegarde dans le navigateur (localStorage) avec un nom personnalisable</li>
-                            <li><strong>Enregistrer sur réseau :</strong> Exporte un fichier JSON via le gestionnaire de fichiers du système</li>
-                            <li><strong>Ouvrir :</strong> Chargez une onde verte précédemment sauvegardée ou un fichier JSON depuis le réseau</li>
-                            <li><strong>Imprimer :</strong> Génère une version imprimable du diagramme en format paysage avec légende, paramètres et horodatage</li>
+                            <li><strong>V. mont / V. desc :</strong> Vitesses montante et descendante en km/h (de 10 à 130). Déterminent l'inclinaison des lignes directrices et le calcul de la bande passante.</li>
+                            <li><strong>Zoom X :</strong> Échelle horizontale du diagramme (en px/s)</li>
+                            <li><strong>Zoom Y :</strong> Échelle verticale du diagramme (en px/m)</li>
+                            <li><strong>Cycles :</strong> Nombre de cycles affichés (2 ou 3)</li>
+                            <li><strong>Lignes directrices :</strong> Affiche ou masque les lignes de vitesse diagonales sur le diagramme</li>
+                            <li><strong>Synchroniser :</strong> Actualise les données (offset, durée de vert, cycle) depuis les projets sauvegardés pour le plan de feu sélectionné de chaque carrefour</li>
+                            <li><strong>Enregistrer :</strong> Exporte l'onde verte dans un fichier JSON sur le disque</li>
+                            <li><strong>Imprimer :</strong> Génère une version imprimable du diagramme en format A4 paysage avec légende, vitesses et bandes passantes</li>
+                        </ul>
+                    </section>
+                    <section className="help-section">
+                        <h4>Sauvegarde et chargement</h4>
+                        <ul>
+                            <li><strong>Création :</strong> Menu Onde verte → Créer une onde verte crée une nouvelle onde verte et l'ouvre dans un nouvel onglet</li>
+                            <li><strong>Ouverture :</strong> Menu Onde verte → Ouvrir une onde verte charge une onde verte existante depuis le local storage</li>
                             <li><strong>Paramètres par PF :</strong> Les vitesses, offsets et options d'affichage sont sauvegardés séparément pour chaque plan de feu, permettant de comparer facilement différents scénarios</li>
                         </ul>
                     </section>
