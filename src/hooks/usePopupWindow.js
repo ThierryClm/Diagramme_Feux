@@ -64,7 +64,7 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
             const popup = window.open(
                 '',
                 title.replace(/\s+/g, '_'),
-                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no,status=no`
             );
 
             if (!popup) {

@@ -311,7 +311,7 @@ function App() {
     const floatingImagePopup = usePopupWindow({
         isOpen: showFloatingImage && !!intersectionImage,
         onClose: () => setShowFloatingImage(false),
-        title: 'Image du carrefour',
+        title: 'Carrefour',
         width: Math.round((750 - floatingCrop.left - floatingCrop.right) * floatingZoom) + 40,
         height: Math.round((530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom) + 120
     });
@@ -1479,6 +1479,9 @@ function App() {
             case 'toggleGroupNamesDiagram':
                 setShowGroupNamesDiagram(v => !v);
                 break;
+            case 'toggleFloatingImage':
+                setShowFloatingImage(v => !v);
+                break;
             case 'externalLinks':
                 setShowExternalLinksModal(true);
                 break;
@@ -2539,7 +2542,7 @@ function App() {
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                 />
@@ -3507,6 +3510,7 @@ function App() {
                             <li><strong>Séparateur vertical :</strong> La barre de séparation entre le panneau de configuration (à gauche) et la zone du diagramme (à droite) est déplaçable par glisser-déposer. Sa position est sauvegardée automatiquement.</li>
                             <li><strong>Séparateur horizontal :</strong> La barre de séparation entre le diagramme (en haut) et le tableau des conditions de micro-régulation (en bas) est également déplaçable par glisser-déposer. Sa position est sauvegardée avec le projet.</li>
                             <li><strong>Masquer le panneau de configuration :</strong> Le bouton "Paramètre" dans l'en-tête permet de masquer ou d'afficher le panneau de configuration à gauche, libérant ainsi toute la largeur de l'écran pour le diagramme.</li>
+                            <li><strong>Image du carrefour :</strong> Le menu Mise en page permet d'afficher ou masquer la fenêtre détachée de l'image du carrefour. L'option est grisée si aucune image n'est chargée.</li>
                         </ul>
                     </section>
 
@@ -3549,6 +3553,7 @@ function App() {
                             <li><strong>Fin (Fin de vert) :</strong> Position de fin du vert dans le cycle (en secondes depuis le début du cycle)</li>
                             <li><strong>V (Vert) :</strong> Durée du feu vert, calculée automatiquement comme la différence entre Fin et Déb</li>
                             <li><strong>Indicateur aiguillage/escamotage :</strong> Cliquez sur un nom de groupe puis utilisez <em>Alt+A</em> (aiguillage) ou <em>Alt+E</em> (escamotage) pour marquer le groupe. Un petit "a" ou "e" apparaît à côté du nom. Les conflits où ce groupe est en première position (GFx dans "GFx ↔ GFy") sont alors grisés et non comptabilisés, ce qui peut permettre de valider le plan de feux.</li>
+                            <li><strong>Mode simulation :</strong> En mode simulation (onglet Simulation actif), la durée du cycle est affichée en lecture seule ("Cycle nnn secondes") et ne peut pas être modifiée.</li>
                         </ul>
                     </section>
 
@@ -3726,6 +3731,8 @@ function App() {
                             </li>
                             <li><strong>Mode simulation :</strong> Les flèches suivent le temps de la simulation en cours</li>
                             <li><strong>Escamotage :</strong> Quand un escamotage est actif, la flèche du groupe cible passe à l'orange puis au rouge pendant la zone de coupure</li>
+                            <li><strong>Déplacement au clavier :</strong> Sélectionnez une flèche en cliquant dessus, puis utilisez les touches fléchées du clavier (gauche, droite, haut, bas) pour la déplacer point par point. Le focus doit être sur l'image du carrefour (ne fonctionne pas quand l'image est détachée).</li>
+                            <li><strong>Glisser-déposer :</strong> Cliquez et maintenez sur une flèche pour la déplacer. La flèche suit le mouvement de la souris sans se recentrer sur le point de clic.</li>
                         </ul>
                     </section>
 
@@ -3735,6 +3742,7 @@ function App() {
                             <li><strong>Ctrl+Z :</strong> Annuler la dernière action</li>
                             <li><strong>Ctrl+Y :</strong> Refaire la dernière action annulée</li>
                             <li><strong>F1 :</strong> Aide en ligne contextuelle (pointe sur la section correspondant à la zone survolée)</li>
+                            <li><strong>Flèches directionnelles :</strong> Déplacent point par point la flèche sélectionnée sur l'image du carrefour (focus requis sur l'image)</li>
                         </ul>
                     </section>
 

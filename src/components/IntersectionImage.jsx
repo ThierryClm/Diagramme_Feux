@@ -194,11 +194,17 @@ const IntersectionImage = ({
         e.stopPropagation();
         setSelectedArrow(arrowId);
         setIsDragging(true);
+        setTimeout(() => containerRef.current?.focus(), 0);
+
+        const rect = containerRef.current.getBoundingClientRect();
+        const arrowData = arrows.find(a => a.id === arrowId);
+        const offsetX = ((e.clientX - rect.left) / rect.width) * 100 - arrowData.x;
+        const offsetY = ((e.clientY - rect.top) / rect.height) * 100 - arrowData.y;
 
         const handleMouseMove = (moveEvent) => {
             const rect = containerRef.current.getBoundingClientRect();
-            const x = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100));
-            const y = Math.max(0, Math.min(100, ((moveEvent.clientY - rect.top) / rect.height) * 100));
+            const x = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100 - offsetX));
+            const y = Math.max(0, Math.min(100, ((moveEvent.clientY - rect.top) / rect.height) * 100 - offsetY));
 
             onArrowsChange(arrows.map(a =>
                 a.id === arrowId ? { ...a, x, y } : a
@@ -280,6 +286,34 @@ const IntersectionImage = ({
             setSelectedArrow(null);
         }
     };
+
+    // Arrow keyboard navigation - refs pour données à jour dans le handler
+    const arrowsRef = useRef(arrows);
+    const selectedArrowRef = useRef(selectedArrow);
+    const onArrowsChangeRef = useRef(onArrowsChange);
+    arrowsRef.current = arrows;
+    selectedArrowRef.current = selectedArrow;
+    onArrowsChangeRef.current = onArrowsChange;
+
+    const handleContainerKeyDown = useCallback((e) => {
+        if (!selectedArrowRef.current) return;
+        const step = 0.2;
+        let dx = 0, dy = 0;
+        switch (e.key) {
+            case 'ArrowLeft':  dx = -step; break;
+            case 'ArrowRight': dx = step;  break;
+            case 'ArrowUp':    dy = -step; break;
+            case 'ArrowDown':  dy = step;  break;
+            default: return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        onArrowsChangeRef.current(arrowsRef.current.map(a =>
+            a.id === selectedArrowRef.current
+                ? { ...a, x: Math.max(0, Math.min(100, a.x + dx)), y: Math.max(0, Math.min(100, a.y + dy)) }
+                : a
+        ));
+    }, []);
 
     // Get group info for display
     const getGroupInfo = (groupId) => {
@@ -737,7 +771,10 @@ const IntersectionImage = ({
                 <div
                     ref={containerRef}
                     className="intersection-image-area"
+                    tabIndex="-1"
+                    style={{ outline: 'none' }}
                     onClick={handleImageClick}
+                    onKeyDown={handleContainerKeyDown}
                 >
                 {imageData ? (
                     <>
@@ -769,6 +806,7 @@ const IntersectionImage = ({
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setSelectedArrow(arrow.id);
+                                        setTimeout(() => containerRef.current?.focus(), 0);
                                     }}
                                     onMouseEnter={() => setHoveredArrowGroupId && setHoveredArrowGroupId(arrow.groupId)}
                                     onMouseLeave={() => setHoveredArrowGroupId && setHoveredArrowGroupId(null)}

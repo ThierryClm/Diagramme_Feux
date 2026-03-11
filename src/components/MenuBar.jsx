@@ -184,6 +184,7 @@ const MenuBar = ({
                 { label: 'Noms GF dans le formulaire', action: 'toggleGroupNamesForm', toggle: true, checked: layoutOptions.showGroupNamesForm },
                 { label: 'Noms GF dans la matrice', action: 'toggleGroupNamesMatrix', toggle: true, checked: layoutOptions.showGroupNamesMatrix },
                 { label: 'Noms GF dans les diagrammes', action: 'toggleGroupNamesDiagram', toggle: true, checked: layoutOptions.showGroupNamesDiagram },
+                { label: 'Image du carrefour', action: 'toggleFloatingImage', toggle: true, checked: layoutOptions.showFloatingImage, disabled: !layoutOptions.hasIntersectionImage },
                 { type: 'separator' },
                 {
                     label: 'Dilatation du diagramme',
@@ -347,9 +348,10 @@ const MenuBar = ({
             return (
                 <button
                     key={idx}
-                    className={`menu-item ${item.checked ? 'checked' : ''}`}
-                    onClick={() => handleItemClick(item.action)}
+                    className={`menu-item ${item.checked ? 'checked' : ''} ${item.disabled ? 'disabled' : ''}`}
+                    onClick={() => !item.disabled && handleItemClick(item.action)}
                     onMouseEnter={() => setOpenSubmenu(null)}
+                    disabled={item.disabled}
                 >
                     <span className="checkmark">{item.checked ? '✓' : '\u00A0\u00A0'}</span>
                     {item.label}

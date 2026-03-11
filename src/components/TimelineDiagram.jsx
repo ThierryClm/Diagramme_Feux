@@ -806,30 +806,36 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             <h3 className="diagram-title">
                 <span>Diagramme{planName ? ` : simulation du plan de feu ${planName}` : (activePFName ? ` - ${activePFName}` : '')}</span>
                 {setCycleLengthInput && (
-                    <label className="cycle-input-label" style={{ marginLeft: '50px', fontSize: '14px', fontWeight: 'normal' }}>
-                        Cycle:
-                        <input
-                            type="number"
-                            min="10"
-                            value={cycleLengthInput}
-                            onChange={(e) => setCycleLengthInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.target.blur();
-                                }
-                            }}
-                            onBlur={() => {
-                                const newCycle = parseInt(cycleLengthInput);
-                                if (!isNaN(newCycle) && newCycle >= 10 && newCycle !== cycleLength) {
-                                    setCycleLength(newCycle);
-                                } else {
-                                    setCycleLengthInput(cycleLength.toString());
-                                }
-                            }}
-                            className="input-count"
-                        />
-                        <span>s</span>
-                    </label>
+                    planName ? (
+                        <span style={{ marginLeft: '50px', fontSize: '14px', fontWeight: 'normal' }}>
+                            Cycle {simulationResult?.simulatedCycleLength || cycleLength} secondes
+                        </span>
+                    ) : (
+                        <label className="cycle-input-label" style={{ marginLeft: '50px', fontSize: '14px', fontWeight: 'normal' }}>
+                            Cycle:
+                            <input
+                                type="number"
+                                min="10"
+                                value={cycleLengthInput}
+                                onChange={(e) => setCycleLengthInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.target.blur();
+                                    }
+                                }}
+                                onBlur={() => {
+                                    const newCycle = parseInt(cycleLengthInput);
+                                    if (!isNaN(newCycle) && newCycle >= 10 && newCycle !== cycleLength) {
+                                        setCycleLength(newCycle);
+                                    } else {
+                                        setCycleLengthInput(cycleLength.toString());
+                                    }
+                                }}
+                                className="input-count"
+                            />
+                            <span>s</span>
+                        </label>
+                    )
                 )}
                 {planName && setIsPlayingSimulation && (
                     <div className="diagram-playback" style={{ marginLeft: '20px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 'normal' }}>
