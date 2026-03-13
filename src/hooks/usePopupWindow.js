@@ -40,6 +40,11 @@ function installMainListener() {
 
     // When user clicks inside the main window (covers tab switches, buttons, etc.)
     document.addEventListener('mousedown', bringPopupsIfAllowed);
+
+    // Close all popups when the main window is closed
+    window.addEventListener('beforeunload', () => {
+        openPopups.forEach(p => { if (!p.closed) p.close(); });
+    });
 }
 
 /**

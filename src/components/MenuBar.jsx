@@ -185,6 +185,7 @@ const MenuBar = ({
                 { label: 'Noms GF dans la matrice', action: 'toggleGroupNamesMatrix', toggle: true, checked: layoutOptions.showGroupNamesMatrix },
                 { label: 'Noms GF dans les diagrammes', action: 'toggleGroupNamesDiagram', toggle: true, checked: layoutOptions.showGroupNamesDiagram },
                 { label: 'Image du carrefour', action: 'toggleFloatingImage', toggle: true, checked: layoutOptions.showFloatingImage, disabled: !layoutOptions.hasIntersectionImage },
+                { label: 'Matrice des temps interverts', action: 'toggleFloatingMatrix', toggle: true, checked: layoutOptions.showFloatingMatrix },
                 { type: 'separator' },
                 {
                     label: 'Dilatation du diagramme',

@@ -54,7 +54,7 @@ const MatrixInput = ({ value, onChange, className }) => {
     );
 };
 
-const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover, showGroupNames = true }) => {
+const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover, showGroupNames = true, onDetach }) => {
 
     // Bi-carrefour separator index
     const separatorIdx = biCarrefourSeparator != null ? groups.findIndex(g => g.id === biCarrefourSeparator) : -1;
@@ -360,7 +360,18 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
 
     return (
         <div className="matrix-container-inline">
-            <h3>Matrice des temps interverts</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                Matrice des temps interverts
+                {onDetach && (
+                    <button
+                        onClick={onDetach}
+                        title="Détacher dans une fenêtre séparée"
+                        style={{ fontSize: '0.65em', padding: '2px 8px', cursor: 'pointer', background: '#444', border: '1px solid #666', color: '#ccc', borderRadius: '3px' }}
+                    >
+                        Détacher
+                    </button>
+                )}
+            </h3>
 
             <div className="matrix-scroll">
                 <table className="matrix-grid">

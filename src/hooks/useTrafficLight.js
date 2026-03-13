@@ -547,6 +547,24 @@ export const useTrafficLight = () => {
                 return newPf;
             });
         });
+
+        // 5. Reorder traffic datasets (keyed by groupId)
+        setTrafficDatasets(currentDatasets => {
+            const newDatasets = {};
+            Object.keys(currentDatasets).forEach(datasetKey => {
+                const dataset = currentDatasets[datasetKey];
+                const newDataset = {};
+                Object.keys(dataset).forEach(oldGroupId => {
+                    const oldId = parseInt(oldGroupId);
+                    const newId = oldToNew[oldId];
+                    if (newId) {
+                        newDataset[newId] = dataset[oldGroupId];
+                    }
+                });
+                newDatasets[datasetKey] = newDataset;
+            });
+            return newDatasets;
+        });
     };
 
     // Helper: Check if two time ranges overlap in cyclic time

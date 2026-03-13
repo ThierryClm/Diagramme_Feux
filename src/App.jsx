@@ -223,6 +223,11 @@ function App() {
         const saved = localStorage.getItem('floating_image_visible');
         return saved === 'true';
     });
+
+    // Floating matrix state
+    const [showFloatingMatrix, setShowFloatingMatrix] = useState(() => {
+        return localStorage.getItem('floating_matrix_visible') === 'true';
+    });
     const [floatingCrop, setFloatingCrop] = useState(() => {
         try {
             const saved = localStorage.getItem('floating_image_crop');
@@ -299,6 +304,11 @@ function App() {
         localStorage.setItem('floating_image_visible', showFloatingImage.toString());
     }, [showFloatingImage]);
 
+    // Save floating matrix state to localStorage
+    useEffect(() => {
+        localStorage.setItem('floating_matrix_visible', showFloatingMatrix.toString());
+    }, [showFloatingMatrix]);
+
     useEffect(() => {
         localStorage.setItem('floating_image_crop', JSON.stringify(floatingCrop));
     }, [floatingCrop]);
@@ -314,6 +324,15 @@ function App() {
         title: 'Carrefour',
         width: Math.round((750 - floatingCrop.left - floatingCrop.right) * floatingZoom) + 40,
         height: Math.round((530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom) + 120
+    });
+
+    // Popup window for floating matrix
+    const matrixPopup = usePopupWindow({
+        isOpen: showFloatingMatrix,
+        onClose: () => setShowFloatingMatrix(false),
+        title: 'Matrice',
+        width: Math.min(900, 120 + groups.length * 55),
+        height: Math.min(800, 120 + groups.length * 55)
     });
 
     // Handle resize drag
@@ -1482,6 +1501,9 @@ function App() {
             case 'toggleFloatingImage':
                 setShowFloatingImage(v => !v);
                 break;
+            case 'toggleFloatingMatrix':
+                setShowFloatingMatrix(v => !v);
+                break;
             case 'externalLinks':
                 setShowExternalLinksModal(true);
                 break;
@@ -2515,6 +2537,28 @@ function App() {
         simulationEnabled, isPlayingSimulation, simulationCurrentTime, simulationResult,
         actionData, cycleLength, imageBrightness, imageContrast, floatingImagePopup.renderToPopup]);
 
+    // Render matrix into popup window
+    useEffect(() => {
+        if (!showFloatingMatrix) return;
+        matrixPopup.renderToPopup(
+            <div style={{ padding: '12px', height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+                <IntergreenMatrix
+                    conflictMatrix={conflictMatrix}
+                    setMatrixValue={setMatrixValue}
+                    groups={groups}
+                    cycleLength={cycleLength}
+                    actionData={actionData}
+                    activePFId={activePFId}
+                    pfTabs={pfTabs}
+                    biCarrefourSeparator={biCarrefourSeparator}
+                    onCellHover={() => {}}
+                    showGroupNames={showGroupNamesMatrix}
+                />
+            </div>
+        );
+    }, [showFloatingMatrix, conflictMatrix, groups, cycleLength, actionData, activePFId,
+        pfTabs, biCarrefourSeparator, showGroupNamesMatrix, matrixPopup.renderToPopup]);
+
     // Afficher l'écran de connexion si non authentifié
     if (!isAuthenticated) {
         return (
@@ -2542,7 +2586,7 @@ function App() {
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                 />
@@ -2849,6 +2893,7 @@ function App() {
                                     biCarrefourSeparator={biCarrefourSeparator}
                                     onCellHover={setHoveredConflict}
                                     showGroupNames={showGroupNamesMatrix}
+                                    onDetach={() => setShowFloatingMatrix(v => !v)}
                                 />
                                 </div>
                             )}
@@ -4319,7 +4364,7 @@ function App() {
                         disabled={!moveGroupTouched}
                         onClick={() => {
                             moveGroupToPosition(parseInt(groupToMove), parseInt(moveAfterGroup));
-                            setMoveGroupModal(false);
+                            setMoveGroupTouched(false);
                         }}
                     >
                         Déplacer
