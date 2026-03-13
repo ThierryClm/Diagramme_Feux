@@ -218,6 +218,18 @@ function App() {
         setProjectModified(true);
     }, [groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
 
+    // Warn before closing if project has unsaved changes
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (projectModified) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [projectModified]);
+
     // Floating image state (persists across tab changes and page reloads)
     const [showFloatingImage, setShowFloatingImage] = useState(() => {
         const saved = localStorage.getItem('floating_image_visible');
@@ -3115,8 +3127,8 @@ function App() {
                                 cycleLengthInput={cycleLengthInput}
                                 setCycleLengthInput={setCycleLengthInput}
                                 setCycleLength={setCycleLength}
-                                showComments={showComments}
-                                showRemarks={showRemarks}
+                                showComments={simulationEnabled ? false : showComments}
+                                showRemarks={simulationEnabled ? false : showRemarks}
                                 showGroupNames={showGroupNamesDiagram}
                             />
                         </div>
