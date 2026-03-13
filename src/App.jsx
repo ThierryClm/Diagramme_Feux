@@ -3568,7 +3568,9 @@ function App() {
                             <li><strong>Séparateur vertical :</strong> La barre de séparation entre le panneau de configuration (à gauche) et la zone du diagramme (à droite) est déplaçable par glisser-déposer. Sa position est sauvegardée automatiquement.</li>
                             <li><strong>Séparateur horizontal :</strong> La barre de séparation entre le diagramme (en haut) et le tableau des conditions de micro-régulation (en bas) est également déplaçable par glisser-déposer. Sa position est sauvegardée avec le projet.</li>
                             <li><strong>Masquer le panneau de configuration :</strong> Le bouton "Paramètre" dans l'en-tête permet de masquer ou d'afficher le panneau de configuration à gauche, libérant ainsi toute la largeur de l'écran pour le diagramme.</li>
-                            <li><strong>Image du carrefour :</strong> Le menu Mise en page permet d'afficher ou masquer la fenêtre détachée de l'image du carrefour. L'option est grisée si aucune image n'est chargée.</li>
+                            <li><strong>Image du carrefour :</strong> Le menu Mise en page permet d'afficher ou masquer la fenêtre détachée de l'image du carrefour. L'option est grisée si aucune image n'est chargée. La fenêtre peut être déplacée sur un autre écran.</li>
+                            <li><strong>Matrice des temps interverts :</strong> Le menu Mise en page (ou le bouton "Détacher" dans l'onglet Matrice) ouvre la matrice dans une fenêtre séparée, déplaçable sur un autre écran. La matrice reste éditable depuis la fenêtre détachée.</li>
+                            <li><strong>Confirmation à la fermeture :</strong> Si le projet a été modifié sans être sauvegardé, le navigateur affiche une confirmation avant de fermer l'onglet ou la fenêtre.</li>
                         </ul>
                     </section>
 
@@ -3769,7 +3771,7 @@ function App() {
                             <li><strong>Glisser :</strong> Décale tous les groupes d'un nombre de secondes donné</li>
                             <li><strong>Insérer :</strong> Insère du temps dans le cycle à une position donnée</li>
                             <li><strong>Réduire :</strong> Réduit la plage de temps dans le cycle à une position donnée</li>
-                            <li><strong>Déplacer un groupe :</strong> Déplace un groupe vers le haut ou le bas. <em>Cette action synchronise automatiquement les données (diagramme, matrice, actions) dans tous les plans de feux.</em></li>
+                            <li><strong>Déplacer un groupe :</strong> Déplace un groupe vers une nouvelle position. <em>Cette action synchronise automatiquement les données (diagramme, matrice, actions, données de trafic) dans tous les plans de feux.</em> La fenêtre reste ouverte après chaque déplacement pour enchaîner plusieurs opérations ; seuls la croix ou le bouton Annuler la ferment.</li>
                             <li><strong>Intégrer un bi-Carrefour :</strong> Permet de séparer visuellement le carrefour en deux zones en désignant un groupe de feu de séparation. Une ligne blanche horizontale et verticale apparaît dans la matrice des temps interverts (onglet Configuration et onglet Matrice), ainsi qu'une ligne blanche de séparation dans le diagramme du plan de feu. Le menu bascule ensuite en « Rétablir en uni-carrefour » pour supprimer la séparation. Cette option est sauvegardée avec le projet.</li>
                             <li><strong>Options :</strong> Affiche la légende visuelle des actions</li>
                         </ul>
