@@ -1,0 +1,78 @@
+{
+    "projectName": "Projet Test",
+    "intersectionName": "Carrefour Test",
+    "cycleLength": 90,
+    "groups": [
+        {
+            "id": 1,
+            "name": "GF1",
+            "type": "VL",
+            "offset": 0,
+            "minGreen": 10,
+            "durations": { "green": 30, "orange": 3, "red": 57 },
+            "da": "",
+            "phaseFlag": "",
+            "comment": "",
+            "commentColor": "",
+            "courant": ""
+        },
+        {
+            "id": 2,
+            "name": "GF2",
+            "type": "VL",
+            "offset": 33,
+            "minGreen": 10,
+            "durations": { "green": 25, "orange": 3, "red": 32 },
+            "da": "",
+            "phaseFlag": "",
+            "comment": "",
+            "commentColor": "",
+            "courant": ""
+        },
+        {
+            "id": 3,
+            "name": "GF3",
+            "type": "Piéton",
+            "offset": 55,
+            "minGreen": 8,
+            "durations": { "green": 20, "orange": 3, "red": 12 },
+            "da": "",
+            "phaseFlag": "",
+            "comment": "",
+            "commentColor": "",
+            "courant": ""
+        }
+    ],
+    "conflictMatrix": [
+        ["", 5,  3 ],
+        [4,  "", 6 ],
+        [3,  3,  ""]
+    ],
+    "pfTabs": [
+        {
+            "id": 1,
+            "name": "Plan 1",
+            "cycleLength": 90,
+            "actionData": [],
+            "remarques": ""
+        }
+    ],
+    "activePFId": 1,
+    "intersectionImage": null,
+    "intersectionArrows": [],
+    "imageBrightness": 100,
+    "imageContrast": 100,
+    "trafficDatasets": {},
+    "activeTrafficDataset": 0,
+    "customTrafficDatasetNames": {},
+    "pfTrafficDatasetMap": {},
+    "dependencyGap": 0,
+    "biCarrefourSeparator": null,
+    "externalLinks": [],
+    "projectProperties": {
+        "commune": "",
+        "moa": "",
+        "moe": "",
+        "dateModification": "2026-03-17T08:00:00.000Z"
+    }
+}

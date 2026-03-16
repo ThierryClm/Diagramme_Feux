@@ -110,15 +110,71 @@ export function computeConflicts(groups, conflictMatrix, cycleLength, actionData
 /**
  * Déplace un groupe de la position `from` à la position `to` dans le tableau.
  * Réassigne les ids séquentiellement après déplacement.
- *
- * @param {Array} groups - Liste des groupes
- * @param {number} fromIndex - Index source (0-based)
- * @param {number} toIndex - Index destination (0-based)
- * @returns {Array} Nouveau tableau de groupes
  */
 export function moveGroup(groups, fromIndex, toIndex) {
     const newGroups = [...groups];
     const [moved] = newGroups.splice(fromIndex, 1);
     newGroups.splice(toIndex, 0, moved);
     return newGroups.map((g, idx) => ({ ...g, id: idx + 1 }));
+}
+
+/**
+ * Réorganise la matrice de conflits après un déplacement de groupe.
+ * Logique extraite de moveGroupToPosition dans useTrafficLight.js.
+ *
+ * @param {Array} matrix - Matrice 2D originale
+ * @param {Array} groups - Groupes avant déplacement
+ * @param {number} fromIndex - Index source (0-based)
+ * @param {number} toIndex - Index destination (0-based)
+ * @returns {Array} Nouvelle matrice réorganisée
+ */
+export function remapMatrix(matrix, groups, fromIndex, toIndex) {
+    if (!matrix || matrix.length === 0) return matrix;
+
+    // Calculer le nouvel ordre des groupes
+    const newGroups = [...groups];
+    const [moved] = newGroups.splice(fromIndex, 1);
+    newGroups.splice(toIndex, 0, moved);
+
+    // Construire la correspondance ancienne position → nouvelle position
+    const oldToNew = {};
+    for (let i = 0; i < groups.length; i++) {
+        const group = groups[i];
+        const newIndex = newGroups.findIndex(g => g.id === group.id);
+        oldToNew[i + 1] = newIndex + 1; // 1-based
+    }
+
+    const size = matrix.length;
+    const newMatrix = Array(size).fill(null).map(() => Array(size).fill(0));
+    for (let oldRow = 0; oldRow < size; oldRow++) {
+        for (let oldCol = 0; oldCol < size; oldCol++) {
+            const newRow = oldToNew[oldRow + 1] - 1;
+            const newCol = oldToNew[oldCol + 1] - 1;
+            if (newRow >= 0 && newRow < size && newCol >= 0 && newCol < size) {
+                newMatrix[newRow][newCol] = matrix[oldRow][oldCol];
+            }
+        }
+    }
+    return newMatrix;
+}
+
+/**
+ * Valide les contraintes de timing d'un groupe par rapport au cycle.
+ *
+ * @param {Object} group - Groupe à valider
+ * @param {number} cycleLength - Durée du cycle en secondes
+ * @returns {Array} Liste des erreurs détectées (vide si tout est OK)
+ */
+export function validateGroupTiming(group, cycleLength) {
+    const errors = [];
+    const { offset, durations, minGreen } = group;
+    const { green, orange } = durations;
+
+    if (green < minGreen) {
+        errors.push({ type: 'minGreen', message: `Vert (${green}s) < minimum (${minGreen}s)` });
+    }
+    if (offset + green + orange > cycleLength) {
+        errors.push({ type: 'overflow', message: `offset+vert+orange (${offset + green + orange}s) dépasse le cycle (${cycleLength}s)` });
+    }
+    return errors;
 }

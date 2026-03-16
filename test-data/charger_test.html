@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Chargement données de test</title>
+    <style>
+        body { font-family: sans-serif; background: #1e1e1e; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #2a2a2a; padding: 2rem; border-radius: 8px; text-align: center; max-width: 400px; }
+        button { background: #4a9eff; color: white; border: none; padding: 0.8rem 2rem; border-radius: 4px; font-size: 1rem; cursor: pointer; margin-top: 1rem; }
+        button:hover { background: #3a8eee; }
+        .ok { color: #4caf50; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>Données de test — Diagramme de Feux</h2>
+    <p>Charge un projet de test avec 3 groupes de feux et un conflit intervert GF1→GF2 (3s réel &lt; 5s requis).</p>
+    <p style="color:#aaa; font-size:0.85em">⚠️ Cette page doit être ouverte via le serveur :<br><strong>http://localhost:3000/test-data/charger_test.html</strong></p>
+    <button onclick="charger()">Charger et ouvrir l'application</button>
+    <div id="status"></div>
+</div>
+<script>
+function charger() {
+    const projet = {
+        projectName: "Projet Test",
+        intersectionName: "Carrefour Test",
+        cycleLength: 90,
+        groups: [
+            { id: 1, name: "GF1", type: "VL", offset: 0,  minGreen: 10, durations: { green: 30, orange: 3, red: 57 }, da: "", phaseFlag: "", comment: "", commentColor: "", courant: "" },
+            { id: 2, name: "GF2", type: "VL", offset: 33, minGreen: 10, durations: { green: 25, orange: 3, red: 32 }, da: "", phaseFlag: "", comment: "", commentColor: "", courant: "" },
+            { id: 3, name: "GF3", type: "Piéton", offset: 55, minGreen: 8, durations: { green: 20, orange: 3, red: 12 }, da: "", phaseFlag: "", comment: "", commentColor: "", courant: "" }
+        ],
+        conflictMatrix: [["", 5, 3], [4, "", 6], [3, 3, ""]],
+        pfTabs: [{ id: 1, name: "Plan 1", cycleLength: 90, actionData: [], remarques: "" }],
+        activePFId: 1,
+        intersectionImage: null,
+        intersectionArrows: [],
+        imageBrightness: 100,
+        imageContrast: 100,
+        trafficDatasets: {},
+        activeTrafficDataset: 0,
+        customTrafficDatasetNames: {},
+        pfTrafficDatasetMap: {},
+        dependencyGap: 0,
+        biCarrefourSeparator: null,
+        externalLinks: [],
+        projectProperties: { commune: "", moa: "", moe: "", dateModification: new Date().toISOString() }
+    };
+
+    // Enregistrer le projet dans localStorage
+    localStorage.setItem("traffic_project_Projet Test", JSON.stringify(projet));
+    // Mettre à jour la liste des projets
+    const order = JSON.parse(localStorage.getItem("traffic_project_order") || "[]");
+    if (!order.includes("Projet Test")) {
+        order.unshift("Projet Test");
+        localStorage.setItem("traffic_project_order", JSON.stringify(order));
+    }
+
+    document.getElementById("status").innerHTML = '<p class="ok">✓ Données chargées ! Redirection en cours...</p>';
+    setTimeout(() => { window.location.href = "http://localhost:3000/"; }, 1000);
+}
+</script>
+</body>
+</html>
