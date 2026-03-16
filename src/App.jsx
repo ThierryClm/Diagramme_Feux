@@ -23,6 +23,10 @@ import useFloatingLegend from './hooks/useFloatingLegend';
 import useFloatingMatrix from './hooks/useFloatingMatrix';
 import useDarkMode from './hooks/useDarkMode';
 import useRecentDirectories from './hooks/useRecentDirectories';
+import useUILayout from './hooks/useUILayout';
+import useProjectModification from './hooks/useProjectModification';
+import usePhasageBulleUI from './hooks/usePhasageBulleUI';
+import useRecentFiles from './hooks/useRecentFiles';
 import { importExcelFile } from './utils/excelImporter';
 
 import './components/GroupTable.css';
@@ -198,8 +202,21 @@ function App() {
     const [showUserManager, setShowUserManager] = useState(false);
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
-    const [pixelsPerSecond, setPixelsPerSecond] = useState(10);
-    const [activeTab, setActiveTab] = useState('config'); // 'config', 'traffic'
+    const {
+        pixelsPerSecond, setPixelsPerSecond,
+        activeTab, setActiveTab,
+        sidebarWidth, setSidebarWidth,
+        isResizing,
+        splitViewRef,
+        sidebarVisible, setSidebarVisible,
+        handleResizeStart,
+        diagramHeight, setDiagramHeight,
+        isResizingDiagram,
+        diagramAreaRef,
+        resetDiagramHeight,
+        handleDiagramResizeStart,
+        handleActionPanelResize
+    } = useUILayout();
     const [showDependencies, setShowDependencies] = useState(false);
     const [hoveredActionId, setHoveredActionId] = useState(null);
 
@@ -212,27 +229,8 @@ function App() {
     const [hoveredDiagramTime, setHoveredDiagramTime] = useState(null); // Time position when hovering diagram
 
     // Track whether project has been modified (for "Nouveau projet" menu)
-    const [projectModified, setProjectModified] = useState(false);
-    const projectModifiedSkip = useRef(true);
-    useEffect(() => {
-        if (projectModifiedSkip.current) {
-            projectModifiedSkip.current = false;
-            return;
-        }
-        setProjectModified(true);
-    }, [groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
-
-    // Warn before closing if project has unsaved changes
-    useEffect(() => {
-        const handleBeforeUnload = (e) => {
-            if (projectModified) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [projectModified]);
+    const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip } =
+        useProjectModification([groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
 
     // Floating image state (persists across tab changes and page reloads)
     const [showFloatingImage, setShowFloatingImage] = useState(() => {
@@ -277,11 +275,14 @@ function App() {
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
 
     // Phasage bulle state (phasageBulleCount and phasageBulleTimes come from useTrafficLight hook - saved per PF)
-    const [phasageBulleEnabled, setPhasageBulleEnabled] = useState(false);
-    const [phasageBulleModal, setPhasageBulleModal] = useState(false);
-    const [phasageBulleVisibleGroups, setPhasageBulleVisibleGroups] = useState(new Set());
-    const [phasageBulleVersion, setPhasageBulleVersion] = useState(0);
-    const [hoveredPhasageGroupId, setHoveredPhasageGroupId] = useState(null);
+    const {
+        phasageBulleEnabled, setPhasageBulleEnabled,
+        phasageBulleModal, setPhasageBulleModal,
+        phasageBulleVisibleGroups, setPhasageBulleVisibleGroups,
+        phasageBulleVersion, setPhasageBulleVersion,
+        hoveredPhasageGroupId, setHoveredPhasageGroupId,
+        togglePhasageBulleGroup
+    } = usePhasageBulleUI(intersectionArrows);
     const [imageNaturalDims, setImageNaturalDims] = useState({ width: 1, height: 1 });
 
     // Compute natural dimensions of intersection image (for print scaling)
@@ -297,28 +298,6 @@ function App() {
     const [diagramArrowStyle, setDiagramArrowStyle] = useState('solid');
 
     // Resizable sidebar
-    const [sidebarWidth, setSidebarWidth] = useState(() => {
-        const saved = localStorage.getItem('sidebar_width');
-        return saved ? parseInt(saved) : 450;
-    });
-    const [isResizing, setIsResizing] = useState(false);
-    const splitViewRef = useRef(null);
-
-    // Sidebar visibility toggle
-    const [sidebarVisible, setSidebarVisible] = useState(() => {
-        const saved = localStorage.getItem('sidebar_visible');
-        return saved !== null ? saved === 'true' : true;
-    });
-
-    // Save sidebar width to localStorage
-    useEffect(() => {
-        localStorage.setItem('sidebar_width', sidebarWidth.toString());
-    }, [sidebarWidth]);
-
-    // Save sidebar visibility to localStorage
-    useEffect(() => {
-        localStorage.setItem('sidebar_visible', sidebarVisible.toString());
-    }, [sidebarVisible]);
 
     // Save floating image state to localStorage
     useEffect(() => {
@@ -344,126 +323,8 @@ function App() {
     });
 
 
-    // Handle resize drag
-    const handleResizeStart = useCallback((e) => {
-        e.preventDefault();
-        setIsResizing(true);
-    }, []);
-
-    const handleResizeMove = useCallback((e) => {
-        if (!isResizing || !splitViewRef.current) return;
-        const containerRect = splitViewRef.current.getBoundingClientRect();
-        const newWidth = e.clientX - containerRect.left;
-        // Limit between 300px and 1200px
-        setSidebarWidth(Math.min(1200, Math.max(300, newWidth)));
-    }, [isResizing]);
-
-    const handleResizeEnd = useCallback(() => {
-        setIsResizing(false);
-    }, []);
-
-    // Add/remove mouse event listeners for resizing
-    useEffect(() => {
-        if (isResizing) {
-            document.addEventListener('mousemove', handleResizeMove);
-            document.addEventListener('mouseup', handleResizeEnd);
-            document.body.style.cursor = 'col-resize';
-            document.body.style.userSelect = 'none';
-        } else {
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-        }
-        return () => {
-            document.removeEventListener('mousemove', handleResizeMove);
-            document.removeEventListener('mouseup', handleResizeEnd);
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-        };
-    }, [isResizing, handleResizeMove, handleResizeEnd]);
 
 
-    // Resizable horizontal splitter between diagram and action table
-    const [diagramHeight, setDiagramHeight] = useState(() => {
-        const saved = localStorage.getItem('diagram_height');
-        return saved ? parseInt(saved) : null; // null = auto (show full diagram)
-    });
-    const [isResizingDiagram, setIsResizingDiagram] = useState(false);
-    const diagramAreaRef = useRef(null);
-
-    // Save diagram height to localStorage
-    useEffect(() => {
-        if (diagramHeight !== null) {
-            localStorage.setItem('diagram_height', diagramHeight.toString());
-        }
-    }, [diagramHeight]);
-
-    // Handle horizontal resize drag
-    const handleDiagramResizeStart = useCallback((e) => {
-        e.preventDefault();
-        setIsResizingDiagram(true);
-    }, []);
-
-    const handleDiagramResizeMove = useCallback((e) => {
-        if (!isResizingDiagram || !diagramAreaRef.current) return;
-        const containerRect = diagramAreaRef.current.getBoundingClientRect();
-        const newHeight = e.clientY - containerRect.top - 40; // 40 = tabs height
-        // Limit between 100px and container height - 150px (for action table)
-        const maxHeight = containerRect.height - 150;
-        setDiagramHeight(Math.min(maxHeight, Math.max(100, newHeight)));
-    }, [isResizingDiagram]);
-
-    const handleDiagramResizeEnd = useCallback(() => {
-        setIsResizingDiagram(false);
-    }, []);
-
-    // On first load with no saved height, reduce diagram by 120px to show more action table
-    useEffect(() => {
-        if (diagramHeight === null && diagramAreaRef.current) {
-            const panel = diagramAreaRef.current.querySelector('.diagram-panel');
-            if (panel) {
-                const h = panel.offsetHeight;
-                if (h > 200) setDiagramHeight(h - 120);
-            }
-        }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // Reset diagram height to auto (full diagram visible)
-    const resetDiagramHeight = useCallback(() => {
-        setDiagramHeight(null);
-        localStorage.removeItem('diagram_height');
-    }, []);
-
-    // Handle panel resize from ActionTable bottom handle
-    const handleActionPanelResize = useCallback((deltaY) => {
-        if (!diagramAreaRef.current) return;
-        const containerRect = diagramAreaRef.current.getBoundingClientRect();
-        const maxHeight = containerRect.height - 150;
-
-        setDiagramHeight(prev => {
-            // If prev is null, calculate current diagram height
-            const currentHeight = prev !== null ? prev : containerRect.height - 200;
-            const newHeight = currentHeight + deltaY;
-            return Math.min(maxHeight, Math.max(100, newHeight));
-        });
-    }, []);
-
-    // Add/remove mouse event listeners for diagram resizing
-    useEffect(() => {
-        if (isResizingDiagram) {
-            document.addEventListener('mousemove', handleDiagramResizeMove);
-            document.addEventListener('mouseup', handleDiagramResizeEnd);
-            document.body.style.cursor = 'row-resize';
-            document.body.style.userSelect = 'none';
-        }
-        return () => {
-            document.removeEventListener('mousemove', handleDiagramResizeMove);
-            document.removeEventListener('mouseup', handleDiagramResizeEnd);
-            if (!isResizing) {
-                document.body.style.cursor = '';
-                document.body.style.userSelect = '';
-            }
-        };
-    }, [isResizingDiagram, handleDiagramResizeMove, handleDiagramResizeEnd, isResizing]);
 
     // Calculate simulated diagram when in simulation mode
     const simulationResult = useMemo(() => {
@@ -481,15 +342,6 @@ function App() {
     const [groupCountInput, setGroupCountInput] = useState(groups.length.toString());
     const [cycleLengthInput, setCycleLengthInput] = useState(cycleLength.toString());
 
-    // Initialize visible groups when entering phasage bulle mode
-    useEffect(() => {
-        if (phasageBulleEnabled && phasageBulleVisibleGroups.size === 0) {
-            // By default, show all groups that have arrows
-            const arrowGroupIds = new Set(intersectionArrows.map(a => a.groupId));
-            setPhasageBulleVisibleGroups(arrowGroupIds);
-        }
-    }, [phasageBulleEnabled, intersectionArrows]);
-
     // Synchronize traffic dataset with active PF tab (only when no saved mapping)
     useEffect(() => {
         if (pfTabs && pfTabs.length > 0 && activePFId) {
@@ -502,19 +354,6 @@ function App() {
             }
         }
     }, [activePFId, pfTabs, trafficDatasetNames, setActiveTrafficDataset, pfTrafficDatasetMap]);
-
-    // Toggle group visibility in phasage bulle
-    const togglePhasageBulleGroup = (groupId) => {
-        setPhasageBulleVisibleGroups(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(groupId)) {
-                newSet.delete(groupId);
-            } else {
-                newSet.add(groupId);
-            }
-            return newSet;
-        });
-    };
 
     // Sync local inputs when actual values change (e.g., after undo/redo or project load)
     useEffect(() => {
@@ -556,7 +395,7 @@ function App() {
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
     const [importHintDir, setImportHintDir] = useState('');
-    const [recentFiles, setRecentFiles] = useState([]);
+    const { recentFiles, setRecentFiles, addToRecentFiles, getRecentDirectories, getRecentDirectoriesForMenu } = useRecentFiles();
 
     // Green wave states
     const [createGreenWaveModal, setCreateGreenWaveModal] = useState(false);
@@ -1131,86 +970,6 @@ function App() {
         } catch (e) {
             console.error('Failed to delete green wave', e);
         }
-    };
-
-    // Load recent files from localStorage
-    useEffect(() => {
-        try {
-            const saved = localStorage.getItem('recentFiles');
-            if (saved) {
-                const files = JSON.parse(saved);
-                setRecentFiles(files);
-            }
-        } catch (e) {
-            console.error('Failed to load recent files', e);
-        }
-    }, []);
-
-    // Add file to recent files list
-    const addToRecentFiles = (filePath, fileName) => {
-        try {
-            // Extract directory from path (handle both / and \ separators)
-            const lastSlash = Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/'));
-            const directory = lastSlash > 0 ? filePath.substring(0, lastSlash) : '';
-
-            const newFile = {
-                path: filePath,
-                name: fileName,
-                directory: directory,
-                timestamp: new Date().toISOString()
-            };
-
-            // Get existing recent files
-            const saved = localStorage.getItem('recentFiles');
-            let files = saved ? JSON.parse(saved) : [];
-
-            // Remove if already exists (to avoid duplicates)
-            files = files.filter(f => f.path !== filePath);
-
-            // Add to beginning
-            files.unshift(newFile);
-
-            // Keep only last 10 files
-            files = files.slice(0, 10);
-
-            // Save to state and localStorage
-            setRecentFiles(files);
-            localStorage.setItem('recentFiles', JSON.stringify(files));
-        } catch (e) {
-            console.error('Failed to add to recent files', e);
-        }
-    };
-
-    // Get unique recent directories
-    const getRecentDirectories = () => {
-        try {
-            const directories = new Map();
-            recentFiles.forEach(file => {
-                if (file.directory && !directories.has(file.directory)) {
-                    directories.set(file.directory, file.timestamp);
-                }
-            });
-
-            // Sort by most recent
-            return Array.from(directories.entries())
-                .sort((a, b) => new Date(b[1]) - new Date(a[1]))
-                .map(([dir]) => dir)
-                .slice(0, 5); // Keep only last 5 directories
-        } catch (e) {
-            console.error('Failed to get recent directories', e);
-            return [];
-        }
-    };
-
-    // Get recent directories for menu (with shortened names)
-    const getRecentDirectoriesForMenu = () => {
-        const dirs = getRecentDirectories();
-        return dirs.map(dir => {
-            // Extract just the last folder name for display
-            const parts = dir.replace(/\\/g, '/').split('/');
-            const name = parts[parts.length - 1] || parts[parts.length - 2] || dir;
-            return { path: dir, name: name };
-        });
     };
 
     // Check for duplicated state on load
