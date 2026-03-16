@@ -27,6 +27,8 @@ import useUILayout from './hooks/useUILayout';
 import useProjectModification from './hooks/useProjectModification';
 import usePhasageBulleUI from './hooks/usePhasageBulleUI';
 import useRecentFiles from './hooks/useRecentFiles';
+import useSimulationUI from './hooks/useSimulationUI';
+import useDialogState from './hooks/useDialogState';
 import { importExcelFile } from './utils/excelImporter';
 
 import './components/GroupTable.css';
@@ -221,12 +223,14 @@ function App() {
     const [hoveredActionId, setHoveredActionId] = useState(null);
 
     // Intersection image animation state
-    const [isPlayingSimulation, setIsPlayingSimulation] = useState(false);
-    const [simulationCurrentTime, setSimulationCurrentTime] = useState(0);
+    const {
+        isPlayingSimulation, setIsPlayingSimulation,
+        simulationCurrentTime, setSimulationCurrentTime,
+        hoveredDiagramTime, setHoveredDiagramTime
+    } = useSimulationUI();
     const [hoveredArrowGroupId, setHoveredArrowGroupId] = useState(null);
     const [hoveredArrowGroupSaturated, setHoveredArrowGroupSaturated] = useState(false);
     const [hoveredConflict, setHoveredConflict] = useState(null); // {from, to} for conflict hover
-    const [hoveredDiagramTime, setHoveredDiagramTime] = useState(null); // Time position when hovering diagram
 
     // Track whether project has been modified (for "Nouveau projet" menu)
     const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip } =
@@ -364,15 +368,6 @@ function App() {
         setCycleLengthInput(cycleLength.toString());
     }, [cycleLength]);
 
-    // Modal states
-    const [openModal, setOpenModal] = useState(false);
-    const [slideModal, setSlideModal] = useState(false);
-    const [insertModal, setInsertModal] = useState(false);
-    const [reduceModal, setReduceModal] = useState(false);
-    const [optionsModal, setOptionsModal] = useState(false);
-    const [helpModal, setHelpModal] = useState(false);
-    const helpZoneRef = useRef(null);
-    const [importModal, setImportModal] = useState(false);
     const {
         darkMode, setDarkMode,
         showComments, setShowComments,
@@ -381,64 +376,61 @@ function App() {
         showGroupNamesMatrix, setShowGroupNamesMatrix,
         showGroupNamesDiagram, setShowGroupNamesDiagram
     } = useDarkMode();
-    const [slideValue, setSlideValue] = useState(0);
-    const [slideFromGroup, setSlideFromGroup] = useState(1);
-    const [slideToGroup, setSlideToGroup] = useState(1);
-    const [slideTouched, setSlideTouched] = useState(false);
-    const [insertStart, setInsertStart] = useState(0);
-    const [insertDuration, setInsertDuration] = useState(5);
-    const [insertTouched, setInsertTouched] = useState(false);
-    const [reduceStart, setReduceStart] = useState(0);
-    const [reduceDuration, setReduceDuration] = useState(5);
-    const [reduceTouched, setReduceTouched] = useState(false);
+    const { recentFiles, setRecentFiles, addToRecentFiles, getRecentDirectories, getRecentDirectoriesForMenu } = useRecentFiles();
     const [selectedProject, setSelectedProject] = useState(null);
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
     const [importHintDir, setImportHintDir] = useState('');
-    const { recentFiles, setRecentFiles, addToRecentFiles, getRecentDirectories, getRecentDirectoriesForMenu } = useRecentFiles();
 
-    // Green wave states
-    const [createGreenWaveModal, setCreateGreenWaveModal] = useState(false);
-    const [openGreenWaveModal, setOpenGreenWaveModal] = useState(false);
+    // Green wave data states
     const [selectedGreenWave, setSelectedGreenWave] = useState(null);
-    const [greenWaveViewer, setGreenWaveViewer] = useState(false);
     const [greenWaveData, setGreenWaveData] = useState(null);
     const [greenWaveListKey, setGreenWaveListKey] = useState(0);
 
-    // Print preview states
-    const [printPreviewModal, setPrintPreviewModal] = useState(false);
-    const [printType, setPrintType] = useState(null); // 'matrix', 'form', 'diagram', 'dossier'
-    const [dossierDialog, setDossierDialog] = useState(false);
-    const [dossierSections, setDossierSections] = useState({});
-    const [currentProjectPath, setCurrentProjectPath] = useState(''); // Chemin du projet courant
+    // Project path
+    const [currentProjectPath, setCurrentProjectPath] = useState('');
 
-    // Bi-carrefour modal states
-    const [biCarrefourModal, setBiCarrefourModal] = useState(false);
-    const [biCarrefourGroupId, setBiCarrefourGroupId] = useState('');
-    const [biCarrefourTouched, setBiCarrefourTouched] = useState(false);
-
-    // Move group modal states
-    const [moveGroupModal, setMoveGroupModal] = useState(false);
-    const [groupToMove, setGroupToMove] = useState('');
-    const [moveAfterGroup, setMoveAfterGroup] = useState('0'); // '0' means at the beginning
-    const [moveGroupTouched, setMoveGroupTouched] = useState(false);
-
-    // Imported HTM files state
-    const [importedHTMFiles, setImportedHTMFiles] = useState(() => {
-        try {
-            const saved = localStorage.getItem('importedHTMFiles');
-            return saved ? JSON.parse(saved) : [];
-        } catch (e) {
-            return [];
-        }
-    });
-    const [importHTMModal, setImportHTMModal] = useState(false);
-    const [htmFile, setHtmFile] = useState(null);
-    const [htmImportError, setHtmImportError] = useState('');
-    const [showExternalLinksModal, setShowExternalLinksModal] = useState(false);
-
-    // Drag & drop state for PF tabs
-    const [draggedTabIndex, setDraggedTabIndex] = useState(null);
+    // Modal and dialog states
+    const {
+        openModal, setOpenModal,
+        slideModal, setSlideModal,
+        insertModal, setInsertModal,
+        reduceModal, setReduceModal,
+        optionsModal, setOptionsModal,
+        helpModal, setHelpModal,
+        helpZoneRef,
+        importModal, setImportModal,
+        slideValue, setSlideValue,
+        slideFromGroup, setSlideFromGroup,
+        slideToGroup, setSlideToGroup,
+        slideTouched, setSlideTouched,
+        insertStart, setInsertStart,
+        insertDuration, setInsertDuration,
+        insertTouched, setInsertTouched,
+        reduceStart, setReduceStart,
+        reduceDuration, setReduceDuration,
+        reduceTouched, setReduceTouched,
+        biCarrefourModal, setBiCarrefourModal,
+        biCarrefourGroupId, setBiCarrefourGroupId,
+        biCarrefourTouched, setBiCarrefourTouched,
+        moveGroupModal, setMoveGroupModal,
+        groupToMove, setGroupToMove,
+        moveAfterGroup, setMoveAfterGroup,
+        moveGroupTouched, setMoveGroupTouched,
+        importHTMModal, setImportHTMModal,
+        htmFile, setHtmFile,
+        htmImportError, setHtmImportError,
+        importedHTMFiles, setImportedHTMFiles,
+        showExternalLinksModal, setShowExternalLinksModal,
+        printPreviewModal, setPrintPreviewModal,
+        printType, setPrintType,
+        dossierDialog, setDossierDialog,
+        dossierSections, setDossierSections,
+        createGreenWaveModal, setCreateGreenWaveModal,
+        openGreenWaveModal, setOpenGreenWaveModal,
+        greenWaveViewer, setGreenWaveViewer,
+        draggedTabIndex, setDraggedTabIndex
+    } = useDialogState();
 
     // File System Access API - mémoriser les derniers répertoires utilisés
     const lastOpenDirectoryRef = useRef(null);
