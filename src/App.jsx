@@ -19,6 +19,10 @@ import ExternalLinksModal from './components/ExternalLinksModal';
 import PropertiesPanel from './components/PropertiesPanel';
 import { calculateSimulatedDiagram } from './utils/simulationCalculator';
 import usePopupWindow from './hooks/usePopupWindow';
+import useFloatingLegend from './hooks/useFloatingLegend';
+import useFloatingMatrix from './hooks/useFloatingMatrix';
+import useDarkMode from './hooks/useDarkMode';
+import useRecentDirectories from './hooks/useRecentDirectories';
 import { importExcelFile } from './utils/excelImporter';
 
 import './components/GroupTable.css';
@@ -237,9 +241,11 @@ function App() {
     });
 
     // Floating matrix state
-    const [showFloatingMatrix, setShowFloatingMatrix] = useState(() => {
-        return localStorage.getItem('floating_matrix_visible') === 'true';
-    });
+    const {
+        showFloatingMatrix,
+        setShowFloatingMatrix,
+        matrixPopup
+    } = useFloatingMatrix(groups.length);
     const [floatingCrop, setFloatingCrop] = useState(() => {
         try {
             const saved = localStorage.getItem('floating_image_crop');
@@ -259,10 +265,13 @@ function App() {
     });
 
     // Floating legend state
-    const [showFloatingLegend, setShowFloatingLegend] = useState(false);
-    const [floatingLegendPosition, setFloatingLegendPosition] = useState({ x: 200, y: 150 });
-    const [isLegendDragging, setIsLegendDragging] = useState(false);
-    const legendDragOffset = useRef({ x: 0, y: 0 });
+    const {
+        showFloatingLegend,
+        setShowFloatingLegend,
+        floatingLegendPosition,
+        isLegendDragging,
+        handleLegendMouseDown
+    } = useFloatingLegend();
 
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
@@ -316,10 +325,6 @@ function App() {
         localStorage.setItem('floating_image_visible', showFloatingImage.toString());
     }, [showFloatingImage]);
 
-    // Save floating matrix state to localStorage
-    useEffect(() => {
-        localStorage.setItem('floating_matrix_visible', showFloatingMatrix.toString());
-    }, [showFloatingMatrix]);
 
     useEffect(() => {
         localStorage.setItem('floating_image_crop', JSON.stringify(floatingCrop));
@@ -338,14 +343,6 @@ function App() {
         height: Math.round((530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom) + 120
     });
 
-    // Popup window for floating matrix
-    const matrixPopup = usePopupWindow({
-        isOpen: showFloatingMatrix,
-        onClose: () => setShowFloatingMatrix(false),
-        title: 'Matrice',
-        width: Math.min(900, 120 + groups.length * 55),
-        height: Math.min(800, 120 + groups.length * 55)
-    });
 
     // Handle resize drag
     const handleResizeStart = useCallback((e) => {
@@ -384,38 +381,6 @@ function App() {
         };
     }, [isResizing, handleResizeMove, handleResizeEnd]);
 
-    // Floating legend drag handling
-    const handleLegendMouseDown = useCallback((e) => {
-        if (e.target.classList.contains('floating-close-btn')) return;
-        setIsLegendDragging(true);
-        legendDragOffset.current = {
-            x: e.clientX - floatingLegendPosition.x,
-            y: e.clientY - floatingLegendPosition.y
-        };
-    }, [floatingLegendPosition]);
-
-    useEffect(() => {
-        if (!isLegendDragging) return;
-
-        const handleMouseMove = (e) => {
-            setFloatingLegendPosition({
-                x: e.clientX - legendDragOffset.current.x,
-                y: e.clientY - legendDragOffset.current.y
-            });
-        };
-
-        const handleMouseUp = () => {
-            setIsLegendDragging(false);
-        };
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-
-        return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isLegendDragging]);
 
     // Resizable horizontal splitter between diagram and action table
     const [diagramHeight, setDiagramHeight] = useState(() => {
@@ -569,12 +534,14 @@ function App() {
     const [helpModal, setHelpModal] = useState(false);
     const helpZoneRef = useRef(null);
     const [importModal, setImportModal] = useState(false);
-    const [darkMode, setDarkMode] = useState(true);
-    const [showComments, setShowComments] = useState(true);
-    const [showRemarks, setShowRemarks] = useState(true);
-    const [showGroupNamesForm, setShowGroupNamesForm] = useState(true);
-    const [showGroupNamesMatrix, setShowGroupNamesMatrix] = useState(true);
-    const [showGroupNamesDiagram, setShowGroupNamesDiagram] = useState(true);
+    const {
+        darkMode, setDarkMode,
+        showComments, setShowComments,
+        showRemarks, setShowRemarks,
+        showGroupNamesForm, setShowGroupNamesForm,
+        showGroupNamesMatrix, setShowGroupNamesMatrix,
+        showGroupNamesDiagram, setShowGroupNamesDiagram
+    } = useDarkMode();
     const [slideValue, setSlideValue] = useState(0);
     const [slideFromGroup, setSlideFromGroup] = useState(1);
     const [slideToGroup, setSlideToGroup] = useState(1);
@@ -642,64 +609,14 @@ function App() {
     const lastGreenWaveDirectoryRef = useRef(null);
 
     // Liste des 5 derniers répertoires par type (pour affichage dans les menus)
-    const [recentOpenDirs, setRecentOpenDirs] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('recentOpenDirs') || '[]');
-        } catch { return []; }
-    });
-    const [recentImportDirs, setRecentImportDirs] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('recentImportDirs') || '[]');
-        } catch { return []; }
-    });
-    const [recentImageDirs, setRecentImageDirs] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('recentImageDirs') || '[]');
-        } catch { return []; }
-    });
-    const [recentSaveDirs, setRecentSaveDirs] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('recentSaveDirs') || '[]');
-        } catch { return []; }
-    });
-    const [recentGreenWaveDirs, setRecentGreenWaveDirs] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('recentGreenWaveDirs') || '[]');
-        } catch { return []; }
-    });
-
-    // Fonction pour ajouter un répertoire à la liste des récents
-    const addRecentDirectory = useCallback((type, dirName, dirHandle) => {
-        const updateList = (currentList, setList, storageKey) => {
-            // Créer un nouvel élément
-            const newEntry = { name: dirName, timestamp: Date.now() };
-            // Filtrer pour éviter les doublons
-            const filtered = currentList.filter(d => d.name !== dirName);
-            // Ajouter en tête et limiter à 5
-            const updated = [newEntry, ...filtered].slice(0, 5);
-            setList(updated);
-            localStorage.setItem(storageKey, JSON.stringify(updated));
-            return updated;
-        };
-
-        switch (type) {
-            case 'open':
-                updateList(recentOpenDirs, setRecentOpenDirs, 'recentOpenDirs');
-                break;
-            case 'import':
-                updateList(recentImportDirs, setRecentImportDirs, 'recentImportDirs');
-                break;
-            case 'image':
-                updateList(recentImageDirs, setRecentImageDirs, 'recentImageDirs');
-                break;
-            case 'save':
-                updateList(recentSaveDirs, setRecentSaveDirs, 'recentSaveDirs');
-                break;
-            case 'greenwave':
-                updateList(recentGreenWaveDirs, setRecentGreenWaveDirs, 'recentGreenWaveDirs');
-                break;
-        }
-    }, [recentOpenDirs, recentImportDirs, recentImageDirs, recentSaveDirs, recentGreenWaveDirs]);
+    const {
+        recentOpenDirs,
+        recentImportDirs,
+        recentImageDirs,
+        recentSaveDirs,
+        recentGreenWaveDirs,
+        addRecentDirectory
+    } = useRecentDirectories();
 
     // Fonctions pour sauvegarder/restaurer les handles de répertoire via IndexedDB
     const openIndexedDB = useCallback(() => {
@@ -2270,10 +2187,6 @@ function App() {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [undo, redo]);
 
-    // Apply dark/light mode to body
-    useEffect(() => {
-        document.body.classList.toggle('light-mode', !darkMode);
-    }, [darkMode]);
 
     // Render arrow SVG for floating image
     const renderFloatingArrowSVG = (courant, color, arrowLength = 1, turnLength = 1) => {
