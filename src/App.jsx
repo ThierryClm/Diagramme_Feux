@@ -19,7 +19,22 @@ import ExternalLinksModal from './components/ExternalLinksModal';
 import PropertiesPanel from './components/PropertiesPanel';
 import { calculateSimulatedDiagram } from './utils/simulationCalculator';
 import usePopupWindow from './hooks/usePopupWindow';
-import { importExcelFile } from './utils/excelImporter';
+import useFloatingLegend from './hooks/useFloatingLegend';
+import useFloatingMatrix from './hooks/useFloatingMatrix';
+import useDarkMode from './hooks/useDarkMode';
+import useRecentDirectories from './hooks/useRecentDirectories';
+import useUILayout from './hooks/useUILayout';
+import useProjectModification from './hooks/useProjectModification';
+import usePhasageBulleUI from './hooks/usePhasageBulleUI';
+import useRecentFiles from './hooks/useRecentFiles';
+import useSimulationUI from './hooks/useSimulationUI';
+import useDialogState from './hooks/useDialogState';
+import useFloatingImage from './hooks/useFloatingImage';
+import useDirectoryHandles from './hooks/useDirectoryHandles';
+import useFloatingImageRenderer from './hooks/useFloatingImageRenderer';
+import useFileOperations from './hooks/useFileOperations';
+import useImportOperations from './hooks/useImportOperations';
+import renderFloatingArrowSVG from './utils/renderArrowSVG';
 
 import './components/GroupTable.css';
 import './components/IntergreenMatrix.css';
@@ -194,311 +209,83 @@ function App() {
     const [showUserManager, setShowUserManager] = useState(false);
 
     const [selectedGroupId, setSelectedGroupId] = useState(null);
-    const [pixelsPerSecond, setPixelsPerSecond] = useState(10);
-    const [activeTab, setActiveTab] = useState('config'); // 'config', 'traffic'
+    const {
+        pixelsPerSecond, setPixelsPerSecond,
+        activeTab, setActiveTab,
+        sidebarWidth, setSidebarWidth,
+        isResizing,
+        splitViewRef,
+        sidebarVisible, setSidebarVisible,
+        handleResizeStart,
+        diagramHeight, setDiagramHeight,
+        isResizingDiagram,
+        diagramAreaRef,
+        resetDiagramHeight,
+        handleDiagramResizeStart,
+        handleActionPanelResize
+    } = useUILayout();
     const [showDependencies, setShowDependencies] = useState(false);
     const [hoveredActionId, setHoveredActionId] = useState(null);
 
     // Intersection image animation state
-    const [isPlayingSimulation, setIsPlayingSimulation] = useState(false);
-    const [simulationCurrentTime, setSimulationCurrentTime] = useState(0);
+    const {
+        isPlayingSimulation, setIsPlayingSimulation,
+        simulationCurrentTime, setSimulationCurrentTime,
+        hoveredDiagramTime, setHoveredDiagramTime
+    } = useSimulationUI();
     const [hoveredArrowGroupId, setHoveredArrowGroupId] = useState(null);
     const [hoveredArrowGroupSaturated, setHoveredArrowGroupSaturated] = useState(false);
     const [hoveredConflict, setHoveredConflict] = useState(null); // {from, to} for conflict hover
-    const [hoveredDiagramTime, setHoveredDiagramTime] = useState(null); // Time position when hovering diagram
 
     // Track whether project has been modified (for "Nouveau projet" menu)
-    const [projectModified, setProjectModified] = useState(false);
-    const projectModifiedSkip = useRef(true);
-    useEffect(() => {
-        if (projectModifiedSkip.current) {
-            projectModifiedSkip.current = false;
-            return;
-        }
-        setProjectModified(true);
-    }, [groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
-
-    // Warn before closing if project has unsaved changes
-    useEffect(() => {
-        const handleBeforeUnload = (e) => {
-            if (projectModified) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [projectModified]);
-
-    // Floating image state (persists across tab changes and page reloads)
-    const [showFloatingImage, setShowFloatingImage] = useState(() => {
-        const saved = localStorage.getItem('floating_image_visible');
-        return saved === 'true';
-    });
+    const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip } =
+        useProjectModification([groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
 
     // Floating matrix state
-    const [showFloatingMatrix, setShowFloatingMatrix] = useState(() => {
-        return localStorage.getItem('floating_matrix_visible') === 'true';
-    });
-    const [floatingCrop, setFloatingCrop] = useState(() => {
-        try {
-            const saved = localStorage.getItem('floating_image_crop');
-            return saved ? JSON.parse(saved) : { top: 0, bottom: 0, left: 0, right: 0 };
-        } catch {
-            return { top: 0, bottom: 0, left: 0, right: 0 };
-        }
-    });
-    const [showCropControls, setShowCropControls] = useState(false);
-    const [floatingZoom, setFloatingZoom] = useState(() => {
-        try {
-            const saved = localStorage.getItem('floating_image_zoom');
-            return saved ? parseFloat(saved) : 1;
-        } catch {
-            return 1;
-        }
-    });
+    const {
+        showFloatingMatrix,
+        setShowFloatingMatrix,
+        matrixPopup
+    } = useFloatingMatrix(groups.length);
 
     // Floating legend state
-    const [showFloatingLegend, setShowFloatingLegend] = useState(false);
-    const [floatingLegendPosition, setFloatingLegendPosition] = useState({ x: 200, y: 150 });
-    const [isLegendDragging, setIsLegendDragging] = useState(false);
-    const legendDragOffset = useRef({ x: 0, y: 0 });
+    const {
+        showFloatingLegend,
+        setShowFloatingLegend,
+        floatingLegendPosition,
+        isLegendDragging,
+        handleLegendMouseDown
+    } = useFloatingLegend();
 
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
 
     // Phasage bulle state (phasageBulleCount and phasageBulleTimes come from useTrafficLight hook - saved per PF)
-    const [phasageBulleEnabled, setPhasageBulleEnabled] = useState(false);
-    const [phasageBulleModal, setPhasageBulleModal] = useState(false);
-    const [phasageBulleVisibleGroups, setPhasageBulleVisibleGroups] = useState(new Set());
-    const [phasageBulleVersion, setPhasageBulleVersion] = useState(0);
-    const [hoveredPhasageGroupId, setHoveredPhasageGroupId] = useState(null);
-    const [imageNaturalDims, setImageNaturalDims] = useState({ width: 1, height: 1 });
+    const {
+        phasageBulleEnabled, setPhasageBulleEnabled,
+        phasageBulleModal, setPhasageBulleModal,
+        phasageBulleVisibleGroups, setPhasageBulleVisibleGroups,
+        phasageBulleVersion, setPhasageBulleVersion,
+        hoveredPhasageGroupId, setHoveredPhasageGroupId,
+        togglePhasageBulleGroup
+    } = usePhasageBulleUI(intersectionArrows);
 
-    // Compute natural dimensions of intersection image (for print scaling)
-    useEffect(() => {
-        if (intersectionImage) {
-            const img = new Image();
-            img.onload = () => setImageNaturalDims({ width: img.naturalWidth || 1, height: img.naturalHeight || 1 });
-            img.src = intersectionImage;
-        }
-    }, [intersectionImage]);
+    // Floating image state (visibilité, recadrage, zoom, popup)
+    const {
+        showFloatingImage, setShowFloatingImage,
+        floatingCrop, setFloatingCrop,
+        showCropControls, setShowCropControls,
+        floatingZoom, setFloatingZoom,
+        imageNaturalDims,
+        floatingImagePopup
+    } = useFloatingImage(intersectionImage);
 
     // Diagram arrow style
     const [diagramArrowStyle, setDiagramArrowStyle] = useState('solid');
 
-    // Resizable sidebar
-    const [sidebarWidth, setSidebarWidth] = useState(() => {
-        const saved = localStorage.getItem('sidebar_width');
-        return saved ? parseInt(saved) : 450;
-    });
-    const [isResizing, setIsResizing] = useState(false);
-    const splitViewRef = useRef(null);
 
-    // Sidebar visibility toggle
-    const [sidebarVisible, setSidebarVisible] = useState(() => {
-        const saved = localStorage.getItem('sidebar_visible');
-        return saved !== null ? saved === 'true' : true;
-    });
 
-    // Save sidebar width to localStorage
-    useEffect(() => {
-        localStorage.setItem('sidebar_width', sidebarWidth.toString());
-    }, [sidebarWidth]);
 
-    // Save sidebar visibility to localStorage
-    useEffect(() => {
-        localStorage.setItem('sidebar_visible', sidebarVisible.toString());
-    }, [sidebarVisible]);
-
-    // Save floating image state to localStorage
-    useEffect(() => {
-        localStorage.setItem('floating_image_visible', showFloatingImage.toString());
-    }, [showFloatingImage]);
-
-    // Save floating matrix state to localStorage
-    useEffect(() => {
-        localStorage.setItem('floating_matrix_visible', showFloatingMatrix.toString());
-    }, [showFloatingMatrix]);
-
-    useEffect(() => {
-        localStorage.setItem('floating_image_crop', JSON.stringify(floatingCrop));
-    }, [floatingCrop]);
-
-    useEffect(() => {
-        localStorage.setItem('floating_image_zoom', floatingZoom.toString());
-    }, [floatingZoom]);
-
-    // Popup window for floating image
-    const floatingImagePopup = usePopupWindow({
-        isOpen: showFloatingImage && !!intersectionImage,
-        onClose: () => setShowFloatingImage(false),
-        title: 'Carrefour',
-        width: Math.round((750 - floatingCrop.left - floatingCrop.right) * floatingZoom) + 40,
-        height: Math.round((530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom) + 120
-    });
-
-    // Popup window for floating matrix
-    const matrixPopup = usePopupWindow({
-        isOpen: showFloatingMatrix,
-        onClose: () => setShowFloatingMatrix(false),
-        title: 'Matrice',
-        width: Math.min(900, 120 + groups.length * 55),
-        height: Math.min(800, 120 + groups.length * 55)
-    });
-
-    // Handle resize drag
-    const handleResizeStart = useCallback((e) => {
-        e.preventDefault();
-        setIsResizing(true);
-    }, []);
-
-    const handleResizeMove = useCallback((e) => {
-        if (!isResizing || !splitViewRef.current) return;
-        const containerRect = splitViewRef.current.getBoundingClientRect();
-        const newWidth = e.clientX - containerRect.left;
-        // Limit between 300px and 1200px
-        setSidebarWidth(Math.min(1200, Math.max(300, newWidth)));
-    }, [isResizing]);
-
-    const handleResizeEnd = useCallback(() => {
-        setIsResizing(false);
-    }, []);
-
-    // Add/remove mouse event listeners for resizing
-    useEffect(() => {
-        if (isResizing) {
-            document.addEventListener('mousemove', handleResizeMove);
-            document.addEventListener('mouseup', handleResizeEnd);
-            document.body.style.cursor = 'col-resize';
-            document.body.style.userSelect = 'none';
-        } else {
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-        }
-        return () => {
-            document.removeEventListener('mousemove', handleResizeMove);
-            document.removeEventListener('mouseup', handleResizeEnd);
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-        };
-    }, [isResizing, handleResizeMove, handleResizeEnd]);
-
-    // Floating legend drag handling
-    const handleLegendMouseDown = useCallback((e) => {
-        if (e.target.classList.contains('floating-close-btn')) return;
-        setIsLegendDragging(true);
-        legendDragOffset.current = {
-            x: e.clientX - floatingLegendPosition.x,
-            y: e.clientY - floatingLegendPosition.y
-        };
-    }, [floatingLegendPosition]);
-
-    useEffect(() => {
-        if (!isLegendDragging) return;
-
-        const handleMouseMove = (e) => {
-            setFloatingLegendPosition({
-                x: e.clientX - legendDragOffset.current.x,
-                y: e.clientY - legendDragOffset.current.y
-            });
-        };
-
-        const handleMouseUp = () => {
-            setIsLegendDragging(false);
-        };
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-
-        return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isLegendDragging]);
-
-    // Resizable horizontal splitter between diagram and action table
-    const [diagramHeight, setDiagramHeight] = useState(() => {
-        const saved = localStorage.getItem('diagram_height');
-        return saved ? parseInt(saved) : null; // null = auto (show full diagram)
-    });
-    const [isResizingDiagram, setIsResizingDiagram] = useState(false);
-    const diagramAreaRef = useRef(null);
-
-    // Save diagram height to localStorage
-    useEffect(() => {
-        if (diagramHeight !== null) {
-            localStorage.setItem('diagram_height', diagramHeight.toString());
-        }
-    }, [diagramHeight]);
-
-    // Handle horizontal resize drag
-    const handleDiagramResizeStart = useCallback((e) => {
-        e.preventDefault();
-        setIsResizingDiagram(true);
-    }, []);
-
-    const handleDiagramResizeMove = useCallback((e) => {
-        if (!isResizingDiagram || !diagramAreaRef.current) return;
-        const containerRect = diagramAreaRef.current.getBoundingClientRect();
-        const newHeight = e.clientY - containerRect.top - 40; // 40 = tabs height
-        // Limit between 100px and container height - 150px (for action table)
-        const maxHeight = containerRect.height - 150;
-        setDiagramHeight(Math.min(maxHeight, Math.max(100, newHeight)));
-    }, [isResizingDiagram]);
-
-    const handleDiagramResizeEnd = useCallback(() => {
-        setIsResizingDiagram(false);
-    }, []);
-
-    // On first load with no saved height, reduce diagram by 120px to show more action table
-    useEffect(() => {
-        if (diagramHeight === null && diagramAreaRef.current) {
-            const panel = diagramAreaRef.current.querySelector('.diagram-panel');
-            if (panel) {
-                const h = panel.offsetHeight;
-                if (h > 200) setDiagramHeight(h - 120);
-            }
-        }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // Reset diagram height to auto (full diagram visible)
-    const resetDiagramHeight = useCallback(() => {
-        setDiagramHeight(null);
-        localStorage.removeItem('diagram_height');
-    }, []);
-
-    // Handle panel resize from ActionTable bottom handle
-    const handleActionPanelResize = useCallback((deltaY) => {
-        if (!diagramAreaRef.current) return;
-        const containerRect = diagramAreaRef.current.getBoundingClientRect();
-        const maxHeight = containerRect.height - 150;
-
-        setDiagramHeight(prev => {
-            // If prev is null, calculate current diagram height
-            const currentHeight = prev !== null ? prev : containerRect.height - 200;
-            const newHeight = currentHeight + deltaY;
-            return Math.min(maxHeight, Math.max(100, newHeight));
-        });
-    }, []);
-
-    // Add/remove mouse event listeners for diagram resizing
-    useEffect(() => {
-        if (isResizingDiagram) {
-            document.addEventListener('mousemove', handleDiagramResizeMove);
-            document.addEventListener('mouseup', handleDiagramResizeEnd);
-            document.body.style.cursor = 'row-resize';
-            document.body.style.userSelect = 'none';
-        }
-        return () => {
-            document.removeEventListener('mousemove', handleDiagramResizeMove);
-            document.removeEventListener('mouseup', handleDiagramResizeEnd);
-            if (!isResizing) {
-                document.body.style.cursor = '';
-                document.body.style.userSelect = '';
-            }
-        };
-    }, [isResizingDiagram, handleDiagramResizeMove, handleDiagramResizeEnd, isResizing]);
 
     // Calculate simulated diagram when in simulation mode
     const simulationResult = useMemo(() => {
@@ -516,15 +303,6 @@ function App() {
     const [groupCountInput, setGroupCountInput] = useState(groups.length.toString());
     const [cycleLengthInput, setCycleLengthInput] = useState(cycleLength.toString());
 
-    // Initialize visible groups when entering phasage bulle mode
-    useEffect(() => {
-        if (phasageBulleEnabled && phasageBulleVisibleGroups.size === 0) {
-            // By default, show all groups that have arrows
-            const arrowGroupIds = new Set(intersectionArrows.map(a => a.groupId));
-            setPhasageBulleVisibleGroups(arrowGroupIds);
-        }
-    }, [phasageBulleEnabled, intersectionArrows]);
-
     // Synchronize traffic dataset with active PF tab (only when no saved mapping)
     useEffect(() => {
         if (pfTabs && pfTabs.length > 0 && activePFId) {
@@ -538,19 +316,6 @@ function App() {
         }
     }, [activePFId, pfTabs, trafficDatasetNames, setActiveTrafficDataset, pfTrafficDatasetMap]);
 
-    // Toggle group visibility in phasage bulle
-    const togglePhasageBulleGroup = (groupId) => {
-        setPhasageBulleVisibleGroups(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(groupId)) {
-                newSet.delete(groupId);
-            } else {
-                newSet.add(groupId);
-            }
-            return newSet;
-        });
-    };
-
     // Sync local inputs when actual values change (e.g., after undo/redo or project load)
     useEffect(() => {
         setGroupCountInput(groups.length.toString());
@@ -560,598 +325,108 @@ function App() {
         setCycleLengthInput(cycleLength.toString());
     }, [cycleLength]);
 
-    // Modal states
-    const [openModal, setOpenModal] = useState(false);
-    const [slideModal, setSlideModal] = useState(false);
-    const [insertModal, setInsertModal] = useState(false);
-    const [reduceModal, setReduceModal] = useState(false);
-    const [optionsModal, setOptionsModal] = useState(false);
-    const [helpModal, setHelpModal] = useState(false);
-    const helpZoneRef = useRef(null);
-    const [importModal, setImportModal] = useState(false);
-    const [darkMode, setDarkMode] = useState(true);
-    const [showComments, setShowComments] = useState(true);
-    const [showRemarks, setShowRemarks] = useState(true);
-    const [showGroupNamesForm, setShowGroupNamesForm] = useState(true);
-    const [showGroupNamesMatrix, setShowGroupNamesMatrix] = useState(true);
-    const [showGroupNamesDiagram, setShowGroupNamesDiagram] = useState(true);
-    const [slideValue, setSlideValue] = useState(0);
-    const [slideFromGroup, setSlideFromGroup] = useState(1);
-    const [slideToGroup, setSlideToGroup] = useState(1);
-    const [slideTouched, setSlideTouched] = useState(false);
-    const [insertStart, setInsertStart] = useState(0);
-    const [insertDuration, setInsertDuration] = useState(5);
-    const [insertTouched, setInsertTouched] = useState(false);
-    const [reduceStart, setReduceStart] = useState(0);
-    const [reduceDuration, setReduceDuration] = useState(5);
-    const [reduceTouched, setReduceTouched] = useState(false);
+    const {
+        darkMode, setDarkMode,
+        showComments, setShowComments,
+        showRemarks, setShowRemarks,
+        showGroupNamesForm, setShowGroupNamesForm,
+        showGroupNamesMatrix, setShowGroupNamesMatrix,
+        showGroupNamesDiagram, setShowGroupNamesDiagram
+    } = useDarkMode();
+    const { recentFiles, setRecentFiles, addToRecentFiles, getRecentDirectories, getRecentDirectoriesForMenu } = useRecentFiles();
     const [selectedProject, setSelectedProject] = useState(null);
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
     const [importHintDir, setImportHintDir] = useState('');
-    const [recentFiles, setRecentFiles] = useState([]);
 
-    // Green wave states
-    const [createGreenWaveModal, setCreateGreenWaveModal] = useState(false);
-    const [openGreenWaveModal, setOpenGreenWaveModal] = useState(false);
+    // Green wave data states
     const [selectedGreenWave, setSelectedGreenWave] = useState(null);
-    const [greenWaveViewer, setGreenWaveViewer] = useState(false);
     const [greenWaveData, setGreenWaveData] = useState(null);
     const [greenWaveListKey, setGreenWaveListKey] = useState(0);
 
-    // Print preview states
-    const [printPreviewModal, setPrintPreviewModal] = useState(false);
-    const [printType, setPrintType] = useState(null); // 'matrix', 'form', 'diagram', 'dossier'
-    const [dossierDialog, setDossierDialog] = useState(false);
-    const [dossierSections, setDossierSections] = useState({});
-    const [currentProjectPath, setCurrentProjectPath] = useState(''); // Chemin du projet courant
+    // Project path
+    const [currentProjectPath, setCurrentProjectPath] = useState('');
 
-    // Bi-carrefour modal states
-    const [biCarrefourModal, setBiCarrefourModal] = useState(false);
-    const [biCarrefourGroupId, setBiCarrefourGroupId] = useState('');
-    const [biCarrefourTouched, setBiCarrefourTouched] = useState(false);
+    // Modal and dialog states
+    const {
+        openModal, setOpenModal,
+        slideModal, setSlideModal,
+        insertModal, setInsertModal,
+        reduceModal, setReduceModal,
+        optionsModal, setOptionsModal,
+        helpModal, setHelpModal,
+        helpZoneRef,
+        importModal, setImportModal,
+        slideValue, setSlideValue,
+        slideFromGroup, setSlideFromGroup,
+        slideToGroup, setSlideToGroup,
+        slideTouched, setSlideTouched,
+        insertStart, setInsertStart,
+        insertDuration, setInsertDuration,
+        insertTouched, setInsertTouched,
+        reduceStart, setReduceStart,
+        reduceDuration, setReduceDuration,
+        reduceTouched, setReduceTouched,
+        biCarrefourModal, setBiCarrefourModal,
+        biCarrefourGroupId, setBiCarrefourGroupId,
+        biCarrefourTouched, setBiCarrefourTouched,
+        moveGroupModal, setMoveGroupModal,
+        groupToMove, setGroupToMove,
+        moveAfterGroup, setMoveAfterGroup,
+        moveGroupTouched, setMoveGroupTouched,
+        importHTMModal, setImportHTMModal,
+        htmFile, setHtmFile,
+        htmImportError, setHtmImportError,
+        importedHTMFiles, setImportedHTMFiles,
+        showExternalLinksModal, setShowExternalLinksModal,
+        printPreviewModal, setPrintPreviewModal,
+        printType, setPrintType,
+        dossierDialog, setDossierDialog,
+        dossierSections, setDossierSections,
+        createGreenWaveModal, setCreateGreenWaveModal,
+        openGreenWaveModal, setOpenGreenWaveModal,
+        greenWaveViewer, setGreenWaveViewer,
+        draggedTabIndex, setDraggedTabIndex
+    } = useDialogState();
 
-    // Move group modal states
-    const [moveGroupModal, setMoveGroupModal] = useState(false);
-    const [groupToMove, setGroupToMove] = useState('');
-    const [moveAfterGroup, setMoveAfterGroup] = useState('0'); // '0' means at the beginning
-    const [moveGroupTouched, setMoveGroupTouched] = useState(false);
-
-    // Imported HTM files state
-    const [importedHTMFiles, setImportedHTMFiles] = useState(() => {
-        try {
-            const saved = localStorage.getItem('importedHTMFiles');
-            return saved ? JSON.parse(saved) : [];
-        } catch (e) {
-            return [];
-        }
-    });
-    const [importHTMModal, setImportHTMModal] = useState(false);
-    const [htmFile, setHtmFile] = useState(null);
-    const [htmImportError, setHtmImportError] = useState('');
-    const [showExternalLinksModal, setShowExternalLinksModal] = useState(false);
-
-    // Drag & drop state for PF tabs
-    const [draggedTabIndex, setDraggedTabIndex] = useState(null);
-
-    // File System Access API - mémoriser les derniers répertoires utilisés
-    const lastOpenDirectoryRef = useRef(null);
-    const lastSaveDirectoryRef = useRef(null);
-    const lastImportDirectoryRef = useRef(null);
-    const lastImageDirectoryRef = useRef(null);
-    const lastGreenWaveDirectoryRef = useRef(null);
+    // File System Access API - handles de répertoires via IndexedDB
+    const {
+        lastOpenDirectoryRef,
+        lastSaveDirectoryRef,
+        lastImportDirectoryRef,
+        lastImageDirectoryRef,
+        lastGreenWaveDirectoryRef,
+        saveDirectoryHandle,
+        loadDirectoryHandle
+    } = useDirectoryHandles();
 
     // Liste des 5 derniers répertoires par type (pour affichage dans les menus)
-    const [recentOpenDirs, setRecentOpenDirs] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('recentOpenDirs') || '[]');
-        } catch { return []; }
+    const {
+        recentOpenDirs,
+        recentImportDirs,
+        recentImageDirs,
+        recentSaveDirs,
+        recentGreenWaveDirs,
+        addRecentDirectory
+    } = useRecentDirectories();
+
+    const {
+        handleOpenFileWithPicker,
+        handleOpenFileFromRecentDir,
+        handleSaveFileWithPicker,
+        handleSaveFileToRecentDir
+    } = useFileOperations({
+        projectName, diagramHeight, floatingCrop, floatingZoom,
+        setSelectedProject, setOpenModal, setCurrentProjectPath, setProjectModified,
+        setDiagramHeight, setFloatingCrop, setFloatingZoom,
+        setShowComments, setShowRemarks, setIntersectionName,
+        loadFullState, getFullState, saveProject,
+        lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
+        lastImageDirectoryRef, lastGreenWaveDirectoryRef,
+        saveDirectoryHandle, loadDirectoryHandle,
+        recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs,
+        addRecentDirectory
     });
-    const [recentImportDirs, setRecentImportDirs] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('recentImportDirs') || '[]');
-        } catch { return []; }
-    });
-    const [recentImageDirs, setRecentImageDirs] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('recentImageDirs') || '[]');
-        } catch { return []; }
-    });
-    const [recentSaveDirs, setRecentSaveDirs] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('recentSaveDirs') || '[]');
-        } catch { return []; }
-    });
-    const [recentGreenWaveDirs, setRecentGreenWaveDirs] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('recentGreenWaveDirs') || '[]');
-        } catch { return []; }
-    });
-
-    // Fonction pour ajouter un répertoire à la liste des récents
-    const addRecentDirectory = useCallback((type, dirName, dirHandle) => {
-        const updateList = (currentList, setList, storageKey) => {
-            // Créer un nouvel élément
-            const newEntry = { name: dirName, timestamp: Date.now() };
-            // Filtrer pour éviter les doublons
-            const filtered = currentList.filter(d => d.name !== dirName);
-            // Ajouter en tête et limiter à 5
-            const updated = [newEntry, ...filtered].slice(0, 5);
-            setList(updated);
-            localStorage.setItem(storageKey, JSON.stringify(updated));
-            return updated;
-        };
-
-        switch (type) {
-            case 'open':
-                updateList(recentOpenDirs, setRecentOpenDirs, 'recentOpenDirs');
-                break;
-            case 'import':
-                updateList(recentImportDirs, setRecentImportDirs, 'recentImportDirs');
-                break;
-            case 'image':
-                updateList(recentImageDirs, setRecentImageDirs, 'recentImageDirs');
-                break;
-            case 'save':
-                updateList(recentSaveDirs, setRecentSaveDirs, 'recentSaveDirs');
-                break;
-            case 'greenwave':
-                updateList(recentGreenWaveDirs, setRecentGreenWaveDirs, 'recentGreenWaveDirs');
-                break;
-        }
-    }, [recentOpenDirs, recentImportDirs, recentImageDirs, recentSaveDirs, recentGreenWaveDirs]);
-
-    // Fonctions pour sauvegarder/restaurer les handles de répertoire via IndexedDB
-    const openIndexedDB = useCallback(() => {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open('DiagrammeFeux_FileHandles', 1);
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => resolve(request.result);
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                if (!db.objectStoreNames.contains('handles')) {
-                    db.createObjectStore('handles');
-                }
-            };
-        });
-    }, []);
-
-    const saveDirectoryHandle = useCallback(async (key, handle) => {
-        try {
-            const db = await openIndexedDB();
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction(['handles'], 'readwrite');
-                const store = transaction.objectStore('handles');
-                const request = store.put(handle, key);
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
-            });
-        } catch (e) {
-            console.error('Erreur sauvegarde handle:', e);
-        }
-    }, [openIndexedDB]);
-
-    const loadDirectoryHandle = useCallback(async (key) => {
-        try {
-            const db = await openIndexedDB();
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction(['handles'], 'readonly');
-                const store = transaction.objectStore('handles');
-                const request = store.get(key);
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        } catch (e) {
-            console.error('Erreur chargement handle:', e);
-            return null;
-        }
-    }, [openIndexedDB]);
-
-    // Charger les derniers répertoires au démarrage
-    useEffect(() => {
-        const loadHandles = async () => {
-            try {
-                const openHandle = await loadDirectoryHandle('lastOpenDirectory');
-                const saveHandle = await loadDirectoryHandle('lastSaveDirectory');
-                const importHandle = await loadDirectoryHandle('lastImportDirectory');
-                const imageHandle = await loadDirectoryHandle('lastImageDirectory');
-                const greenWaveHandle = await loadDirectoryHandle('lastGreenWaveDirectory');
-                if (openHandle) lastOpenDirectoryRef.current = openHandle;
-                if (saveHandle) lastSaveDirectoryRef.current = saveHandle;
-                if (importHandle) lastImportDirectoryRef.current = importHandle;
-                if (imageHandle) lastImageDirectoryRef.current = imageHandle;
-                if (greenWaveHandle) lastGreenWaveDirectoryRef.current = greenWaveHandle;
-            } catch (e) {
-                console.error('Erreur chargement handles:', e);
-            }
-        };
-        loadHandles();
-    }, [loadDirectoryHandle]);
-
-    // Ouvrir un fichier JSON avec File System Access API
-    const handleOpenFileWithPicker = useCallback(async () => {
-        if (!window.showOpenFilePicker) {
-            // Fallback pour navigateurs sans File System Access API
-            setSelectedProject(null);
-            setOpenModal(true);
-            return;
-        }
-
-        try {
-            const options = {
-                types: [{
-                    description: 'Fichiers Projet',
-                    accept: { 'application/json': ['.json'] }
-                }],
-                multiple: false
-            };
-
-            // Utiliser le dernier répertoire si disponible
-            if (lastOpenDirectoryRef.current) {
-                options.startIn = lastOpenDirectoryRef.current;
-            }
-
-            const [fileHandle] = await window.showOpenFilePicker(options);
-            const file = await fileHandle.getFile();
-            const content = await file.text();
-
-            // Validation du contenu avant parsing
-            if (!content || content.trim() === '') {
-                alert('Erreur: Le fichier est vide');
-                return;
-            }
-
-            let data;
-            try {
-                data = JSON.parse(content);
-            } catch (parseError) {
-                console.error('Erreur parsing JSON:', parseError);
-                alert('Erreur: Le fichier JSON est invalide ou corrompu.\n\n' +
-                      'Détails: ' + parseError.message + '\n\n' +
-                      'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
-                return;
-            }
-
-            // Mémoriser le répertoire parent
-            try {
-                const dirHandle = await fileHandle.getParent?.();
-                if (dirHandle) {
-                    lastOpenDirectoryRef.current = dirHandle;
-                    await saveDirectoryHandle('lastOpenDirectory', dirHandle);
-                    // Ajouter aux répertoires récents
-                    addRecentDirectory('open', dirHandle.name, dirHandle);
-                }
-            } catch (e) {
-                // getParent n'est pas toujours disponible
-            }
-
-            // Charger les données du projet
-            const projName = file.name.replace(/\.json$/i, '');
-            loadFullState({
-                projectName: projName,
-                ...data
-            });
-
-            // Mémoriser le chemin du projet
-            setCurrentProjectPath(file.name);
-            setProjectModified(true);
-
-            // Restaurer la hauteur du diagramme si présente
-            if (data.diagramHeight !== undefined) {
-                setDiagramHeight(data.diagramHeight);
-            }
-
-            // Restaurer le rognage de l'image flottante si présent
-            if (data.floatingCrop !== undefined) {
-                setFloatingCrop(data.floatingCrop);
-            }
-
-            // Restaurer le zoom de l'image flottante si présent
-            if (data.floatingZoom !== undefined) {
-                setFloatingZoom(data.floatingZoom);
-            }
-
-            // Décocher commentaires/remarques s'il n'y en a pas dans le projet
-            const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
-            setShowComments(!!hasComments);
-            const pfList = data.pfTabs || [];
-            const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
-            setShowRemarks(!!hasRemarks);
-
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error('Erreur ouverture fichier:', e);
-                alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
-            }
-        }
-    }, [loadFullState, saveDirectoryHandle, addRecentDirectory, setDiagramHeight]);
-
-    // Ouvrir un fichier depuis un répertoire récent
-    const handleOpenFileFromRecentDir = useCallback(async (dirIndex) => {
-        if (!window.showOpenFilePicker) {
-            alert('API File System non supportée par ce navigateur');
-            return;
-        }
-
-        try {
-            const dirInfo = recentOpenDirs[dirIndex];
-            if (!dirInfo) return;
-
-            const options = {
-                types: [{
-                    description: 'Fichiers Projet',
-                    accept: { 'application/json': ['.json'] }
-                }],
-                multiple: false
-            };
-
-            // Essayer de récupérer le handle du répertoire depuis IndexedDB
-            const savedHandle = await loadDirectoryHandle(`recentOpenDir_${dirIndex}`);
-            if (savedHandle) {
-                options.startIn = savedHandle;
-            }
-
-            const [fileHandle] = await window.showOpenFilePicker(options);
-            const file = await fileHandle.getFile();
-            const content = await file.text();
-
-            // Validation du contenu avant parsing
-            if (!content || content.trim() === '') {
-                alert('Erreur: Le fichier est vide');
-                return;
-            }
-
-            let data;
-            try {
-                data = JSON.parse(content);
-            } catch (parseError) {
-                console.error('Erreur parsing JSON:', parseError);
-                alert('Erreur: Le fichier JSON est invalide ou corrompu.\n\n' +
-                      'Détails: ' + parseError.message + '\n\n' +
-                      'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
-                return;
-            }
-
-            // Mémoriser le répertoire parent
-            try {
-                const dirHandle = await fileHandle.getParent?.();
-                if (dirHandle) {
-                    lastOpenDirectoryRef.current = dirHandle;
-                    await saveDirectoryHandle('lastOpenDirectory', dirHandle);
-                    addRecentDirectory('open', dirHandle.name, dirHandle);
-                }
-            } catch (e) {
-                // getParent n'est pas toujours disponible
-            }
-
-            const projName = file.name.replace(/\.json$/i, '');
-            loadFullState({
-                projectName: projName,
-                ...data
-            });
-
-            // Mémoriser le chemin du projet
-            setCurrentProjectPath(file.name);
-            setProjectModified(true);
-
-            // Restaurer la hauteur du diagramme si présente
-            if (data.diagramHeight !== undefined) {
-                setDiagramHeight(data.diagramHeight);
-            }
-
-            // Restaurer le rognage de l'image flottante si présent
-            if (data.floatingCrop !== undefined) {
-                setFloatingCrop(data.floatingCrop);
-            }
-
-            // Restaurer le zoom de l'image flottante si présent
-            if (data.floatingZoom !== undefined) {
-                setFloatingZoom(data.floatingZoom);
-            }
-
-            // Décocher commentaires/remarques s'il n'y en a pas dans le projet
-            const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
-            setShowComments(!!hasComments);
-            const pfList = data.pfTabs || [];
-            const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
-            setShowRemarks(!!hasRemarks);
-
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error('Erreur ouverture fichier:', e);
-                alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
-            }
-        }
-    }, [recentOpenDirs, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, loadFullState, setDiagramHeight]);
-
-    // Enregistrer un fichier JSON avec File System Access API
-    const handleSaveFileWithPicker = useCallback(async () => {
-        if (!window.showSaveFilePicker) {
-            // Fallback pour navigateurs sans File System Access API
-            const name = prompt('Nom du projet:', projectName || 'Mon projet');
-            if (name) {
-                saveProject(name);
-            }
-            return;
-        }
-
-        try {
-            const options = {
-                suggestedName: `${projectName || 'projet'}.json`,
-                types: [{
-                    description: 'Fichier Projet JSON',
-                    accept: { 'application/json': ['.json'] }
-                }]
-            };
-
-            // Utiliser le dernier répertoire si disponible
-            if (lastSaveDirectoryRef.current) {
-                options.startIn = lastSaveDirectoryRef.current;
-            }
-
-            const fileHandle = await window.showSaveFilePicker(options);
-
-            // Préparer les données du projet
-            const fullState = getFullState();
-            const projectData = {
-                ...fullState,
-                diagramHeight: diagramHeight,
-                floatingCrop: floatingCrop,
-                floatingZoom: floatingZoom,
-                // Noms des répertoires utilisés (avec fallback sur les récents)
-                directoryNames: {
-                    open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
-                    save: lastSaveDirectoryRef.current?.name || recentSaveDirs[0]?.name || null,
-                    import: lastImportDirectoryRef.current?.name || recentImportDirs[0]?.name || null,
-                    image: lastImageDirectoryRef.current?.name || recentImageDirs[0]?.name || null,
-                    greenWave: lastGreenWaveDirectoryRef.current?.name || recentGreenWaveDirs[0]?.name || null
-                }
-            };
-
-            // Écrire le fichier
-            const jsonContent = JSON.stringify(projectData, null, 2);
-            const writable = await fileHandle.createWritable();
-            await writable.write(jsonContent);
-            await writable.close();
-
-            // Vérifier que le fichier n'est pas vide après sauvegarde
-            try {
-                const savedFile = await fileHandle.getFile();
-                const savedContent = await savedFile.text();
-                if (!savedContent || savedContent.trim() === '') {
-                    alert('Attention: Le fichier semble vide après la sauvegarde.\n\n' +
-                          'Veuillez réessayer la sauvegarde ou utiliser "Enregistrer" pour sauvegarder dans le localStorage.');
-                    return;
-                }
-            } catch (verifyError) {
-                console.warn('Impossible de vérifier le fichier sauvegardé:', verifyError);
-            }
-
-            // Mémoriser le répertoire parent
-            try {
-                const dirHandle = await fileHandle.getParent?.();
-                if (dirHandle) {
-                    lastSaveDirectoryRef.current = dirHandle;
-                    await saveDirectoryHandle('lastSaveDirectory', dirHandle);
-                    // Ajouter aux répertoires récents d'enregistrement
-                    addRecentDirectory('save', dirHandle.name, dirHandle);
-                }
-            } catch (e) {
-                // getParent n'est pas toujours disponible
-            }
-
-            // Mettre à jour le nom du projet
-            const savedName = fileHandle.name.replace(/\.json$/i, '');
-            setIntersectionName(savedName);
-
-            // Mémoriser le chemin du projet
-            setCurrentProjectPath(fileHandle.name);
-            setProjectModified(true);
-
-            // Sauvegarder aussi dans localStorage pour cohérence
-            saveProject(savedName);
-
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error('Erreur sauvegarde fichier:', e);
-                alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
-            }
-        }
-    }, [intersectionName, projectName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle, addRecentDirectory, recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]);
-
-    // Enregistrer un fichier dans un répertoire récent
-    const handleSaveFileToRecentDir = useCallback(async (dirIndex) => {
-        if (!window.showSaveFilePicker) {
-            alert('API File System non supportée par ce navigateur');
-            return;
-        }
-
-        try {
-            const dirInfo = recentSaveDirs[dirIndex];
-            if (!dirInfo) return;
-
-            const options = {
-                suggestedName: `${projectName || 'projet'}.json`,
-                types: [{
-                    description: 'Fichier Projet JSON',
-                    accept: { 'application/json': ['.json'] }
-                }]
-            };
-
-            // Essayer de récupérer le handle du répertoire depuis IndexedDB
-            const savedHandle = await loadDirectoryHandle(`recentSaveDir_${dirIndex}`);
-            if (savedHandle) {
-                options.startIn = savedHandle;
-            }
-
-            const fileHandle = await window.showSaveFilePicker(options);
-
-            // Préparer les données du projet
-            const fullState = getFullState();
-            const projectData = {
-                ...fullState,
-                diagramHeight: diagramHeight,
-                floatingCrop: floatingCrop,
-                floatingZoom: floatingZoom,
-                // Noms des répertoires utilisés (avec fallback sur les récents)
-                directoryNames: {
-                    open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
-                    save: lastSaveDirectoryRef.current?.name || recentSaveDirs[0]?.name || null,
-                    import: lastImportDirectoryRef.current?.name || recentImportDirs[0]?.name || null,
-                    image: lastImageDirectoryRef.current?.name || recentImageDirs[0]?.name || null,
-                    greenWave: lastGreenWaveDirectoryRef.current?.name || recentGreenWaveDirs[0]?.name || null
-                }
-            };
-
-            // Écrire le fichier
-            const jsonContent = JSON.stringify(projectData, null, 2);
-            const writable = await fileHandle.createWritable();
-            await writable.write(jsonContent);
-            await writable.close();
-
-            // Vérifier que le fichier n'est pas vide après sauvegarde
-            try {
-                const savedFile = await fileHandle.getFile();
-                const savedContent = await savedFile.text();
-                if (!savedContent || savedContent.trim() === '') {
-                    alert('Attention: Le fichier semble vide après la sauvegarde.\n\n' +
-                          'Veuillez réessayer la sauvegarde ou utiliser "Enregistrer" pour sauvegarder dans le localStorage.');
-                    return;
-                }
-            } catch (verifyError) {
-                console.warn('Impossible de vérifier le fichier sauvegardé:', verifyError);
-            }
-
-            // Mémoriser le répertoire parent
-            try {
-                const dirHandle = await fileHandle.getParent?.();
-                if (dirHandle) {
-                    lastSaveDirectoryRef.current = dirHandle;
-                    await saveDirectoryHandle('lastSaveDirectory', dirHandle);
-                    addRecentDirectory('save', dirHandle.name, dirHandle);
-                }
-            } catch (e) {
-                // getParent n'est pas toujours disponible
-            }
-
-            // Mettre à jour le nom du projet
-            const savedName = fileHandle.name.replace(/\.json$/i, '');
-            setIntersectionName(savedName);
-
-            // Mémoriser le chemin du projet
-            setCurrentProjectPath(fileHandle.name);
-            setProjectModified(true);
-
-            // Sauvegarder aussi dans localStorage pour cohérence
-            saveProject(savedName);
-
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error('Erreur sauvegarde fichier:', e);
-                alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
-            }
-        }
-    }, [recentSaveDirs, intersectionName, projectName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject, recentOpenDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]);
 
     // Get all saved green waves (sorted by most recent first)
     const getSavedGreenWaves = () => {
@@ -1214,86 +489,6 @@ function App() {
         } catch (e) {
             console.error('Failed to delete green wave', e);
         }
-    };
-
-    // Load recent files from localStorage
-    useEffect(() => {
-        try {
-            const saved = localStorage.getItem('recentFiles');
-            if (saved) {
-                const files = JSON.parse(saved);
-                setRecentFiles(files);
-            }
-        } catch (e) {
-            console.error('Failed to load recent files', e);
-        }
-    }, []);
-
-    // Add file to recent files list
-    const addToRecentFiles = (filePath, fileName) => {
-        try {
-            // Extract directory from path (handle both / and \ separators)
-            const lastSlash = Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/'));
-            const directory = lastSlash > 0 ? filePath.substring(0, lastSlash) : '';
-
-            const newFile = {
-                path: filePath,
-                name: fileName,
-                directory: directory,
-                timestamp: new Date().toISOString()
-            };
-
-            // Get existing recent files
-            const saved = localStorage.getItem('recentFiles');
-            let files = saved ? JSON.parse(saved) : [];
-
-            // Remove if already exists (to avoid duplicates)
-            files = files.filter(f => f.path !== filePath);
-
-            // Add to beginning
-            files.unshift(newFile);
-
-            // Keep only last 10 files
-            files = files.slice(0, 10);
-
-            // Save to state and localStorage
-            setRecentFiles(files);
-            localStorage.setItem('recentFiles', JSON.stringify(files));
-        } catch (e) {
-            console.error('Failed to add to recent files', e);
-        }
-    };
-
-    // Get unique recent directories
-    const getRecentDirectories = () => {
-        try {
-            const directories = new Map();
-            recentFiles.forEach(file => {
-                if (file.directory && !directories.has(file.directory)) {
-                    directories.set(file.directory, file.timestamp);
-                }
-            });
-
-            // Sort by most recent
-            return Array.from(directories.entries())
-                .sort((a, b) => new Date(b[1]) - new Date(a[1]))
-                .map(([dir]) => dir)
-                .slice(0, 5); // Keep only last 5 directories
-        } catch (e) {
-            console.error('Failed to get recent directories', e);
-            return [];
-        }
-    };
-
-    // Get recent directories for menu (with shortened names)
-    const getRecentDirectoriesForMenu = () => {
-        const dirs = getRecentDirectories();
-        return dirs.map(dir => {
-            // Extract just the last folder name for display
-            const parts = dir.replace(/\\/g, '/').split('/');
-            const name = parts[parts.length - 1] || parts[parts.length - 2] || dir;
-            return { path: dir, name: name };
-        });
     };
 
     // Check for duplicated state on load
@@ -1803,446 +998,22 @@ function App() {
     };
 
     // Handle file selection for import
-    const handleFileSelect = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImportFile(file);
-            setImportError('');
-
-            // Add to recent files (webkitRelativePath or name only due to browser security)
-            const filePath = file.webkitRelativePath || file.name;
-            addToRecentFiles(filePath, file.name);
-        }
-    };
-
-    // Handle direct Excel import via File System Access API
-    const handleImportExcelDirect = async () => {
-        if (!window.showOpenFilePicker) {
-            // Fallback pour navigateurs sans File System Access API
-            setImportFile(null);
-            setImportError('');
-            setImportHintDir('');
-            setImportModal(true);
-            return;
-        }
-
-        try {
-            const options = {
-                types: [{
-                    description: 'Fichiers Excel',
-                    accept: {
-                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-                        'application/vnd.ms-excel': ['.xls']
-                    }
-                }],
-                multiple: false
-            };
-
-            // Utiliser le dernier répertoire d'import si disponible
-            if (lastImportDirectoryRef.current) {
-                options.startIn = lastImportDirectoryRef.current;
-            }
-
-            const [fileHandle] = await window.showOpenFilePicker(options);
-            const file = await fileHandle.getFile();
-
-            // Mémoriser le répertoire parent
-            try {
-                const dirHandle = await fileHandle.getParent?.();
-                if (dirHandle) {
-                    lastImportDirectoryRef.current = dirHandle;
-                    await saveDirectoryHandle('lastImportDirectory', dirHandle);
-                    // Ajouter aux répertoires récents
-                    addRecentDirectory('import', dirHandle.name, dirHandle);
-                }
-            } catch (e) {
-                // getParent n'est pas toujours disponible
-            }
-
-            const importedData = await importExcelFile(file);
-
-            // Load the imported data
-            loadFullState({
-                projectName: importedData.intersectionName,
-                intersectionName: importedData.intersectionName,
-                groups: importedData.groups,
-                cycleLength: importedData.cycleLength,
-                conflictMatrix: importedData.conflictMatrix,
-                actionData: importedData.actionData,
-                pfTabs: importedData.pfTabs.length > 0 ? importedData.pfTabs : undefined,
-                activePFId: 1,
-                trafficDatasets: importedData.trafficDatasets
-            });
-
-            // Apply traffic data if available
-            if (importedData.trafficData && Object.keys(importedData.trafficData).length > 0) {
-                importedData.groups.forEach((group) => {
-                    const trafficInfo = importedData.trafficData[group.id];
-                    if (trafficInfo && trafficInfo.courant) {
-                        updateGroupParams(group.id, { courant: trafficInfo.courant });
-                    }
-                });
-            }
-
-            // Afficher le résultat avec les avertissements éventuels
-            let message = `Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`;
-            if (importedData.warnings && importedData.warnings.length > 0) {
-                message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
-            }
-            alert(message);
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error('Erreur import Excel:', e);
-                alert('Erreur lors de l\'import: ' + e.message);
-            }
-        }
-    };
-
-    // Import Excel depuis un répertoire récent
-    const handleImportExcelFromRecentDir = async (dirIndex) => {
-        if (!window.showOpenFilePicker) {
-            alert('API File System non supportée par ce navigateur');
-            return;
-        }
-
-        try {
-            const dirInfo = recentImportDirs[dirIndex];
-            if (!dirInfo) return;
-
-            const options = {
-                types: [{
-                    description: 'Fichiers Excel',
-                    accept: {
-                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-                        'application/vnd.ms-excel': ['.xls']
-                    }
-                }],
-                multiple: false
-            };
-
-            // Essayer de récupérer le handle du répertoire depuis IndexedDB
-            const savedHandle = await loadDirectoryHandle(`recentImportDir_${dirIndex}`);
-            if (savedHandle) {
-                options.startIn = savedHandle;
-            }
-
-            const [fileHandle] = await window.showOpenFilePicker(options);
-            const file = await fileHandle.getFile();
-
-            // Mémoriser le répertoire parent
-            try {
-                const dirHandle = await fileHandle.getParent?.();
-                if (dirHandle) {
-                    lastImportDirectoryRef.current = dirHandle;
-                    await saveDirectoryHandle('lastImportDirectory', dirHandle);
-                    addRecentDirectory('import', dirHandle.name, dirHandle);
-                }
-            } catch (e) {
-                // getParent n'est pas toujours disponible
-            }
-
-            const importedData = await importExcelFile(file);
-
-            loadFullState({
-                projectName: importedData.intersectionName,
-                intersectionName: importedData.intersectionName,
-                groups: importedData.groups,
-                cycleLength: importedData.cycleLength,
-                conflictMatrix: importedData.conflictMatrix,
-                actionData: importedData.actionData,
-                pfTabs: importedData.pfTabs.length > 0 ? importedData.pfTabs : undefined,
-                activePFId: 1,
-                trafficDatasets: importedData.trafficDatasets
-            });
-
-            if (importedData.trafficData && Object.keys(importedData.trafficData).length > 0) {
-                importedData.groups.forEach((group) => {
-                    const trafficInfo = importedData.trafficData[group.id];
-                    if (trafficInfo && trafficInfo.courant) {
-                        updateGroupParams(group.id, { courant: trafficInfo.courant });
-                    }
-                });
-            }
-
-            // Afficher le résultat avec les avertissements éventuels
-            let message = `Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`;
-            if (importedData.warnings && importedData.warnings.length > 0) {
-                message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
-            }
-            alert(message);
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error('Erreur import Excel:', e);
-                alert('Erreur lors de l\'import: ' + e.message);
-            }
-        }
-    };
-
-    // Handle CSV/Excel import
-    const handleImport = async () => {
-        if (!importFile) {
-            setImportError('Veuillez sélectionner un fichier');
-            return;
-        }
-
-        try {
-            const fileExt = importFile.name.toLowerCase().split('.').pop();
-
-            // Handle Excel files
-            if (fileExt === 'xlsx' || fileExt === 'xls') {
-                const importedData = await importExcelFile(importFile);
-
-                // Load the imported data
-                loadFullState({
-                    projectName: importedData.intersectionName,
-                    intersectionName: importedData.intersectionName,
-                    groups: importedData.groups,
-                    cycleLength: importedData.cycleLength,
-                    conflictMatrix: importedData.conflictMatrix,
-                    actionData: importedData.actionData,
-                    pfTabs: importedData.pfTabs.length > 0 ? importedData.pfTabs : undefined,
-                    activePFId: 1,
-                    trafficDatasets: importedData.trafficDatasets
-                });
-
-                // Apply traffic data if available
-                if (importedData.trafficData && Object.keys(importedData.trafficData).length > 0) {
-                    // Update groups with traffic courant
-                    importedData.groups.forEach((group, idx) => {
-                        const trafficInfo = importedData.trafficData[group.id];
-                        if (trafficInfo && trafficInfo.courant) {
-                            updateGroupParams(group.id, { courant: trafficInfo.courant });
-                        }
-                    });
-                }
-
-                setImportModal(false);
-                setImportFile(null);
-                setImportError('');
-                // Afficher le résultat avec les avertissements éventuels
-                let message = `Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`;
-                if (importedData.warnings && importedData.warnings.length > 0) {
-                    message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
-                }
-                alert(message);
-            }
-            // Handle CSV files
-            else if (fileExt === 'csv') {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const content = e.target.result;
-                        const lines = content.split('\n').filter(line => line.trim());
-
-                        if (lines.length < 2) {
-                            setImportError('Le fichier CSV est vide ou invalide');
-                            return;
-                        }
-
-                        // Parse header
-                        const header = lines[0].split(';').map(h => h.trim().toLowerCase());
-
-                        // Parse data rows
-                        const importedGroups = [];
-                        for (let i = 1; i < lines.length; i++) {
-                            const values = lines[i].split(';');
-                            if (values.length < 2) continue;
-
-                            const row = {};
-                            header.forEach((col, idx) => {
-                                row[col] = values[idx]?.trim() || '';
-                            });
-
-                            // Map CSV columns to group structure
-                            const group = {
-                                id: importedGroups.length + 1,
-                                name: row['nom'] || row['name'] || `G${importedGroups.length + 1}`,
-                                type: row['type'] || 'VL',
-                                minGreen: parseInt(row['minvert'] || row['mingreen'] || row['min']) || 6,
-                                offset: parseInt(row['debut'] || row['offset'] || row['deb']) || 0,
-                                durations: {
-                                    green: parseInt(row['vert'] || row['green'] || row['duree'] || row['dur']) || 0,
-                                    orange: parseInt(row['orange'] || row['jaune']) || 3,
-                                    red: parseInt(row['rouge'] || row['red']) || 0
-                                }
-                            };
-                            importedGroups.push(group);
-                        }
-
-                        if (importedGroups.length === 0) {
-                            setImportError('Aucune donnée valide trouvée dans le fichier');
-                            return;
-                        }
-
-                        // Load the imported data
-                        const csvProjName = importFile.name.replace(/\.csv$/i, '');
-                        loadFullState({
-                            projectName: csvProjName,
-                            intersectionName: csvProjName,
-                            groups: importedGroups,
-                            cycleLength: cycleLength
-                        });
-
-                        setImportModal(false);
-                        setImportFile(null);
-                        setImportError('');
-                    } catch (err) {
-                        setImportError('Erreur lors de la lecture du fichier: ' + err.message);
-                    }
-                };
-                reader.onerror = () => {
-                    setImportError('Erreur lors de la lecture du fichier');
-                };
-                reader.readAsText(importFile);
-            } else {
-                setImportError('Format de fichier non supporté. Utilisez .xlsx, .xls ou .csv');
-            }
-        } catch (err) {
-            setImportError(err.message);
-        }
-    };
-
-    // Handle HTM file selection
-    const handleHTMFileSelect = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setHtmFile(file);
-            setHtmImportError('');
-        }
-    };
-
-    // Parse HTM file to extract traffic light data
-    const parseHTMFile = (content) => {
-        const groups = [];
-
-        // Parse HTML table rows - look for traffic light data patterns
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(content, 'text/html');
-
-        // Try to find tables with traffic light data
-        const tables = doc.querySelectorAll('table');
-
-        for (const table of tables) {
-            const rows = table.querySelectorAll('tr');
-
-            for (const row of rows) {
-                const cells = row.querySelectorAll('td, th');
-                if (cells.length >= 4) {
-                    // Try to extract group data from cells
-                    const cellTexts = Array.from(cells).map(c => c.textContent.trim());
-
-                    // Look for patterns like: group name, green duration, orange, red
-                    const nameCell = cellTexts[0];
-                    const greenVal = parseInt(cellTexts[1]) || parseInt(cellTexts[2]);
-                    const orangeVal = parseInt(cellTexts[2]) || parseInt(cellTexts[3]) || 3;
-
-                    if (nameCell && greenVal > 0) {
-                        groups.push({
-                            id: groups.length + 1,
-                            name: nameCell,
-                            type: nameCell.toLowerCase().includes('pieton') ? 'Piéton' :
-                                  nameCell.toLowerCase().includes('cycle') ? 'Cycliste' : 'VL',
-                            minGreen: 6,
-                            offset: 0,
-                            durations: {
-                                green: greenVal,
-                                orange: orangeVal,
-                                red: 0
-                            }
-                        });
-                    }
-                }
-            }
-        }
-
-        // If no tables found, try to parse structured text
-        if (groups.length === 0) {
-            const lines = content.split('\n');
-            for (const line of lines) {
-                // Look for patterns like "GF1: 30s vert, 3s orange"
-                const match = line.match(/([A-Za-z0-9]+)\s*[:]\s*(\d+)/);
-                if (match) {
-                    const greenMatch = line.match(/(\d+)\s*s?\s*(vert|green)/i);
-                    const orangeMatch = line.match(/(\d+)\s*s?\s*(orange|jaune)/i);
-
-                    if (greenMatch) {
-                        groups.push({
-                            id: groups.length + 1,
-                            name: match[1],
-                            type: 'VL',
-                            minGreen: 6,
-                            offset: 0,
-                            durations: {
-                                green: parseInt(greenMatch[1]) || 0,
-                                orange: orangeMatch ? parseInt(orangeMatch[1]) : 3,
-                                red: 0
-                            }
-                        });
-                    }
-                }
-            }
-        }
-
-        return groups;
-    };
-
-    // Handle HTM import
-    const handleHTMImport = () => {
-        if (!htmFile) {
-            setHtmImportError('Veuillez sélectionner un fichier HTM');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const content = e.target.result;
-                const parsedGroups = parseHTMFile(content);
-
-                if (parsedGroups.length === 0) {
-                    setHtmImportError('Aucune donnée de groupe de feu trouvée dans le fichier HTM');
-                    return;
-                }
-
-                const fileName = htmFile.name.replace(/\.htm[l]?$/i, '');
-                const fileId = Date.now().toString();
-
-                // Create new imported file entry
-                const newFile = {
-                    id: fileId,
-                    name: fileName,
-                    importedAt: new Date().toISOString(),
-                    data: {
-                        groups: parsedGroups,
-                        cycleLength: cycleLength
-                    }
-                };
-
-                // Save to imported files list
-                const updatedFiles = [...importedHTMFiles, newFile];
-                setImportedHTMFiles(updatedFiles);
-                localStorage.setItem('importedHTMFiles', JSON.stringify(updatedFiles));
-
-                // Load the data as a new project
-                loadFullState({
-                    projectName: fileName,
-                    intersectionName: fileName,
-                    groups: parsedGroups,
-                    cycleLength: cycleLength
-                });
-
-                setImportHTMModal(false);
-                setHtmFile(null);
-                setHtmImportError('');
-            } catch (err) {
-                setHtmImportError('Erreur lors de la lecture du fichier: ' + err.message);
-            }
-        };
-        reader.onerror = () => {
-            setHtmImportError('Erreur lors de la lecture du fichier');
-        };
-        reader.readAsText(htmFile);
-    };
+    const {
+        handleFileSelect,
+        handleImportExcelDirect,
+        handleImportExcelFromRecentDir,
+        handleImport,
+        handleHTMFileSelect,
+        handleHTMImport
+    } = useImportOperations({
+        importFile, setImportFile, setImportError, setImportModal, setImportHintDir,
+        htmFile, setHtmFile, setHtmImportError, importedHTMFiles, setImportedHTMFiles, setImportHTMModal,
+        cycleLength, loadFullState, updateGroupParams,
+        lastImportDirectoryRef,
+        saveDirectoryHandle, loadDirectoryHandle,
+        recentImportDirs, addRecentDirectory,
+        addToRecentFiles
+    });
 
     // Keyboard shortcuts for undo (Ctrl+Z) and redo (Ctrl+Y or Ctrl+Shift+Z)
     useEffect(() => {
@@ -2270,284 +1041,21 @@ function App() {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [undo, redo]);
 
-    // Apply dark/light mode to body
-    useEffect(() => {
-        document.body.classList.toggle('light-mode', !darkMode);
-    }, [darkMode]);
-
-    // Render arrow SVG for floating image
-    const renderFloatingArrowSVG = (courant, color, arrowLength = 1, turnLength = 1) => {
-        const strokeWidth = 3;
-        const thinStrokeWidth = 2;
-        const size = 32;
-
-        switch (courant) {
-            case 'TD':
-                return (
-                    <svg width={size} height={size} viewBox="0 0 32 32">
-                        <line x1="16" y1="28" x2="16" y2="6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-                        <polyline points="8,14 16,6 24,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                );
-            case 'TàD': {
-                const tadEndX = 14 + (12 * turnLength);
-                return (
-                    <svg width={size} height={size} viewBox="0 0 32 32">
-                        <path d={`M8,24 L8,12 Q8,8 12,8 L${tadEndX},8`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points={`${tadEndX - 6},2 ${tadEndX},8 ${tadEndX - 6},14`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                );
-            }
-            case 'TàG': {
-                const tagEndX = 18 - (12 * turnLength);
-                return (
-                    <svg width={size} height={size} viewBox="0 0 32 32">
-                        <path d={`M24,24 L24,12 Q24,8 20,8 L${tagEndX},8`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points={`${tagEndX + 6},2 ${tagEndX},8 ${tagEndX + 6},14`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                );
-            }
-            case 'TDTàD':
-            case 'TD-TàD':
-                return (
-                    <svg width={size} height={size} viewBox="0 0 32 32">
-                        <line x1="12" y1="28" x2="12" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-                        <polyline points="6,14 12,8 18,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M12,20 Q20,20 20,12 L20,8" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points="16,12 20,8 24,12" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                );
-            case 'TDTàG':
-            case 'TD-TàG':
-                return (
-                    <svg width={size} height={size} viewBox="0 0 32 32">
-                        <line x1="20" y1="28" x2="20" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-                        <polyline points="14,14 20,8 26,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M20,20 Q12,20 12,12 L12,8" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points="8,12 12,8 16,12" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                );
-            case 'TD_G_D':
-                return (
-                    <svg width={size} height={size} viewBox="0 0 32 32">
-                        <line x1="16" y1="28" x2="16" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-                        <polyline points="10,14 16,8 22,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M16,20 Q8,20 8,12 L8,10" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points="4,14 8,10 12,14" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M16,20 Q24,20 24,12 L24,10" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points="20,14 24,10 28,14" fill="none" stroke={color} strokeWidth={strokeWidth - 1} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                );
-            case 'Piéton':
-            case 'Cycle': {
-                const extendedHeight = size + (arrowLength - 1) * 24;
-                const viewBoxHeight = 32 + (arrowLength - 1) * 24;
-                const topY = 6;
-                const bottomY = 26 + (arrowLength - 1) * 24;
-                const centerY = (topY + bottomY) / 2;
-                return (
-                    <svg width={size} height={extendedHeight} viewBox={`0 0 32 ${viewBoxHeight}`}>
-                        <line x1="16" y1={centerY} x2="16" y2={topY} stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" />
-                        <polyline points={`11,${topY + 5} 16,${topY} 21,${topY + 5}`} fill="none" stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                        <line x1="16" y1={centerY} x2="16" y2={bottomY} stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" />
-                        <polyline points={`11,${bottomY - 5} 16,${bottomY} 21,${bottomY - 5}`} fill="none" stroke={color} strokeWidth={thinStrokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                );
-            }
-            default:
-                return (
-                    <svg width={size} height={size} viewBox="0 0 32 32">
-                        <line x1="16" y1="28" x2="16" y2="6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-                        <polyline points="8,14 16,6 24,14" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                );
-        }
-    };
 
     // Render floating image content into popup window
-    useEffect(() => {
-        if (!showFloatingImage || !intersectionImage) return;
-
-        const showNums = JSON.parse(localStorage.getItem('intersection_showGroupNumbers') ?? 'true');
-
-        // Compute group number centroids
-        const groupMap = {};
-        intersectionArrows.forEach(arrow => {
-            if (!arrow.groupId) return;
-            const group = groups.find(g => g.id === arrow.groupId);
-            const courant = group?.courant || '';
-            let px = arrow.x;
-            let py = arrow.y;
-            if (courant === 'TàD' || courant === 'TàG') {
-                const sc = arrow.scale || 1;
-                const svgSize = 96 * sc;
-                const dxSvg = courant === 'TàD' ? -8 : 8;
-                const dySvg = 2;
-                const dxPx = (dxSvg / 32) * svgSize;
-                const dyPx = (dySvg / 32) * svgSize;
-                const rotRad = (arrow.rotation || 0) * Math.PI / 180;
-                px += (dxPx * Math.cos(rotRad) - dyPx * Math.sin(rotRad)) / 750 * 100;
-                py += (dxPx * Math.sin(rotRad) + dyPx * Math.cos(rotRad)) / 530 * 100;
-            }
-            if (!groupMap[arrow.groupId]) groupMap[arrow.groupId] = [];
-            groupMap[arrow.groupId].push({ x: px, y: py });
-        });
-
-        // Use simulation time when playing, otherwise use hovered time
-        const activeTime = (simulationEnabled && isPlayingSimulation)
-            ? simulationCurrentTime
-            : hoveredDiagramTime;
-
-        floatingImagePopup.renderToPopup(
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <div style={{ padding: '6px 12px', background: '#2a2a2a', borderBottom: '1px solid #444', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                    <div className="floating-zoom-control">
-                        <button className="floating-zoom-btn" onClick={() => setFloatingZoom(z => Math.max(0.3, z - 0.1))} title="Réduire">−</button>
-                        <span className="floating-zoom-value">{Math.round(floatingZoom * 100)}%</span>
-                        <button className="floating-zoom-btn" onClick={() => setFloatingZoom(z => Math.min(2, z + 0.1))} title="Agrandir">+</button>
-                    </div>
-                    <button
-                        className={`floating-crop-btn ${showCropControls ? 'active' : ''}`}
-                        onClick={() => setShowCropControls(!showCropControls)}
-                        title="Rogner l'image"
-                    >
-                        ✂
-                    </button>
-                </div>
-                {showCropControls && (
-                    <div className="floating-crop-controls">
-                        <div className="crop-control">
-                            <label>Haut</label>
-                            <input type="range" min="0" max="250" value={floatingCrop.top} onChange={(e) => setFloatingCrop(prev => ({ ...prev, top: parseInt(e.target.value) }))} />
-                            <span>{floatingCrop.top}px</span>
-                        </div>
-                        <div className="crop-control">
-                            <label>Bas</label>
-                            <input type="range" min="0" max="250" value={floatingCrop.bottom} onChange={(e) => setFloatingCrop(prev => ({ ...prev, bottom: parseInt(e.target.value) }))} />
-                            <span>{floatingCrop.bottom}px</span>
-                        </div>
-                        <div className="crop-control">
-                            <label>Gauche</label>
-                            <input type="range" min="0" max="350" value={floatingCrop.left} onChange={(e) => setFloatingCrop(prev => ({ ...prev, left: parseInt(e.target.value) }))} />
-                            <span>{floatingCrop.left}px</span>
-                        </div>
-                        <div className="crop-control">
-                            <label>Droite</label>
-                            <input type="range" min="0" max="350" value={floatingCrop.right} onChange={(e) => setFloatingCrop(prev => ({ ...prev, right: parseInt(e.target.value) }))} />
-                            <span>{floatingCrop.right}px</span>
-                        </div>
-                        <button className="crop-reset-btn" onClick={() => setFloatingCrop({ top: 0, bottom: 0, left: 0, right: 0 })}>Réinitialiser</button>
-                    </div>
-                )}
-                <div className="floating-image-content" style={{ flex: 1, overflow: 'auto' }}>
-                    <div
-                        className="floating-image-wrapper"
-                        style={{
-                            width: (750 - floatingCrop.left - floatingCrop.right) * floatingZoom,
-                            height: (530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom
-                        }}
-                    >
-                        <div
-                            className="floating-image-inner"
-                            style={{
-                                marginTop: -floatingCrop.top,
-                                marginLeft: -floatingCrop.left,
-                                width: 750,
-                                height: 530,
-                                transform: `scale(${floatingZoom})`,
-                                transformOrigin: 'top left'
-                            }}
-                        >
-                            <img src={intersectionImage} alt="Carrefour" style={{ filter: `brightness(${imageBrightness}%) contrast(${imageContrast}%)` }} />
-                            {showNums && Object.entries(groupMap).map(([gId, pts]) => {
-                                const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
-                                const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
-                                const g = groups.find(gr => gr.id === Number(gId));
-                                const isPieton = (g?.courant || '') === 'Piéton';
-                                return isPieton ? (
-                                    <div key={`fgnum-${gId}`} className="group-number-centroid pieton" style={{ left: `${cx}%`, top: `${cy}%` }}>
-                                        <svg viewBox="0 0 20 18" width="20" height="18">
-                                            <polygon points="10,1 1,17 19,17" fill="rgba(255,255,255,0.7)" stroke="#000" strokeWidth="1"/>
-                                            <text x="10" y="15" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#000">{gId}</text>
-                                        </svg>
-                                    </div>
-                                ) : (
-                                    <div key={`fgnum-${gId}`} className="group-number-centroid" style={{ left: `${cx}%`, top: `${cy}%` }}>
-                                        {gId}
-                                    </div>
-                                );
-                            })}
-                            {intersectionArrows.map(arrow => {
-                                const group = groups.find(g => g.id === arrow.groupId);
-                                const courant = group?.courant || '';
-                                const rotation = arrow.rotation || 0;
-                                const scale = arrow.scale || 1;
-                                const arrowLength = arrow.length || 1;
-                                const turnLength = arrow.turnLength || 1;
-                                const isHovered = hoveredArrowGroupId === arrow.groupId;
-
-                                let arrowColor = '#000000';
-                                if (activeTime !== null && group) {
-                                    const isSimPlaying = simulationEnabled && isPlayingSimulation;
-                                    const simGroup = isSimPlaying ? simulationResult?.simulatedGroups?.find(g => g.id === arrow.groupId) : null;
-                                    const offset = simGroup ? (simGroup.simulatedOffset ?? group.offset) : (group.offset || 0);
-                                    const greenDuration = simGroup ? (simGroup.simulatedGreen ?? group.durations?.green ?? 0) : (group.durations?.green || 0);
-                                    const orangeDuration = group.durations?.orange || 0;
-                                    const cycle = isSimPlaying ? (simulationResult?.simulatedCycleLength || cycleLength || 100) : (cycleLength || 100);
-
-                                    const secondeLucarneAction = actionData.find(action =>
-                                        action.action === 'Seconde lucarne' &&
-                                        action.gf === String(arrow.groupId) &&
-                                        action.deb !== '' && action.fin !== ''
-                                    );
-
-                                    let isInSecondeLucarne = false;
-                                    if (secondeLucarneAction) {
-                                        const slDeb = parseInt(secondeLucarneAction.deb) || 0;
-                                        const slFin = parseInt(secondeLucarneAction.fin) || 0;
-                                        const normalizedTime = activeTime % cycle;
-                                        if (slDeb <= slFin) {
-                                            isInSecondeLucarne = normalizedTime >= slDeb && normalizedTime < slFin;
-                                        } else {
-                                            isInSecondeLucarne = normalizedTime >= slDeb || normalizedTime < slFin;
-                                        }
-                                    }
-
-                                    if (isInSecondeLucarne) {
-                                        arrowColor = '#00aa00';
-                                    } else {
-                                        let relativeTime = (activeTime - offset + cycle) % cycle;
-                                        if (relativeTime < greenDuration) {
-                                            arrowColor = '#00cc00';
-                                        } else if (relativeTime < greenDuration + orangeDuration) {
-                                            arrowColor = '#ffff00';
-                                        } else {
-                                            arrowColor = '#cc0000';
-                                        }
-                                    }
-                                }
-
-                                return (
-                                    <div
-                                        key={arrow.id}
-                                        className={`floating-arrow-marker ${isHovered ? 'hovered' : ''}`}
-                                        style={{ left: `${arrow.x}%`, top: `${arrow.y}%` }}
-                                    >
-                                        <div className="arrow-symbol" style={{ transform: `rotate(${rotation}deg) scale(${scale})` }}>
-                                            {renderFloatingArrowSVG(courant, arrowColor, arrowLength, turnLength)}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }, [showFloatingImage, intersectionImage, floatingCrop, floatingZoom, showCropControls,
-        intersectionArrows, groups, hoveredArrowGroupId, hoveredDiagramTime,
-        simulationEnabled, isPlayingSimulation, simulationCurrentTime, simulationResult,
-        actionData, cycleLength, imageBrightness, imageContrast, floatingImagePopup.renderToPopup]);
+    useFloatingImageRenderer({
+        showFloatingImage, intersectionImage,
+        floatingCrop, setFloatingCrop,
+        floatingZoom, setFloatingZoom,
+        showCropControls, setShowCropControls,
+        intersectionArrows, groups,
+        hoveredArrowGroupId, hoveredDiagramTime,
+        simulationEnabled, isPlayingSimulation,
+        simulationCurrentTime, simulationResult,
+        actionData, cycleLength,
+        imageBrightness, imageContrast,
+        floatingImagePopup
+    });
 
     // Render matrix into popup window
     useEffect(() => {

@@ -485,13 +485,15 @@ export const useTrafficLight = () => {
 
         // 3. Update GF references in ActionTable
         const gfFields = ['gf', 'plage1', 'plage2', 'actGf1', 'actGf1Gf2', 'actGf1Gf3', 'actGf1Gf4'];
+        const size = groups.length;
 
+        // Remap active PF tab data first
         setActionData(currentData => {
             return currentData.map(row => {
                 const newRow = { ...row };
                 gfFields.forEach(field => {
                     const val = parseInt(newRow[field]);
-                    if (!isNaN(val) && val > 0 && val <= groups.length) {
+                    if (!isNaN(val) && val > 0 && val <= size) {
                         newRow[field] = oldToNew[val].toString();
                     }
                 });
@@ -500,7 +502,6 @@ export const useTrafficLight = () => {
         });
 
         // 4. Update ALL PF tabs with reordered data
-        const size = groups.length;
         setPfTabs(currentTabs => {
             return currentTabs.map(pf => {
                 const newPf = { ...pf };
@@ -530,8 +531,9 @@ export const useTrafficLight = () => {
                     newPf.conflictMatrix = newMatrix;
                 }
 
-                // Update GF references in action data if it exists
-                if (newPf.data && newPf.data.length > 0) {
+                // Update GF references in action data for non-active tabs
+                // (active tab already handled by setActionData above)
+                if (pf.id !== activePFId && newPf.data && newPf.data.length > 0) {
                     newPf.data = newPf.data.map(row => {
                         const newRow = { ...row };
                         gfFields.forEach(field => {
