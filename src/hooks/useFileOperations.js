@@ -1,0 +1,412 @@
+import { useCallback } from 'react';
+
+/**
+ * Gère les opérations d'ouverture et de sauvegarde de fichiers projet
+ * via la File System Access API (avec fallback localStorage).
+ */
+const useFileOperations = ({
+    projectName, diagramHeight, floatingCrop, floatingZoom,
+    setSelectedProject, setOpenModal, setCurrentProjectPath, setProjectModified,
+    setDiagramHeight, setFloatingCrop, setFloatingZoom,
+    setShowComments, setShowRemarks, setIntersectionName,
+    loadFullState, getFullState, saveProject,
+    lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
+    lastImageDirectoryRef, lastGreenWaveDirectoryRef,
+    saveDirectoryHandle, loadDirectoryHandle,
+    recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs,
+    addRecentDirectory
+}) => {
+    // Ouvrir un fichier JSON avec File System Access API
+    const handleOpenFileWithPicker = useCallback(async () => {
+        if (!window.showOpenFilePicker) {
+            // Fallback pour navigateurs sans File System Access API
+            setSelectedProject(null);
+            setOpenModal(true);
+            return;
+        }
+
+        try {
+            const options = {
+                types: [{
+                    description: 'Fichiers Projet',
+                    accept: { 'application/json': ['.json'] }
+                }],
+                multiple: false
+            };
+
+            // Utiliser le dernier répertoire si disponible
+            if (lastOpenDirectoryRef.current) {
+                options.startIn = lastOpenDirectoryRef.current;
+            }
+
+            const [fileHandle] = await window.showOpenFilePicker(options);
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+
+            // Validation du contenu avant parsing
+            if (!content || content.trim() === '') {
+                alert('Erreur: Le fichier est vide');
+                return;
+            }
+
+            let data;
+            try {
+                data = JSON.parse(content);
+            } catch (parseError) {
+                console.error('Erreur parsing JSON:', parseError);
+                alert('Erreur: Le fichier JSON est invalide ou corrompu.\n\n' +
+                      'Détails: ' + parseError.message + '\n\n' +
+                      'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
+                return;
+            }
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastOpenDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastOpenDirectory', dirHandle);
+                    // Ajouter aux répertoires récents
+                    addRecentDirectory('open', dirHandle.name, dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
+
+            // Charger les données du projet
+            const projName = file.name.replace(/\.json$/i, '');
+            loadFullState({
+                projectName: projName,
+                ...data
+            });
+
+            // Mémoriser le chemin du projet
+            setCurrentProjectPath(file.name);
+            setProjectModified(true);
+
+            // Restaurer la hauteur du diagramme si présente
+            if (data.diagramHeight !== undefined) {
+                setDiagramHeight(data.diagramHeight);
+            }
+
+            // Restaurer le rognage de l'image flottante si présent
+            if (data.floatingCrop !== undefined) {
+                setFloatingCrop(data.floatingCrop);
+            }
+
+            // Restaurer le zoom de l'image flottante si présent
+            if (data.floatingZoom !== undefined) {
+                setFloatingZoom(data.floatingZoom);
+            }
+
+            // Décocher commentaires/remarques s'il n'y en a pas dans le projet
+            const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
+            setShowComments(!!hasComments);
+            const pfList = data.pfTabs || [];
+            const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
+            setShowRemarks(!!hasRemarks);
+
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur ouverture fichier:', e);
+                alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
+            }
+        }
+    }, [loadFullState, saveDirectoryHandle, addRecentDirectory, setDiagramHeight]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Ouvrir un fichier depuis un répertoire récent
+    const handleOpenFileFromRecentDir = useCallback(async (dirIndex) => {
+        if (!window.showOpenFilePicker) {
+            alert('API File System non supportée par ce navigateur');
+            return;
+        }
+
+        try {
+            const dirInfo = recentOpenDirs[dirIndex];
+            if (!dirInfo) return;
+
+            const options = {
+                types: [{
+                    description: 'Fichiers Projet',
+                    accept: { 'application/json': ['.json'] }
+                }],
+                multiple: false
+            };
+
+            // Essayer de récupérer le handle du répertoire depuis IndexedDB
+            const savedHandle = await loadDirectoryHandle(`recentOpenDir_${dirIndex}`);
+            if (savedHandle) {
+                options.startIn = savedHandle;
+            }
+
+            const [fileHandle] = await window.showOpenFilePicker(options);
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+
+            // Validation du contenu avant parsing
+            if (!content || content.trim() === '') {
+                alert('Erreur: Le fichier est vide');
+                return;
+            }
+
+            let data;
+            try {
+                data = JSON.parse(content);
+            } catch (parseError) {
+                console.error('Erreur parsing JSON:', parseError);
+                alert('Erreur: Le fichier JSON est invalide ou corrompu.\n\n' +
+                      'Détails: ' + parseError.message + '\n\n' +
+                      'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
+                return;
+            }
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastOpenDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastOpenDirectory', dirHandle);
+                    addRecentDirectory('open', dirHandle.name, dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
+
+            const projName = file.name.replace(/\.json$/i, '');
+            loadFullState({
+                projectName: projName,
+                ...data
+            });
+
+            // Mémoriser le chemin du projet
+            setCurrentProjectPath(file.name);
+            setProjectModified(true);
+
+            // Restaurer la hauteur du diagramme si présente
+            if (data.diagramHeight !== undefined) {
+                setDiagramHeight(data.diagramHeight);
+            }
+
+            // Restaurer le rognage de l'image flottante si présent
+            if (data.floatingCrop !== undefined) {
+                setFloatingCrop(data.floatingCrop);
+            }
+
+            // Restaurer le zoom de l'image flottante si présent
+            if (data.floatingZoom !== undefined) {
+                setFloatingZoom(data.floatingZoom);
+            }
+
+            // Décocher commentaires/remarques s'il n'y en a pas dans le projet
+            const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
+            setShowComments(!!hasComments);
+            const pfList = data.pfTabs || [];
+            const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
+            setShowRemarks(!!hasRemarks);
+
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur ouverture fichier:', e);
+                alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
+            }
+        }
+    }, [recentOpenDirs, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, loadFullState, setDiagramHeight]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Enregistrer un fichier JSON avec File System Access API
+    const handleSaveFileWithPicker = useCallback(async () => {
+        if (!window.showSaveFilePicker) {
+            // Fallback pour navigateurs sans File System Access API
+            const name = prompt('Nom du projet:', projectName || 'Mon projet');
+            if (name) {
+                saveProject(name);
+            }
+            return;
+        }
+
+        try {
+            const options = {
+                suggestedName: `${projectName || 'projet'}.json`,
+                types: [{
+                    description: 'Fichier Projet JSON',
+                    accept: { 'application/json': ['.json'] }
+                }]
+            };
+
+            // Utiliser le dernier répertoire si disponible
+            if (lastSaveDirectoryRef.current) {
+                options.startIn = lastSaveDirectoryRef.current;
+            }
+
+            const fileHandle = await window.showSaveFilePicker(options);
+
+            // Préparer les données du projet
+            const fullState = getFullState();
+            const projectData = {
+                ...fullState,
+                diagramHeight: diagramHeight,
+                floatingCrop: floatingCrop,
+                floatingZoom: floatingZoom,
+                // Noms des répertoires utilisés (avec fallback sur les récents)
+                directoryNames: {
+                    open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
+                    save: lastSaveDirectoryRef.current?.name || recentSaveDirs[0]?.name || null,
+                    import: lastImportDirectoryRef.current?.name || recentImportDirs[0]?.name || null,
+                    image: lastImageDirectoryRef.current?.name || recentImageDirs[0]?.name || null,
+                    greenWave: lastGreenWaveDirectoryRef.current?.name || recentGreenWaveDirs[0]?.name || null
+                }
+            };
+
+            // Écrire le fichier
+            const jsonContent = JSON.stringify(projectData, null, 2);
+            const writable = await fileHandle.createWritable();
+            await writable.write(jsonContent);
+            await writable.close();
+
+            // Vérifier que le fichier n'est pas vide après sauvegarde
+            try {
+                const savedFile = await fileHandle.getFile();
+                const savedContent = await savedFile.text();
+                if (!savedContent || savedContent.trim() === '') {
+                    alert('Attention: Le fichier semble vide après la sauvegarde.\n\n' +
+                          'Veuillez réessayer la sauvegarde ou utiliser "Enregistrer" pour sauvegarder dans le localStorage.');
+                    return;
+                }
+            } catch (verifyError) {
+                console.warn('Impossible de vérifier le fichier sauvegardé:', verifyError);
+            }
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastSaveDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastSaveDirectory', dirHandle);
+                    // Ajouter aux répertoires récents d'enregistrement
+                    addRecentDirectory('save', dirHandle.name, dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
+
+            // Mettre à jour le nom du projet
+            const savedName = fileHandle.name.replace(/\.json$/i, '');
+            setIntersectionName(savedName);
+
+            // Mémoriser le chemin du projet
+            setCurrentProjectPath(fileHandle.name);
+            setProjectModified(true);
+
+            // Sauvegarder aussi dans localStorage pour cohérence
+            saveProject(savedName);
+
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur sauvegarde fichier:', e);
+                alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
+            }
+        }
+    }, [projectName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle, addRecentDirectory, recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Enregistrer un fichier dans un répertoire récent
+    const handleSaveFileToRecentDir = useCallback(async (dirIndex) => {
+        if (!window.showSaveFilePicker) {
+            alert('API File System non supportée par ce navigateur');
+            return;
+        }
+
+        try {
+            const dirInfo = recentSaveDirs[dirIndex];
+            if (!dirInfo) return;
+
+            const options = {
+                suggestedName: `${projectName || 'projet'}.json`,
+                types: [{
+                    description: 'Fichier Projet JSON',
+                    accept: { 'application/json': ['.json'] }
+                }]
+            };
+
+            // Essayer de récupérer le handle du répertoire depuis IndexedDB
+            const savedHandle = await loadDirectoryHandle(`recentSaveDir_${dirIndex}`);
+            if (savedHandle) {
+                options.startIn = savedHandle;
+            }
+
+            const fileHandle = await window.showSaveFilePicker(options);
+
+            // Préparer les données du projet
+            const fullState = getFullState();
+            const projectData = {
+                ...fullState,
+                diagramHeight: diagramHeight,
+                floatingCrop: floatingCrop,
+                floatingZoom: floatingZoom,
+                // Noms des répertoires utilisés (avec fallback sur les récents)
+                directoryNames: {
+                    open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
+                    save: lastSaveDirectoryRef.current?.name || recentSaveDirs[0]?.name || null,
+                    import: lastImportDirectoryRef.current?.name || recentImportDirs[0]?.name || null,
+                    image: lastImageDirectoryRef.current?.name || recentImageDirs[0]?.name || null,
+                    greenWave: lastGreenWaveDirectoryRef.current?.name || recentGreenWaveDirs[0]?.name || null
+                }
+            };
+
+            // Écrire le fichier
+            const jsonContent = JSON.stringify(projectData, null, 2);
+            const writable = await fileHandle.createWritable();
+            await writable.write(jsonContent);
+            await writable.close();
+
+            // Vérifier que le fichier n'est pas vide après sauvegarde
+            try {
+                const savedFile = await fileHandle.getFile();
+                const savedContent = await savedFile.text();
+                if (!savedContent || savedContent.trim() === '') {
+                    alert('Attention: Le fichier semble vide après la sauvegarde.\n\n' +
+                          'Veuillez réessayer la sauvegarde ou utiliser "Enregistrer" pour sauvegarder dans le localStorage.');
+                    return;
+                }
+            } catch (verifyError) {
+                console.warn('Impossible de vérifier le fichier sauvegardé:', verifyError);
+            }
+
+            // Mémoriser le répertoire parent
+            try {
+                const dirHandle = await fileHandle.getParent?.();
+                if (dirHandle) {
+                    lastSaveDirectoryRef.current = dirHandle;
+                    await saveDirectoryHandle('lastSaveDirectory', dirHandle);
+                    addRecentDirectory('save', dirHandle.name, dirHandle);
+                }
+            } catch (e) {
+                // getParent n'est pas toujours disponible
+            }
+
+            // Mettre à jour le nom du projet
+            const savedName = fileHandle.name.replace(/\.json$/i, '');
+            setIntersectionName(savedName);
+
+            // Mémoriser le chemin du projet
+            setCurrentProjectPath(fileHandle.name);
+            setProjectModified(true);
+
+            // Sauvegarder aussi dans localStorage pour cohérence
+            saveProject(savedName);
+
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur sauvegarde fichier:', e);
+                alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
+            }
+        }
+    }, [recentSaveDirs, projectName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject, recentOpenDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    return {
+        handleOpenFileWithPicker,
+        handleOpenFileFromRecentDir,
+        handleSaveFileWithPicker,
+        handleSaveFileToRecentDir
+    };
+};
+
+export default useFileOperations;
