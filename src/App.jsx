@@ -29,6 +29,7 @@ import usePhasageBulleUI from './hooks/usePhasageBulleUI';
 import useRecentFiles from './hooks/useRecentFiles';
 import useSimulationUI from './hooks/useSimulationUI';
 import useDialogState from './hooks/useDialogState';
+import useFloatingImage from './hooks/useFloatingImage';
 import { importExcelFile } from './utils/excelImporter';
 
 import './components/GroupTable.css';
@@ -236,35 +237,12 @@ function App() {
     const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip } =
         useProjectModification([groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
 
-    // Floating image state (persists across tab changes and page reloads)
-    const [showFloatingImage, setShowFloatingImage] = useState(() => {
-        const saved = localStorage.getItem('floating_image_visible');
-        return saved === 'true';
-    });
-
     // Floating matrix state
     const {
         showFloatingMatrix,
         setShowFloatingMatrix,
         matrixPopup
     } = useFloatingMatrix(groups.length);
-    const [floatingCrop, setFloatingCrop] = useState(() => {
-        try {
-            const saved = localStorage.getItem('floating_image_crop');
-            return saved ? JSON.parse(saved) : { top: 0, bottom: 0, left: 0, right: 0 };
-        } catch {
-            return { top: 0, bottom: 0, left: 0, right: 0 };
-        }
-    });
-    const [showCropControls, setShowCropControls] = useState(false);
-    const [floatingZoom, setFloatingZoom] = useState(() => {
-        try {
-            const saved = localStorage.getItem('floating_image_zoom');
-            return saved ? parseFloat(saved) : 1;
-        } catch {
-            return 1;
-        }
-    });
 
     // Floating legend state
     const {
@@ -287,44 +265,19 @@ function App() {
         hoveredPhasageGroupId, setHoveredPhasageGroupId,
         togglePhasageBulleGroup
     } = usePhasageBulleUI(intersectionArrows);
-    const [imageNaturalDims, setImageNaturalDims] = useState({ width: 1, height: 1 });
 
-    // Compute natural dimensions of intersection image (for print scaling)
-    useEffect(() => {
-        if (intersectionImage) {
-            const img = new Image();
-            img.onload = () => setImageNaturalDims({ width: img.naturalWidth || 1, height: img.naturalHeight || 1 });
-            img.src = intersectionImage;
-        }
-    }, [intersectionImage]);
+    // Floating image state (visibilité, recadrage, zoom, popup)
+    const {
+        showFloatingImage, setShowFloatingImage,
+        floatingCrop, setFloatingCrop,
+        showCropControls, setShowCropControls,
+        floatingZoom, setFloatingZoom,
+        imageNaturalDims,
+        floatingImagePopup
+    } = useFloatingImage(intersectionImage);
 
     // Diagram arrow style
     const [diagramArrowStyle, setDiagramArrowStyle] = useState('solid');
-
-    // Resizable sidebar
-
-    // Save floating image state to localStorage
-    useEffect(() => {
-        localStorage.setItem('floating_image_visible', showFloatingImage.toString());
-    }, [showFloatingImage]);
-
-
-    useEffect(() => {
-        localStorage.setItem('floating_image_crop', JSON.stringify(floatingCrop));
-    }, [floatingCrop]);
-
-    useEffect(() => {
-        localStorage.setItem('floating_image_zoom', floatingZoom.toString());
-    }, [floatingZoom]);
-
-    // Popup window for floating image
-    const floatingImagePopup = usePopupWindow({
-        isOpen: showFloatingImage && !!intersectionImage,
-        onClose: () => setShowFloatingImage(false),
-        title: 'Carrefour',
-        width: Math.round((750 - floatingCrop.left - floatingCrop.right) * floatingZoom) + 40,
-        height: Math.round((530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom) + 120
-    });
 
 
 
