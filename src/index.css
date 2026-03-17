@@ -137,6 +137,10 @@ body.light-mode .group-table td {
     color: #222;
 }
 
+body.light-mode .group-table .col-id {
+    color: #000;
+}
+
 body.light-mode .group-table input,
 body.light-mode .group-table select {
     background: #fff;
@@ -884,6 +888,10 @@ body.high-contrast-mode .group-table td {
     color: #ffffff;
 }
 
+body.high-contrast-mode .group-table .col-id {
+    color: #ffdd00;
+}
+
 body.high-contrast-mode .group-table input,
 body.high-contrast-mode .group-table select {
     background: #1a2050;
@@ -925,24 +933,28 @@ body.high-contrast-mode .matrix-grid th {
 
 body.high-contrast-mode .row-header {
     background: #1a2050;
-    color: #ffdd00;
+    color: #ffdd00 !important;
 }
 
 body.high-contrast-mode .row-name {
     background: #0f1440;
-    color: #00e5ff;
+    color: #00e5ff !important;
 }
 
 body.high-contrast-mode .matrix-grid .col-index-header {
-    color: #ffdd00;
+    color: #ffdd00 !important;
+}
+
+body.high-contrast-mode .matrix-grid .col-name-header {
+    color: #00e5ff !important;
 }
 
 body.high-contrast-mode .traffic-table .col-id {
-    color: #ffdd00;
+    color: #ffdd00 !important;
 }
 
 body.high-contrast-mode .traffic-table .col-name-readonly {
-    color: #00e5ff;
+    color: #00e5ff !important;
 }
 
 body.high-contrast-mode .diagonal-cell {
@@ -1136,7 +1148,7 @@ body.high-contrast-mode .cycle-input-label {
 
 body.high-contrast-mode .cycle-input-label .input-count {
     background: #1a2050;
-    color: #ffdd00;
+    color: #ffffff;
     border-color: #4466bb;
 }
 
@@ -1702,6 +1714,10 @@ body.amber-mode .group-table td {
     color: #f5f0e8;
 }
 
+body.amber-mode .group-table .col-id {
+    color: #ffb300;
+}
+
 body.amber-mode .group-table input,
 body.amber-mode .group-table select {
     background: #303030;
@@ -1743,24 +1759,28 @@ body.amber-mode .matrix-grid th {
 
 body.amber-mode .row-header {
     background: #303030;
-    color: #ffb300;
+    color: #ffb300 !important;
 }
 
 body.amber-mode .row-name {
     background: #252525;
-    color: #ffc640;
+    color: #ffc640 !important;
 }
 
 body.amber-mode .matrix-grid .col-index-header {
-    color: #ffb300;
+    color: #ffb300 !important;
+}
+
+body.amber-mode .matrix-grid .col-name-header {
+    color: #ffc640 !important;
 }
 
 body.amber-mode .traffic-table .col-id {
-    color: #ffb300;
+    color: #ffb300 !important;
 }
 
 body.amber-mode .traffic-table .col-name-readonly {
-    color: #ffc640;
+    color: #ffc640 !important;
 }
 
 body.amber-mode .diagonal-cell {
@@ -1952,7 +1972,7 @@ body.amber-mode .cycle-input-label {
 
 body.amber-mode .cycle-input-label .input-count {
     background: #303030;
-    color: #ffb300;
+    color: #f5f0e8;
     border-color: #666;
 }
 
