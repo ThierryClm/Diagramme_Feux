@@ -79,6 +79,14 @@
     color: #666;
 }
 
+.matrix-locked-cell {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    cursor: default;
+    color: inherit;
+}
+
 .col-name-header {
     min-width: 70px;
     width: auto !important;

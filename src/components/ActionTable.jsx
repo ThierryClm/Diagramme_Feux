@@ -76,7 +76,7 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel }) => {
+const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel, showFloatingConditions, setShowFloatingConditions, showFloatingVariables, setShowFloatingVariables }) => {
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
 
@@ -97,11 +97,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     const startHeightRef = useRef(0);
     const panelResizeStartY = useRef(0);
 
-    // Popup window state (conditions de micro-régulation)
-    const [showFloatingConditions, setShowFloatingConditions] = useState(false);
-
-    // Popup window state (variables micro)
-    const [showFloatingVariables, setShowFloatingVariables] = useState(false);
+    // showFloatingConditions and showFloatingVariables are now passed as props
 
     // Compute visible micro fields: filled fields + 1 empty, max 30
     const visibleMicroFields = useMemo(() => {

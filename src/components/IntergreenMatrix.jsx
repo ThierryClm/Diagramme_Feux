@@ -54,7 +54,7 @@ const MatrixInput = ({ value, onChange, className }) => {
     );
 };
 
-const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover, showGroupNames = true, onDetach }) => {
+const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover, showGroupNames = true, locked = false, onDetach }) => {
 
     // Bi-carrefour separator index
     const separatorIdx = biCarrefourSeparator != null ? groups.findIndex(g => g.id === biCarrefourSeparator) : -1;
@@ -425,6 +425,8 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                                         >
                                             {fromIdx === toIdx ? (
                                                 <span className="diagonal">-</span>
+                                            ) : locked ? (
+                                                <span className={`matrix-locked-cell ${inputClass}`}>{val === '' ? '' : String(val)}</span>
                                             ) : (
                                                 <MatrixInput
                                                     className={inputClass}

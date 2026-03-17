@@ -1,7 +1,7 @@
 import React from 'react';
 import './GroupTable.css';
 
-const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = true }) => {
+const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = true, onDetach }) => {
 
     const handleStartChange = (id, value) => {
         updateGroupParams(id, { offset: parseInt(value) || 0 });
@@ -37,7 +37,18 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
 
     return (
         <div className="group-table-container">
-            <h3 className="group-table-title">Formulaire</h3>
+            <h3 className="group-table-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                Formulaire
+                {onDetach && (
+                    <button
+                        onClick={onDetach}
+                        title="Détacher dans une fenêtre séparée"
+                        style={{ fontSize: '0.65em', padding: '2px 8px', cursor: 'pointer', background: '#444', border: '1px solid #666', color: '#ccc', borderRadius: '3px' }}
+                    >
+                        Détacher
+                    </button>
+                )}
+            </h3>
             <table className="group-table">
                 <thead>
                     <tr>
@@ -66,6 +77,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                                             className="input-name-cell"
                                             value={g.name}
                                             onChange={(e) => updateGroupParams(g.id, { name: e.target.value })}
+                                            onFocus={(e) => { if (/^Groupe \d+$/.test(g.name)) e.target.select(); }}
                                         />
                                     </td>
                                 )}
@@ -120,6 +132,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                                         className="input-mini"
                                         value={g.minGreen}
                                         onChange={(e) => handleMinGreenChange(g.id, e.target.value)}
+                                        onFocus={(e) => e.target.select()}
                                     />
                                 </td>
                                 {/* Yellow Duration */}
@@ -129,6 +142,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                                         className="input-yellow"
                                         value={g.durations.orange}
                                         onChange={(e) => handleYellowChange(g.id, e.target.value)}
+                                        onFocus={(e) => e.target.select()}
                                     />
                                 </td>
                             </tr>

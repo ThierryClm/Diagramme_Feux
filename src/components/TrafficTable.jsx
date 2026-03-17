@@ -17,7 +17,8 @@ const TrafficTable = ({
     copyTrafficDataset,
     addCustomTrafficDataset,
     actionData = [],
-    simulationSelectedActions = []
+    simulationSelectedActions = [],
+    onDetach
 }) => {
     const [showPasteDropdown, setShowPasteDropdown] = useState(false);
     const [showAllGroups, setShowAllGroups] = useState(false);
@@ -289,7 +290,18 @@ const TrafficTable = ({
     return (
         <div className="traffic-table-container">
             <div className="traffic-header">
-                <h3>Données Trafic {hoveredGroupId !== null && <span style={{color: '#4ecdc4', fontSize: '0.8em'}}> [Grp {hoveredGroupId}]</span>}</h3>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    Données Trafic {hoveredGroupId !== null && <span style={{color: '#4ecdc4', fontSize: '0.8em'}}> [Grp {hoveredGroupId}]</span>}
+                    {onDetach && (
+                        <button
+                            onClick={onDetach}
+                            title="Détacher dans une fenêtre séparée"
+                            style={{ fontSize: '0.65em', padding: '2px 8px', cursor: 'pointer', background: '#444', border: '1px solid #666', color: '#ccc', borderRadius: '3px' }}
+                        >
+                            Détacher
+                        </button>
+                    )}
+                </h3>
                 <label className="traffic-all-groups-checkbox">
                     <input
                         type="checkbox"

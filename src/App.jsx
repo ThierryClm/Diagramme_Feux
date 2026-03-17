@@ -32,6 +32,8 @@ import useDialogState from './hooks/useDialogState';
 import useFloatingImage from './hooks/useFloatingImage';
 import useDirectoryHandles from './hooks/useDirectoryHandles';
 import useFloatingImageRenderer from './hooks/useFloatingImageRenderer';
+import useFloatingForm from './hooks/useFloatingForm';
+import useFloatingTraffic from './hooks/useFloatingTraffic';
 import useFileOperations from './hooks/useFileOperations';
 import useImportOperations from './hooks/useImportOperations';
 import renderFloatingArrowSVG from './utils/renderArrowSVG';
@@ -123,6 +125,8 @@ function App() {
         setDependencyGap,
         biCarrefourSeparator,
         setBiCarrefourSeparator,
+        matricesLocked,
+        setMatricesLocked,
         externalLinks,
         setExternalLinks,
         projectProperties,
@@ -238,7 +242,7 @@ function App() {
     const [hoveredConflict, setHoveredConflict] = useState(null); // {from, to} for conflict hover
 
     // Track whether project has been modified (for "Nouveau projet" menu)
-    const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip } =
+    const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip, hasUnsavedChanges } =
         useProjectModification([groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
 
     // Floating matrix state
@@ -248,6 +252,20 @@ function App() {
         matrixPopup
     } = useFloatingMatrix(groups.length);
 
+    // Floating form state
+    const {
+        showFloatingForm,
+        setShowFloatingForm,
+        formPopup
+    } = useFloatingForm(groups.length);
+
+    // Floating traffic state
+    const {
+        showFloatingTraffic,
+        setShowFloatingTraffic,
+        trafficPopup
+    } = useFloatingTraffic(groups.length);
+
     // Floating legend state
     const {
         showFloatingLegend,
@@ -256,6 +274,10 @@ function App() {
         isLegendDragging,
         handleLegendMouseDown
     } = useFloatingLegend();
+
+    // Floating conditions & variables states (lifted from ActionTable for menu control)
+    const [showFloatingConditions, setShowFloatingConditions] = useState(false);
+    const [showFloatingVariables, setShowFloatingVariables] = useState(false);
 
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
@@ -418,6 +440,7 @@ function App() {
     } = useFileOperations({
         projectName, diagramHeight, floatingCrop, floatingZoom,
         setSelectedProject, setOpenModal, setCurrentProjectPath, setProjectModified,
+        projectModifiedSkip, hasUnsavedChanges,
         setDiagramHeight, setFloatingCrop, setFloatingZoom,
         setShowComments, setShowRemarks, setIntersectionName,
         loadFullState, getFullState, saveProject,
@@ -637,6 +660,9 @@ function App() {
             case 'uniCarrefour':
                 setBiCarrefourSeparator(null);
                 break;
+            case 'lockMatrices':
+                setMatricesLocked(prev => !prev);
+                break;
             case 'slide':
                 setSlideValue(0);
                 setSlideFromGroup(groups[0]?.id || 1);
@@ -710,6 +736,18 @@ function App() {
                 break;
             case 'toggleFloatingMatrix':
                 setShowFloatingMatrix(v => !v);
+                break;
+            case 'toggleFloatingForm':
+                setShowFloatingForm(v => !v);
+                break;
+            case 'toggleFloatingConditions':
+                setShowFloatingConditions(v => !v);
+                break;
+            case 'toggleFloatingVariables':
+                setShowFloatingVariables(v => !v);
+                break;
+            case 'toggleFloatingTraffic':
+                setShowFloatingTraffic(v => !v);
                 break;
             case 'externalLinks':
                 setShowExternalLinksModal(true);
@@ -1073,11 +1111,56 @@ function App() {
                     biCarrefourSeparator={biCarrefourSeparator}
                     onCellHover={() => {}}
                     showGroupNames={showGroupNamesMatrix}
+                    locked={matricesLocked}
                 />
             </div>
         );
     }, [showFloatingMatrix, conflictMatrix, groups, cycleLength, actionData, activePFId,
         pfTabs, biCarrefourSeparator, showGroupNamesMatrix, matrixPopup.renderToPopup]);
+
+    // Render form into popup window
+    useEffect(() => {
+        if (!showFloatingForm) return;
+        formPopup.renderToPopup(
+            <div style={{ padding: '12px', height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+                <GroupTable
+                    groups={groups}
+                    updateGroupParams={updateGroupParams}
+                    cycleLength={cycleLength}
+                    showGroupNames={showGroupNamesForm}
+                />
+            </div>
+        );
+    }, [showFloatingForm, groups, cycleLength, showGroupNamesForm, formPopup.renderToPopup, updateGroupParams]);
+
+    // Render traffic table into popup window
+    useEffect(() => {
+        if (!showFloatingTraffic) return;
+        trafficPopup.renderToPopup(
+            <div style={{ padding: '12px', height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+                <TrafficTable
+                    groups={groups}
+                    cycleLength={cycleLength}
+                    activeTrafficDataset={activeTrafficDataset}
+                    setActiveTrafficDataset={setActiveTrafficDataset}
+                    updateTrafficData={updateTrafficData}
+                    getTrafficData={getTrafficData}
+                    updateGroupParams={updateGroupParams}
+                    setHoveredGroupId={setHoveredArrowGroupId}
+                    hoveredGroupId={hoveredArrowGroupId}
+                    setHoveredGroupSaturated={setHoveredArrowGroupSaturated}
+                    trafficDatasetNames={trafficDatasetNames}
+                    setHoveredVUtile={setHoveredVUtile}
+                    copyTrafficDataset={copyTrafficDataset}
+                    addCustomTrafficDataset={addCustomTrafficDataset}
+                    actionData={actionData}
+                    simulationSelectedActions={simulationSelectedActions}
+                />
+            </div>
+        );
+    }, [showFloatingTraffic, groups, cycleLength, activeTrafficDataset, actionData,
+        simulationSelectedActions, trafficPopup.renderToPopup, updateTrafficData,
+        getTrafficData, updateGroupParams, trafficDatasetNames, copyTrafficDataset, addCustomTrafficDataset]);
 
     // Afficher l'écran de connexion si non authentifié
     if (!isAuthenticated) {
@@ -1106,7 +1189,7 @@ function App() {
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                 />
@@ -1381,6 +1464,7 @@ function App() {
                                         updateGroupParams={updateGroupParams}
                                         cycleLength={cycleLength}
                                         showGroupNames={showGroupNamesForm}
+                                        onDetach={() => setShowFloatingForm(v => !v)}
                                     />
                                     </div>
                                     <div style={{ marginTop: '2rem' }} onMouseEnter={() => { helpZoneRef.current = 'matrice'; }}>
@@ -1395,6 +1479,8 @@ function App() {
                                             biCarrefourSeparator={biCarrefourSeparator}
                                             onCellHover={setHoveredConflict}
                                             showGroupNames={showGroupNamesMatrix}
+                                            locked={matricesLocked}
+                                            onDetach={() => setShowFloatingMatrix(v => !v)}
                                         />
                                     </div>
                                 </>
@@ -1413,6 +1499,7 @@ function App() {
                                     biCarrefourSeparator={biCarrefourSeparator}
                                     onCellHover={setHoveredConflict}
                                     showGroupNames={showGroupNamesMatrix}
+                                    locked={matricesLocked}
                                     onDetach={() => setShowFloatingMatrix(v => !v)}
                                 />
                                 </div>
@@ -1437,6 +1524,7 @@ function App() {
                                     addCustomTrafficDataset={addCustomTrafficDataset}
                                     actionData={actionData}
                                     simulationSelectedActions={simulationSelectedActions}
+                                    onDetach={() => setShowFloatingTraffic(v => !v)}
                                 />
                                 </div>
                             )}
@@ -1784,6 +1872,10 @@ function App() {
                                 microCustomFields={microCustomFields}
                                 updateMicroCustomField={updateMicroCustomField}
                                 onResizePanel={handleActionPanelResize}
+                                showFloatingConditions={showFloatingConditions}
+                                setShowFloatingConditions={setShowFloatingConditions}
+                                showFloatingVariables={showFloatingVariables}
+                                setShowFloatingVariables={setShowFloatingVariables}
                             />
                         </div>
                     </div>

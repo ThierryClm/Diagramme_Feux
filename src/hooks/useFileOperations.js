@@ -7,6 +7,7 @@ import { useCallback } from 'react';
 const useFileOperations = ({
     projectName, diagramHeight, floatingCrop, floatingZoom,
     setSelectedProject, setOpenModal, setCurrentProjectPath, setProjectModified,
+    projectModifiedSkip, hasUnsavedChanges,
     setDiagramHeight, setFloatingCrop, setFloatingZoom,
     setShowComments, setShowRemarks, setIntersectionName,
     loadFullState, getFullState, saveProject,
@@ -82,7 +83,9 @@ const useFileOperations = ({
 
             // Mémoriser le chemin du projet
             setCurrentProjectPath(file.name);
-            setProjectModified(true);
+            setProjectModified(true); // active "Nouveau projet" dans le menu
+            projectModifiedSkip.current = true; // absorbe le prochain changement de deps
+            hasUnsavedChanges.current = false; // pas de modifications non sauvegardées
 
             // Restaurer la hauteur du diagramme si présente
             if (data.diagramHeight !== undefined) {
@@ -180,7 +183,9 @@ const useFileOperations = ({
 
             // Mémoriser le chemin du projet
             setCurrentProjectPath(file.name);
-            setProjectModified(true);
+            setProjectModified(true); // active "Nouveau projet" dans le menu
+            projectModifiedSkip.current = true; // absorbe le prochain changement de deps
+            hasUnsavedChanges.current = false; // pas de modifications non sauvegardées
 
             // Restaurer la hauteur du diagramme si présente
             if (data.diagramHeight !== undefined) {
@@ -294,7 +299,9 @@ const useFileOperations = ({
 
             // Mémoriser le chemin du projet
             setCurrentProjectPath(fileHandle.name);
-            setProjectModified(true);
+            setProjectModified(true); // active "Nouveau projet" dans le menu
+            projectModifiedSkip.current = true; // absorbe setIntersectionName(savedName)
+            hasUnsavedChanges.current = false; // projet sauvegardé, pas de modifications
 
             // Sauvegarder aussi dans localStorage pour cohérence
             saveProject(savedName);
@@ -388,7 +395,9 @@ const useFileOperations = ({
 
             // Mémoriser le chemin du projet
             setCurrentProjectPath(fileHandle.name);
-            setProjectModified(true);
+            setProjectModified(true); // active "Nouveau projet" dans le menu
+            projectModifiedSkip.current = true; // absorbe setIntersectionName(savedName)
+            hasUnsavedChanges.current = false; // projet sauvegardé, pas de modifications
 
             // Sauvegarder aussi dans localStorage pour cohérence
             saveProject(savedName);

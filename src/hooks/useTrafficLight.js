@@ -116,6 +116,7 @@ export const useTrafficLight = () => {
     const [cycleLength, setCycleLength] = useState(DEFAULT_CYCLE);
     const [dependencyGap, setDependencyGap] = useState(20);
     const [biCarrefourSeparator, setBiCarrefourSeparator] = useState(null);
+    const [matricesLocked, setMatricesLocked] = useState(false);
     const [externalLinks, setExternalLinks] = useState([]);
     const [projectProperties, setProjectProperties] = useState(() => {
         try {
@@ -1100,6 +1101,9 @@ export const useTrafficLight = () => {
             // Load bi-carrefour separator (always reset to null if not present)
             setBiCarrefourSeparator(state.biCarrefourSeparator !== undefined ? state.biCarrefourSeparator : null);
 
+            // Load matrices locked state (reset to false if not present)
+            setMatricesLocked(state.matricesLocked === true);
+
             // Load external links
             if (state.externalLinks && Array.isArray(state.externalLinks)) {
                 setExternalLinks(state.externalLinks);
@@ -1188,6 +1192,7 @@ export const useTrafficLight = () => {
         pfTrafficDatasetMap,
         dependencyGap,
         biCarrefourSeparator,
+        matricesLocked,
         externalLinks,
         projectProperties
         // Note: simulation state is NOT included (per user request)
@@ -2609,6 +2614,8 @@ export const useTrafficLight = () => {
         setDependencyGap,
         biCarrefourSeparator,
         setBiCarrefourSeparator,
+        matricesLocked,
+        setMatricesLocked,
         externalLinks,
         setExternalLinks,
         conflictMatrix,
