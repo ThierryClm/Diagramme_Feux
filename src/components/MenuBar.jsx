@@ -199,7 +199,17 @@ const MenuBar = ({
                         { type: 'slider', label: 'Zoom', min: 4, max: 20, value: pixelsPerSecond, unit: 'px/s', sliderId: 'pixelsPerSecond' }
                     ]
                 },
-                { label: 'Affichage blanc sur fond noir', action: 'toggleDarkMode', toggle: true, checked: layoutOptions.darkMode }
+                {
+                    label: 'Options de contraste',
+                    type: 'submenu',
+                    submenuId: 'contraste',
+                    submenu: [
+                        { label: 'Blanc sur fond noir', action: 'themeDark', themeId: 'dark' },
+                        { label: 'Noir sur fond blanc', action: 'themeLight', themeId: 'light' },
+                        { label: 'Haut contraste', action: 'themeHighContrast', themeId: 'high-contrast' },
+                        { label: 'Contraste ambre', action: 'themeAmber', themeId: 'amber' }
+                    ]
+                }
             ]
         },
         diagramme: {
@@ -288,6 +298,21 @@ const MenuBar = ({
                     />
                     <span className="menu-slider-value">{subItem.value}{subItem.unit}</span>
                 </div>
+            );
+        }
+
+        // Check if this is a theme item
+        if (subItem.themeId) {
+            const isActive = layoutOptions.colorTheme === subItem.themeId;
+            return (
+                <button
+                    key={subIdx}
+                    className={`menu-item ${isActive ? 'checked' : ''}`}
+                    onClick={() => handleItemClick(subItem.action)}
+                >
+                    {isActive && <span className="checkmark">✓</span>}
+                    {subItem.label}
+                </button>
             );
         }
 

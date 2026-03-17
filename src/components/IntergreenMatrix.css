@@ -21,7 +21,8 @@
 }
 
 .matrix-grid {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     margin-top: 10px;
 }
 
@@ -30,7 +31,8 @@
     top: 0;
     background: #222;
     padding: 2px;
-    border: 1px solid #444;
+    border-right: 1px solid #444;
+    border-bottom: 1px solid #444;
     z-index: 10;
     height: 18px;
     width: 18px;
@@ -39,7 +41,8 @@
 }
 
 .matrix-grid td {
-    border: 1px solid #444;
+    border-right: 1px solid #444;
+    border-bottom: 1px solid #444;
     padding: 0;
     text-align: center;
     width: 18px;
@@ -110,7 +113,6 @@
     font-size: 0.80em;
     color: #fff;
     white-space: nowrap;
-    border-right: 1px solid #444;
     z-index: 5;
     width: auto !important;
     min-width: 70px !important;
@@ -123,7 +125,6 @@
     max-width: 24px !important;
     left: 0;
     z-index: 6;
-    border-right: 1px solid #444;
 }
 
 .matrix-conflict-cell {

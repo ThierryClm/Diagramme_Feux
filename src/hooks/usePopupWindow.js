@@ -92,13 +92,14 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
                 popup.document.head.appendChild(clone);
             });
 
-            // Sync light/dark mode class on body
-            const isLightMode = document.body.classList.contains('light-mode');
-            if (isLightMode) {
-                popup.document.body.classList.add('light-mode');
-            }
+            // Sync theme class on popup body
+            ['light-mode', 'high-contrast-mode', 'amber-mode'].forEach(cls => {
+                if (document.body.classList.contains(cls)) {
+                    popup.document.body.classList.add(cls);
+                }
+            });
 
-            // Add base styles for popup body
+            // Add base styles for popup body (all themes)
             const popupStyle = popup.document.createElement('style');
             popupStyle.textContent = `
                 body {
@@ -109,6 +110,12 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
                 }
                 body.light-mode {
                     background: #f5f5f5;
+                }
+                body.high-contrast-mode {
+                    background: #0a0e2a;
+                }
+                body.amber-mode {
+                    background: #1a1a1a;
                 }
                 #popup-root {
                     height: 100vh;
@@ -176,11 +183,16 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
         }
     }, []);
 
-    // Sync light/dark mode changes
+    // Sync theme changes to popup
     useEffect(() => {
         if (popupRef.current && !popupRef.current.closed) {
-            const isLightMode = document.body.classList.contains('light-mode');
-            popupRef.current.document.body.classList.toggle('light-mode', isLightMode);
+            const themeClasses = ['light-mode', 'high-contrast-mode', 'amber-mode'];
+            themeClasses.forEach(cls => {
+                popupRef.current.document.body.classList.toggle(
+                    cls,
+                    document.body.classList.contains(cls)
+                );
+            });
         }
     });
 

@@ -349,6 +349,7 @@ function App() {
 
     const {
         darkMode, setDarkMode,
+        colorTheme, setColorTheme,
         showComments, setShowComments,
         showRemarks, setShowRemarks,
         showGroupNamesForm, setShowGroupNamesForm,
@@ -719,8 +720,17 @@ function App() {
             case 'toggleRemarks':
                 setShowRemarks(v => !v);
                 break;
-            case 'toggleDarkMode':
-                setDarkMode(v => !v);
+            case 'themeDark':
+                setColorTheme('dark');
+                break;
+            case 'themeLight':
+                setColorTheme('light');
+                break;
+            case 'themeHighContrast':
+                setColorTheme('high-contrast');
+                break;
+            case 'themeAmber':
+                setColorTheme('amber');
                 break;
             case 'toggleGroupNamesForm':
                 setShowGroupNamesForm(v => !v);
@@ -1189,7 +1199,7 @@ function App() {
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                 />

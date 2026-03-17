@@ -291,7 +291,7 @@ const TrafficTable = ({
         <div className="traffic-table-container">
             <div className="traffic-header">
                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    Données Trafic {hoveredGroupId !== null && <span style={{color: '#4ecdc4', fontSize: '0.8em'}}> [Grp {hoveredGroupId}]</span>}
+                    Données Trafic
                     {onDetach && (
                         <button
                             onClick={onDetach}

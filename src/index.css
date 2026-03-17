@@ -199,15 +199,7 @@ body.light-mode .sidebar .matrix-grid input:focus {
 
 body.light-mode .matrix-grid th,
 body.light-mode .matrix-grid td {
-    border: 1px solid #999 !important;
-}
-
-body.light-mode .row-name {
-    border-right: 1px solid #999 !important;
-}
-
-body.light-mode .row-header {
-    border-right: 1px solid #999 !important;
+    border-color: #999;
 }
 
 /* Bi-carrefour separator: black in light mode */
@@ -773,6 +765,1627 @@ body.light-mode .arrow-editor h4 {
 body.light-mode .arrow-editor label {
     color: #333;
 }
+
+/* ===================================================================
+   HIGH CONTRAST MODE
+   Fond bleu marine profond, texte jaune/blanc vif, accents cyan/magenta
+   Inspiré des standards WCAG AAA pour une lisibilité maximale
+   =================================================================== */
+
+body.high-contrast-mode {
+    background-color: #0a0e2a;
+    color: #ffffff;
+}
+
+/* Header */
+body.high-contrast-mode .app-header {
+    background: #0f1440;
+    border-bottom: 2px solid #3355aa;
+}
+
+body.high-contrast-mode .app-header input,
+body.high-contrast-mode .app-header select {
+    background: #1a2050;
+    color: #ffdd00;
+    border: 1px solid #4466bb;
+}
+
+body.high-contrast-mode .app-header button {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .undo-btn,
+body.high-contrast-mode .toggle-btn {
+    background: #1a2050;
+    border-color: #4466bb;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .undo-btn:hover,
+body.high-contrast-mode .toggle-btn:hover {
+    background: #253080;
+}
+
+body.high-contrast-mode .toggle-btn.active {
+    background-color: rgba(0, 229, 255, 0.3);
+}
+
+body.high-contrast-mode .logout-btn {
+    background: #1a2050;
+    border-color: #4466bb;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .logout-btn:hover {
+    background: #253080;
+    color: #ffee44;
+}
+
+/* Sidebar */
+body.high-contrast-mode .sidebar {
+    background: #0f1440;
+    border-right: 2px solid #3355aa;
+}
+
+body.high-contrast-mode .sidebar input,
+body.high-contrast-mode .sidebar select,
+body.high-contrast-mode .sidebar textarea {
+    background: #1a2050;
+    color: #ffffff;
+    border: 1px solid #4466bb;
+}
+
+body.high-contrast-mode .sidebar label,
+body.high-contrast-mode .sidebar span,
+body.high-contrast-mode .sidebar th,
+body.high-contrast-mode .sidebar td,
+body.high-contrast-mode .sidebar h3,
+body.high-contrast-mode .sidebar h4,
+body.high-contrast-mode .sidebar p {
+    color: #ffffff;
+}
+
+body.high-contrast-mode .tab-btn {
+    background: #1a2050;
+    color: #ffdd00;
+    border: 1px solid #3355aa;
+}
+
+body.high-contrast-mode .tab-btn.active {
+    background: #253080;
+    color: #ffee44;
+    border-color: #00e5ff;
+}
+
+body.high-contrast-mode .tab-btn:hover {
+    background: #253080;
+}
+
+/* GroupTable (Configuration) */
+body.high-contrast-mode .group-table-container {
+    background: #0f1440;
+}
+
+body.high-contrast-mode .group-table-title {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .group-table th {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .group-table td {
+    color: #ffffff;
+}
+
+body.high-contrast-mode .group-table input,
+body.high-contrast-mode .group-table select {
+    background: #1a2050;
+    color: #ffffff;
+    border: 1px solid #4466bb;
+}
+
+body.high-contrast-mode .input-mini,
+body.high-contrast-mode .input-yellow {
+    color: #ffffff !important;
+}
+
+body.high-contrast-mode .input-readonly {
+    background: #0f1440 !important;
+}
+
+body.high-contrast-mode .btn-move {
+    background: #253080;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .btn-move:hover {
+    background: #3040a0;
+}
+
+/* IntergreenMatrix */
+body.high-contrast-mode .matrix-container-inline {
+    background: #0f1440;
+}
+
+body.high-contrast-mode .matrix-container-inline h3 {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .matrix-grid th {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .row-header {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .row-name {
+    background: #0f1440;
+    color: #00e5ff;
+}
+
+body.high-contrast-mode .matrix-grid .col-index-header {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .traffic-table .col-id {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .traffic-table .col-name-readonly {
+    color: #00e5ff;
+}
+
+body.high-contrast-mode .diagonal-cell {
+    background: #0a0e2a;
+}
+
+body.high-contrast-mode .sidebar .matrix-grid input {
+    color: #ffffff;
+    background: transparent !important;
+}
+
+body.high-contrast-mode .sidebar .matrix-grid input:focus {
+    background: #253080 !important;
+}
+
+body.high-contrast-mode .matrix-grid th,
+body.high-contrast-mode .matrix-grid td {
+    border-color: #3355aa;
+}
+
+/* Bi-carrefour separator */
+body.high-contrast-mode .matrix-bi-sep-bottom {
+    border-bottom-color: #ffdd00 !important;
+}
+
+body.high-contrast-mode .matrix-bi-sep-right {
+    border-right-color: #ffdd00 !important;
+}
+
+/* TrafficTable */
+body.high-contrast-mode .traffic-table-container {
+    background: #0f1440;
+}
+
+body.high-contrast-mode .traffic-header h3 {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .traffic-table th {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .traffic-table input,
+body.high-contrast-mode .traffic-table select {
+    background: #1a2050;
+    color: #ffffff;
+    border: 1px solid #4466bb;
+}
+
+body.high-contrast-mode .sidebar .traffic-table .col-calculated {
+    color: #00e5ff;
+}
+
+body.high-contrast-mode .sidebar .traffic-table .capacity-green {
+    color: #44ff88;
+}
+
+body.high-contrast-mode .sidebar .traffic-table .capacity-orange {
+    color: #ffaa00;
+}
+
+body.high-contrast-mode .sidebar .traffic-table .capacity-red {
+    color: #ff4444;
+}
+
+body.high-contrast-mode .sidebar .traffic-table .capacity-black {
+    color: #ff4444;
+}
+
+body.high-contrast-mode .traffic-dataset-label,
+body.high-contrast-mode .traffic-dataset-selector {
+    background: #1a2050;
+    color: #ffdd00;
+    border-color: #4466bb;
+}
+
+body.high-contrast-mode .paste-dropdown {
+    background: #1a2050;
+    color: #ffffff;
+    border-color: #4466bb;
+}
+
+/* Diagram area */
+body.high-contrast-mode .diagram-area {
+    background: #0a0e2a;
+}
+
+body.high-contrast-mode .diagram-panel {
+    background: #0a0e2a;
+}
+
+/* TimelineDiagram */
+body.high-contrast-mode .diagram-title {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .timeline-sidebar {
+    background: #0f1440;
+}
+
+body.high-contrast-mode .sidebar-header-row {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .timeline-sidebar td {
+    color: #ffffff;
+}
+
+body.high-contrast-mode .input-time-sm {
+    background: #1a2050;
+    color: #ffffff;
+    border-color: #4466bb;
+}
+
+body.high-contrast-mode .input-da {
+    background: #1a2050;
+    color: #ff44ff;
+    border-color: #4466bb;
+}
+
+/* Diagram sidebar labels */
+body.high-contrast-mode .row-label-container {
+    color: #ffffff;
+    border-bottom-color: #3355aa;
+}
+
+body.high-contrast-mode .label-id {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .label-name {
+    color: #00e5ff;
+}
+
+body.high-contrast-mode .col-label {
+    color: #aabbee;
+}
+
+body.high-contrast-mode .timeline-scroll-area {
+    background: #0a0e2a;
+}
+
+body.high-contrast-mode .timeline-ruler {
+    background: #1a2050;
+    color: #ffdd00;
+    border-bottom-color: #3355aa;
+}
+
+body.high-contrast-mode .timeline-comments {
+    background: #0f1440;
+}
+
+body.high-contrast-mode .comments-header {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .input-comment {
+    background: #1a2050;
+    color: #ffffff;
+    border-color: #4466bb;
+}
+
+body.high-contrast-mode .timeline-remarques {
+    background: #0f1440;
+}
+
+body.high-contrast-mode .remarques-header {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .input-remarques {
+    background: #1a2050;
+    color: #ffffff;
+    border-color: #4466bb;
+}
+
+/* PropertiesPanel */
+body.high-contrast-mode .logo-box {
+    background: #1a2050;
+    border-color: #4466bb;
+}
+
+body.high-contrast-mode .cycle-input-label {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .cycle-input-label .input-count {
+    background: #1a2050;
+    color: #ffdd00;
+    border-color: #4466bb;
+}
+
+/* ActionTable */
+body.high-contrast-mode .action-table-container {
+    background: #0f1440;
+}
+
+body.high-contrast-mode .action-panel {
+    background: #0f1440;
+}
+
+body.high-contrast-mode .action-table-container h3 {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .action-table th {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .action-table thead tr.header-group th {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .action-table td {
+    color: #ffffff;
+    border-color: #3355aa;
+}
+
+body.high-contrast-mode .action-table input,
+body.high-contrast-mode .action-table select {
+    background: #1a2050;
+    color: #ffffff;
+    border: 1px solid #4466bb;
+}
+
+body.high-contrast-mode .action-table select option {
+    background: #1a2050;
+    color: #ffffff;
+}
+
+body.high-contrast-mode .action-table td:has(input:disabled),
+body.high-contrast-mode .action-table input.input-disabled {
+    background: #0a0e2a;
+}
+
+body.high-contrast-mode .custom-field-input {
+    background: #0f1440;
+    color: #ffffff;
+}
+
+body.high-contrast-mode .action-table-panel-resize {
+    background: #3355aa;
+}
+
+/* Micro-régulation keywords: magenta vif au lieu de violet */
+body.high-contrast-mode .micro-highlight-backdrop {
+    color: #ffffff;
+}
+
+body.high-contrast-mode .micro-highlight-backdrop .micro-keyword {
+    color: #ff44ff;
+}
+
+body.high-contrast-mode .input-micro.micro-has-backdrop {
+    caret-color: #ffffff;
+}
+
+body.high-contrast-mode .action-table input:focus,
+body.high-contrast-mode .action-table select:focus,
+body.high-contrast-mode .action-table textarea:focus {
+    background: #253080;
+}
+
+/* Detach button */
+body.high-contrast-mode .detach-btn {
+    background: #253080;
+    color: #ffdd00;
+    border-color: #4466bb;
+}
+
+body.high-contrast-mode .detach-btn:hover:not(:disabled) {
+    background: #00897B;
+    color: #ffffff;
+}
+
+body.high-contrast-mode .action-table-separator-horizontal {
+    background: #3355aa;
+}
+
+body.high-contrast-mode .custom-field-input:focus {
+    background: #1a2050;
+    border-color: #00e5ff;
+}
+
+body.high-contrast-mode .custom-field-input::placeholder {
+    color: #6677aa;
+}
+
+/* Floating panels */
+body.high-contrast-mode .floating-panel {
+    background: #0f1440;
+    border: 5px solid #3355aa;
+    box-shadow: 0 8px 32px rgba(0, 100, 255, 0.3);
+}
+
+body.high-contrast-mode .floating-panel-titlebar {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .floating-panel-close {
+    color: #ff4444;
+}
+
+body.high-contrast-mode .floating-panel-body {
+    background: #0f1440;
+    color: #ffffff;
+}
+
+/* Modal */
+body.high-contrast-mode .modal-content {
+    background: #0f1440;
+    color: #ffffff;
+}
+
+body.high-contrast-mode .modal-header {
+    background: #1a2050;
+    color: #ffdd00;
+    border-bottom-color: #3355aa;
+}
+
+body.high-contrast-mode .modal-header h3 {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .modal-close {
+    color: #ff4444;
+}
+
+body.high-contrast-mode .modal-close:hover {
+    color: #ff6666;
+}
+
+body.high-contrast-mode .modal-body {
+    color: #ffffff;
+}
+
+body.high-contrast-mode .modal-body input,
+body.high-contrast-mode .modal-body select {
+    background: #1a2050;
+    color: #ffffff;
+    border-color: #4466bb;
+}
+
+body.high-contrast-mode .modal-btn-secondary {
+    background: #253080;
+    color: #ffdd00;
+}
+
+/* PF tabs bar */
+body.high-contrast-mode .pf-tabs-bar {
+    background: #0f1440;
+}
+
+body.high-contrast-mode .pf-tab {
+    background: #1a2050;
+    color: #aabbee;
+    border: 1px solid #3355aa;
+}
+
+body.high-contrast-mode .pf-tab.active {
+    background: #253080;
+    color: #ffdd00;
+    border-color: #00e5ff;
+}
+
+/* ProjectManager */
+body.high-contrast-mode .project-manager {
+    background: #0f1440;
+    color: #ffffff;
+}
+
+body.high-contrast-mode .project-manager button {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .files-list li:hover {
+    background: #253080;
+}
+
+/* Floating legend */
+body.high-contrast-mode .floating-legend-window {
+    background: #0f1440;
+    color: #ffffff;
+}
+
+body.high-contrast-mode .floating-legend-header {
+    background: #1a2050;
+    color: #ffdd00;
+}
+
+/* Phasage */
+body.high-contrast-mode .phasage-group-item {
+    background: #1a2050;
+    color: #ffffff;
+}
+
+body.high-contrast-mode .phasage-group-courant {
+    background: #253080;
+    color: #00e5ff;
+}
+
+/* SimulationPanel */
+body.high-contrast-mode .simulation-panel {
+    background: #0f1440;
+    color: #ffffff;
+}
+
+body.high-contrast-mode .simulation-panel input,
+body.high-contrast-mode .simulation-panel select {
+    background: #1a2050;
+    color: #ffffff;
+    border-color: #4466bb;
+}
+
+body.high-contrast-mode .simulation-panel th,
+body.high-contrast-mode .simulation-panel td {
+    color: #ffffff;
+}
+
+body.high-contrast-mode .simulation-panel button {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .simulation-item {
+    background: #1a2050;
+    border-color: #3355aa;
+}
+
+body.high-contrast-mode .simulation-item:hover {
+    background: #253080;
+    border-color: #4466bb;
+}
+
+body.high-contrast-mode .simulation-item.checked {
+    background: #1a3060;
+}
+
+body.high-contrast-mode .sim-action-type {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .sim-row-num {
+    color: #aabbee;
+}
+
+body.high-contrast-mode .sim-time {
+    color: #00e5ff;
+}
+
+body.high-contrast-mode .sim-desc {
+    color: #aabbee;
+}
+
+body.high-contrast-mode .simulation-info {
+    background: #1a2050;
+    border-color: #3355aa;
+}
+
+body.high-contrast-mode .sim-info-label {
+    color: #aabbee;
+}
+
+body.high-contrast-mode .simulation-list-header {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .sim-btn {
+    background: #253080;
+    border-color: #4466bb;
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .sim-btn:hover {
+    background: #3040a0;
+}
+
+body.high-contrast-mode .simulation-traffic-table td {
+    color: #ffffff;
+}
+
+body.high-contrast-mode .simulation-traffic-header .traffic-title {
+    color: #ffdd00;
+}
+
+/* Timeline grid lines */
+body.high-contrast-mode .grid-1s {
+    background: rgba(51, 85, 170, 0.2);
+}
+
+body.high-contrast-mode .grid-5s {
+    background: rgba(51, 85, 170, 0.4);
+}
+
+body.high-contrast-mode .grid-10s {
+    background: rgba(51, 85, 170, 0.6);
+}
+
+body.high-contrast-mode .ruler-tick {
+    color: #ffdd00;
+}
+
+/* Timeline row and column separators */
+body.high-contrast-mode .diagram-title {
+    border-bottom-color: #3355aa;
+}
+
+body.high-contrast-mode .timeline-ruler {
+    border-bottom-color: #3355aa;
+}
+
+body.high-contrast-mode .timeline-row-track {
+    background: #0a0e2a;
+    border-bottom-color: #3355aa;
+}
+
+body.high-contrast-mode .comment-row {
+    border-bottom-color: #3355aa;
+}
+
+/* Cycle end line */
+body.high-contrast-mode .grid-cycle-end {
+    background: #ffdd00;
+}
+
+/* Green cut overlay */
+body.high-contrast-mode .green-cut-overlay {
+    background: #1a2050;
+}
+
+/* Intersection image */
+body.high-contrast-mode .intersection-image-container {
+    background: #0f1440;
+}
+body.high-contrast-mode .intersection-header {
+    background: #0f1440;
+}
+body.high-contrast-mode .intersection-header h3 {
+    color: #ffdd00;
+}
+body.high-contrast-mode .intersection-image-area {
+    background: #0a0e2a;
+}
+body.high-contrast-mode .display-options {
+    background: #1a2050;
+    border-color: #3355aa;
+}
+body.high-contrast-mode .checkbox-option {
+    color: #ffffff;
+}
+body.high-contrast-mode .image-filters {
+    background: #1a2050;
+    border-color: #3355aa;
+}
+body.high-contrast-mode .filter-row {
+    color: #ffffff;
+}
+body.high-contrast-mode .filter-value {
+    color: #00e5ff;
+}
+body.high-contrast-mode .no-selection-hint {
+    background: #1a2050;
+    border-color: #3355aa;
+    color: #aabbee;
+}
+body.high-contrast-mode .hint {
+    color: #aabbee;
+}
+body.high-contrast-mode .arrow-editor {
+    background: #1a2050;
+    border-color: #3355aa;
+    color: #ffffff;
+}
+body.high-contrast-mode .arrow-editor h4 {
+    color: #ffdd00;
+}
+body.high-contrast-mode .arrow-editor label {
+    color: #ffffff;
+}
+
+/* Menu bar */
+body.high-contrast-mode .menu-bar {
+    background: #0f1440;
+    border-bottom: 2px solid #3355aa;
+}
+
+body.high-contrast-mode .menu-button {
+    color: #ffdd00;
+}
+
+body.high-contrast-mode .menu-button.active,
+body.high-contrast-mode .menu-button:hover {
+    background: #253080;
+}
+
+body.high-contrast-mode .menu-dropdown {
+    background: #1a2050;
+    border: 1px solid #3355aa;
+}
+
+body.high-contrast-mode .menu-item {
+    color: #ffffff;
+}
+
+body.high-contrast-mode .menu-item:hover {
+    background: #253080;
+}
+
+body.high-contrast-mode .menu-item.disabled {
+    color: #556688;
+}
+
+body.high-contrast-mode .menu-separator {
+    border-color: #3355aa;
+}
+
+body.high-contrast-mode .menu-header {
+    color: #aabbee;
+}
+
+body.high-contrast-mode .submenu-dropdown {
+    background: #1a2050;
+    border: 1px solid #3355aa;
+}
+
+body.high-contrast-mode .menu-slider-label,
+body.high-contrast-mode .menu-slider-value {
+    color: #ffffff;
+}
+
+/* ===================================================================
+   END HIGH CONTRAST MODE
+   =================================================================== */
+
+/* ===================================================================
+   AMBER MODE
+   Fond anthracite neutre, accents ambre/or, texte blanc crème
+   Chaleureux et très lisible sans teinte bleutée
+   =================================================================== */
+
+body.amber-mode {
+    background-color: #1a1a1a;
+    color: #f5f0e8;
+}
+
+/* Header */
+body.amber-mode .app-header {
+    background: #252525;
+    border-bottom: 2px solid #555;
+}
+
+body.amber-mode .app-header input,
+body.amber-mode .app-header select {
+    background: #303030;
+    color: #ffb300;
+    border: 1px solid #666;
+}
+
+body.amber-mode .app-header button {
+    color: #ffb300;
+}
+
+body.amber-mode .undo-btn,
+body.amber-mode .toggle-btn {
+    background: #303030;
+    border-color: #666;
+    color: #ffb300;
+}
+
+body.amber-mode .undo-btn:hover,
+body.amber-mode .toggle-btn:hover {
+    background: #404040;
+}
+
+body.amber-mode .toggle-btn.active {
+    background-color: rgba(255, 179, 0, 0.25);
+}
+
+body.amber-mode .logout-btn {
+    background: #303030;
+    border-color: #666;
+    color: #ffb300;
+}
+
+body.amber-mode .logout-btn:hover {
+    background: #404040;
+    color: #ffc640;
+}
+
+/* Sidebar */
+body.amber-mode .sidebar {
+    background: #222222;
+    border-right: 2px solid #555;
+}
+
+body.amber-mode .sidebar input,
+body.amber-mode .sidebar select,
+body.amber-mode .sidebar textarea {
+    background: #303030;
+    color: #f5f0e8;
+    border: 1px solid #666;
+}
+
+body.amber-mode .sidebar label,
+body.amber-mode .sidebar span,
+body.amber-mode .sidebar th,
+body.amber-mode .sidebar td,
+body.amber-mode .sidebar h3,
+body.amber-mode .sidebar h4,
+body.amber-mode .sidebar p {
+    color: #f5f0e8;
+}
+
+body.amber-mode .tab-btn {
+    background: #303030;
+    color: #ffb300;
+    border: 1px solid #555;
+}
+
+body.amber-mode .tab-btn.active {
+    background: #404040;
+    color: #ffc640;
+    border-color: #e68a00;
+}
+
+body.amber-mode .tab-btn:hover {
+    background: #3a3a3a;
+}
+
+/* GroupTable */
+body.amber-mode .group-table-container {
+    background: #222222;
+}
+
+body.amber-mode .group-table-title {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .group-table th {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .group-table td {
+    color: #f5f0e8;
+}
+
+body.amber-mode .group-table input,
+body.amber-mode .group-table select {
+    background: #303030;
+    color: #f5f0e8;
+    border: 1px solid #666;
+}
+
+body.amber-mode .input-mini,
+body.amber-mode .input-yellow {
+    color: #f5f0e8 !important;
+}
+
+body.amber-mode .input-readonly {
+    background: #252525 !important;
+}
+
+body.amber-mode .btn-move {
+    background: #404040;
+    color: #ffb300;
+}
+
+body.amber-mode .btn-move:hover {
+    background: #505050;
+}
+
+/* IntergreenMatrix */
+body.amber-mode .matrix-container-inline {
+    background: #222222;
+}
+
+body.amber-mode .matrix-container-inline h3 {
+    color: #ffb300;
+}
+
+body.amber-mode .matrix-grid th {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .row-header {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .row-name {
+    background: #252525;
+    color: #ffc640;
+}
+
+body.amber-mode .matrix-grid .col-index-header {
+    color: #ffb300;
+}
+
+body.amber-mode .traffic-table .col-id {
+    color: #ffb300;
+}
+
+body.amber-mode .traffic-table .col-name-readonly {
+    color: #ffc640;
+}
+
+body.amber-mode .diagonal-cell {
+    background: #1a1a1a;
+}
+
+body.amber-mode .sidebar .matrix-grid input {
+    color: #f5f0e8;
+    background: transparent !important;
+}
+
+body.amber-mode .sidebar .matrix-grid input:focus {
+    background: #404040 !important;
+}
+
+body.amber-mode .matrix-grid th,
+body.amber-mode .matrix-grid td {
+    border-color: #555;
+}
+
+body.amber-mode .matrix-bi-sep-bottom {
+    border-bottom-color: #ffb300 !important;
+}
+
+body.amber-mode .matrix-bi-sep-right {
+    border-right-color: #ffb300 !important;
+}
+
+/* TrafficTable */
+body.amber-mode .traffic-table-container {
+    background: #222222;
+}
+
+body.amber-mode .traffic-header h3 {
+    color: #ffb300;
+}
+
+body.amber-mode .traffic-table th {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .traffic-table input,
+body.amber-mode .traffic-table select {
+    background: #303030;
+    color: #f5f0e8;
+    border: 1px solid #666;
+}
+
+body.amber-mode .sidebar .traffic-table .col-calculated {
+    color: #66ccff;
+}
+
+body.amber-mode .sidebar .traffic-table .capacity-green {
+    color: #66ff88;
+}
+
+body.amber-mode .sidebar .traffic-table .capacity-orange {
+    color: #ffaa33;
+}
+
+body.amber-mode .sidebar .traffic-table .capacity-red {
+    color: #ff5555;
+}
+
+body.amber-mode .sidebar .traffic-table .capacity-black {
+    color: #ff5555;
+}
+
+body.amber-mode .traffic-dataset-label,
+body.amber-mode .traffic-dataset-selector {
+    background: #303030;
+    color: #ffb300;
+    border-color: #666;
+}
+
+body.amber-mode .paste-dropdown {
+    background: #303030;
+    color: #f5f0e8;
+    border-color: #666;
+}
+
+/* Diagram area */
+body.amber-mode .diagram-area {
+    background: #1a1a1a;
+}
+
+body.amber-mode .diagram-panel {
+    background: #1a1a1a;
+}
+
+/* TimelineDiagram */
+body.amber-mode .diagram-title {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .timeline-sidebar {
+    background: #222222;
+}
+
+body.amber-mode .sidebar-header-row {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .timeline-sidebar td {
+    color: #f5f0e8;
+}
+
+body.amber-mode .input-time-sm {
+    background: #303030;
+    color: #f5f0e8;
+    border-color: #666;
+}
+
+body.amber-mode .input-da {
+    background: #303030;
+    color: #ff88ff;
+    border-color: #666;
+}
+
+body.amber-mode .row-label-container {
+    color: #f5f0e8;
+    border-bottom-color: #555;
+}
+
+body.amber-mode .label-id {
+    color: #ffb300;
+}
+
+body.amber-mode .label-name {
+    color: #ffc640;
+}
+
+body.amber-mode .col-label {
+    color: #999;
+}
+
+body.amber-mode .timeline-scroll-area {
+    background: #1a1a1a;
+}
+
+body.amber-mode .timeline-ruler {
+    background: #303030;
+    color: #ffb300;
+    border-bottom-color: #555;
+}
+
+body.amber-mode .timeline-comments {
+    background: #222222;
+}
+
+body.amber-mode .comments-header {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .input-comment {
+    background: #303030;
+    color: #f5f0e8;
+    border-color: #666;
+}
+
+body.amber-mode .timeline-remarques {
+    background: #222222;
+}
+
+body.amber-mode .remarques-header {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .input-remarques {
+    background: #303030;
+    color: #f5f0e8;
+    border-color: #666;
+}
+
+/* PropertiesPanel */
+body.amber-mode .logo-box {
+    background: #303030;
+    border-color: #666;
+}
+
+body.amber-mode .cycle-input-label {
+    color: #ffb300;
+}
+
+body.amber-mode .cycle-input-label .input-count {
+    background: #303030;
+    color: #ffb300;
+    border-color: #666;
+}
+
+/* ActionTable */
+body.amber-mode .action-table-container {
+    background: #222222;
+}
+
+body.amber-mode .action-panel {
+    background: #222222;
+}
+
+body.amber-mode .action-table-container h3 {
+    color: #ffb300;
+}
+
+body.amber-mode .action-table th {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .action-table thead tr.header-group th {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .action-table td {
+    color: #f5f0e8;
+    border-color: #555;
+}
+
+body.amber-mode .action-table input,
+body.amber-mode .action-table select {
+    background: #303030;
+    color: #f5f0e8;
+    border: 1px solid #666;
+}
+
+body.amber-mode .action-table select option {
+    background: #303030;
+    color: #f5f0e8;
+}
+
+body.amber-mode .action-table td:has(input:disabled),
+body.amber-mode .action-table input.input-disabled {
+    background: #1a1a1a;
+}
+
+body.amber-mode .custom-field-input {
+    background: #252525;
+    color: #f5f0e8;
+}
+
+body.amber-mode .action-table-panel-resize {
+    background: #555;
+}
+
+body.amber-mode .micro-highlight-backdrop {
+    color: #f5f0e8;
+}
+
+body.amber-mode .micro-highlight-backdrop .micro-keyword {
+    color: #ff88ff;
+}
+
+body.amber-mode .input-micro.micro-has-backdrop {
+    caret-color: #f5f0e8;
+}
+
+body.amber-mode .action-table input:focus,
+body.amber-mode .action-table select:focus,
+body.amber-mode .action-table textarea:focus {
+    background: #404040;
+}
+
+body.amber-mode .detach-btn {
+    background: #404040;
+    color: #ffb300;
+    border-color: #666;
+}
+
+body.amber-mode .detach-btn:hover:not(:disabled) {
+    background: #e68a00;
+    color: #fff;
+}
+
+body.amber-mode .action-table-separator-horizontal {
+    background: #555;
+}
+
+body.amber-mode .custom-field-input:focus {
+    background: #303030;
+    border-color: #e68a00;
+}
+
+body.amber-mode .custom-field-input::placeholder {
+    color: #777;
+}
+
+/* Floating panels */
+body.amber-mode .floating-panel {
+    background: #222222;
+    border: 5px solid #555;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+body.amber-mode .floating-panel-titlebar {
+    background: #303030;
+    color: #ffb300;
+}
+
+body.amber-mode .floating-panel-close {
+    color: #ff5555;
+}
+
+body.amber-mode .floating-panel-body {
+    background: #222222;
+    color: #f5f0e8;
+}
+
+/* Modal */
+body.amber-mode .modal-content {
+    background: #222222;
+    color: #f5f0e8;
+}
+
+body.amber-mode .modal-header {
+    background: #303030;
+    color: #ffb300;
+    border-bottom-color: #555;
+}
+
+body.amber-mode .modal-header h3 {
+    color: #ffb300;
+}
+
+body.amber-mode .modal-close {
+    color: #ff5555;
+}
+
+body.amber-mode .modal-close:hover {
+    color: #ff7777;
+}
+
+body.amber-mode .modal-body {
+    color: #f5f0e8;
+}
+
+body.amber-mode .modal-body input,
+body.amber-mode .modal-body select {
+    background: #303030;
+    color: #f5f0e8;
+    border-color: #666;
+}
+
+body.amber-mode .modal-btn-secondary {
+    background: #404040;
+    color: #ffb300;
+}
+
+/* PF tabs */
+body.amber-mode .pf-tabs-bar {
+    background: #222222;
+}
+
+body.amber-mode .pf-tab {
+    background: #303030;
+    color: #999;
+    border: 1px solid #555;
+}
+
+body.amber-mode .pf-tab.active {
+    background: #404040;
+    color: #ffb300;
+    border-color: #e68a00;
+}
+
+/* ProjectManager */
+body.amber-mode .project-manager {
+    background: #222222;
+    color: #f5f0e8;
+}
+
+body.amber-mode .project-manager button {
+    color: #ffb300;
+}
+
+body.amber-mode .files-list li:hover {
+    background: #404040;
+}
+
+/* Floating legend */
+body.amber-mode .floating-legend-window {
+    background: #222222;
+    color: #f5f0e8;
+}
+
+body.amber-mode .floating-legend-header {
+    background: #303030;
+    color: #ffb300;
+}
+
+/* Phasage */
+body.amber-mode .phasage-group-item {
+    background: #303030;
+    color: #f5f0e8;
+}
+
+body.amber-mode .phasage-group-courant {
+    background: #404040;
+    color: #ffc640;
+}
+
+/* SimulationPanel */
+body.amber-mode .simulation-panel {
+    background: #222222;
+    color: #f5f0e8;
+}
+
+body.amber-mode .simulation-panel input,
+body.amber-mode .simulation-panel select {
+    background: #303030;
+    color: #f5f0e8;
+    border-color: #666;
+}
+
+body.amber-mode .simulation-panel th,
+body.amber-mode .simulation-panel td {
+    color: #f5f0e8;
+}
+
+body.amber-mode .simulation-panel button {
+    color: #ffb300;
+}
+
+body.amber-mode .simulation-item {
+    background: #303030;
+    border-color: #555;
+}
+
+body.amber-mode .simulation-item:hover {
+    background: #404040;
+    border-color: #666;
+}
+
+body.amber-mode .simulation-item.checked {
+    background: #3a3520;
+}
+
+body.amber-mode .sim-action-type {
+    color: #ffb300;
+}
+
+body.amber-mode .sim-row-num {
+    color: #999;
+}
+
+body.amber-mode .sim-time {
+    color: #ffc640;
+}
+
+body.amber-mode .sim-desc {
+    color: #999;
+}
+
+body.amber-mode .simulation-info {
+    background: #303030;
+    border-color: #555;
+}
+
+body.amber-mode .sim-info-label {
+    color: #999;
+}
+
+body.amber-mode .simulation-list-header {
+    color: #ffb300;
+}
+
+body.amber-mode .sim-btn {
+    background: #404040;
+    border-color: #666;
+    color: #ffb300;
+}
+
+body.amber-mode .sim-btn:hover {
+    background: #505050;
+}
+
+body.amber-mode .simulation-traffic-table td {
+    color: #f5f0e8;
+}
+
+body.amber-mode .simulation-traffic-header .traffic-title {
+    color: #ffb300;
+}
+
+/* Timeline grid lines */
+body.amber-mode .grid-1s {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+body.amber-mode .grid-5s {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.amber-mode .grid-10s {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.amber-mode .ruler-tick {
+    color: #ffb300;
+}
+
+body.amber-mode .diagram-title {
+    border-bottom-color: #555;
+}
+
+body.amber-mode .timeline-ruler {
+    border-bottom-color: #555;
+}
+
+body.amber-mode .timeline-row-track {
+    background: #1a1a1a;
+    border-bottom-color: #555;
+}
+
+body.amber-mode .comment-row {
+    border-bottom-color: #555;
+}
+
+body.amber-mode .grid-cycle-end {
+    background: #ffb300;
+}
+
+body.amber-mode .green-cut-overlay {
+    background: #303030;
+}
+
+/* Intersection image */
+body.amber-mode .intersection-image-container {
+    background: #222222;
+}
+body.amber-mode .intersection-header {
+    background: #222222;
+}
+body.amber-mode .intersection-header h3 {
+    color: #ffb300;
+}
+body.amber-mode .intersection-image-area {
+    background: #1a1a1a;
+}
+body.amber-mode .display-options {
+    background: #303030;
+    border-color: #555;
+}
+body.amber-mode .checkbox-option {
+    color: #f5f0e8;
+}
+body.amber-mode .image-filters {
+    background: #303030;
+    border-color: #555;
+}
+body.amber-mode .filter-row {
+    color: #f5f0e8;
+}
+body.amber-mode .filter-value {
+    color: #ffc640;
+}
+body.amber-mode .no-selection-hint {
+    background: #303030;
+    border-color: #555;
+    color: #999;
+}
+body.amber-mode .hint {
+    color: #999;
+}
+body.amber-mode .arrow-editor {
+    background: #303030;
+    border-color: #555;
+    color: #f5f0e8;
+}
+body.amber-mode .arrow-editor h4 {
+    color: #ffb300;
+}
+body.amber-mode .arrow-editor label {
+    color: #f5f0e8;
+}
+
+/* Menu bar */
+body.amber-mode .menu-bar {
+    background: #222222;
+    border-bottom: 2px solid #555;
+}
+
+body.amber-mode .menu-button {
+    color: #ffb300;
+}
+
+body.amber-mode .menu-button.active,
+body.amber-mode .menu-button:hover {
+    background: #404040;
+}
+
+body.amber-mode .menu-dropdown {
+    background: #303030;
+    border: 1px solid #555;
+}
+
+body.amber-mode .menu-item {
+    color: #f5f0e8;
+}
+
+body.amber-mode .menu-item:hover {
+    background: #404040;
+}
+
+body.amber-mode .menu-item.disabled {
+    color: #666;
+}
+
+body.amber-mode .menu-separator {
+    border-color: #555;
+}
+
+body.amber-mode .menu-header {
+    color: #999;
+}
+
+body.amber-mode .submenu-dropdown {
+    background: #303030;
+    border: 1px solid #555;
+}
+
+body.amber-mode .menu-slider-label,
+body.amber-mode .menu-slider-value {
+    color: #f5f0e8;
+}
+
+/* ===================================================================
+   END AMBER MODE
+   =================================================================== */
 
 h1 {
     font-size: 2.2em;
