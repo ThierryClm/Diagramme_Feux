@@ -835,6 +835,10 @@ body.high-contrast-mode .sidebar textarea {
     border: 1px solid #4466bb;
 }
 
+body.high-contrast-mode .sidebar .matrix-grid input {
+    border: none;
+}
+
 body.high-contrast-mode .sidebar label,
 body.high-contrast-mode .sidebar span,
 body.high-contrast-mode .sidebar th,
@@ -1647,6 +1651,10 @@ body.amber-mode .sidebar textarea {
     background: #303030;
     color: #f5f0e8;
     border: 1px solid #666;
+}
+
+body.amber-mode .sidebar .matrix-grid input {
+    border: none;
 }
 
 body.amber-mode .sidebar label,
