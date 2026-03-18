@@ -22,7 +22,7 @@ const SimulationPanel = ({
         'Début de bande passante',
         'Fin de bande passante',
         'Priorité piétons',
-        'Signa d\'aide à la conduite',
+        'Signal aide conduite',
         'Synchro BTS'
     ];
     const activeActions = actionData.filter(a =>
@@ -42,7 +42,40 @@ const SimulationPanel = ({
         );
     }, [groups, actionData, selectedActions, cycleLength, conflictMatrix]);
 
-    const { simulatedGroups, simulatedCycleLength, conflicts: rawConflicts } = simulationResult;
+    const { simulatedGroups, simulatedCycleLength, conflicts: rawConflicts, removedPeriods } = simulationResult;
+
+    // Determine which actions are "erased" (their deb or [deb,fin] is inside a removed period)
+    const erasedActionIds = useMemo(() => {
+        if (!removedPeriods || removedPeriods.length === 0) return new Set();
+        const erased = new Set();
+        activeActions.forEach(action => {
+            if (action.deb === '') return;
+            // Escamotage de phase never grayed (it's the contracting action)
+            if (action.action === 'Escamotage de phase') return;
+            const deb = parseInt(action.deb) || 0;
+            const hasFin = action.fin !== '';
+            const fin = hasFin ? (parseInt(action.fin) || 0) : deb;
+            // Adaptatif vertical can only be grayed by Escamotage de phase zones (not its own)
+            const isAV = action.action === 'Adaptatif vertical';
+            for (const period of removedPeriods) {
+                if (isAV && period.source !== 'Escamotage de phase') continue;
+                if (!hasFin) {
+                    // Action with deb only (e.g. "Point de repos"): erased if deb is inside the zone
+                    if (deb >= period.deb && deb < period.fin) {
+                        erased.add(action.id);
+                        break;
+                    }
+                } else {
+                    // Action with [deb, fin]: erased only if BOTH deb AND fin are inside the zone
+                    if (deb >= period.deb && deb < period.fin && fin > period.deb && fin <= period.fin) {
+                        erased.add(action.id);
+                        break;
+                    }
+                }
+            }
+        });
+        return erased;
+    }, [activeActions, removedPeriods]);
 
     // Filter conflicts to exclude those managed by SELECTED Escamotage actions
     const conflicts = useMemo(() => {
@@ -215,10 +248,11 @@ const SimulationPanel = ({
                         const isChecked = selectedActions.includes(action.id);
                         const isModifying = ['Escamotage de phase', 'Ouverture anticipée', 'Adaptatif vertical'].includes(action.action);
                         const isHovered = hoveredActionId === action.id;
+                        const isErased = erasedActionIds.has(action.id);
                         return (
                             <label
                                 key={action.id}
-                                className={`simulation-item ${isChecked ? 'checked' : ''} ${isModifying ? 'modifying' : ''} ${isHovered ? 'hovered' : ''}`}
+                                className={`simulation-item ${isChecked ? 'checked' : ''} ${isModifying ? 'modifying' : ''} ${isHovered ? 'hovered' : ''} ${isErased ? 'erased' : ''}`}
                                 onMouseEnter={() => setHoveredActionId(action.id)}
                                 onMouseLeave={() => setHoveredActionId(null)}
                             >

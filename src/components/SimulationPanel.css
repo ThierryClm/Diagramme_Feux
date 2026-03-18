@@ -58,7 +58,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .no-actions {
@@ -71,14 +71,14 @@
 .simulation-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
+    gap: 6px;
+    padding: 2px 6px;
     background: #2a2a2a;
     border: 1px solid #3a3a3a;
-    border-radius: 4px;
+    border-radius: 3px;
     cursor: pointer;
     transition: background-color 0.15s, border-color 0.15s;
-    font-size: 0.8em;
+    font-size: 0.75em;
 }
 
 .simulation-item:hover {
@@ -213,8 +213,9 @@
 
 .conflict-item {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
     padding: 4px 6px;
     background: #2a2020;
     border-radius: 3px;
@@ -224,6 +225,8 @@
 .conflict-groups {
     color: #faa;
     font-weight: bold;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .conflict-message {
@@ -280,9 +283,20 @@
 
 /* Hovered state - highlight when hovering in diagram or in list */
 .simulation-item.hovered {
-    background: #3a3a50 !important;
-    border-color: #66f !important;
-    box-shadow: 0 0 5px rgba(100, 100, 255, 0.5);
+    background: rgba(255, 204, 0, 0.3) !important;
+    border-color: rgba(255, 204, 0, 0.8) !important;
+    box-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
+    color: #fff !important;
+}
+
+/* Grayed out state - action erased by Escamotage de phase or Adaptatif vertical */
+.simulation-item.erased {
+    opacity: 0.4;
+    text-decoration: line-through;
+}
+
+.simulation-item.erased .simulation-item-text {
+    color: #666;
 }
 
 /* Traffic Data Table in Simulation */

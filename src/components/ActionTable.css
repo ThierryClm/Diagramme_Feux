@@ -383,12 +383,14 @@
 
 /* Highlighted row state */
 .action-table tbody tr.row-highlighted {
-    background: rgba(255, 204, 0, 0.15) !important;
-    outline: 1px solid rgba(255, 204, 0, 0.5);
+    background: rgba(255, 204, 0, 0.35) !important;
+    outline: 2px solid rgba(255, 204, 0, 0.8);
+    outline-offset: -1px;
 }
 
 .action-table tbody tr.row-highlighted td {
     background: transparent !important;
+    color: #fff !important;
 }
 
 .action-table tbody tr:hover {

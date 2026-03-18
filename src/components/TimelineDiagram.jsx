@@ -146,7 +146,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
         // Check if action falls within any removed period (for Escamotage de phase)
         // NOTE: 'Escamotage de phase' and 'Adaptatif vertical' are NOT hidden by removed periods
-        if (simulationResult?.removedPeriods?.length && actionType !== 'Escamotage de phase' && actionType !== 'Adaptatif vertical') {
+        if (simulationResult?.removedPeriods?.length && actionType !== 'Escamotage de phase' && actionType !== 'Adaptatif vertical' && actionType !== 'Priorité piétons' && actionType !== 'Flèche d\'anticipation' && actionType !== 'Signal aide conduite') {
             for (const period of simulationResult.removedPeriods) {
                 // Only check for Escamotage de phase removed periods (not Adaptatif vertical which is handled above)
                 // Action is hidden if it's entirely within or overlaps the removed period
@@ -668,10 +668,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         if (action.action !== 'Priorité piétons') return false;
         if (action.gf === '' || action.deb === '' || action.fin === '') return false;
         if (simulationFilter && simulationFilter.has(action.id)) return false;
-        // Hide if within a selected Escamotage de phase or Adaptatif vertical
-        const deb = parseInt(action.deb) || 0;
-        const fin = parseInt(action.fin) || 0;
-        if (isWithinSelectedEscamotageOrAdaptatif(deb, fin)) return false;
+        // Ne pas masquer : les contractions décalent cette action via getShiftedActionPosition
         return true;
     });
 
@@ -682,10 +679,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         if (action.action !== "Flèche d'anticipation") return false;
         if (action.gf === '' || action.deb === '' || action.fin === '') return false;
         if (simulationFilter && simulationFilter.has(action.id)) return false;
-        // Hide if within a selected Escamotage de phase or Adaptatif vertical
-        const deb = parseInt(action.deb) || 0;
-        const fin = parseInt(action.fin) || 0;
-        if (isWithinSelectedEscamotageOrAdaptatif(deb, fin)) return false;
+        // Ne pas masquer : les contractions décalent cette action via getShiftedActionPosition
         return true;
     });
 
@@ -2342,15 +2336,21 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {/* Signa d'aide à la conduite overlays */}
                         {signaActions.map((action, idx) => {
                             const gf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
-                            const deb = parseInt(action.deb) || 0;
-                            const fin = parseInt(action.fin) || 0;
-                            const blueStart = fin - 5;
+                            const rawDeb = parseInt(action.deb) || 0;
+                            const rawFin = parseInt(action.fin) || 0;
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
 
                             // Find group index in array
                             const groupIndex = groups.findIndex(g => g.id === gf);
                             if (groupIndex === -1) return null;
+
+                            // Apply time shifts (from contractions) in simulation mode
+                            const shiftedPos = getShiftedActionPosition(rawDeb, rawFin, gf, 'Signal aide conduite');
+                            if (shiftedPos.hidden) return null;
+                            const deb = shiftedPos.deb;
+                            const fin = shiftedPos.fin;
+                            const blueStart = fin - 5;
 
                             // Calculate positions
                             const orangeLeftPos = deb * pixelsPerSecond;

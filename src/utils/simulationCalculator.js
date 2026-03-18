@@ -29,6 +29,28 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
     // Each shift: { from: number, amount: number } - positions >= from are shifted left by amount
     const timeShifts = [];
 
+    // Track cumulative contractions to adjust subsequent action deb/fin values
+    // Each contraction: { deb, fin } in the ORIGINAL timeline
+    const contractions = [];
+
+    // Helper: adjust a time position based on all previous contractions
+    // Converts an original-timeline position to the current contracted-timeline position
+    const adjustForContractions = (time) => {
+        let adjusted = time;
+        for (const c of contractions) {
+            if (adjusted >= c.fin) {
+                // Position is after the contracted zone → shift left by the zone width
+                adjusted -= (c.fin - c.deb);
+            } else if (adjusted > c.deb) {
+                // Position is inside the contracted zone → clamp to the zone start
+                adjusted = c.deb;
+                // Also adjust c.deb for subsequent contractions' reference
+                // (c.deb itself was already in the adjusted space)
+            }
+        }
+        return adjusted;
+    };
+
     // Get selected actions
     const selectedActions = actionData.filter(a => selectedActionIds.includes(a.id));
 
@@ -85,95 +107,14 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         return 0;
     };
 
-    // Process each action type in order
+    // Process each action type in order:
+    // 1. Ouverture anticipée
+    // 2. Fermeture anticipée
+    // 3. Escamotage groupe (greenCuts sur cible)
+    // 4. Adaptatif vertical
+    // 5. Escamotage de phase (en dernier, pour ne pas cumuler avec les effets existants)
 
-    // 1. Escamotage de phase - remove the phase and reduce cycle
-    const escamotagePhaseActions = selectedActions.filter(a =>
-        a.action === 'Escamotage de phase' &&
-        a.deb !== '' &&
-        a.fin !== ''
-    );
-
-    escamotagePhaseActions.forEach(action => {
-        const deb = parseInt(action.deb) || 0;
-        const fin = parseInt(action.fin) || 0;
-        const duration = fin > deb ? fin - deb : (fin + simulatedCycleLength - deb);
-
-        // If GF is specified, mark that group as escamoted
-        if (action.gf) {
-            const gfId = parseInt(action.gf);
-            const groupIndex = simulatedGroups.findIndex(g => g.id === gfId);
-            if (groupIndex !== -1) {
-                simulatedGroups[groupIndex].isEscamoted = true;
-                simulatedGroups[groupIndex].simulatedGreen = 0;
-            }
-        }
-
-        // Record removed period for action filtering
-        removedPeriods.push({ deb, fin });
-
-        // Record time shift for action overlays
-        timeShifts.push({ from: fin, amount: duration });
-
-        // For each group, cut the green bar that intersects with [deb, fin]
-        simulatedGroups.forEach(g => {
-            if (g.isEscamoted) return;
-
-            const offset = g.simulatedOffset;
-            const greenEnd = offset + g.simulatedGreen;
-
-            // Check if green bar intersects with [deb, fin]
-            if (fin > deb) {
-                // Case 1: Green starts before deb and extends into [deb, fin]
-                if (offset < deb && greenEnd > deb) {
-                    // Cut the part after deb
-                    const cutAmount = Math.min(greenEnd, fin) - deb;
-                    g.simulatedGreen = Math.max(0, g.simulatedGreen - cutAmount);
-                }
-                // Case 2: Green starts within [deb, fin]
-                else if (offset >= deb && offset < fin) {
-                    if (greenEnd <= fin) {
-                        // Entirely within - escamote the group
-                        g.isEscamoted = true;
-                        g.simulatedGreen = 0;
-                    } else {
-                        // Starts in [deb, fin] but extends past fin
-                        const cutAmount = fin - offset;
-                        g.simulatedGreen = Math.max(0, g.simulatedGreen - cutAmount);
-                        // Will be shifted later
-                    }
-                }
-
-                // Case 4: Green bar wraps around the cycle and its wrap portion [0, wrapEnd] overlaps [deb, fin]
-                if (greenEnd > simulatedCycleLength) {
-                    const wrapEnd = greenEnd - simulatedCycleLength;
-                    if (wrapEnd > deb) {
-                        const overlapEnd = Math.min(wrapEnd, fin);
-                        const wrapCutAmount = overlapEnd - deb;
-                        if (wrapCutAmount > 0) {
-                            g.simulatedGreen = Math.max(0, g.simulatedGreen - wrapCutAmount);
-                        }
-                    }
-                }
-            }
-        });
-
-        // Reduce cycle length
-        simulatedCycleLength -= duration;
-
-        // Shift all groups that start at or after 'fin' by -duration
-        // (after the removed period, everything shifts left)
-        simulatedGroups.forEach(g => {
-            if (!g.isEscamoted && g.simulatedOffset >= fin) {
-                g.simulatedOffset = Math.max(0, g.simulatedOffset - duration);
-            } else if (!g.isEscamoted && g.simulatedOffset >= deb) {
-                // Groups starting within [deb, fin) that weren't escamoted - move to deb
-                g.simulatedOffset = deb;
-            }
-        });
-    });
-
-    // 2. Ouverture anticipée - shift the start of green earlier
+    // 1. Ouverture anticipée - shift the start of green earlier
     const ouvertureActions = selectedActions.filter(a =>
         a.action === 'Ouverture anticipée' &&
         a.gf !== '' &&
@@ -196,7 +137,7 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         }
     });
 
-    // 2b. Fermeture anticipée:
+    // 2. Fermeture anticipée:
     // - Reduce green duration of the group in GF (end of green moves left)
     // - Apply "glissement" (shift offset left) to groups in actGf1-4
     const fermetureActions = selectedActions.filter(a =>
@@ -248,7 +189,31 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         });
     });
 
-    // 3. Adaptatif vertical - shift groups/actions after 'deb' by the duration, reduce cycle length
+    // 3. Escamotage groupe - cut green bar of target group (actGf1) for action duration
+    const escamotageActions = selectedActions.filter(a =>
+        a.action === 'Escamotage' &&
+        a.actGf1 !== '' &&
+        a.deb !== '' &&
+        a.fin !== ''
+    );
+
+    escamotageActions.forEach(action => {
+        // Parse actGf1 - might be "G2", "2", or just a number
+        const actGf1Str = action.actGf1?.toString().replace(/[Gg]/g, '').trim() || '';
+        const targetGfId = parseInt(actGf1Str);
+        const deb = parseInt(action.deb) || 0;
+        const fin = parseInt(action.fin) || 0;
+
+        if (!isNaN(targetGfId)) {
+            const groupIndex = simulatedGroups.findIndex(g => g.id === targetGfId);
+            if (groupIndex !== -1 && !simulatedGroups[groupIndex].isEscamoted) {
+                // Add a green cut period for this group
+                simulatedGroups[groupIndex].greenCuts.push({ deb, fin });
+            }
+        }
+    });
+
+    // 4. Adaptatif vertical - shift groups/actions after 'deb' by the duration, reduce cycle length
     // If plage1/plage2 are defined, only groups in that range are affected for green cutting
     // If not defined, all groups are affected
     // In all cases, groups starting after 'deb' are shifted
@@ -261,9 +226,15 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
     const totalGroups = groups.length;
 
     adaptatifActions.forEach(action => {
-        const deb = parseInt(action.deb) || 0;
-        const fin = parseInt(action.fin) || 0;
-        const shiftAmount = fin > deb ? fin - deb : (fin + simulatedCycleLength - deb);
+        const rawDeb = parseInt(action.deb) || 0;
+        const rawFin = parseInt(action.fin) || 0;
+
+        // Adjust deb/fin based on previous contractions (so we work on the virtual timeline)
+        const deb = adjustForContractions(rawDeb);
+        const fin = adjustForContractions(rawFin);
+        const shiftAmount = fin > deb ? fin - deb : 0; // If fin <= deb after adjustment, skip
+
+        if (shiftAmount <= 0) return;
 
         // Determine affected group range
         // If plage1/plage2 not defined, all groups are affected
@@ -271,9 +242,8 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         const plage1 = hasPlageRange ? (parseInt(action.plage1) || 1) : 1;
         const plage2 = hasPlageRange ? (parseInt(action.plage2) || totalGroups) : totalGroups;
 
-        // Record removed period and time shift for action overlays
-        // Include plage range so actions can check if they should be shifted
-        removedPeriods.push({ deb, fin });
+        // Record removed period and time shift for action overlays (use adjusted values)
+        removedPeriods.push({ deb, fin, source: 'Adaptatif vertical' });
         timeShifts.push({
             from: fin,
             amount: shiftAmount,
@@ -349,7 +319,7 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
             // Reduce cycle length by the adaptatif duration
             simulatedCycleLength -= shiftAmount;
 
-            // Shift ALL groups that start at or after 'deb' by -shiftAmount
+            // Shift ALL groups that start at or after 'fin' by -shiftAmount
             simulatedGroups.forEach(g => {
                 if (g.isEscamoted) return;
 
@@ -362,31 +332,106 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
                 }
                 // Groups starting before deb are not shifted
             });
+
+            // Record this contraction for subsequent actions
+            contractions.push({ deb, fin });
         }
     });
 
-    // 4. Escamotage - cut green bar of target group (actGf1) for action duration
-    const escamotageActions = selectedActions.filter(a =>
-        a.action === 'Escamotage' &&
-        a.actGf1 !== '' &&
+    // 5. Escamotage de phase - remove the phase and reduce cycle (traité EN DERNIER)
+    // Ne se cumule pas avec les effets déjà appliqués par les actions précédentes
+    const escamotagePhaseActions = selectedActions.filter(a =>
+        a.action === 'Escamotage de phase' &&
         a.deb !== '' &&
         a.fin !== ''
     );
 
-    escamotageActions.forEach(action => {
-        // Parse actGf1 - might be "G2", "2", or just a number
-        const actGf1Str = action.actGf1?.toString().replace(/[Gg]/g, '').trim() || '';
-        const targetGfId = parseInt(actGf1Str);
-        const deb = parseInt(action.deb) || 0;
-        const fin = parseInt(action.fin) || 0;
+    escamotagePhaseActions.forEach(action => {
+        const rawDeb = parseInt(action.deb) || 0;
+        const rawFin = parseInt(action.fin) || 0;
 
-        if (!isNaN(targetGfId)) {
-            const groupIndex = simulatedGroups.findIndex(g => g.id === targetGfId);
-            if (groupIndex !== -1 && !simulatedGroups[groupIndex].isEscamoted) {
-                // Add a green cut period for this group
-                simulatedGroups[groupIndex].greenCuts.push({ deb, fin });
+        // Adjust deb/fin based on previous contractions (so we work on the virtual timeline)
+        const deb = adjustForContractions(rawDeb);
+        const fin = adjustForContractions(rawFin);
+        const duration = fin > deb ? fin - deb : 0; // If fin <= deb after adjustment, skip
+
+        if (duration <= 0) return;
+
+        // If GF is specified, mark that group as escamoted
+        if (action.gf) {
+            const gfId = parseInt(action.gf);
+            const groupIndex = simulatedGroups.findIndex(g => g.id === gfId);
+            if (groupIndex !== -1) {
+                simulatedGroups[groupIndex].isEscamoted = true;
+                simulatedGroups[groupIndex].simulatedGreen = 0;
             }
         }
+
+        // Record removed period for action filtering (use adjusted values)
+        removedPeriods.push({ deb, fin, source: 'Escamotage de phase' });
+
+        // Record time shift for action overlays
+        timeShifts.push({ from: fin, amount: duration });
+
+        // For each group, cut the green bar that intersects with [deb, fin]
+        simulatedGroups.forEach(g => {
+            if (g.isEscamoted) return;
+
+            const offset = g.simulatedOffset;
+            const greenEnd = offset + g.simulatedGreen;
+
+            // Check if green bar intersects with [deb, fin]
+            if (fin > deb) {
+                // Case 1: Green starts before deb and extends into [deb, fin]
+                if (offset < deb && greenEnd > deb) {
+                    // Cut the part after deb
+                    const cutAmount = Math.min(greenEnd, fin) - deb;
+                    g.simulatedGreen = Math.max(0, g.simulatedGreen - cutAmount);
+                }
+                // Case 2: Green starts within [deb, fin]
+                else if (offset >= deb && offset < fin) {
+                    if (greenEnd <= fin) {
+                        // Entirely within - escamote the group
+                        g.isEscamoted = true;
+                        g.simulatedGreen = 0;
+                    } else {
+                        // Starts in [deb, fin] but extends past fin
+                        const cutAmount = fin - offset;
+                        g.simulatedGreen = Math.max(0, g.simulatedGreen - cutAmount);
+                        // Will be shifted later
+                    }
+                }
+
+                // Case 4: Green bar wraps around the cycle and its wrap portion [0, wrapEnd] overlaps [deb, fin]
+                if (greenEnd > simulatedCycleLength) {
+                    const wrapEnd = greenEnd - simulatedCycleLength;
+                    if (wrapEnd > deb) {
+                        const overlapEnd = Math.min(wrapEnd, fin);
+                        const wrapCutAmount = overlapEnd - deb;
+                        if (wrapCutAmount > 0) {
+                            g.simulatedGreen = Math.max(0, g.simulatedGreen - wrapCutAmount);
+                        }
+                    }
+                }
+            }
+        });
+
+        // Reduce cycle length
+        simulatedCycleLength -= duration;
+
+        // Shift all groups that start at or after 'fin' by -duration
+        // (after the removed period, everything shifts left)
+        simulatedGroups.forEach(g => {
+            if (!g.isEscamoted && g.simulatedOffset >= fin) {
+                g.simulatedOffset = Math.max(0, g.simulatedOffset - duration);
+            } else if (!g.isEscamoted && g.simulatedOffset >= deb) {
+                // Groups starting within [deb, fin) that weren't escamoted - move to deb
+                g.simulatedOffset = deb;
+            }
+        });
+
+        // Record this contraction for subsequent escamotage de phase actions
+        contractions.push({ deb, fin });
     });
 
     // Calculate conflicts on simulated diagram
