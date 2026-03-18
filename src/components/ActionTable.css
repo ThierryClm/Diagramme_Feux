@@ -245,7 +245,7 @@
 }
 
 .input-gf {
-    width: 18px !important;
+    width: 26px !important;
 }
 
 .input-action {
@@ -262,12 +262,12 @@
 }
 
 .input-time-xs {
-    width: 24px !important;
+    width: 30px !important;
     text-align: right;
 }
 
 .input-abrv {
-    width: 24px !important;
+    width: 38px !important;
 }
 
 .input-micro {
@@ -318,7 +318,7 @@
 }
 
 .input-small {
-    width: 14px !important;
+    width: 22px !important;
 }
 
 /* Dragging state */

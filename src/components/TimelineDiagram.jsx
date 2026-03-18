@@ -94,6 +94,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         let adjustedDeb = deb;
         let adjustedFin = fin;
         let fullShiftOnDeb = 0;
+        const isAvOrEscamotage = actionType === 'Escamotage de phase' || actionType === 'Adaptatif vertical';
 
         // For full Adaptatif vertical (applies to all groups), apply special logic:
         // - If BOTH deb and fin are inside [avDeb, avFin] → hidden = true
@@ -104,15 +105,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         // - For 'Escamotage de phase' and 'Adaptatif vertical' actions, only apply shifting (not hiding/clamping)
         if (simulationResult?.timeShifts?.length) {
             const cycle = effectiveCycleLength || cycleLength;
-            const isAvOrEscamotage = actionType === 'Escamotage de phase' || actionType === 'Adaptatif vertical';
 
             simulationResult.timeShifts.forEach(shift => {
-                if (!shift.isPartial && shift.amount > 0) {
-                    // AV/EP overlays: skip EP-sourced shifts and skip own timeShift
-                    if (isAvOrEscamotage && shift.source === 'Escamotage de phase') return;
+                if (shift.amount > 0 && (!shift.isPartial || isAvOrEscamotage)) {
+                    // Only process non-partial shifts for regular actions
+                    // For AV/EP overlays, also process partial shifts (from other AV with plage)
+                    if (shift.isPartial && !isAvOrEscamotage) return;
+
+                    // AV/EP overlays: skip only own timeShift (not shifted by itself)
                     if (isAvOrEscamotage && actionId && shift.actionId === actionId) return;
 
-                    // Full Adaptatif vertical (no plage1/plage2)
+                    // Full or partial contraction zone
                     const avDeb = shift.from - shift.amount;
                     const avFin = shift.from;
                     const avWidth = shift.amount;
@@ -134,7 +137,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         }
                     }
 
-                    // Shift values that are after the adaptatif zone (applies to ALL action types)
+                    // Shift values that are after the contraction zone (applies to ALL action types)
                     // Track how much was applied on deb to avoid double-counting with getGroupShift later
                     if (adjustedDeb >= avFin) {
                         adjustedDeb -= avWidth;
@@ -151,11 +154,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         // Check if action falls within any removed period (for Escamotage de phase)
         // NOTE: Use ORIGINAL deb/fin values (before timeShift adjustments) since removedPeriods
         // are in the original timeline coordinate system
-        // NOTE: 'Escamotage de phase' and 'Adaptatif vertical' are NOT hidden by removed periods
+        // NOTE: 'Escamotage de phase' is NOT hidden by removed periods (it IS the contraction)
+        // NOTE: 'Adaptatif vertical' CAN be hidden by EP-sourced removed periods (AV inside EP zone)
         // NOTE: Micro-regulation actions (Priorité piétons, Flèche anticipation, Signal aide conduite)
         // are shifted, not hidden
-        if (simulationResult?.removedPeriods?.length && actionType !== 'Escamotage de phase' && actionType !== 'Adaptatif vertical' && actionType !== 'Priorité piétons' && actionType !== 'Flèche d\'anticipation' && actionType !== 'Signal aide conduite') {
+        if (simulationResult?.removedPeriods?.length && actionType !== 'Escamotage de phase' && actionType !== 'Priorité piétons' && actionType !== 'Flèche d\'anticipation' && actionType !== 'Signal aide conduite') {
             for (const period of simulationResult.removedPeriods) {
+                // AV overlays can only be hidden by EP-sourced periods
+                if (actionType === 'Adaptatif vertical' && period.source !== 'Escamotage de phase') continue;
                 // Action is hidden only if BOTH original deb AND fin are inside the removed period
                 const debInPeriod = deb >= period.deb && deb < period.fin;
                 const finInPeriod = fin > period.deb && fin <= period.fin;
@@ -215,6 +221,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
         // Apply remaining shift with wrap-around handling (for group shifts and partial Adaptatif vertical)
         const cycle = effectiveCycleLength || cycleLength;
+
+        // AV/EP overlays: no modulo — they are time zones, not phase bars
+        // Their positions are already correctly adjusted by timeShifts above
+        if (isAvOrEscamotage) {
+            return { deb: adjustedDeb - totalShift, fin: adjustedFin - totalShift, hidden };
+        }
+
         const shiftedDeb = ((adjustedDeb - totalShift) % cycle + cycle) % cycle;
 
         // If original fin equals cycle, don't apply modulo (keep at cycle position)
@@ -512,10 +525,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     const adaptatifActions = actionData.filter(action => {
         if (action.action !== 'Adaptatif vertical' || action.deb === '' || action.fin === '') return false;
         if (simulationFilter && simulationFilter.has(action.id)) return false;
-        // Hide if within a selected Escamotage de phase
-        const deb = parseInt(action.deb) || 0;
-        const fin = parseInt(action.fin) || 0;
-        if (isWithinSelectedEscamotage(deb, fin)) return false;
+        // Ne pas masquer les AV par les EP — ils sont décalés, pas supprimés
         return true;
     });
 
@@ -2040,39 +2050,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const abrv = action.abrv || '';
                             const isHighlighted = hoveredActionId === action.id;
 
-                            // Calculate overlap with selected Adaptatif vertical zones
-                            // Use ORIGINAL values (origDeb, origFin) for comparison with Adaptatif vertical
-                            let adaptatifReduction = 0;
-
-                            // Method 1: Check selectedAdaptatifVertical (works for partial Adaptatif vertical)
-                            selectedAdaptatifVertical.forEach(av => {
-                                const avDeb = parseInt(av.deb) || 0;
-                                const avFin = parseInt(av.fin) || 0;
-                                // Calculate overlap using simple min/max formula
-                                const overlapStart = Math.max(avDeb, origDeb);
-                                const overlapEnd = Math.min(avFin, origFin);
-                                if (overlapEnd > overlapStart) {
-                                    adaptatifReduction += (overlapEnd - overlapStart);
-                                }
-                            });
-
-                            // Method 2: Check timeShifts for FULL Adaptatif vertical (no plage1/plage2)
-                            // This handles the case when Adaptatif vertical covers all groups
-                            if (simulationResult?.timeShifts?.length && adaptatifReduction === 0) {
-                                simulationResult.timeShifts.forEach(shift => {
-                                    // FULL Adaptatif vertical has no plage1/plage2
-                                    if (!shift.plage1 && !shift.plage2 && shift.amount > 0) {
-                                        const avFin = shift.from;
-                                        const avDeb = shift.from - shift.amount;
-                                        const overlapStart = Math.max(avDeb, origDeb);
-                                        const overlapEnd = Math.min(avFin, origFin);
-                                        if (overlapEnd > overlapStart) {
-                                            adaptatifReduction += (overlapEnd - overlapStart);
-                                        }
-                                    }
-                                });
-                            }
-
                             const leftPos = deb * pixelsPerSecond;
 
                             // Cover all rows, starting just below ruler (12px above rows) and 22px below
@@ -2084,7 +2061,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                             if (wrapsAround) {
                                 const firstPartWidth = (cycleLength - deb) * pixelsPerSecond;
-                                const secondPartWidth = Math.max(0, fin - adaptatifReduction) * pixelsPerSecond;
+                                const secondPartWidth = Math.max(0, fin) * pixelsPerSecond;
                                 return (
                                     <React.Fragment key={`escamotage-${idx}`}>
                                         {/* First part: from deb to end of cycle */}
@@ -2130,7 +2107,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 );
                             }
 
-                            const duration = Math.max(0, (fin - deb) - adaptatifReduction);
+                            const duration = Math.max(0, fin - deb);
                             const width = duration * pixelsPerSecond;
 
                             return (

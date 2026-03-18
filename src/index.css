@@ -1506,13 +1506,13 @@ body.high-contrast-mode .simulation-list-header {
 }
 
 body.high-contrast-mode .sim-btn {
-    background: #253080;
-    border-color: #4466bb;
-    color: #ffdd00;
+    background: #333;
+    border-color: #555;
+    color: #ddd;
 }
 
 body.high-contrast-mode .sim-btn:hover {
-    background: #3040a0;
+    background: #444;
 }
 
 body.high-contrast-mode .simulation-traffic-table td {
@@ -2366,13 +2366,13 @@ body.amber-mode .simulation-list-header {
 }
 
 body.amber-mode .sim-btn {
-    background: #404040;
-    border-color: #666;
-    color: #ffb300;
+    background: #333;
+    border-color: #555;
+    color: #ddd;
 }
 
 body.amber-mode .sim-btn:hover {
-    background: #505050;
+    background: #444;
 }
 
 body.amber-mode .simulation-traffic-table td {

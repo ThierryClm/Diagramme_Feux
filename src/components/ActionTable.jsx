@@ -120,7 +120,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         isOpen: showFloatingConditions,
         onClose: () => setShowFloatingConditions(false),
         title: 'Conditions de micro-régulation',
-        width: 1135,
+        width: 1280,
         height: 420
     });
 

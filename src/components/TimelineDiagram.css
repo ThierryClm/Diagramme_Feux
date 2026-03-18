@@ -544,7 +544,7 @@
 .escamotage-overlay {
     position: absolute;
     background: rgba(128, 128, 128, 0.2);
-    border: 1px solid rgba(128, 128, 128, 0.4);
+    border: 2px solid rgba(200, 200, 200, 0.7);
     z-index: 21;
     pointer-events: none;
     box-sizing: border-box; /* Inclure la bordure dans la largeur */

@@ -1652,16 +1652,30 @@ export const useTrafficLight = () => {
         });
     }, []);
 
+    const EXCLUDED_FROM_SIMULATION = [
+        'Début de bande passante',
+        'Fin de bande passante',
+        'Priorité piétons',
+        'Signal aide conduite',
+        'Synchro BTS'
+    ];
+
     const selectAllSimulationActions = useCallback(() => {
         const activeIds = actionData
-            .filter(a => a.action && a.action !== '')
+            .filter(a => a.action && a.action !== '' && !EXCLUDED_FROM_SIMULATION.includes(a.action))
             .map(a => a.id);
         setSimulationSelectedActions(activeIds);
     }, [actionData]);
 
     const deselectAllSimulationActions = useCallback(() => {
-        setSimulationSelectedActions([]);
-    }, []);
+        // Keep excluded actions untouched, only deselect simulation-visible actions
+        setSimulationSelectedActions(prev =>
+            prev.filter(id => {
+                const action = actionData.find(a => a.id === id);
+                return action && EXCLUDED_FROM_SIMULATION.includes(action.action);
+            })
+        );
+    }, [actionData]);
 
     // Save project - defined after all state declarations to capture current values
     const saveProject = useCallback((name) => {
