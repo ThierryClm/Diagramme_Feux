@@ -85,25 +85,8 @@ const TrafficTable = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleAddDataset]);
 
-    // Determine which groups are inhibited by selected simulation actions
-    // (Escamotage de phase, Fermeture anticipée, Adaptatif vertical)
-    const inhibitedGroups = useMemo(() => {
-        const inhibited = new Set();
-        const inhibitActions = ['Escamotage de phase', 'Fermeture anticipée', 'Adaptatif vertical'];
-
-        actionData.forEach(action => {
-            if (simulationSelectedActions.includes(action.id) &&
-                inhibitActions.includes(action.action) &&
-                action.gf) {
-                const gfId = parseInt(action.gf.toString().replace(/[Gg]/g, '').trim());
-                if (gfId > 0) {
-                    inhibited.add(gfId);
-                }
-            }
-        });
-
-        return inhibited;
-    }, [actionData, simulationSelectedActions]);
+    // Traffic calculations are always shown regardless of simulation actions
+    const inhibitedGroups = new Set(); // No inhibition - always calculate
 
     // Parse trafficVol: extract numeric value (ignoring trailing 'c')
     const parseTrafficVol = (val) => {

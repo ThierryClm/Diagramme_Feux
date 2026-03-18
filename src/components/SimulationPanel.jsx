@@ -365,11 +365,11 @@ const SimulationPanel = ({
                                 const greenStart = g.simulatedOffset !== undefined ? g.simulatedOffset : g.offset;
                                 const greenDuration = g.simulatedGreen !== undefined ? g.simulatedGreen : g.durations?.green;
                                 const greenEnd = (greenStart + greenDuration) % simulatedCycleLength;
-                                // If inhibited, don't calculate traffic values
-                                const vUtile = isInhibited ? null : calculateVUtile(trafficData?.trafficVol, g.laneCoef);
-                                const capacity = isInhibited ? { value: null, display: '' } : calculateCapacity(greenDuration, vUtile);
-                                const delay = isInhibited ? null : calculateDelay(greenDuration, trafficData?.trafficVol, g.laneCoef, g.id, greenStart);
-                                const queue = isInhibited ? null : calculateQueue(greenDuration, trafficData?.trafficVol, g.laneCoef, g.id, greenStart);
+                                // Always calculate traffic values (show grayed if inhibited)
+                                const vUtile = calculateVUtile(trafficData?.trafficVol, g.laneCoef);
+                                const capacity = calculateCapacity(greenDuration, vUtile);
+                                const delay = calculateDelay(greenDuration, trafficData?.trafficVol, g.laneCoef, g.id, greenStart);
+                                const queue = calculateQueue(greenDuration, trafficData?.trafficVol, g.laneCoef, g.id, greenStart);
                                 return (
                                     <tr key={g.id} className={isInhibited ? 'row-inhibited' : ''}>
                                         <td className="col-id">{g.id}</td>
