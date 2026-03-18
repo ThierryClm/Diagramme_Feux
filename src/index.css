@@ -69,6 +69,18 @@ body.light-mode .toggle-btn.active {
     background-color: rgba(46, 204, 113, 0.3);
 }
 
+body.light-mode .validate-btn.validated {
+    background: rgba(46, 204, 113, 0.3);
+    border-color: #4CAF50;
+    color: #2e7d32;
+}
+
+body.light-mode .validate-btn.invalidated {
+    background: rgba(231, 76, 60, 0.3);
+    border-color: #e74c3c;
+    color: #c0392b;
+}
+
 body.light-mode .logout-btn {
     background: #d0d0d0;
     border-color: #999;
@@ -250,7 +262,9 @@ body.light-mode .sidebar .traffic-table .capacity-red {
 }
 
 body.light-mode .sidebar .traffic-table .capacity-black {
-    color: #000;
+    color: #000 !important;
+    background-color: #ff6b6b !important;
+    font-weight: bold;
 }
 
 body.light-mode .traffic-dataset-label,
@@ -552,6 +566,30 @@ body.light-mode .pf-tab.active {
     color: #000;
 }
 
+body.light-mode .pf-tab.pf-validated {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: #4CAF50;
+    color: #2e7d32;
+}
+
+body.light-mode .pf-tab.pf-validated.active {
+    background: rgba(76, 175, 80, 0.3);
+    border-color: #4CAF50;
+    color: #1b5e20;
+}
+
+body.light-mode .pf-tab.pf-invalidated {
+    background: rgba(231, 76, 60, 0.2);
+    border-color: #e74c3c;
+    color: #c0392b;
+}
+
+body.light-mode .pf-tab.pf-invalidated.active {
+    background: rgba(231, 76, 60, 0.3);
+    border-color: #e74c3c;
+    color: #922b21;
+}
+
 /* ProjectManager */
 body.light-mode .project-manager {
     background: #f0f0f0;
@@ -814,6 +852,18 @@ body.high-contrast-mode .toggle-btn.active {
     background-color: rgba(0, 229, 255, 0.3);
 }
 
+body.high-contrast-mode .validate-btn.validated {
+    background: rgba(76, 175, 80, 0.35);
+    border-color: #4CAF50;
+    color: #4CAF50;
+}
+
+body.high-contrast-mode .validate-btn.invalidated {
+    background: rgba(231, 76, 60, 0.35);
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
 body.high-contrast-mode .logout-btn {
     background: #1a2050;
     border-color: #4466bb;
@@ -1022,7 +1072,9 @@ body.high-contrast-mode .sidebar .traffic-table .capacity-red {
 }
 
 body.high-contrast-mode .sidebar .traffic-table .capacity-black {
-    color: #ff4444;
+    color: #000 !important;
+    background-color: #ff6b6b !important;
+    font-weight: bold;
 }
 
 body.high-contrast-mode .traffic-dataset-label,
@@ -1326,6 +1378,30 @@ body.high-contrast-mode .pf-tab.active {
     background: #253080;
     color: #ffdd00;
     border-color: #00e5ff;
+}
+
+body.high-contrast-mode .pf-tab.pf-validated {
+    background: rgba(76, 175, 80, 0.3);
+    border-color: #4CAF50;
+    color: #8f8;
+}
+
+body.high-contrast-mode .pf-tab.pf-validated.active {
+    background: rgba(76, 175, 80, 0.4);
+    border-color: #4CAF50;
+    color: #fff;
+}
+
+body.high-contrast-mode .pf-tab.pf-invalidated {
+    background: rgba(231, 76, 60, 0.3);
+    border-color: #e74c3c;
+    color: #f88;
+}
+
+body.high-contrast-mode .pf-tab.pf-invalidated.active {
+    background: rgba(231, 76, 60, 0.4);
+    border-color: #e74c3c;
+    color: #fff;
 }
 
 /* ProjectManager */
@@ -1640,6 +1716,18 @@ body.amber-mode .toggle-btn.active {
     background-color: rgba(255, 179, 0, 0.25);
 }
 
+body.amber-mode .validate-btn.validated {
+    background: rgba(76, 175, 80, 0.35);
+    border-color: #4CAF50;
+    color: #4CAF50;
+}
+
+body.amber-mode .validate-btn.invalidated {
+    background: rgba(231, 76, 60, 0.35);
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
 body.amber-mode .logout-btn {
     background: #303030;
     border-color: #666;
@@ -1847,7 +1935,9 @@ body.amber-mode .sidebar .traffic-table .capacity-red {
 }
 
 body.amber-mode .sidebar .traffic-table .capacity-black {
-    color: #ff5555;
+    color: #000 !important;
+    background-color: #ff6b6b !important;
+    font-weight: bold;
 }
 
 body.amber-mode .traffic-dataset-label,
@@ -2148,6 +2238,30 @@ body.amber-mode .pf-tab.active {
     background: #404040;
     color: #ffb300;
     border-color: #e68a00;
+}
+
+body.amber-mode .pf-tab.pf-validated {
+    background: rgba(76, 175, 80, 0.3);
+    border-color: #4CAF50;
+    color: #8f8;
+}
+
+body.amber-mode .pf-tab.pf-validated.active {
+    background: rgba(76, 175, 80, 0.4);
+    border-color: #4CAF50;
+    color: #fff;
+}
+
+body.amber-mode .pf-tab.pf-invalidated {
+    background: rgba(231, 76, 60, 0.3);
+    border-color: #e74c3c;
+    color: #f88;
+}
+
+body.amber-mode .pf-tab.pf-invalidated.active {
+    background: rgba(231, 76, 60, 0.4);
+    border-color: #e74c3c;
+    color: #fff;
 }
 
 /* ProjectManager */

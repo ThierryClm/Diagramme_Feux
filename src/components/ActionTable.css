@@ -98,7 +98,7 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
 }
 
 /* Resizable horizontal separator */
@@ -406,6 +406,7 @@
 
 .custom-field-input {
     width: 100%;
+    min-width: 42ch;
     box-sizing: border-box;
     background: #2a2a2a;
     border: 1px solid #444;
