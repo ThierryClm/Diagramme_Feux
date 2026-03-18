@@ -243,13 +243,15 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         const plage2 = hasPlageRange ? (parseInt(action.plage2) || totalGroups) : totalGroups;
 
         // Record removed period and time shift for action overlays (use adjusted values)
-        removedPeriods.push({ deb, fin, source: 'Adaptatif vertical' });
+        removedPeriods.push({ deb, fin, source: 'Adaptatif vertical', actionId: action.id });
         timeShifts.push({
             from: fin,
             amount: shiftAmount,
             plage1: plage1,
             plage2: plage2,
-            isPartial: hasPlageRange  // true if plage1/plage2 were explicitly set
+            isPartial: hasPlageRange,  // true if plage1/plage2 were explicitly set
+            source: 'Adaptatif vertical',
+            actionId: action.id
         });
 
         // Process groups in the affected range: cut green bars that overlap [deb, fin]
@@ -334,7 +336,7 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
             });
 
             // Record this contraction for subsequent actions
-            contractions.push({ deb, fin });
+            contractions.push({ deb, fin, source: 'Adaptatif vertical' });
         }
     });
 
@@ -357,21 +359,31 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
 
         if (duration <= 0) return;
 
-        // If GF is specified, mark that group as escamoted
+        // If GF is specified, only mark as escamoted if the group's green actually overlaps [deb, fin]
         if (action.gf) {
             const gfId = parseInt(action.gf);
             const groupIndex = simulatedGroups.findIndex(g => g.id === gfId);
             if (groupIndex !== -1) {
-                simulatedGroups[groupIndex].isEscamoted = true;
-                simulatedGroups[groupIndex].simulatedGreen = 0;
+                const g = simulatedGroups[groupIndex];
+                const greenEnd = g.simulatedOffset + g.simulatedGreen;
+                // Check if the group's green overlaps with [deb, fin]
+                const overlaps = fin > deb && (
+                    (g.simulatedOffset >= deb && g.simulatedOffset < fin) ||
+                    (greenEnd > deb && greenEnd <= fin) ||
+                    (g.simulatedOffset < deb && greenEnd > fin)
+                );
+                if (overlaps) {
+                    g.isEscamoted = true;
+                    g.simulatedGreen = 0;
+                }
             }
         }
 
         // Record removed period for action filtering (use adjusted values)
-        removedPeriods.push({ deb, fin, source: 'Escamotage de phase' });
+        removedPeriods.push({ deb, fin, source: 'Escamotage de phase', actionId: action.id });
 
         // Record time shift for action overlays
-        timeShifts.push({ from: fin, amount: duration });
+        timeShifts.push({ from: fin, amount: duration, source: 'Escamotage de phase', actionId: action.id });
 
         // For each group, cut the green bar that intersects with [deb, fin]
         simulatedGroups.forEach(g => {
@@ -431,7 +443,7 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         });
 
         // Record this contraction for subsequent escamotage de phase actions
-        contractions.push({ deb, fin });
+        contractions.push({ deb, fin, source: 'Escamotage de phase' });
     });
 
     // Calculate conflicts on simulated diagram
@@ -446,7 +458,8 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         simulatedCycleLength,
         conflicts,
         timeShifts,
-        removedPeriods
+        removedPeriods,
+        contractions
     };
 };
 
@@ -488,8 +501,9 @@ const calculateSimulatedConflicts = (simulatedGroups, cycleLength, conflictMatri
             const gFrom = simulatedGroups[from];
             const gTo = simulatedGroups[to];
 
-            // Skip escamoted groups
+            // Skip escamoted groups or groups with zero green (e.g. reduced by Fermeture anticipée)
             if (gFrom.isEscamoted || gTo.isEscamoted) continue;
+            if (gFrom.simulatedGreen <= 0 || gTo.simulatedGreen <= 0) continue;
 
             const startA = gFrom.simulatedOffset;
             const endA = (gFrom.simulatedOffset + gFrom.simulatedGreen) % cycleLength;

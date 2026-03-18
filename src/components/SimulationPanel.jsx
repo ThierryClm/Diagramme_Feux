@@ -42,9 +42,25 @@ const SimulationPanel = ({
         );
     }, [groups, actionData, selectedActions, cycleLength, conflictMatrix]);
 
-    const { simulatedGroups, simulatedCycleLength, conflicts: rawConflicts, removedPeriods } = simulationResult;
+    const { simulatedGroups, simulatedCycleLength, conflicts: rawConflicts, removedPeriods, contractions } = simulationResult;
 
-    // Determine which actions are "erased" (their deb or [deb,fin] is inside a removed period)
+    // Helper: adjust a time position based on AV contractions only
+    // EP removedPeriods are in the post-AV timeline, so we only apply AV contractions
+    const adjustForAVContractions = (time) => {
+        if (!contractions || contractions.length === 0) return time;
+        let adjusted = time;
+        for (const c of contractions) {
+            if (c.source !== 'Adaptatif vertical') continue;
+            if (adjusted >= c.fin) {
+                adjusted -= (c.fin - c.deb);
+            } else if (adjusted > c.deb) {
+                adjusted = c.deb;
+            }
+        }
+        return adjusted;
+    };
+
+    // Determine which actions are "erased" (their adjusted deb or [deb,fin] is inside a removed period)
     const erasedActionIds = useMemo(() => {
         if (!removedPeriods || removedPeriods.length === 0) return new Set();
         const erased = new Set();
@@ -52,13 +68,23 @@ const SimulationPanel = ({
             if (action.deb === '') return;
             // Escamotage de phase never grayed (it's the contracting action)
             if (action.action === 'Escamotage de phase') return;
-            const deb = parseInt(action.deb) || 0;
+            const rawDeb = parseInt(action.deb) || 0;
             const hasFin = action.fin !== '';
-            const fin = hasFin ? (parseInt(action.fin) || 0) : deb;
+            const rawFin = hasFin ? (parseInt(action.fin) || 0) : rawDeb;
             // Adaptatif vertical can only be grayed by Escamotage de phase zones (not its own)
             const isAV = action.action === 'Adaptatif vertical';
             for (const period of removedPeriods) {
                 if (isAV && period.source !== 'Escamotage de phase') continue;
+                // For EP removedPeriods: adjust action values by AV contractions only
+                // For AV removedPeriods: use original action values (AV zones are in original timeline)
+                let deb, fin;
+                if (period.source === 'Escamotage de phase') {
+                    deb = adjustForAVContractions(rawDeb);
+                    fin = adjustForAVContractions(rawFin);
+                } else {
+                    deb = rawDeb;
+                    fin = rawFin;
+                }
                 if (!hasFin) {
                     // Action with deb only (e.g. "Point de repos"): erased if deb is inside the zone
                     if (deb >= period.deb && deb < period.fin) {
@@ -75,7 +101,7 @@ const SimulationPanel = ({
             }
         });
         return erased;
-    }, [activeActions, removedPeriods]);
+    }, [activeActions, removedPeriods, contractions]);
 
     // Filter conflicts to exclude those managed by SELECTED Escamotage actions
     const conflicts = useMemo(() => {
@@ -261,13 +287,15 @@ const SimulationPanel = ({
                                     checked={isChecked}
                                     onChange={() => onToggle(action.id)}
                                 />
-                                <span className="sim-row-num">{action.id}</span>
-                                <span className="sim-action-type">{action.action}</span>
                                 {action.gf && (
                                     <span className="sim-gf">GF{action.gf}</span>
                                 )}
+                                <span className="sim-action-type">{action.action}</span>
                                 {action.deb !== '' && action.fin !== '' && (
                                     <span className="sim-time">{action.deb}-{action.fin}s</span>
+                                )}
+                                {action.deb !== '' && action.fin === '' && (
+                                    <span className="sim-time">{action.deb}s</span>
                                 )}
                                 {action.description && (
                                     <span className="sim-desc" title={action.description}>

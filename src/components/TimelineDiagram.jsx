@@ -88,7 +88,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     // Returns adjusted deb/fin values after applying time shifts
     // Also returns hidden=true if the action is within a removed period
     // actionType: optional action type - "Seconde lucarne" is NOT shifted by group glissement
-    const getShiftedActionPosition = (deb, fin, groupId = null, actionType = null, actionPlage = null) => {
+    const getShiftedActionPosition = (deb, fin, groupId = null, actionType = null, actionPlage = null, actionId = null) => {
         let hidden = false;
         let totalShift = 0;
         let adjustedDeb = deb;
@@ -108,6 +108,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
             simulationResult.timeShifts.forEach(shift => {
                 if (!shift.isPartial && shift.amount > 0) {
+                    // AV/EP overlays: skip EP-sourced shifts and skip own timeShift
+                    if (isAvOrEscamotage && shift.source === 'Escamotage de phase') return;
+                    if (isAvOrEscamotage && actionId && shift.actionId === actionId) return;
+
                     // Full Adaptatif vertical (no plage1/plage2)
                     const avDeb = shift.from - shift.amount;
                     const avFin = shift.from;
@@ -145,20 +149,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         }
 
         // Check if action falls within any removed period (for Escamotage de phase)
+        // NOTE: Use ORIGINAL deb/fin values (before timeShift adjustments) since removedPeriods
+        // are in the original timeline coordinate system
         // NOTE: 'Escamotage de phase' and 'Adaptatif vertical' are NOT hidden by removed periods
+        // NOTE: Micro-regulation actions (Priorité piétons, Flèche anticipation, Signal aide conduite)
+        // are shifted, not hidden
         if (simulationResult?.removedPeriods?.length && actionType !== 'Escamotage de phase' && actionType !== 'Adaptatif vertical' && actionType !== 'Priorité piétons' && actionType !== 'Flèche d\'anticipation' && actionType !== 'Signal aide conduite') {
             for (const period of simulationResult.removedPeriods) {
-                // Only check for Escamotage de phase removed periods (not Adaptatif vertical which is handled above)
-                // Action is hidden if it's entirely within or overlaps the removed period
-                if (adjustedDeb >= period.deb && adjustedDeb < period.fin) {
-                    hidden = true;
-                    break;
-                }
-                if (adjustedFin > period.deb && adjustedFin <= period.fin) {
-                    hidden = true;
-                    break;
-                }
-                if (adjustedDeb <= period.deb && adjustedFin >= period.fin) {
+                // Action is hidden only if BOTH original deb AND fin are inside the removed period
+                const debInPeriod = deb >= period.deb && deb < period.fin;
+                const finInPeriod = fin > period.deb && fin <= period.fin;
+                if (debInPeriod && finInPeriod) {
                     hidden = true;
                     break;
                 }
@@ -172,7 +173,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         // NOTE: "Seconde lucarne" actions are NOT shifted by group glissement (from Fermeture anticipée),
         //       but SHOULD be shifted by Escamotage de phase timeShifts.
         // NOTE: For full Adaptatif vertical, shifts are already applied above, so skip here
-        if (groupId && simulationResult && actionType !== 'Seconde lucarne') {
+        if (groupId && simulationResult && actionType !== 'Seconde lucarne' && actionType !== 'Adaptatif vertical' && actionType !== 'Escamotage de phase') {
             const groupShift = getGroupShift(groupId);
             if (groupShift > 0) {
                 // Subtract shift already applied by the full shift logic above to avoid double-counting
@@ -560,7 +561,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     selectedEscamotageDePhase.forEach(a => {
         const zDeb = parseInt(a.deb) || 0;
         const zFin = parseInt(a.fin) || 0;
-        const shifted = getShiftedActionPosition(zDeb, zFin, null, 'Escamotage de phase');
+        const shifted = getShiftedActionPosition(zDeb, zFin, null, 'Escamotage de phase', null, a.id);
         if (!shifted.hidden) {
             braceZoneRanges.push({ deb: shifted.deb, fin: shifted.fin, rawDeb: zDeb, rawFin: zFin });
         }
@@ -571,7 +572,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         const plage1 = parseInt(a.plage1) || 0;
         const plage2 = parseInt(a.plage2) || 0;
         const avPlage = (plage1 > 0 && plage2 > 0) ? { plage1, plage2 } : null;
-        const shifted = getShiftedActionPosition(zDeb, zFin, null, 'Adaptatif vertical', avPlage);
+        const shifted = getShiftedActionPosition(zDeb, zFin, null, 'Adaptatif vertical', avPlage, a.id);
         if (!shifted.hidden) {
             braceZoneRanges.push({ deb: shifted.deb, fin: shifted.fin, rawDeb: zDeb, rawFin: zFin, plage1, plage2, isPartial: !!avPlage });
         }
@@ -885,8 +886,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             ? simGroup.simulatedGreen
                             : g.durations.green;
                         const end = isSimEscamoted ? 0 : ((start + duration) % (simGroup ? effectiveCycleLength : cycleLength));
-                        // Show both values if either is non-zero (and not escamoted during simulation)
-                        const hasValue = !isSimEscamoted && (start > 0 || end > 0);
+                        // Show both values if green duration > 0 (and not escamoted during simulation)
+                        // Hide when green is reduced to 0 (e.g. by Fermeture anticipée)
+                        const hasValue = !isSimEscamoted && duration > 0 && (start > 0 || end > 0);
 
                         const isLabelHighlighted = hoveredArrowGroupId === g.id;
                         return (
@@ -1073,7 +1075,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 ? simGroup.simulatedGreen
                                 : group.durations.green;
                             const endValue = (offset + greenDuration) % effectiveCycleLength;
-                            const hasPhase = !isEscamoted && (greenDuration > 0 || offset > 0 || endValue > 0);
+                            const hasPhase = !isEscamoted && greenDuration > 0;
 
                             // Calculate base bars from group offset/duration
                             const totalDuration = group.durations.green + group.durations.orange + group.durations.red;
@@ -1430,7 +1432,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const origFin = parseInt(action.fin) || 0;
                                         // Apply time shifts from escamotage/adaptatif
                                         // Pass action type to exclude "Seconde lucarne" from group shift
-                                        const shifted = getShiftedActionPosition(origDeb, origFin, group.id, action.action);
+                                        const shifted = getShiftedActionPosition(origDeb, origFin, group.id, action.action, null, action.id);
 
                                         // Skip rendering if action is hidden (entirely within removed period)
                                         if (shifted.hidden) {
@@ -1740,7 +1742,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const plage1 = parseInt(action.plage1) || 0;
                             const plage2 = parseInt(action.plage2) || 0;
                             const avPlage = (plage1 > 0 && plage2 > 0) ? { plage1, plage2 } : null;
-                            const shifted = getShiftedActionPosition(origDeb, origFin, null, 'Adaptatif vertical', avPlage);
+                            const shifted = getShiftedActionPosition(origDeb, origFin, null, 'Adaptatif vertical', avPlage, action.id);
                             if (shifted.hidden) return null;
                             const deb = shifted.deb;
                             const fin = shifted.fin;
@@ -2031,7 +2033,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const origDeb = parseInt(action.deb) || 0;
                             const origFin = parseInt(action.fin) || 0;
                             // Apply shift from other Escamotage de phase or Adaptatif vertical actions
-                            const shifted = getShiftedActionPosition(origDeb, origFin, null, 'Escamotage de phase');
+                            const shifted = getShiftedActionPosition(origDeb, origFin, null, 'Escamotage de phase', null, action.id);
                             if (shifted.hidden) return null;
                             const deb = shifted.deb;
                             const fin = shifted.fin;
