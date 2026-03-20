@@ -41,9 +41,9 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                 Formulaire
                 {onDetach && (
                     <button
+                        className="detach-btn"
                         onClick={onDetach}
                         title="Détacher dans une fenêtre séparée"
-                        style={{ fontSize: '0.65em', padding: '2px 8px', cursor: 'pointer', background: '#444', border: '1px solid #666', color: '#ccc', borderRadius: '3px' }}
                     >
                         Détacher
                     </button>

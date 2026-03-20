@@ -49,6 +49,10 @@ body.light-mode .app-header select {
     border-color: #999;
 }
 
+body.light-mode .gfx-label {
+    color: #222;
+}
+
 body.light-mode .app-header button {
     color: #222;
 }
@@ -828,8 +832,12 @@ body.high-contrast-mode .app-header {
 body.high-contrast-mode .app-header input,
 body.high-contrast-mode .app-header select {
     background: #1a2050;
-    color: #ffdd00;
+    color: #ffffff;
     border: 1px solid #4466bb;
+}
+
+body.high-contrast-mode .gfx-label {
+    color: #ffdd00;
 }
 
 body.high-contrast-mode .app-header button {
@@ -924,7 +932,8 @@ body.high-contrast-mode .group-table-container {
     background: #0f1440;
 }
 
-body.high-contrast-mode .group-table-title {
+body.high-contrast-mode .group-table-title,
+body.high-contrast-mode .sidebar .group-table-title {
     background: #1a2050;
     color: #ffdd00;
 }
@@ -972,7 +981,8 @@ body.high-contrast-mode .matrix-container-inline {
     background: #0f1440;
 }
 
-body.high-contrast-mode .matrix-container-inline h3 {
+body.high-contrast-mode .matrix-container-inline h3,
+body.high-contrast-mode .sidebar .matrix-container-inline h3 {
     color: #ffdd00;
 }
 
@@ -1037,6 +1047,10 @@ body.high-contrast-mode .matrix-bi-sep-right {
 /* TrafficTable */
 body.high-contrast-mode .traffic-table-container {
     background: #0f1440;
+}
+
+body.high-contrast-mode .sidebar .traffic-table-container h3 {
+    color: #ffdd00;
 }
 
 body.high-contrast-mode .traffic-header h3 {
@@ -1692,8 +1706,12 @@ body.amber-mode .app-header {
 body.amber-mode .app-header input,
 body.amber-mode .app-header select {
     background: #303030;
-    color: #ffb300;
+    color: #f5f0e8;
     border: 1px solid #666;
+}
+
+body.amber-mode .gfx-label {
+    color: #ffb300;
 }
 
 body.amber-mode .app-header button {
@@ -1788,7 +1806,8 @@ body.amber-mode .group-table-container {
     background: #222222;
 }
 
-body.amber-mode .group-table-title {
+body.amber-mode .group-table-title,
+body.amber-mode .sidebar .group-table-title {
     background: #303030;
     color: #ffb300;
 }
@@ -1836,7 +1855,8 @@ body.amber-mode .matrix-container-inline {
     background: #222222;
 }
 
-body.amber-mode .matrix-container-inline h3 {
+body.amber-mode .matrix-container-inline h3,
+body.amber-mode .sidebar .matrix-container-inline h3 {
     color: #ffb300;
 }
 
@@ -1900,6 +1920,10 @@ body.amber-mode .matrix-bi-sep-right {
 /* TrafficTable */
 body.amber-mode .traffic-table-container {
     background: #222222;
+}
+
+body.amber-mode .sidebar .traffic-table-container h3 {
+    color: #ffb300;
 }
 
 body.amber-mode .traffic-header h3 {

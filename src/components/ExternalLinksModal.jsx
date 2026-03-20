@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { safeShowOpenFilePicker } from '../utils/filePicker';
 import './ExternalLinksModal.css';
 
 const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
@@ -109,7 +110,7 @@ const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
         }
 
         try {
-            const [fileHandle] = await window.showOpenFilePicker({
+            const [fileHandle] = await safeShowOpenFilePicker({
                 multiple: false
             });
 

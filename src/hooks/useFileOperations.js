@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { safeShowOpenFilePicker, safeShowSaveFilePicker } from '../utils/filePicker';
 
 /**
  * Gère les opérations d'ouverture et de sauvegarde de fichiers projet
@@ -40,7 +41,7 @@ const useFileOperations = ({
                 options.startIn = lastOpenDirectoryRef.current;
             }
 
-            const [fileHandle] = await window.showOpenFilePicker(options);
+            const [fileHandle] = await safeShowOpenFilePicker(options);
             const file = await fileHandle.getFile();
             const content = await file.text();
 
@@ -142,7 +143,7 @@ const useFileOperations = ({
                 options.startIn = savedHandle;
             }
 
-            const [fileHandle] = await window.showOpenFilePicker(options);
+            const [fileHandle] = await safeShowOpenFilePicker(options);
             const file = await fileHandle.getFile();
             const content = await file.text();
 
@@ -242,7 +243,7 @@ const useFileOperations = ({
                 options.startIn = lastSaveDirectoryRef.current;
             }
 
-            const fileHandle = await window.showSaveFilePicker(options);
+            const fileHandle = await safeShowSaveFilePicker(options);
 
             // Préparer les données du projet
             const fullState = getFullState();
@@ -339,7 +340,7 @@ const useFileOperations = ({
                 options.startIn = savedHandle;
             }
 
-            const fileHandle = await window.showSaveFilePicker(options);
+            const fileHandle = await safeShowSaveFilePicker(options);
 
             // Préparer les données du projet
             const fullState = getFullState();

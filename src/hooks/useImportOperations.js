@@ -1,5 +1,6 @@
 import { importExcelFile } from '../utils/excelImporter';
 import parseHTMFile from '../utils/parseHTMFile';
+import { safeShowOpenFilePicker } from '../utils/filePicker';
 
 /**
  * Gère les opérations d'import de fichiers :
@@ -55,7 +56,7 @@ const useImportOperations = ({
                 options.startIn = lastImportDirectoryRef.current;
             }
 
-            const [fileHandle] = await window.showOpenFilePicker(options);
+            const [fileHandle] = await safeShowOpenFilePicker(options);
             const file = await fileHandle.getFile();
 
             // Mémoriser le répertoire parent
@@ -138,7 +139,7 @@ const useImportOperations = ({
                 options.startIn = savedHandle;
             }
 
-            const [fileHandle] = await window.showOpenFilePicker(options);
+            const [fileHandle] = await safeShowOpenFilePicker(options);
             const file = await fileHandle.getFile();
 
             // Mémoriser le répertoire parent

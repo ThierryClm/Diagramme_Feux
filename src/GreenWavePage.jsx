@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { safeShowSaveFilePicker } from './utils/filePicker';
 import './components/GreenWaveViewer.css';
 
 const GreenWavePage = () => {
@@ -199,7 +200,7 @@ const GreenWavePage = () => {
                 options.startIn = lastGreenWaveDirectoryRef.current;
             }
 
-            const fileHandle = await window.showSaveFilePicker(options);
+            const fileHandle = await safeShowSaveFilePicker(options);
 
             // Write the file
             const jsonContent = JSON.stringify(greenWaveData, null, 2);

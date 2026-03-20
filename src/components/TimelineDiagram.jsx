@@ -84,6 +84,24 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         return shift;
     };
 
+    // Helper to get the END shift for a group (how much its green end changed)
+    // Returns the difference: originalGreenEnd - simulatedGreenEnd (positive = end moved left)
+    const getGroupEndShift = (groupId) => {
+        if (!simulationResult) return 0;
+        const originalGroup = groups.find(g => g.id === parseInt(groupId));
+        const simGroup = simulationResult.simulatedGroups.find(g => g.id === parseInt(groupId));
+        if (!originalGroup || !simGroup) return 0;
+
+        const cycle = simulationResult.simulatedCycleLength || cycleLength;
+        const originalEnd = (originalGroup.offset + originalGroup.durations.green) % cycleLength;
+        const simulatedEnd = (simGroup.simulatedOffset + simGroup.simulatedGreen) % cycle;
+
+        let shift = originalEnd - simulatedEnd;
+        shift = ((shift % cycle) + cycle) % cycle;
+        if (shift > cycle / 2) return 0;
+        return shift;
+    };
+
     // Helper to calculate shifted position for action overlays
     // Returns adjusted deb/fin values after applying time shifts
     // Also returns hidden=true if the action is within a removed period
@@ -180,7 +198,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         //       but SHOULD be shifted by Escamotage de phase timeShifts.
         // NOTE: For full Adaptatif vertical, shifts are already applied above, so skip here
         if (groupId && simulationResult && actionType !== 'Seconde lucarne' && actionType !== 'Adaptatif vertical' && actionType !== 'Escamotage de phase') {
-            const groupShift = getGroupShift(groupId);
+            // Determine if this action is closer to the START or END of the group's green
+            // For actions near the END, use the end shift (which may be 0 if only start moved via glissement)
+            const originalGroup = groups.find(g => g.id === parseInt(groupId));
+            let useEndShift = false;
+            if (originalGroup && actionType === 'Fermeture anticipée') {
+                const cycle = simulationResult.simulatedCycleLength || cycleLength;
+                const greenStart = originalGroup.offset;
+                const greenEnd = (originalGroup.offset + originalGroup.durations.green) % cycleLength;
+                const actionMid = (adjustedDeb + ((adjustedFin > adjustedDeb ? adjustedFin - adjustedDeb : 0) / 2)) % cycle;
+                const circDist = (a, b) => { const d = Math.abs(a - b); return Math.min(d, cycle - d); };
+                useEndShift = circDist(actionMid, greenEnd) < circDist(actionMid, greenStart);
+            }
+
+            const groupShift = useEndShift ? getGroupEndShift(groupId) : getGroupShift(groupId);
             if (groupShift > 0) {
                 // Subtract shift already applied by the full shift logic above to avoid double-counting
                 // (Escamotage de phase and full Adaptatif vertical shift deb in both places)

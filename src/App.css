@@ -50,6 +50,10 @@
     border-radius: 4px;
 }
 
+.gfx-label {
+    color: #eee;
+}
+
 .input-dependency-gap {
     background: #333;
     border: 1px solid #444;

@@ -23,7 +23,8 @@ const SimulationPanel = ({
         'Fin de bande passante',
         'Priorité piétons',
         'Signal aide conduite',
-        'Synchro BTS'
+        'Synchro BTS',
+        "Flèche d'anticipation"
     ];
     const activeActions = actionData.filter(a =>
         a.action && a.action !== '' && !excludedActions.includes(a.action)

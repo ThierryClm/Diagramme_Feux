@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
+import { isFilePickerActive } from '../utils/filePicker';
 
 /**
  * Shared registry of all open popup windows.
@@ -7,32 +8,38 @@ import { createRoot } from 'react-dom/client';
  */
 const openPopups = new Set();
 let isBringingToFront = false;
+let lastBringTime = 0;
 
 function bringAllPopupsToFront(except) {
-    if (isBringingToFront || openPopups.size === 0) return;
+    if (isBringingToFront || openPopups.size === 0 || isFilePickerActive()) return;
+    const now = Date.now();
+    if (now - lastBringTime < 500) return;
     isBringingToFront = true;
-    // Focus all popups except 'except' first, then 'except' last (so it stays on top)
+    lastBringTime = now;
     openPopups.forEach(p => {
         if (p !== except && !p.closed) p.focus();
     });
     if (except && !except.closed) except.focus();
-    setTimeout(() => { isBringingToFront = false; }, 300);
+    setTimeout(() => { isBringingToFront = false; }, 500);
 }
 
 // Install shared listeners on the main window (once)
 let mainListenerInstalled = false;
+let bringPopupsTimer = null;
 function installMainListener() {
     if (mainListenerInstalled) return;
     mainListenerInstalled = true;
 
     const bringPopupsIfAllowed = () => {
-        if (openPopups.size === 0) return;
-        setTimeout(() => {
-            // Don't steal focus from interactive elements (inputs, textareas, selects)
+        if (openPopups.size === 0 || isBringingToFront || isFilePickerActive()) return;
+        if (bringPopupsTimer) clearTimeout(bringPopupsTimer);
+        bringPopupsTimer = setTimeout(() => {
+            bringPopupsTimer = null;
+            if (isFilePickerActive()) return;
             const ae = document.activeElement;
             if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT' || ae.isContentEditable)) return;
             bringAllPopupsToFront(null);
-        }, 50);
+        }, 150);
     };
 
     // When main window regains focus from outside (alt-tab, taskbar)
@@ -135,7 +142,9 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
 
             // When this popup gains focus, bring all other popups to front too
             popup.addEventListener('focus', () => {
-                setTimeout(() => bringAllPopupsToFront(popup), 50);
+                if (!isFilePickerActive()) {
+                    setTimeout(() => bringAllPopupsToFront(popup), 150);
+                }
             });
 
             // Detect popup close
@@ -183,18 +192,28 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
         }
     }, []);
 
-    // Sync theme changes to popup
+    // Sync theme changes to popup via MutationObserver (instead of every render)
     useEffect(() => {
-        if (popupRef.current && !popupRef.current.closed) {
-            const themeClasses = ['light-mode', 'high-contrast-mode', 'amber-mode'];
+        if (!popupRef.current || popupRef.current.closed) return;
+        const popup = popupRef.current;
+        const themeClasses = ['light-mode', 'high-contrast-mode', 'amber-mode'];
+
+        const syncTheme = () => {
+            if (popup.closed) return;
             themeClasses.forEach(cls => {
-                popupRef.current.document.body.classList.toggle(
-                    cls,
-                    document.body.classList.contains(cls)
-                );
+                popup.document.body.classList.toggle(cls, document.body.classList.contains(cls));
             });
-        }
-    });
+        };
+
+        // Sync immediately
+        syncTheme();
+
+        // Observe changes on main body class
+        const observer = new MutationObserver(syncTheme);
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+        return () => observer.disconnect();
+    }, [isOpen]);
 
     // Cleanup on unmount
     useEffect(() => {

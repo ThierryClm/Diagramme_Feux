@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { safeShowOpenFilePicker, safeShowSaveFilePicker } from '../utils/filePicker';
 
 // Niveaux de permissions
 export const PERMISSIONS = {
@@ -327,7 +328,7 @@ export const useAuth = () => {
         }
 
         try {
-            const fileHandle = await window.showSaveFilePicker({
+            const fileHandle = await safeShowSaveFilePicker({
                 suggestedName: 'utilisateurs.json',
                 types: [{
                     description: 'Fichier JSON',
@@ -356,7 +357,7 @@ export const useAuth = () => {
         }
 
         try {
-            const [fileHandle] = await window.showOpenFilePicker({
+            const [fileHandle] = await safeShowOpenFilePicker({
                 types: [{
                     description: 'Fichier JSON',
                     accept: { 'application/json': ['.json'] }

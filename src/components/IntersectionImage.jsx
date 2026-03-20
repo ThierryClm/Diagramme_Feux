@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { safeShowOpenFilePicker } from '../utils/filePicker';
 import './IntersectionImage.css';
 
 const IntersectionImage = ({
@@ -123,7 +124,7 @@ const IntersectionImage = ({
                     options.startIn = lastImageDirectoryRef.current;
                 }
 
-                const [fileHandle] = await window.showOpenFilePicker(options);
+                const [fileHandle] = await safeShowOpenFilePicker(options);
                 const file = await fileHandle.getFile();
 
                 // Save directory handle

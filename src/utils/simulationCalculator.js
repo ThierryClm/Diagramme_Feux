@@ -163,28 +163,47 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
             }
         }
 
-        // 2. Apply glissement (shift offset left) to groups in Action GF fields
-        const glissementGfIds = [];
+        // 2. Apply effect to target groups in Action GF fields
+        // Determine if the action zone points to START or END of each target's green
+        const targetGfIds = [];
         ['actGf1', 'actGf1Gf2', 'actGf1Gf3', 'actGf1Gf4'].forEach(field => {
             if (action[field] && action[field] !== '') {
                 const gfStr = action[field]?.toString().replace(/[Gg]/g, '').trim() || '';
                 const gfId = parseInt(gfStr);
-                if (!isNaN(gfId) && !glissementGfIds.includes(gfId)) {
-                    glissementGfIds.push(gfId);
+                if (!isNaN(gfId) && !targetGfIds.includes(gfId)) {
+                    targetGfIds.push(gfId);
                 }
             }
         });
 
-        // Apply glissement to target groups
-        glissementGfIds.forEach(targetGfId => {
+        // Helper: circular distance between two points on the cycle
+        const circDist = (a, b) => {
+            const d = Math.abs(a - b);
+            return Math.min(d, simulatedCycleLength - d);
+        };
+
+        targetGfIds.forEach(targetGfId => {
             const groupIndex = simulatedGroups.findIndex(g => g.id === targetGfId);
             if (groupIndex !== -1 && !simulatedGroups[groupIndex].isEscamoted) {
-                // Glissement: shift the start left, keep the end at the same position
-                // 1. Shift offset left by shiftAmount
-                // 2. Increase green duration by shiftAmount (to keep end position)
-                simulatedGroups[groupIndex].simulatedOffset =
-                    (simulatedGroups[groupIndex].simulatedOffset - shiftAmount + simulatedCycleLength) % simulatedCycleLength;
-                simulatedGroups[groupIndex].simulatedGreen += shiftAmount;
+                const target = simulatedGroups[groupIndex];
+                const greenStart = target.simulatedOffset;
+                const greenEnd = (target.simulatedOffset + target.simulatedGreen) % simulatedCycleLength;
+                const actionMid = (deb + Math.floor(shiftAmount / 2)) % simulatedCycleLength;
+
+                const distToEnd = circDist(actionMid, greenEnd);
+                const distToStart = circDist(actionMid, greenStart);
+
+                if (distToEnd < distToStart) {
+                    // Arrow points to END of green → fermeture anticipée on target
+                    // Reduce green duration (end moves left)
+                    target.simulatedGreen = Math.max(0, target.simulatedGreen - shiftAmount);
+                } else {
+                    // Arrow points to START of green → glissement
+                    // Shift offset left, increase green to keep end position
+                    target.simulatedOffset =
+                        (target.simulatedOffset - shiftAmount + simulatedCycleLength) % simulatedCycleLength;
+                    target.simulatedGreen += shiftAmount;
+                }
             }
         });
     });

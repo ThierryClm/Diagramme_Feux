@@ -13,6 +13,7 @@ import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import GreenWaveViewer from './components/GreenWaveViewer';
 import SimulationPanel from './components/SimulationPanel';
 import PhasageBulle from './components/PhasageBulle';
+import { safeShowOpenFilePicker } from './utils/filePicker';
 import LoginModal from './components/LoginModal';
 import UserManagerModal from './components/UserManagerModal';
 import ExternalLinksModal from './components/ExternalLinksModal';
@@ -935,7 +936,7 @@ function App() {
                 multiple: false
             };
 
-            const [fileHandle] = await window.showOpenFilePicker(options);
+            const [fileHandle] = await safeShowOpenFilePicker(options);
             const file = await fileHandle.getFile();
             const content = await file.text();
 
@@ -1213,7 +1214,7 @@ function App() {
                         placeholder="Nom du projet"
                         title="Nom du projet (utilisé pour la sauvegarde)"
                     />
-                    <label>
+                    <label className="gfx-label">
                         GFx
                         <input
                             type="number"
