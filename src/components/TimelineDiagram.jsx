@@ -570,10 +570,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         if (action.action !== 'Fermeture anticipée' || action.deb === '' || action.fin === '') return false;
         if (!(action.actGf1 || action.actGf1Gf2 || action.actGf1Gf3 || action.actGf1Gf4)) return false;
         if (simulationFilter && simulationFilter.has(action.id)) return false;
-        // Hide if within a selected Escamotage de phase
+        // Hide if within a selected Escamotage de phase or Adaptatif vertical
         const deb = parseInt(action.deb) || 0;
         const fin = parseInt(action.fin) || 0;
-        if (isWithinSelectedEscamotage(deb, fin)) return false;
+        if (isWithinSelectedEscamotageOrAdaptatif(deb, fin)) return false;
         return true;
     });
 
@@ -1899,7 +1899,16 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {/* Fermeture anticipée arrows */}
                         {fermetureActions.map((action, idx) => {
                             const sourceGf = parseInt(action.gf?.toString().replace(/[Gg]/g, '').trim()) || 0;
+                            const origDeb = parseInt(action.deb) || 0;
                             const fin = parseInt(action.fin) || 0;
+
+                            // Check if overlay is hidden (e.g. within AV zone)
+                            if (simulationResult) {
+                                const shifted = getShiftedActionPosition(origDeb, fin, sourceGf, 'Fermeture anticipée');
+                                if (shifted.hidden) return null;
+                                // Also hide if effective duration is 0
+                                if (shifted.deb === shifted.fin) return null;
+                            }
 
                             // Get target groups from ActGF1, ActGF2, ActGF3, ActGF4
                             const targets = [];
