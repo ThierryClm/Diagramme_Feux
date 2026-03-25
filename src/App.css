@@ -1299,11 +1299,17 @@
 .preview-matrix-table th {
     background: #f0f0f0;
     font-weight: bold;
+    color: #000 !important;
 }
 
 .preview-matrix-table td.row-header {
     background: #f0f0f0;
     font-weight: bold;
+    color: #000 !important;
+}
+
+.preview-matrix-table td.row-name {
+    color: #000 !important;
 }
 
 .preview-matrix-table td.diagonal {
@@ -1523,6 +1529,18 @@
 .print-diagram-content span,
 .print-diagram-content div {
     color: #000 !important;
+}
+
+/* Hachures escamotage bien visibles à l'impression */
+.print-diagram-content .escamotage-overlay {
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 3px,
+        rgba(0, 0, 0, 0.3) 3px,
+        rgba(0, 0, 0, 0.3) 5px
+    ) !important;
+    border: 2px solid rgba(0, 0, 0, 0.6) !important;
 }
 
 /* Cadre du diagramme en noir */
@@ -1993,9 +2011,11 @@
 }
 
 .print-dossier-matrix .preview-matrix-table td.row-name,
-.print-dossier-matrix .preview-matrix-table th.col-name-header {
+.print-dossier-matrix .preview-matrix-table th.col-name-header,
+.print-dossier-matrix .preview-matrix-table td.row-header,
+.print-dossier-matrix .preview-matrix-table th {
     background: #f0f0f0;
-    color: #000;
+    color: #000 !important;
     text-align: left;
     font-size: 0.65rem;
     white-space: nowrap;
@@ -2423,10 +2443,10 @@
     }
 
     body.print-diagram .print-diagram-content {
-        width: auto !important;
+        /* width défini par style inline - ne pas écraser */
         max-width: none !important;
         background: white !important;
-        overflow: visible !important;
+        overflow: hidden !important;
         margin-left: 0 !important;
         padding-left: 0 !important;
     }
@@ -2661,9 +2681,9 @@
     }
 
     body.print-diagram .print-diagram-content {
-        width: auto !important;
+        /* width défini par style inline - ne pas écraser */
         max-width: none !important;
-        overflow: visible !important;
+        overflow: hidden !important;
         height: auto !important;
         display: block !important;
     }
@@ -2741,10 +2761,10 @@
         font-size: 0.65rem !important;
     }
 
-    /* Le diagramme doit utiliser sa largeur intrinsèque, pas être contraint */
+    /* Le diagramme doit utiliser sa largeur définie par style inline */
     body.print-diagram .print-diagram-content {
         display: block !important;
-        overflow: visible !important;
+        overflow: hidden !important;
     }
 
     body.print-diagram .timeline-container {

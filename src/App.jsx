@@ -3096,24 +3096,36 @@ function App() {
                                     <div className="dossier-pf-suboptions">
                                         <label>
                                             <input type="checkbox" checked={dossierSections[`conditionsMicro_${pf.id}`] || false}
-                                                onChange={e => setDossierSections(s => ({...s, [`conditionsMicro_${pf.id}`]: e.target.checked}))} />
+                                                onChange={e => { const v = e.target.checked; setDossierSections(s => {
+                                                    if (v) return {...s, [`conditionsMicro_${pf.id}`]: true};
+                                                    const u = {...s}; pfTabs.forEach(p => { if (s[`diagram_${p.id}`]) u[`conditionsMicro_${p.id}`] = false; }); return u;
+                                                }); }} />
                                             Conditions de micro-régulation
                                         </label>
                                         <label>
                                             <input type="checkbox" checked={dossierSections[`variablesMicro_${pf.id}`] || false}
-                                                onChange={e => setDossierSections(s => ({...s, [`variablesMicro_${pf.id}`]: e.target.checked}))} />
+                                                onChange={e => { const v = e.target.checked; setDossierSections(s => {
+                                                    if (v) return {...s, [`variablesMicro_${pf.id}`]: true};
+                                                    const u = {...s}; pfTabs.forEach(p => { if (s[`diagram_${p.id}`]) u[`variablesMicro_${p.id}`] = false; }); return u;
+                                                }); }} />
                                             Variables micro
                                         </label>
                                         {intersectionArrows.length > 0 && intersectionImage && (
                                         <label>
                                             <input type="checkbox" checked={dossierSections[`phasageBulle_${pf.id}`] || false}
-                                                onChange={e => setDossierSections(s => ({...s, [`phasageBulle_${pf.id}`]: e.target.checked}))} />
+                                                onChange={e => { const v = e.target.checked; setDossierSections(s => {
+                                                    if (v) return {...s, [`phasageBulle_${pf.id}`]: true};
+                                                    const u = {...s}; pfTabs.forEach(p => { if (s[`diagram_${p.id}`]) u[`phasageBulle_${p.id}`] = false; }); return u;
+                                                }); }} />
                                             Phasage bulle
                                         </label>
                                         )}
                                         <label>
                                             <input type="checkbox" checked={dossierSections[`traficCapacite_${pf.id}`] || false}
-                                                onChange={e => setDossierSections(s => ({...s, [`traficCapacite_${pf.id}`]: e.target.checked}))} />
+                                                onChange={e => { const v = e.target.checked; setDossierSections(s => {
+                                                    if (v) return {...s, [`traficCapacite_${pf.id}`]: true};
+                                                    const u = {...s}; pfTabs.forEach(p => { if (s[`diagram_${p.id}`]) u[`traficCapacite_${p.id}`] = false; }); return u;
+                                                }); }} />
                                             Données de trafic et calcul de capacité
                                         </label>
                                     </div>
@@ -3219,25 +3231,35 @@ function App() {
 
                                 {printType === 'diagram' && (() => {
                                     // A4 paysage avec marges 5mm: ~287mm x 200mm
-                                    // Largeur imprimable: ~1050px à 96dpi, ~790px à 72dpi (Edge)
-                                    // Sidebar timeline: 325px (ne pas modifier pour garder l'alignement des barres)
-                                    // Sans les colonnes commentaires/remarques: sidebar effective ~200px
-                                    const printSidebarWidth = 200; // sidebar sans commentaires/remarques
-                                    const printTotalWidth = 750; // largeur disponible conservatrice
-                                    const printTimelineWidth = printTotalWidth - printSidebarWidth; // ~550px
+                                    // A4 paysage marges 10mm: ~277mm = ~1047px à 96dpi
+                                    // Marge de sécurité pour variations navigateur
+                                    const printPageWidth = 960;
+                                    // Sidebar: ~325px fixe en CSS (commentaires/remarques masquées)
+                                    const printSidebarWidth = 325;
+                                    const printTimelineWidth = printPageWidth - printSidebarWidth; // ~635px
 
-                                    // Calcul pixelsPerSecond pour que le timeline tienne dans la largeur
-                                    const optimalPPS = Math.max(2, Math.floor(printTimelineWidth / cycleLength));
+                                    // Référence : 100s = pleine largeur timeline
+                                    // Cycles <= 100s : même PPS (1 seconde = même largeur)
+                                    // Cycles > 100s : PPS réduit pour tenir dans la page
+                                    const referenceCycle = 100;
+                                    const referencePPS = printTimelineWidth / referenceCycle;
+                                    const optimalPPS = cycleLength <= referenceCycle
+                                        ? referencePPS
+                                        : printTimelineWidth / cycleLength;
 
-                                    // Calculer le scale si nécessaire
-                                    const actualWidth = printSidebarWidth + (cycleLength * optimalPPS);
-                                    const printScale = actualWidth > printTotalWidth ? printTotalWidth / actualWidth : 1;
+                                    // Scale de sécurité si le diagramme dépasse la page
+                                    const estimatedWidth = printSidebarWidth + (cycleLength * optimalPPS);
+                                    const printScale = estimatedWidth > printPageWidth
+                                        ? printPageWidth / estimatedWidth : 1;
 
                                     return (
-                                    <div className="print-preview-diagram print-preview-landscape" style={{
-                                        transform: printScale < 1 ? `scale(${printScale.toFixed(3)})` : 'none',
-                                        transformOrigin: 'top left'
-                                    }}>
+                                    <div className="print-preview-diagram print-preview-landscape" style={
+                                        printScale < 1 ? {
+                                            transform: `scale(${printScale.toFixed(3)})`,
+                                            transformOrigin: 'top left',
+                                            width: `${Math.ceil(100 / printScale)}%`
+                                        } : {}
+                                    }>
                                         {/* En-tête du diagramme */}
                                         <div className="print-diagram-header">
                                             <h3>Diagramme {intersectionName || 'Sans titre'} - {pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}</h3>
