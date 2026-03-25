@@ -3233,7 +3233,7 @@ function App() {
                                     // A4 paysage avec marges 5mm: ~287mm x 200mm
                                     // A4 paysage marges 10mm: ~277mm = ~1047px à 96dpi
                                     // Marge de sécurité pour variations navigateur
-                                    const printPageWidth = 960;
+                                    const printPageWidth = 960; // A4 paysage avec marges navigateur
                                     // Sidebar: ~325px fixe en CSS (commentaires/remarques masquées)
                                     const printSidebarWidth = 325;
                                     const printTimelineWidth = printPageWidth - printSidebarWidth; // ~635px
@@ -3242,7 +3242,7 @@ function App() {
                                     // Cycles <= 100s : même PPS (1 seconde = même largeur)
                                     // Cycles > 100s : PPS réduit pour tenir dans la page
                                     const referenceCycle = 100;
-                                    const referencePPS = printTimelineWidth / referenceCycle;
+                                    const referencePPS = (printTimelineWidth / referenceCycle) * 0.95;
                                     const optimalPPS = cycleLength <= referenceCycle
                                         ? referencePPS
                                         : printTimelineWidth / cycleLength;

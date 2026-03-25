@@ -984,6 +984,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         value={g.da || ''}
                                         onChange={(e) => updateGroupParams(g.id, { da: e.target.value.slice(0, 2) })}
                                         onClick={(e) => e.stopPropagation()}
+                                        onFocus={(e) => e.target.select()}
                                         title="Code trajet"
                                         maxLength={2}
                                         placeholder=""
@@ -1000,6 +1001,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             onChange={(e) => !simulationResult && handleStartChange(g.id, e.target.value)}
                                             readOnly={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
+                                            onFocus={(e) => e.target.select()}
                                             placeholder=""
                                             style={simulationResult ? { cursor: 'default', background: 'transparent', border: 'none' } : undefined}
                                         />
@@ -1010,6 +1012,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             onChange={(e) => !simulationResult && handleEndChange(g.id, e.target.value, start)}
                                             readOnly={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
+                                            onFocus={(e) => e.target.select()}
                                             style={simulationResult
                                                 ? { color: duration < g.minGreen ? '#ff4d4d' : 'inherit', cursor: 'default', background: 'transparent', border: 'none' }
                                                 : { color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }

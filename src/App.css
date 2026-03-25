@@ -1788,6 +1788,7 @@
 }
 
 .print-dossier-section h3 {
+    position: relative;
     font-size: 14px;
     font-weight: bold;
     margin: 0 0 8px 0;
@@ -1857,7 +1858,10 @@
 
 /* Petits logos dans les en-têtes de sections */
 .dossier-header-logos {
-    float: right;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
     display: inline-flex;
     gap: 6px;
     align-items: center;
@@ -2446,7 +2450,7 @@
         /* width défini par style inline - ne pas écraser */
         max-width: none !important;
         background: white !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         margin-left: 0 !important;
         padding-left: 0 !important;
     }
@@ -2683,7 +2687,7 @@
     body.print-diagram .print-diagram-content {
         /* width défini par style inline - ne pas écraser */
         max-width: none !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         height: auto !important;
         display: block !important;
     }
@@ -2764,7 +2768,7 @@
     /* Le diagramme doit utiliser sa largeur définie par style inline */
     body.print-diagram .print-diagram-content {
         display: block !important;
-        overflow: hidden !important;
+        overflow: visible !important;
     }
 
     body.print-diagram .timeline-container {
@@ -2813,40 +2817,40 @@
     /* Empêcher le débordement du diagramme sur plusieurs pages */
     body.print-diagram .print-diagram-content {
         page-break-inside: avoid !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         position: relative !important;
     }
 
     body.print-diagram .timeline-container {
         page-break-inside: avoid !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         position: relative !important;
     }
 
     body.print-diagram .timeline-layout {
-        overflow: hidden !important;
+        overflow: visible !important;
         position: relative !important;
     }
 
     body.print-diagram .timeline-scroll-area {
-        overflow: hidden !important;
+        overflow: visible !important;
         position: relative !important;
     }
 
     body.print-diagram .timeline-track-container {
-        overflow: hidden !important;
+        overflow: visible !important;
         position: relative !important;
     }
 
     body.print-diagram .print-preview-diagram {
         page-break-inside: avoid !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         position: relative !important;
     }
 
-    /* Empêcher tout débordement vertical */
+    /* Le contenu peut déborder - la page gère le clipping */
     body.print-diagram .print-preview-page {
-        overflow: hidden !important;
+        overflow: visible !important;
     }
 
     /* Dossier print - Paysage A4 */
