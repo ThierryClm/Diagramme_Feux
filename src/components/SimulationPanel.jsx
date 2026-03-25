@@ -14,7 +14,8 @@ const SimulationPanel = ({
     hoveredActionId,
     setHoveredActionId,
     activeTrafficDataset,
-    getTrafficData
+    getTrafficData,
+    setHoveredConflict
 }) => {
     // Filter to only show actions that have a type selected
     // Exclude actions that don't affect simulation
@@ -320,7 +321,12 @@ const SimulationPanel = ({
                     </div>
                     <div className="conflicts-list">
                         {conflicts.map((c, i) => (
-                            <div key={i} className="conflict-item">
+                            <div
+                                key={i}
+                                className="conflict-item"
+                                onMouseEnter={() => setHoveredConflict?.({ from: c.from, to: c.to, isConflict: true })}
+                                onMouseLeave={() => setHoveredConflict?.(null)}
+                            >
                                 <span className="conflict-groups">GF{c.from} - GF{c.to}</span>
                                 <span className="conflict-message">{c.message}</span>
                             </div>

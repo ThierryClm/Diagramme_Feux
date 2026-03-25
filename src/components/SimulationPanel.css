@@ -220,6 +220,12 @@
     background: #2a2020;
     border-radius: 3px;
     font-size: 0.8em;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.conflict-item:hover {
+    background: #3a2828;
 }
 
 .conflict-groups {
@@ -394,6 +400,6 @@
 .simulation-traffic-table tr.row-inhibited td.col-capacity,
 .simulation-traffic-table tr.row-inhibited td.col-delay,
 .simulation-traffic-table tr.row-inhibited td.col-queue {
-    opacity: 0.7;
-    color: #999;
+    opacity: 0.85;
+    color: #bbb;
 }

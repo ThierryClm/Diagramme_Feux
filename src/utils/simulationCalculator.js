@@ -146,10 +146,29 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         a.fin !== ''
     );
 
+    // Collect AV and EP zones (raw values) for computing effective fermeture durations
+    const avEpZones = selectedActions
+        .filter(a => (a.action === 'Adaptatif vertical' || a.action === 'Escamotage de phase') && a.deb !== '' && a.fin !== '')
+        .map(a => ({ deb: parseInt(a.deb) || 0, fin: parseInt(a.fin) || 0 }));
+
     fermetureActions.forEach(action => {
         const deb = parseInt(action.deb) || 0;
         const fin = parseInt(action.fin) || 0;
         const shiftAmount = fin > deb ? fin - deb : (fin + simulatedCycleLength - deb);
+
+        // Compute effective shift: subtract overlap with selected AV/EP zones
+        // (these zones will be removed later, reducing the effective fermeture duration)
+        let overlapWithAvEp = 0;
+        avEpZones.forEach(zone => {
+            const zDeb = zone.deb;
+            const zFin = zone.fin;
+            if (zFin > zDeb && fin > deb) {
+                // Non-wrapping: overlap = max(0, min(fin, zFin) - max(deb, zDeb))
+                const overlap = Math.max(0, Math.min(fin, zFin) - Math.max(deb, zDeb));
+                overlapWithAvEp += overlap;
+            }
+        });
+        const effectiveShiftAmount = Math.max(0, shiftAmount - overlapWithAvEp);
 
         // 1. Reduce green duration for the group in GF field
         if (action.gf && action.gf !== '') {
@@ -157,7 +176,7 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
             if (!isNaN(gfId)) {
                 const groupIndex = simulatedGroups.findIndex(g => g.id === gfId);
                 if (groupIndex !== -1 && !simulatedGroups[groupIndex].isEscamoted) {
-                    // Reduce green duration (end of green moves left)
+                    // Reduce green duration (end of green moves left) — full amount for source group
                     simulatedGroups[groupIndex].simulatedGreen = Math.max(0, simulatedGroups[groupIndex].simulatedGreen - shiftAmount);
                 }
             }
@@ -195,14 +214,14 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
 
                 if (distToEnd < distToStart) {
                     // Arrow points to END of green → fermeture anticipée on target
-                    // Reduce green duration (end moves left)
-                    target.simulatedGreen = Math.max(0, target.simulatedGreen - shiftAmount);
+                    // Reduce green duration (end moves left) — use effective amount
+                    target.simulatedGreen = Math.max(0, target.simulatedGreen - effectiveShiftAmount);
                 } else {
                     // Arrow points to START of green → glissement
-                    // Shift offset left, increase green to keep end position
+                    // Shift offset left, increase green to keep end position — use effective amount
                     target.simulatedOffset =
-                        (target.simulatedOffset - shiftAmount + simulatedCycleLength) % simulatedCycleLength;
-                    target.simulatedGreen += shiftAmount;
+                        (target.simulatedOffset - effectiveShiftAmount + simulatedCycleLength) % simulatedCycleLength;
+                    target.simulatedGreen += effectiveShiftAmount;
                 }
             }
         });

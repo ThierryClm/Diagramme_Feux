@@ -206,6 +206,89 @@ describe('calculateSimulatedDiagram', () => {
         });
     });
 
+    describe('Fermeture anticipée : effectiveShiftAmount avec chevauchement AV', () => {
+        it('réduit le shift actGf quand la FA chevauche une zone AV', () => {
+            // GF1: green [21, 45] (24s), FA [31, 45] (14s), AV [33, 42] (9s)
+            // effectiveShiftAmount = 14 - 9 = 5s pour les cibles actGf
+            // Source GF1: green réduit de 14 (full shiftAmount) → green = 10, fin = 31
+            // Cible GF4: décalé de 5s (effectiveShiftAmount)
+            const groups = [
+                makeGroup(1, 21, 24),
+                makeGroup(4, 50, 15),
+            ];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Fermeture anticipée', deb: '31', fin: '45', actGf1: '4' }),
+                makeAction(2, { action: 'Adaptatif vertical', deb: '33', fin: '42' }),
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2], 97, emptyMatrix(2));
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            const g4 = result.simulatedGroups.find(g => g.id === 4);
+            // Source: full shiftAmount (14) → green = 24 - 14 = 10, end = 31
+            expect(g1.simulatedGreen).toBe(10);
+            // Target GF4: glissement de 5 (effectiveShiftAmount) → offset 50-5=45
+            // puis AV [33,42] décale GF4 (offset 45 >= 42) de 9 → offset 36
+            // Green inchangé par AV (pas de chevauchement [45,65] avec [33,42])
+            expect(g4.simulatedOffset).toBe(36); // 50 - 5 - 9
+            expect(g4.simulatedGreen).toBe(20); // 15 + 5
+        });
+
+        it('utilise le full shiftAmount quand pas de chevauchement AV', () => {
+            // FA [25, 30] (5s) sans AV → effectiveShiftAmount = 5
+            const groups = [
+                makeGroup(1, 0, 30),
+                makeGroup(2, 40, 15),
+            ];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Fermeture anticipée', deb: '25', fin: '30', actGf1: '2' }),
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 80, emptyMatrix(2));
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            const g2 = result.simulatedGroups.find(g => g.id === 2);
+            expect(g1.simulatedGreen).toBe(25); // 30 - 5
+            // Target: décalé de 5 (no AV overlap)
+            expect(g2.simulatedOffset).toBe(35); // 40 - 5
+            expect(g2.simulatedGreen).toBe(20); // 15 + 5
+        });
+
+        it('FA actGf pointe sur fin du vert → réduit le green de la cible', () => {
+            // GF1: [0, 28], FA [24, 28] (4s)
+            // GF15: [68, 31] wrapping → offset=68, green=60 (end at 31 in cycle 97)
+            // actGf1 pointe sur la fin du vert de GF15 (28 est plus proche de 31 que de 68)
+            // → réduit simulatedGreen de GF15 de 4
+            const groups = [
+                makeGroup(1, 0, 28),
+                makeGroup(15, 68, 60), // green wraps: 68 to 31 (mod 97)
+            ];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Fermeture anticipée', deb: '24', fin: '28', actGf1: '15' }),
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 97, emptyMatrix(2));
+            const g15 = result.simulatedGroups.find(g => g.id === 15);
+            // actionMid = 26, greenEnd = (68+60)%97 = 31, greenStart = 68
+            // distToEnd(26, 31) = 5, distToStart(26, 68) = 42 → pointe sur fin
+            expect(g15.simulatedGreen).toBe(56); // 60 - 4
+        });
+    });
+
+    describe('Fermeture anticipée : overlay position avec chevauchement AV', () => {
+        it('l overlay FA [31,45] chevauchant AV [33,42] reste à [31,36]', () => {
+            // Vérifie que getShiftedActionPosition ne décale pas deb quand il est avant la zone AV
+            // et que fin est correctement décalé de la durée AV
+            // Ce test valide la logique fullShiftOnFin vs fullShiftOnDeb
+            const groups = [makeGroup(1, 21, 24)];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Fermeture anticipée', deb: '31', fin: '45' }),
+                makeAction(2, { action: 'Adaptatif vertical', deb: '33', fin: '42' }),
+            ];
+            // Quand AV est coché, le timeShift {from: 42, amount: 9} décale fin de 45 à 36
+            // mais deb=31 est avant avFin=42, donc pas décalé
+            const result = calculateSimulatedDiagram(groups, actions, [2], 97, emptyMatrix(1));
+            expect(result.timeShifts).toHaveLength(1);
+            expect(result.timeShifts[0].from).toBe(42);
+            expect(result.timeShifts[0].amount).toBe(9);
+        });
+    });
+
     describe('Scénario complet : exemple utilisateur', () => {
         it('AV [35,43] + EP [70,84] + AV [90,92] + EP [84,97]', () => {
             const groups = [

@@ -1403,6 +1403,7 @@ function App() {
                             setHoveredActionId={setHoveredActionId}
                             activeTrafficDataset={activeTrafficDataset}
                             getTrafficData={getTrafficData}
+                            setHoveredConflict={setHoveredConflict}
                         />
                     ) : (
                         <>

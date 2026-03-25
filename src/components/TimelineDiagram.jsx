@@ -112,6 +112,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         let adjustedDeb = deb;
         let adjustedFin = fin;
         let fullShiftOnDeb = 0;
+        let fullShiftOnFin = 0;
         const isAvOrEscamotage = actionType === 'Escamotage de phase' || actionType === 'Adaptatif vertical';
 
         // For full Adaptatif vertical (applies to all groups), apply special logic:
@@ -163,6 +164,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     }
                     if (adjustedFin >= avFin) {
                         adjustedFin -= avWidth;
+                        fullShiftOnFin += avWidth;
                     }
 
                 }
@@ -215,7 +217,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             if (groupShift > 0) {
                 // Subtract shift already applied by the full shift logic above to avoid double-counting
                 // (Escamotage de phase and full Adaptatif vertical shift deb in both places)
-                totalShift = Math.max(0, groupShift - fullShiftOnDeb);
+                totalShift = Math.max(0, groupShift - (useEndShift ? fullShiftOnFin : fullShiftOnDeb));
             }
             // Note: No need to add partial Adaptatif vertical shifts here - getGroupShift() already
             // includes them since simulatedOffset is modified for groups in the plage range.
@@ -1497,39 +1499,43 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         if (action.action === 'Fermeture anticipée' && simGroup) {
                                             const originalGreenEnd = group.offset + group.durations.green;
                                             const simulatedGreenEnd = simGroup.simulatedOffset + simGroup.simulatedGreen;
-                                            if (originalGreenEnd !== simulatedGreenEnd) {
-                                                // Vérifier si l'accolade chevauche une zone (début avant, fin dans la zone)
-                                                let straddlesZone = null;
+                                            // Compare modular ends (not raw sums) to detect actual end-of-green change
+                                            // Wrapping groups may have different raw sums but same modular end
+                                            const originalGreenEndMod = originalGreenEnd % cycleLength;
+                                            const simulatedGreenEndMod = simulatedGreenEnd % effectiveCycleLength;
+                                            if (originalGreenEndMod !== simulatedGreenEndMod) {
+                                                // Vérifier si l'accolade chevauche une zone AV/EP (début avant, fin dans ou après la zone)
+                                                let straddlesZone = false;
                                                 for (const zone of braceZoneRanges) {
                                                     if (zone.isPartial) {
                                                         const gId = parseInt(group.id);
                                                         if (gId < zone.plage1 || gId > zone.plage2) continue;
                                                     }
-                                                    if (origDeb < zone.rawDeb && origFin > zone.rawDeb && origFin <= zone.rawFin) {
-                                                        straddlesZone = zone;
+                                                    // La fermeture chevauche la zone : début avant, fin dans ou après
+                                                    if (origDeb < zone.rawDeb && origFin > zone.rawDeb) {
+                                                        straddlesZone = true;
                                                         break;
                                                     }
                                                 }
 
-                                                if (straddlesZone) {
-                                                    // Début avant la zone : ne pas décaler, tronquer la fin au deb de la zone
-                                                    fermetureEndPos = straddlesZone.deb;
-                                                } else {
-                                                    // Position relative à la fin de vert simulée
+                                                if (!straddlesZone) {
+                                                    // Pas de chevauchement : repositionner relativement à la fin de vert simulée
                                                     const simGreenEnd = simulatedGreenEnd % effectiveCycleLength;
                                                     fermetureStartPos = ((simGreenEnd + (origDeb - originalGreenEnd)) % effectiveCycleLength + effectiveCycleLength) % effectiveCycleLength;
                                                     fermetureEndPos = ((simGreenEnd + (origFin - originalGreenEnd)) % effectiveCycleLength + effectiveCycleLength) % effectiveCycleLength;
                                                 }
+                                                // Si chevauchement : garder deb/fin de getShiftedActionPosition (déjà corrects)
                                             }
                                         }
-                                        // Tronquer l'accolade si elle chevauche une zone Escamotage/Adaptatif
+                                        // Tronquer l'accolade si elle chevauche une zone Adaptatif partiel
+                                        // Les zones full (AV/EP sélectionnées) sont retirées de la timeline,
+                                        // donc la troncature ne s'applique qu'aux zones partielles
                                         if (action.action === 'Fermeture anticipée') {
                                             for (const zone of braceZoneRanges) {
-                                                // Adaptatif partiel : n'affecte que les groupes dans la plage
-                                                if (zone.isPartial) {
-                                                    const gId = parseInt(group.id);
-                                                    if (gId < zone.plage1 || gId > zone.plage2) continue;
-                                                }
+                                                // Seules les zones partielles tronquent les accolades
+                                                if (!zone.isPartial) continue;
+                                                const gId = parseInt(group.id);
+                                                if (gId < zone.plage1 || gId > zone.plage2) continue;
                                                 if (zone.deb < zone.fin && fermetureStartPos < fermetureEndPos) {
                                                     if (fermetureStartPos < zone.deb && fermetureEndPos > zone.deb) {
                                                         // Début accolade < début zone : tronquer la fin au début de la zone
@@ -3636,8 +3642,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 {/* Arrows from main green phases */}
                                 {groups.map((fromGroup, fromIndex) => {
                                     const fromId = fromGroup.id;
-                                    const fromOffset = fromGroup.offset % cycleLength;
-                                    const fromGreenEnd = (fromOffset + fromGroup.durations.green) % cycleLength;
+                                    // Use simulated values when hoveredConflict is from simulation
+                                    const simFrom = simulationResult?.simulatedGroups?.find(g => g.id === fromId);
+                                    const useSimValues = hoveredConflict?.isConflict && simFrom && effectiveCycleLength;
+                                    const effCycle = useSimValues ? effectiveCycleLength : cycleLength;
+                                    const fromOffset = useSimValues ? (simFrom.simulatedOffset % effCycle) : (fromGroup.offset % cycleLength);
+                                    const fromGreen = useSimValues ? simFrom.simulatedGreen : fromGroup.durations.green;
+                                    const fromGreenEnd = (fromOffset + fromGreen) % effCycle;
                                     const fromRowY = RULER_HEIGHT + 1 + (fromIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
                                     const fromX = fromGreenEnd * pixelsPerSecond;
 
@@ -3665,18 +3676,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const arrowMarker = isConflictArrow ? 'url(#dep-arrowhead-conflict)' : 'url(#dep-arrowhead)';
                                         const arrowDash = isConflictArrow ? '6,3' : undefined;
 
-                                        const toOffset = toGroup.offset % cycleLength;
+                                        // Use simulated offset for target too
+                                        const simTo = useSimValues ? simulationResult?.simulatedGroups?.find(g => g.id === toId) : null;
+                                        const toOffset = simTo ? (simTo.simulatedOffset % effCycle) : (toGroup.offset % cycleLength);
 
                                         // Calculate gap between end of fromGroup green and start of toGroup green
-                                        let gap = (toOffset - fromGreenEnd + cycleLength) % cycleLength;
+                                        let gap = (toOffset - fromGreenEnd + effCycle) % effCycle;
                                         // If gap is 0, it means they're at the same time, consider it as full cycle
-                                        if (gap === 0) gap = cycleLength;
+                                        if (gap === 0) gap = effCycle;
 
                                         // Don't show arrow if gap > dependencyGap seconds (unless forced by conflict hover)
                                         if (!showForConflict && gap > dependencyGap) return null;
 
                                         // Arrow ends at: end of green + intergreen time
-                                        const arrowEndTime = (fromGreenEnd + intergreenTime) % cycleLength;
+                                        const arrowEndTime = (fromGreenEnd + intergreenTime) % effCycle;
                                         const toX = arrowEndTime * pixelsPerSecond;
                                         const toRowY = RULER_HEIGHT + 1 + (toIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
                                         const cycleEndX = cycleLength * pixelsPerSecond;
