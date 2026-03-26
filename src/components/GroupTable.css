@@ -43,6 +43,11 @@
     height: 30px;
 }
 
+/* Surlignage croisé depuis le diagramme */
+.group-table tr.form-hovered-row td {
+    background-color: rgba(100, 180, 255, 0.12) !important;
+}
+
 .group-table td {
     padding: 0 2px;
     border-bottom: 1px solid #333;

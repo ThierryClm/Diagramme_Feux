@@ -54,7 +54,7 @@ const MatrixInput = ({ value, onChange, className }) => {
     );
 };
 
-const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover, showGroupNames = true, locked = false, onDetach }) => {
+const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover, showGroupNames = true, locked = false, onDetach, hoveredGroupId }) => {
 
     // Bi-carrefour separator index
     const separatorIdx = biCarrefourSeparator != null ? groups.findIndex(g => g.id === biCarrefourSeparator) : -1;
@@ -379,12 +379,12 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                         <tr>
                             <th>/</th>
                             {showGroupNames && <th className="col-name-header">Nom</th>}
-                            {indices.map(i => <th key={i} className={`col-index-header${separatorIdx >= 0 && (i - 1) === separatorIdx ? ' matrix-bi-sep-right' : ''}`}>{i}</th>)}
+                            {indices.map(i => <th key={i} className={`col-index-header${separatorIdx >= 0 && (i - 1) === separatorIdx ? ' matrix-bi-sep-right' : ''}${hoveredGroupId === i ? ' matrix-hovered-col' : ''}`}>{i}</th>)}
                         </tr>
                     </thead>
                     <tbody>
                         {conflictMatrix.map((row, fromIdx) => (
-                            <tr key={fromIdx}>
+                            <tr key={fromIdx} className={hoveredGroupId === fromIdx + 1 ? 'matrix-hovered-row' : ''}>
                                 <td className={`row-header${separatorIdx >= 0 && fromIdx === separatorIdx ? ' matrix-bi-sep-bottom' : ''}`}>{fromIdx + 1}</td>
                                 {showGroupNames && (
                                     <td className={`row-name${separatorIdx >= 0 && fromIdx === separatorIdx ? ' matrix-bi-sep-bottom' : ''}`}>
@@ -419,7 +419,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                                     return (
                                         <td
                                             key={toIdx}
-                                            className={(fromIdx === toIdx ? 'diagonal-cell' : cellClass) + biClass}
+                                            className={(fromIdx === toIdx ? 'diagonal-cell' : cellClass) + biClass + (hoveredGroupId === toIdx + 1 ? ' matrix-hovered-col' : '')}
                                             onMouseEnter={fromIdx !== toIdx && onCellHover ? () => onCellHover({ from: fromIdx + 1, to: toIdx + 1, isConflict: hasInsufficientDelay }) : undefined}
                                             onMouseLeave={fromIdx !== toIdx && onCellHover ? () => onCellHover(null) : undefined}
                                         >

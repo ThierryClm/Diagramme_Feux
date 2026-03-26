@@ -1,7 +1,7 @@
 import React from 'react';
 import './GroupTable.css';
 
-const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = true, onDetach }) => {
+const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = true, onDetach, hoveredGroupId }) => {
 
     const handleStartChange = (id, value) => {
         updateGroupParams(id, { offset: parseInt(value) || 0 });
@@ -67,7 +67,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                         const end = (start + duration) % cycleLength;
 
                         return (
-                            <tr key={g.id}>
+                            <tr key={g.id} className={hoveredGroupId === g.id ? 'form-hovered-row' : ''}>
                                 <td className="col-id">{g.id}</td>
                                 {/* Name Input */}
                                 {showGroupNames && (

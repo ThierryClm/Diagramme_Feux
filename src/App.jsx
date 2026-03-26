@@ -1123,11 +1123,12 @@ function App() {
                     onCellHover={() => {}}
                     showGroupNames={showGroupNamesMatrix}
                     locked={matricesLocked}
+                    hoveredGroupId={hoveredArrowGroupId}
                 />
             </div>
         );
     }, [showFloatingMatrix, conflictMatrix, groups, cycleLength, actionData, activePFId,
-        pfTabs, biCarrefourSeparator, showGroupNamesMatrix, matrixPopup.renderToPopup]);
+        pfTabs, biCarrefourSeparator, showGroupNamesMatrix, matricesLocked, hoveredArrowGroupId, matrixPopup.renderToPopup]);
 
     // Render form into popup window
     useEffect(() => {
@@ -1139,10 +1140,11 @@ function App() {
                     updateGroupParams={updateGroupParams}
                     cycleLength={cycleLength}
                     showGroupNames={showGroupNamesForm}
+                    hoveredGroupId={hoveredArrowGroupId}
                 />
             </div>
         );
-    }, [showFloatingForm, groups, cycleLength, showGroupNamesForm, formPopup.renderToPopup, updateGroupParams]);
+    }, [showFloatingForm, groups, cycleLength, showGroupNamesForm, hoveredArrowGroupId, formPopup.renderToPopup, updateGroupParams]);
 
     // Render traffic table into popup window
     useEffect(() => {
@@ -1477,6 +1479,7 @@ function App() {
                                         cycleLength={cycleLength}
                                         showGroupNames={showGroupNamesForm}
                                         onDetach={() => setShowFloatingForm(v => !v)}
+                                        hoveredGroupId={hoveredArrowGroupId}
                                     />
                                     </div>
                                     <div style={{ marginTop: '2rem' }} onMouseEnter={() => { helpZoneRef.current = 'matrice'; }}>
@@ -1493,6 +1496,7 @@ function App() {
                                             showGroupNames={showGroupNamesMatrix}
                                             locked={matricesLocked}
                                             onDetach={() => setShowFloatingMatrix(v => !v)}
+                                            hoveredGroupId={hoveredArrowGroupId}
                                         />
                                     </div>
                                 </>
@@ -1513,6 +1517,7 @@ function App() {
                                     showGroupNames={showGroupNamesMatrix}
                                     locked={matricesLocked}
                                     onDetach={() => setShowFloatingMatrix(v => !v)}
+                                    hoveredGroupId={hoveredArrowGroupId}
                                 />
                                 </div>
                             )}
@@ -2184,6 +2189,18 @@ function App() {
                             <li><strong>Matrice des temps interverts :</strong> Le menu Mise en page (ou le bouton "Détacher" dans l'onglet Matrice) ouvre la matrice dans une fenêtre séparée, déplaçable sur un autre écran. La matrice reste éditable depuis la fenêtre détachée.</li>
                             <li><strong>Confirmation à la fermeture :</strong> Si le projet a été modifié sans être sauvegardé, le navigateur affiche une confirmation avant de fermer l'onglet ou la fenêtre.</li>
                         </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Options de contraste</h4>
+                        <p>Le menu Affichage → Options de contraste permet de choisir parmi 4 thèmes de couleurs pour l'interface :</p>
+                        <ul>
+                            <li><strong>Blanc sur fond noir :</strong> Thème par défaut, texte clair sur fond sombre. Adapté au travail prolongé en environnement peu éclairé.</li>
+                            <li><strong>Noir sur fond blanc :</strong> Thème clair, texte noir sur fond blanc. Proche du rendu à l'impression.</li>
+                            <li><strong>Haut contraste :</strong> Fond bleu marine, titres jaunes, noms cyan. Conçu pour une lisibilité maximale, notamment en conditions de forte luminosité.</li>
+                            <li><strong>Ambre :</strong> Fond anthracite, titres et accents ambrés/dorés. Thème chaleureux qui réduit la fatigue visuelle.</li>
+                        </ul>
+                        <p>Le choix du thème est sauvegardé automatiquement dans le navigateur et propagé aux fenêtres détachées (matrice, formulaire, données trafic, conditions micro, variables micro, image du carrefour).</p>
                     </section>
 
                     <section id="help-config-groupes" className="help-section">

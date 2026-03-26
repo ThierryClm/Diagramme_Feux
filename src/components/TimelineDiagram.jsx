@@ -3669,9 +3669,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 {/* Arrows from main green phases */}
                                 {groups.map((fromGroup, fromIndex) => {
                                     const fromId = fromGroup.id;
-                                    // Use simulated values when hoveredConflict is from simulation
+                                    // Use simulated values when simulation is active
                                     const simFrom = simulationResult?.simulatedGroups?.find(g => g.id === fromId);
-                                    const useSimValues = hoveredConflict?.isConflict && simFrom && effectiveCycleLength;
+                                    const useSimValues = simFrom && effectiveCycleLength;
                                     const effCycle = useSimValues ? effectiveCycleLength : cycleLength;
                                     const fromOffset = useSimValues ? (simFrom.simulatedOffset % effCycle) : (fromGroup.offset % cycleLength);
                                     const fromGreen = useSimValues ? simFrom.simulatedGreen : fromGroup.durations.green;
@@ -3704,8 +3704,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const arrowDash = isConflictArrow ? '6,3' : undefined;
 
                                         // Use simulated offset for target too
-                                        const simTo = useSimValues ? simulationResult?.simulatedGroups?.find(g => g.id === toId) : null;
-                                        const toOffset = simTo ? (simTo.simulatedOffset % effCycle) : (toGroup.offset % cycleLength);
+                                        const simTo = simulationResult?.simulatedGroups?.find(g => g.id === toId);
+                                        const toOffset = (useSimValues && simTo) ? (simTo.simulatedOffset % effCycle) : (toGroup.offset % cycleLength);
+
+                                        // Skip if either group is escamoted or has no green in simulation
+                                        if (useSimValues && (simFrom?.isEscamoted || simFrom?.simulatedGreen <= 0)) return null;
+                                        if (useSimValues && simTo && (simTo.isEscamoted || simTo.simulatedGreen <= 0)) return null;
 
                                         // Calculate gap between end of fromGroup green and start of toGroup green
                                         let gap = (toOffset - fromGreenEnd + effCycle) % effCycle;
@@ -3719,7 +3723,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         const arrowEndTime = (fromGreenEnd + intergreenTime) % effCycle;
                                         const toX = arrowEndTime * pixelsPerSecond;
                                         const toRowY = RULER_HEIGHT + 1 + (toIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
-                                        const cycleEndX = cycleLength * pixelsPerSecond;
+                                        const cycleEndX = effCycle * pixelsPerSecond;
 
                                         // If arrow would go backwards, split into two segments
                                         if (fromX > toX) {

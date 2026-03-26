@@ -75,6 +75,21 @@
     background: #333 !important;
 }
 
+/* Surlignage croisé depuis le diagramme */
+.matrix-hovered-row td,
+.matrix-hovered-row th {
+    background-color: rgba(100, 180, 255, 0.12) !important;
+}
+
+th.matrix-hovered-col,
+td.matrix-hovered-col {
+    background-color: rgba(100, 180, 255, 0.12) !important;
+}
+
+.matrix-hovered-row td.matrix-hovered-col {
+    background-color: rgba(100, 180, 255, 0.25) !important;
+}
+
 .diagonal {
     color: #666;
 }
