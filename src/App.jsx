@@ -446,6 +446,7 @@ function App() {
         setDiagramHeight, setFloatingCrop, setFloatingZoom,
         setShowComments, setShowRemarks, setIntersectionName,
         loadFullState, getFullState, saveProject,
+        dossierSections, setDossierSections,
         lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
         lastImageDirectoryRef, lastGreenWaveDirectoryRef,
         saveDirectoryHandle, loadDirectoryHandle,

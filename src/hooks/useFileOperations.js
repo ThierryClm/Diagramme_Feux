@@ -12,6 +12,7 @@ const useFileOperations = ({
     setDiagramHeight, setFloatingCrop, setFloatingZoom,
     setShowComments, setShowRemarks, setIntersectionName,
     loadFullState, getFullState, saveProject,
+    dossierSections, setDossierSections,
     lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
     lastImageDirectoryRef, lastGreenWaveDirectoryRef,
     saveDirectoryHandle, loadDirectoryHandle,
@@ -109,6 +110,11 @@ const useFileOperations = ({
             const pfList = data.pfTabs || [];
             const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
             setShowRemarks(!!hasRemarks);
+
+            // Restaurer les options du dossier d'impression
+            if (data.dossierSections && Object.keys(data.dossierSections).length > 0) {
+                setDossierSections(data.dossierSections);
+            }
 
         } catch (e) {
             if (e.name !== 'AbortError') {
@@ -210,6 +216,11 @@ const useFileOperations = ({
             const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
             setShowRemarks(!!hasRemarks);
 
+            // Restaurer les options du dossier d'impression
+            if (data.dossierSections && Object.keys(data.dossierSections).length > 0) {
+                setDossierSections(data.dossierSections);
+            }
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier:', e);
@@ -252,6 +263,7 @@ const useFileOperations = ({
                 diagramHeight: diagramHeight,
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
+                dossierSections: dossierSections,
                 // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
                     open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
@@ -349,6 +361,7 @@ const useFileOperations = ({
                 diagramHeight: diagramHeight,
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
+                dossierSections: dossierSections,
                 // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
                     open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
