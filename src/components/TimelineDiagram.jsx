@@ -599,6 +599,21 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         simulationFilter.has(action.id)
     ) : [];
 
+    // Groupes impliqués dans des actions "Escamotage" (GF source + actGf cibles) → afficher "e" automatiquement
+    const escamotageGroupIds = new Set();
+    actionData.forEach(action => {
+        if (action.action === 'Escamotage' && action.gf) {
+            const gfId = parseInt(action.gf.toString().replace(/[Gg]/g, '').trim());
+            if (gfId) escamotageGroupIds.add(gfId);
+            [action.actGf1, action.actGf1Gf2, action.actGf1Gf3, action.actGf1Gf4].forEach(actGf => {
+                if (actGf) {
+                    const id = parseInt(actGf.toString().replace(/[Gg]/g, '').trim());
+                    if (id) escamotageGroupIds.add(id);
+                }
+            });
+        }
+    });
+
     // Precompute shifted zone ranges for brace truncation (SELECTED/checked zones only - simulation mode)
     const braceZoneRanges = [];
     selectedEscamotageDePhase.forEach(a => {
@@ -966,8 +981,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             }}
                                         >
                                             {g.name || '-'}
-                                            {g.phaseFlag && (
-                                                <span className="phase-flag-indicator">{g.phaseFlag}</span>
+                                            {(g.phaseFlag || (!g.phaseFlag && escamotageGroupIds.has(g.id))) && (
+                                                <span className="phase-flag-indicator">{g.phaseFlag || 'e'}</span>
                                             )}
                                         </span>
                                         {phaseFlagTooltipId === g.id && (

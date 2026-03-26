@@ -1531,16 +1531,21 @@
     color: #000 !important;
 }
 
-/* Hachures escamotage bien visibles à l'impression */
+/* Escamotage de phase à l'impression : bordure visible, pas de hachures */
 .print-diagram-content .escamotage-overlay {
+    border: 2px solid rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Escamotage (groupe) à l'impression : hachures bien visibles */
+.print-diagram-content .escamotage-group-overlay {
     background: repeating-linear-gradient(
-        45deg,
+        -45deg,
         transparent,
         transparent 3px,
-        rgba(0, 0, 0, 0.3) 3px,
-        rgba(0, 0, 0, 0.3) 5px
+        rgba(0, 0, 0, 0.35) 3px,
+        rgba(0, 0, 0, 0.35) 5px
     ) !important;
-    border: 2px solid rgba(0, 0, 0, 0.6) !important;
+    border: 2px dashed rgba(0, 0, 0, 0.6) !important;
 }
 
 /* Cadre du diagramme en noir */
