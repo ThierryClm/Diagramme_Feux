@@ -2193,7 +2193,7 @@ function App() {
                                 <ul>
                                     <li><em>VL :</em> Véhicules légers (voitures, motos)</li>
                                     <li><em>TC :</em> Transports en commun (bus, tramway)</li>
-                                    <li><em>Cycliste :</em> Pistes cyclables</li>
+                                    <li><em>Cycle :</em> Piste ou traversée cyclable</li>
                                     <li><em>Piéton :</em> Passages piétons</li>
                                 </ul>
                             </li>
@@ -2220,12 +2220,12 @@ function App() {
                     <section id="help-diagramme" className="help-section">
                         <h4>Diagramme</h4>
                         <ul>
-                            <li><strong>DA (Délai d'approche) :</strong> Temps nécessaire pour qu'un véhicule atteigne la ligne de feu depuis le détecteur d'approche</li>
+                            <li><strong>DA :</strong> Correspond au code trajet d'une ligne de bus en délai d'approche, communément noté T0, T1, T2...</li>
                             <li><strong>Déb (Début de vert) :</strong> Position de départ du vert dans le cycle (en secondes depuis le début du cycle)</li>
                             <li><strong>Fin (Fin de vert) :</strong> Position de fin du vert dans le cycle (en secondes depuis le début du cycle)</li>
                             <li><strong>V (Vert) :</strong> Durée du feu vert, calculée automatiquement comme la différence entre Fin et Déb</li>
-                            <li><strong>Indicateur aiguillage/escamotage :</strong> Cliquez sur un nom de groupe puis utilisez <em>Alt+A</em> (aiguillage) ou <em>Alt+E</em> (escamotage) pour marquer le groupe. Un petit "a" ou "e" apparaît à côté du nom. Les conflits où ce groupe est en première position (GFx dans "GFx ↔ GFy") sont alors grisés et non comptabilisés, ce qui peut permettre de valider le plan de feux.</li>
-                            <li><strong>Mode simulation :</strong> En mode simulation (onglet Simulation actif), la durée du cycle est affichée en lecture seule ("Cycle nnn secondes") et ne peut pas être modifiée.</li>
+                            <li><strong>Indicateur aiguillage/escamotage :</strong> Lorsqu'une action <em>Escamotage</em> est définie dans les conditions de micro-régulation, un petit "e" s'affiche automatiquement en haut à droite du nom des groupes concernés (GF source et Action GF cibles). Les conflits où ce groupe est en première position (GFx dans "GFx ↔ GFy") sont alors grisés et non comptabilisés, ce qui peut permettre de valider le plan de feux. Il est également possible de poser manuellement cet indicateur : cliquez sur un nom de groupe puis utilisez <em>Alt+A</em> (aiguillage) ou <em>Alt+E</em> (escamotage) pour marquer le groupe. Un indicateur posé manuellement n'est pas écrasé par l'automatisme.</li>
+                            <li><strong>Mode simulation :</strong> Lorsque l'onglet Simulation est actif, le diagramme passe en mode lecture seule : les valeurs DA, Déb, Fin et la durée du cycle ne sont plus modifiables. Le diagramme affiche en temps réel l'effet des actions de micro-régulation cochées dans le panneau de simulation. Les zones contractées (Adaptatif vertical, Escamotage de phase) réduisent visuellement le cycle, les fermetures anticipées ajustent les fins de vert, et les actions de micro-régulation (Priorité piétons, Signal aide conduite, Flèche d'anticipation) suivent les décalages. Ce mode permet de vérifier le comportement du carrefour sous différentes combinaisons d'actions avant la mise en service.</li>
                         </ul>
                     </section>
 
@@ -2452,6 +2452,21 @@ function App() {
                             <li><span style={{color: '#ff9800'}}>Orange</span> : 76-85% (chargé)</li>
                             <li><span style={{color: '#f44336'}}>Rouge</span> : 86-100% (saturé)</li>
                             <li><span style={{color: '#000', background: '#ff6b6b', padding: '0 4px'}}>Noir/Rouge</span> : &gt; 100% (sursaturé)</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Simulation</h4>
+                        <p>L'onglet Simulation permet de tester l'effet des actions de micro-régulation sur le diagramme.</p>
+                        <ul>
+                            <li><strong>Actions cochables :</strong> Chaque action définie dans les conditions de micro-régulation peut être cochée individuellement. Le diagramme se met à jour en temps réel pour visualiser l'effet combiné des actions sélectionnées.</li>
+                            <li><strong>Ordre de traitement :</strong> Les actions sont traitées dans l'ordre suivant : Ouverture anticipée → Fermeture anticipée → Escamotage (groupe) → Adaptatif vertical → Escamotage de phase. Chaque action s'applique sur le diagramme virtuel résultant des actions précédentes.</li>
+                            <li><strong>Contractions cumulatives :</strong> L'Adaptatif vertical et l'Escamotage de phase contractent le diagramme. Les contractions s'ajustent aux contractions précédentes pour éviter les doubles déductions.</li>
+                            <li><strong>Fermeture anticipée et Action GF :</strong> Lorsqu'une fermeture anticipée pointe sur la fin du vert d'un groupe cible (Action GF), la fin de ce vert est réduite. Si elle pointe sur le début, le début est avancé. La durée effective tient compte du chevauchement avec les zones AV/EP.</li>
+                            <li><strong>Actions grisées :</strong> Les actions dont la plage [Déb, Fin] tombe entièrement dans une zone supprimée (AV ou EP) sont affichées en grisé dans la liste.</li>
+                            <li><strong>Conflits simulés :</strong> Le tableau des conflits se met à jour selon les temps de vert simulés. Les groupes réduits à un vert nul sont exclus des conflits. Le survol d'un conflit affiche une flèche rouge pointillée dans le diagramme depuis les positions simulées.</li>
+                            <li><strong>Données trafic :</strong> Les données V.Utile, Cap.U, Retard et File d'attente sont toujours affichées. Les valeurs inhibées par les actions cochées apparaissent en grisé.</li>
+                            <li><strong>Tout cocher / Tout décocher :</strong> Permet de sélectionner ou désélectionner rapidement toutes les actions.</li>
                         </ul>
                     </section>
 
