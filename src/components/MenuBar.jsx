@@ -160,6 +160,14 @@ const MenuBar = ({
                     disabled: !hasPermission('canSave')
                 }] : [{ label: 'Sauvegarder', action: 'save', disabled: !hasPermission('canSave') }]),
                 { type: 'separator' },
+                {
+                    label: 'Importer programmation contrôleur',
+                    type: 'submenu',
+                    submenuId: 'importController',
+                    submenu: [
+                        { label: 'Maestro (.cmpx)...', action: 'importMaestro' }
+                    ]
+                },
                 ...(recentImportDirs.length > 0 ? [{
                     label: 'Importer Excel...',
                     type: 'submenu',

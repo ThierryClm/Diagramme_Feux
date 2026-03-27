@@ -19,6 +19,7 @@ import UserManagerModal from './components/UserManagerModal';
 import ExternalLinksModal from './components/ExternalLinksModal';
 import PropertiesPanel from './components/PropertiesPanel';
 import { calculateSimulatedDiagram } from './utils/simulationCalculator';
+import { importMaestroFile } from './utils/maestroImporter';
 import usePopupWindow from './hooks/usePopupWindow';
 import useFloatingLegend from './hooks/useFloatingLegend';
 import useFloatingMatrix from './hooks/useFloatingMatrix';
@@ -697,6 +698,9 @@ function App() {
             case 'import':
                 handleImportExcelDirect();
                 break;
+            case 'importMaestro':
+                handleImportMaestro();
+                break;
             case 'browseImport':
                 setImportFile(null);
                 setImportError('');
@@ -1064,6 +1068,56 @@ function App() {
         recentImportDirs, addRecentDirectory,
         addToRecentFiles
     });
+
+    // Import Maestro .cmpx
+    const handleImportMaestro = async () => {
+        try {
+            let file;
+            if (window.showOpenFilePicker) {
+                const [fileHandle] = await safeShowOpenFilePicker({
+                    types: [{
+                        description: 'Fichiers Maestro (.cmpx)',
+                        accept: { '*/*': ['.cmpx'] }
+                    }],
+                    multiple: false
+                });
+                file = await fileHandle.getFile();
+            } else {
+                // Fallback: input file classique
+                file = await new Promise((resolve, reject) => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.cmpx';
+                    input.onchange = () => {
+                        if (input.files[0]) resolve(input.files[0]);
+                        else reject(new Error('Aucun fichier sélectionné'));
+                    };
+                    input.click();
+                });
+            }
+
+            const importedData = await importMaestroFile(file);
+
+            loadFullState({
+                projectName: importedData.intersectionName,
+                intersectionName: importedData.intersectionName,
+                groups: importedData.groups,
+                cycleLength: importedData.cycleLength,
+                conflictMatrix: importedData.conflictMatrix
+            });
+
+            let message = `Import Maestro réussi !\n\n${importedData.groups.length} groupes importés\nDurée de cycle : ${importedData.cycleLength}s`;
+            if (importedData.warnings && importedData.warnings.length > 0) {
+                message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
+            }
+            alert(message);
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur import Maestro:', e);
+                alert('Erreur lors de l\'import Maestro: ' + e.message);
+            }
+        }
+    };
 
     // Keyboard shortcuts (Ctrl+Z/Y, Ctrl+N/O/S)
     const handleMenuActionRef = useRef(handleMenuAction);
