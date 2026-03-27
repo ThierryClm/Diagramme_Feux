@@ -99,11 +99,11 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
 
     // showFloatingConditions and showFloatingVariables are now passed as props
 
-    // Compute visible micro fields: filled fields + 1 empty, max 30
+    // Compute visible micro fields: filled fields + 1 empty, max 50
     const visibleMicroFields = useMemo(() => {
         const lastFilledIndex = microCustomFields.reduce((acc, f, i) => f !== '' ? i : acc, -1);
         // Show all filled fields + 1 empty field (min 1 field shown)
-        const count = Math.min(Math.max(lastFilledIndex + 2, 1), 30);
+        const count = Math.min(Math.max(lastFilledIndex + 2, 1), 50);
         return microCustomFields.slice(0, count);
     }, [microCustomFields]);
 

@@ -1098,15 +1098,33 @@ function App() {
 
             const importedData = await importMaestroFile(file);
 
+            // Construire les pfTabs avec les variables micro et actions
+            const pfData = importedData.actionData || Array.from({ length: 30 }, (_, i) => ({
+                id: i + 1, gf: '', action: '', description: '', deb: '', fin: '',
+                abrv: '', micro: '', plage1: '', plage2: '',
+                actGf1: '', actGf1Gf2: '', actGf1Gf3: '', actGf1Gf4: ''
+            }));
+            const microFields = importedData.microVariables || [];
+            const actionsCount = pfData.filter(a => a.gf || a.action).length;
+
             loadFullState({
                 projectName: importedData.intersectionName,
                 intersectionName: importedData.intersectionName,
                 groups: importedData.groups,
                 cycleLength: importedData.cycleLength,
-                conflictMatrix: importedData.conflictMatrix
+                conflictMatrix: importedData.conflictMatrix,
+                pfTabs: [{
+                    id: 1,
+                    name: 'PF1',
+                    data: pfData,
+                    microCustomFields: microFields
+                }],
+                projectProperties: importedData.projectProperties || {}
             });
 
             let message = `Import Maestro réussi !\n\n${importedData.groups.length} groupes importés\nDurée de cycle : ${importedData.cycleLength}s`;
+            if (actionsCount > 0) message += `\n${actionsCount} conditions micro importées`;
+            if (microFields.length > 0) message += `\n${microFields.length} variables micro importées`;
             if (importedData.warnings && importedData.warnings.length > 0) {
                 message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
             }
