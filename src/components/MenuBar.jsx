@@ -165,7 +165,11 @@ const MenuBar = ({
                     type: 'submenu',
                     submenuId: 'importController',
                     submenu: [
-                        { label: 'Maestro (.cmpx)...', action: 'importMaestro' }
+                        { label: 'Maestro (.cmpx)...', action: 'importMaestro' },
+                        { label: 'Traffy', disabled: true },
+                        { label: 'Swarco', disabled: true },
+                        { label: 'Fareco', disabled: true },
+                        { label: 'SEA', disabled: true }
                     ]
                 },
                 ...(recentImportDirs.length > 0 ? [{

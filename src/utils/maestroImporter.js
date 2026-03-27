@@ -329,7 +329,7 @@ export async function importMaestroFile(file) {
  * Extraire les lignes bus et associer au champ DA des groupes
  * Format dans le CMP : "LIGNE XX VYY" → associe le code trajet "T" au groupe VYY
  */
-function extractBusLines(cmpData, groups) {
+export function extractBusLines(cmpData, groups) {
     // Scanner les chaînes "LIGNE" dans le fichier
     let str = '';
     for (let i = 0; i < cmpData.length; i++) {
@@ -360,7 +360,7 @@ function extractBusLines(cmpData, groups) {
 /**
  * Extraire les informations supplémentaires du fichier CMP vers les variables micro
  */
-function extractMicroVariables(cmpData, variables, actionDescriptions) {
+export function extractMicroVariables(cmpData, variables, actionDescriptions) {
     let str = '', startPos = 0;
     for (let i = 0; i < cmpData.length; i++) {
         const c = cmpData[i];
@@ -397,7 +397,7 @@ function extractMicroVariables(cmpData, variables, actionDescriptions) {
  * Matrice de sécurité : entrées 4 octets [groupeA][groupeB][sec_A→B][sec_B→A]
  * Reconversion : intervert = sec + 3 si source V/B, sec si source P
  */
-function parseIntergreenMatrix(cmpData, numGroups, conflictMatrix, groups, cmpToGroupIdx, warnings) {
+export function parseIntergreenMatrix(cmpData, numGroups, conflictMatrix, groups, cmpToGroupIdx, warnings) {
     const totalGroups = groups.length;
     let bestPos = -1, bestScore = 0;
 
