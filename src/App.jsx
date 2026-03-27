@@ -1065,25 +1065,29 @@ function App() {
         addToRecentFiles
     });
 
-    // Keyboard shortcuts for undo (Ctrl+Z) and redo (Ctrl+Y or Ctrl+Shift+Z)
+    // Keyboard shortcuts (Ctrl+Z/Y, Ctrl+N/O/S)
+    const handleMenuActionRef = useRef(handleMenuAction);
+    handleMenuActionRef.current = handleMenuAction;
     useEffect(() => {
         const handleKeyDown = (e) => {
+            const tag = e.target.tagName;
+            const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
             if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
                 e.preventDefault();
                 undo();
             } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
                 e.preventDefault();
                 redo();
-            } else if (e.key === 'F1') {
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'n' && !isInput) {
                 e.preventDefault();
-                setHelpModal(true);
-                const zone = helpZoneRef.current;
-                if (zone) {
-                    setTimeout(() => {
-                        const el = document.getElementById(`help-${zone}`);
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 100);
-                }
+                handleMenuActionRef.current('new');
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+                e.preventDefault();
+                handleMenuActionRef.current('open');
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                handleMenuActionRef.current('save');
             }
         };
 
@@ -1142,10 +1146,12 @@ function App() {
                     cycleLength={cycleLength}
                     showGroupNames={showGroupNamesForm}
                     hoveredGroupId={hoveredArrowGroupId}
+                    startDrag={startDrag}
+                    endDrag={endDrag}
                 />
             </div>
         );
-    }, [showFloatingForm, groups, cycleLength, showGroupNamesForm, hoveredArrowGroupId, formPopup.renderToPopup, updateGroupParams]);
+    }, [showFloatingForm, groups, cycleLength, showGroupNamesForm, hoveredArrowGroupId, startDrag, endDrag, formPopup.renderToPopup, updateGroupParams]);
 
     // Render traffic table into popup window
     useEffect(() => {
@@ -1481,6 +1487,8 @@ function App() {
                                         showGroupNames={showGroupNamesForm}
                                         onDetach={() => setShowFloatingForm(v => !v)}
                                         hoveredGroupId={hoveredArrowGroupId}
+                                        startDrag={startDrag}
+                                        endDrag={endDrag}
                                     />
                                     </div>
                                     <div style={{ marginTop: '2rem' }} onMouseEnter={() => { helpZoneRef.current = 'matrice'; }}>

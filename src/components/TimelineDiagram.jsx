@@ -1,4 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
+import LocalInput from './LocalInput';
 import './TimelineDiagram.css';
 
 const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
@@ -946,7 +947,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         const end = isSimEscamoted ? 0 : ((start + duration) % (simGroup ? effectiveCycleLength : cycleLength));
                         // Show both values if green duration > 0 (and not escamoted during simulation)
                         // Hide when green is reduced to 0 (e.g. by Fermeture anticipée)
-                        const hasValue = !isSimEscamoted && duration > 0 && (start > 0 || end > 0);
+                        const hasValue = !isSimEscamoted && duration > 0;
 
                         const isLabelHighlighted = hoveredArrowGroupId === g.id;
                         return (
@@ -993,13 +994,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     </div>
                                 )}
                                 {(g.type === 'V' || g.type === 'B') ? (
-                                    <input
-                                        type="text"
+                                    <LocalInput
                                         className="input-da"
                                         value={g.da || ''}
-                                        onChange={(e) => updateGroupParams(g.id, { da: e.target.value.slice(0, 2) })}
+                                        onCommit={(val) => updateGroupParams(g.id, { da: val.slice(0, 2) })}
                                         onClick={(e) => e.stopPropagation()}
-                                        onFocus={(e) => e.target.select()}
+                                        selectOnFocus
                                         title="Code trajet"
                                         maxLength={2}
                                         placeholder=""
@@ -1009,25 +1009,25 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 )}
                                 {g.type ? (
                                     <>
-                                        <input
+                                        <LocalInput
                                             type="number"
                                             className="input-time-sm"
                                             value={hasValue ? start : ''}
-                                            onChange={(e) => !simulationResult && handleStartChange(g.id, e.target.value)}
+                                            onCommit={(val) => !simulationResult && handleStartChange(g.id, val)}
                                             readOnly={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
-                                            onFocus={(e) => e.target.select()}
+                                            selectOnFocus
                                             placeholder=""
                                             style={simulationResult ? { cursor: 'default', background: 'transparent', border: 'none' } : undefined}
                                         />
-                                        <input
+                                        <LocalInput
                                             type="number"
                                             className="input-time-sm"
                                             value={hasValue ? end : ''}
-                                            onChange={(e) => !simulationResult && handleEndChange(g.id, e.target.value, start)}
+                                            onCommit={(val) => !simulationResult && handleEndChange(g.id, val, start)}
                                             readOnly={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
-                                            onFocus={(e) => e.target.select()}
+                                            selectOnFocus
                                             style={simulationResult
                                                 ? { color: duration < g.minGreen ? '#ff4d4d' : 'inherit', cursor: 'default', background: 'transparent', border: 'none' }
                                                 : { color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }

@@ -1,4 +1,5 @@
 import React from 'react';
+import LocalInput from './LocalInput';
 import './GroupTable.css';
 
 const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = true, onDetach, hoveredGroupId }) => {
@@ -72,12 +73,11 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                                 {/* Name Input */}
                                 {showGroupNames && (
                                     <td>
-                                        <input
-                                            type="text"
+                                        <LocalInput
                                             className="input-name-cell"
                                             value={g.name}
-                                            onChange={(e) => updateGroupParams(g.id, { name: e.target.value })}
-                                            onFocus={(e) => { if (/^Groupe \d+$/.test(g.name)) e.target.select(); }}
+                                            onCommit={(val) => updateGroupParams(g.id, { name: val })}
+                                            selectOnFocus={/^Groupe \d+$/.test(g.name)}
                                         />
                                     </td>
                                 )}
@@ -127,22 +127,22 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                                 </td>
                                 {/* Min Green */}
                                 <td>
-                                    <input
+                                    <LocalInput
                                         type="number"
                                         className="input-mini"
                                         value={g.minGreen}
-                                        onChange={(e) => handleMinGreenChange(g.id, e.target.value)}
-                                        onFocus={(e) => e.target.select()}
+                                        onCommit={(val) => handleMinGreenChange(g.id, val)}
+                                        selectOnFocus
                                     />
                                 </td>
                                 {/* Yellow Duration */}
                                 <td>
-                                    <input
+                                    <LocalInput
                                         type="number"
                                         className="input-yellow"
                                         value={g.durations.orange}
-                                        onChange={(e) => handleYellowChange(g.id, e.target.value)}
-                                        onFocus={(e) => e.target.select()}
+                                        onCommit={(val) => handleYellowChange(g.id, val)}
+                                        selectOnFocus
                                     />
                                 </td>
                             </tr>
