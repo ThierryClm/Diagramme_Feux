@@ -1434,3 +1434,6 @@ function parseNumber(value, defaultValue) {
     const num = parseFloat(value);
     return isNaN(num) ? defaultValue : num;
 }
+
+// Named exports for pure functions (used by unit tests)
+export { normalizeActionName, colNameToIndex, getColOffset };

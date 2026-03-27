@@ -319,4 +319,260 @@ describe('calculateSimulatedDiagram', () => {
             expect(r4.simulatedCycleLength).toBe(75); // 97 - 8 - 14
         });
     });
+
+    describe('Ouverture anticipée edge cases', () => {
+        it('ouverture wrapping autour de la limite du cycle (deb > fin)', () => {
+            // cycle=100, group at offset=5, ouverture deb=95 fin=5
+            // shiftAmount = fin < deb → fin + cycle - deb = 5 + 100 - 95 = 10
+            // newOffset = (5 - 10 + 100) % 100 = 95
+            // newGreen = 20 + 10 = 30
+            const groups = [makeGroup(1, 5, 20)];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Ouverture anticipée', deb: '95', fin: '5' }),
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 100, emptyMatrix(1));
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            expect(g1.simulatedOffset).toBe(95); // (5 - 10 + 100) % 100
+            expect(g1.simulatedGreen).toBe(30);  // 20 + 10
+        });
+
+        it('ouverture sur groupe escamoté est ignorée', () => {
+            // Group 1 is escamoted by an unselected Escamotage action (no deb/fin → full hide)
+            // Then an Ouverture on group 1 should be skipped because isEscamoted=true
+            const groups = [makeGroup(1, 10, 20)];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Escamotage' }), // unselected → hides group 1
+                makeAction(2, { gf: '1', action: 'Ouverture anticipée', deb: '5', fin: '10' }),
+            ];
+            // Only action 2 is selected; action 1 is unselected Escamotage
+            const result = calculateSimulatedDiagram(groups, actions, [2], 80, emptyMatrix(1));
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            expect(g1.isEscamoted).toBe(true);
+            expect(g1.simulatedGreen).toBe(0);
+            expect(g1.simulatedOffset).toBe(10); // unchanged, ouverture skipped
+        });
+
+        it('multiples ouvertures sur le même groupe se cumulent', () => {
+            // Two ouvertures on group 1: each shifts start earlier by 5s
+            const groups = [makeGroup(1, 20, 15)];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Ouverture anticipée', deb: '15', fin: '20' }), // 5s
+                makeAction(2, { gf: '1', action: 'Ouverture anticipée', deb: '10', fin: '15' }), // 5s
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2], 80, emptyMatrix(1));
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            // First ouverture: offset 20→15, green 15→20
+            // Second ouverture: offset 15→10, green 20→25
+            expect(g1.simulatedOffset).toBe(10);
+            expect(g1.simulatedGreen).toBe(25);
+        });
+    });
+
+    describe('Fermeture anticipée edge cases', () => {
+        it('FA pointant sur le début du vert de la cible → glissement (shift offset)', () => {
+            // GF1: [0, 30], FA [25, 30] (5s), actGf1 = 2
+            // GF2: [40, 55] (offset=40, green=15)
+            // actionMid = (25 + 2) = 27, greenEnd of GF2 = 55, greenStart of GF2 = 40
+            // distToEnd(27, 55) = 28, distToStart(27, 40) = 13 → closer to start → glissement
+            // GF2: offset = 40-5=35, green = 15+5=20
+            const groups = [makeGroup(1, 0, 30), makeGroup(2, 40, 15)];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Fermeture anticipée', deb: '25', fin: '30', actGf1: '2' }),
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 80, emptyMatrix(2));
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            const g2 = result.simulatedGroups.find(g => g.id === 2);
+            expect(g1.simulatedGreen).toBe(25); // 30 - 5
+            expect(g2.simulatedOffset).toBe(35); // glissement: 40 - 5
+            expect(g2.simulatedGreen).toBe(20);  // 15 + 5
+        });
+
+        it('multiples FA réduisant le même groupe source', () => {
+            // Two FAs on group 1: each reduces green by their respective amounts
+            const groups = [makeGroup(1, 0, 30)];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Fermeture anticipée', deb: '25', fin: '30' }), // 5s
+                makeAction(2, { gf: '1', action: 'Fermeture anticipée', deb: '20', fin: '25' }), // 5s
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2], 80, emptyMatrix(1));
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            // First FA: green 30 - 5 = 25
+            // Second FA: green 25 - 5 = 20
+            expect(g1.simulatedGreen).toBe(20);
+        });
+
+        it('FA sur groupe avec vert déjà réduit à 0 reste à 0', () => {
+            // Group 1 green is 5, FA removes 10 → clamped to 0
+            const groups = [makeGroup(1, 0, 5)];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Fermeture anticipée', deb: '0', fin: '10' }), // 10s > 5s green
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 80, emptyMatrix(1));
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            expect(g1.simulatedGreen).toBe(0); // max(0, 5 - 10) = 0
+        });
+    });
+
+    describe('Adaptatif vertical edge cases', () => {
+        it('AV partiel avec plage1/plage2 ne réduit que les groupes dans la plage', () => {
+            // 3 groups, AV with plage1=2, plage2=2 → only group 2 affected
+            const groups = [makeGroup(1, 0, 20), makeGroup(2, 30, 15), makeGroup(3, 55, 10)];
+            const actions = [
+                makeAction(1, { action: 'Adaptatif vertical', deb: '25', fin: '30', plage1: '2', plage2: '2' }),
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 80, emptyMatrix(3));
+            // Partial mode: cycle unchanged
+            expect(result.simulatedCycleLength).toBe(80);
+            // Group 1: id=1, not in plage [2,2] → unchanged
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            expect(g1.simulatedOffset).toBe(0);
+            expect(g1.simulatedGreen).toBe(20);
+            // Group 2: id=2, in plage [2,2], offset=30 >= fin=30 → shifted left by 5
+            const g2 = result.simulatedGroups.find(g => g.id === 2);
+            expect(g2.simulatedOffset).toBe(25); // 30 - 5
+            // Group 3: id=3, not in plage [2,2] → unchanged
+            const g3 = result.simulatedGroups.find(g => g.id === 3);
+            expect(g3.simulatedOffset).toBe(55);
+            expect(g3.simulatedGreen).toBe(10);
+        });
+
+        it('deux AV consécutifs cumulent correctement les contractions', () => {
+            const groups = [makeGroup(1, 0, 20), makeGroup(2, 50, 15)];
+            const actions = [
+                makeAction(1, { action: 'Adaptatif vertical', deb: '25', fin: '30' }), // 5s
+                makeAction(2, { action: 'Adaptatif vertical', deb: '40', fin: '45' }), // raw 5s, adjusted: 35-40
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2], 80, emptyMatrix(2));
+            // AV1: removes 5s → cycle 75
+            // AV2: deb adjusted 40→35, fin adjusted 45→40, removes 5s → cycle 70
+            expect(result.simulatedCycleLength).toBe(70);
+            expect(result.contractions).toHaveLength(2);
+            // Group 2: originally offset=50
+            // After AV1 [25,30]: offset >= 30 → shifted by 5 → 45
+            // After AV2 [35,40]: offset 45 >= 40 → shifted by 5 → 40
+            const g2 = result.simulatedGroups.find(g => g.id === 2);
+            expect(g2.simulatedOffset).toBe(40);
+        });
+
+        it('zone AV chevauchant le vert d un groupe coupe correctement le vert', () => {
+            // Group 1: offset=10, green=20 → green [10, 30]
+            // AV zone [25, 35] overlaps green [10, 30] by 5s (from 25 to 30)
+            const groups = [makeGroup(1, 10, 20), makeGroup(2, 50, 10)];
+            const actions = [
+                makeAction(1, { action: 'Adaptatif vertical', deb: '25', fin: '35' }), // 10s
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 80, emptyMatrix(2));
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            // Green [10, 30], AV [25, 35]: green extends into AV zone by 5s (30-25)
+            // Case 1 in code: offset(10) < deb(25) && greenEnd(30) > deb(25) → cut = min(30,35)-25 = 5
+            expect(g1.simulatedGreen).toBe(15); // 20 - 5
+            expect(g1.simulatedOffset).toBe(10); // unchanged (starts before deb)
+            // Cycle reduced by 10
+            expect(result.simulatedCycleLength).toBe(70);
+        });
+    });
+
+    describe('Escamotage de phase edge cases', () => {
+        it('EP après AV cumule correctement (deuxième contraction ajustée)', () => {
+            // AV [30, 38] = 8s, then EP [60, 70] raw → adjusted by AV contraction
+            // adjustForContractions(60) = 60-8 = 52, adjustForContractions(70) = 70-8 = 62
+            // EP duration = 62-52 = 10s
+            const groups = [makeGroup(1, 0, 25), makeGroup(2, 45, 15)];
+            const actions = [
+                makeAction(1, { action: 'Adaptatif vertical', deb: '30', fin: '38' }),  // 8s
+                makeAction(2, { action: 'Escamotage de phase', deb: '60', fin: '70' }), // adjusted to [52, 62] = 10s
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2], 90, emptyMatrix(2));
+            // Total: 90 - 8 - 10 = 72
+            expect(result.simulatedCycleLength).toBe(72);
+            expect(result.contractions).toHaveLength(2);
+            expect(result.contractions[0].source).toBe('Adaptatif vertical');
+            expect(result.contractions[1].source).toBe('Escamotage de phase');
+        });
+
+        it('zone EP contenant plusieurs groupes les affecte tous', () => {
+            // EP [20, 60], group 1 at [10, 30], group 2 at [35, 55], group 3 at [70, 85]
+            const groups = [makeGroup(1, 10, 20), makeGroup(2, 35, 20), makeGroup(3, 70, 15)];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Escamotage de phase', deb: '20', fin: '60' }),
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 100, emptyMatrix(3));
+            // GF=1: green [10,30] overlaps [20,60] → g1 escamoted
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            expect(g1.isEscamoted).toBe(true);
+            expect(g1.simulatedGreen).toBe(0);
+            // Group 2: [35,55] entirely within [20,60] → escamoted (Case 2: offset>=deb && greenEnd<=fin)
+            const g2 = result.simulatedGroups.find(g => g.id === 2);
+            expect(g2.isEscamoted).toBe(true);
+            expect(g2.simulatedGreen).toBe(0);
+            // Group 3: [70,85] starts after fin=60 → shifted left by 40 (60-20)
+            const g3 = result.simulatedGroups.find(g => g.id === 3);
+            expect(g3.isEscamoted).toBe(false);
+            expect(g3.simulatedOffset).toBe(30); // 70 - 40
+            expect(g3.simulatedGreen).toBe(15);  // unchanged
+            // Cycle: 100 - 40 = 60
+            expect(result.simulatedCycleLength).toBe(60);
+        });
+    });
+
+    describe('Scénarios multi-actions complexes', () => {
+        it('5 types d actions combinés dans un seul scénario', () => {
+            // Groups: G1 [5, 25], G2 [35, 55], G3 [60, 75], G4 [80, 92]
+            const groups = [
+                makeGroup(1, 5, 20),
+                makeGroup(2, 35, 20),
+                makeGroup(3, 60, 15),
+                makeGroup(4, 80, 12),
+            ];
+            const actions = [
+                // 1. Ouverture anticipée: G1 starts 3s earlier
+                makeAction(1, { gf: '1', action: 'Ouverture anticipée', deb: '2', fin: '5' }),
+                // 2. Fermeture anticipée: G2 loses 5s at end
+                makeAction(2, { gf: '2', action: 'Fermeture anticipée', deb: '50', fin: '55' }),
+                // 3. Escamotage groupe: cut G3 green from 62 to 68
+                makeAction(3, { gf: '3', action: 'Escamotage', actGf1: '3', deb: '62', fin: '68' }),
+                // 4. Adaptatif vertical: remove [76, 80] = 4s
+                makeAction(4, { action: 'Adaptatif vertical', deb: '76', fin: '80' }),
+                // 5. Escamotage de phase: remove [90, 97] raw → adjusted [86, 93] = 7s
+                makeAction(5, { action: 'Escamotage de phase', deb: '90', fin: '97' }),
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2, 3, 4, 5], 100, emptyMatrix(4));
+
+            // Ouverture: G1 offset 5→2, green 20→23
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            expect(g1.simulatedOffset).toBe(2);
+            expect(g1.simulatedGreen).toBe(23);
+
+            // Fermeture: G2 green 20→15 (50-55 = 5s removed)
+            const g2 = result.simulatedGroups.find(g => g.id === 2);
+            expect(g2.simulatedGreen).toBe(15);
+
+            // Escamotage groupe: G3 has a greenCut
+            const g3 = result.simulatedGroups.find(g => g.id === 3);
+            expect(g3.greenCuts).toHaveLength(1);
+            expect(g3.greenCuts[0]).toEqual({ deb: 62, fin: 68 });
+
+            // AV [76,80] removes 4s, EP [90,97] adjusted to [86,93] removes 7s
+            // Cycle: 100 - 4 - 7 = 89
+            expect(result.simulatedCycleLength).toBe(89);
+        });
+
+        it('ouverture + fermeture qui s annulent (effet net zéro sur le vert)', () => {
+            // G1: offset=10, green=20 → [10, 30]
+            // Ouverture: deb=5, fin=10 → shifts start 5s earlier → offset=5, green=25
+            // Fermeture: deb=25, fin=30 → removes 5s from end → green=25-5=20
+            // Net effect: offset moved from 10 to 5, but green stays at 20 (same duration)
+            const groups = [makeGroup(1, 10, 20)];
+            const actions = [
+                makeAction(1, { gf: '1', action: 'Ouverture anticipée', deb: '5', fin: '10' }),
+                makeAction(2, { gf: '1', action: 'Fermeture anticipée', deb: '25', fin: '30' }),
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2], 80, emptyMatrix(1));
+            const g1 = result.simulatedGroups.find(g => g.id === 1);
+            // Ouverture: offset 10→5, green 20→25
+            // Fermeture: green 25→20 (shiftAmount=5)
+            expect(g1.simulatedOffset).toBe(5);
+            expect(g1.simulatedGreen).toBe(20); // same as original green duration
+        });
+    });
 });
