@@ -114,6 +114,14 @@ const PropertiesPanel = ({ intersectionName, setIntersectionName, projectPropert
                     <input type="number" min="0" max="255" value={projectProperties.idCarrefour || ''} onChange={(e) => handleIntField('idCarrefour', e.target.value)} />
                 </div>
                 <div className="property-field">
+                    <label>Contrôleur</label>
+                    <input type="text" value={projectProperties.controleur || ''} onChange={(e) => updateProjectProperty('controleur', e.target.value)} placeholder="Type de contrôleur" />
+                </div>
+                <div className="property-field">
+                    <label>Programme</label>
+                    <input type="text" value={projectProperties.programme || ''} onChange={(e) => updateProjectProperty('programme', e.target.value)} placeholder="Nom du programme" />
+                </div>
+                <div className="property-field">
                     <label htmlFor="horsAgglomeration">Hors agglomération</label>
                     <input
                         type="checkbox"

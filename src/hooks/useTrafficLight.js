@@ -100,7 +100,8 @@ const ensureLocalStorageSpace = () => {
 export const TRAFFIC_DATASETS = ['HPM', 'HPS', 'HC', 'Estimation', 'Projection'];
 
 const DEFAULT_PROJECT_PROPERTIES = {
-    commune: '', idCommune: '', idCarrefour: '', horsAgglomeration: false,
+    commune: '', idCommune: '', idCarrefour: '', controleur: '', programme: '',
+    horsAgglomeration: false,
     moa: '', moe: '', bureauEtudes: '', auteur: '',
     logoMoa: '', logoMoe: '',
     dateCreation: '', dateModification: '', numeroDossier: '', phaseEtude: '', commentaires: ''
@@ -1289,8 +1290,8 @@ export const useTrafficLight = () => {
         return activePF ? activePF.data : createEmptyActionData();
     }, [pfTabs, activePFId]);
 
-    // Get current microCustomFields based on active PF (up to 30 fields)
-    const MAX_MICRO_FIELDS = 30;
+    // Get current microCustomFields based on active PF (up to 60 fields)
+    const MAX_MICRO_FIELDS = 60;
     const microCustomFields = useMemo(() => {
         const activePF = pfTabs.find(pf => pf.id === activePFId);
         const fields = activePF?.microCustomFields || [];
