@@ -223,12 +223,10 @@ export async function importMaestroFile(file) {
         Array(groups.length).fill('')
     );
 
-    if (groupSectionEnd > 0 && structurePos > groupSectionEnd) {
-        try {
-            parseIntergreenMatrix(cmpData, groupSectionEnd, structurePos, numGroups, conflictMatrix, warnings);
-        } catch (e) {
-            warnings.push('Erreur matrice: ' + e.message);
-        }
+    try {
+        parseIntergreenMatrix(cmpData, 0, cmpData.length, numGroups, conflictMatrix, groups, warnings);
+    } catch (e) {
+        warnings.push('Erreur matrice: ' + e.message);
     }
 
     if (groups.length === 0) {
@@ -245,51 +243,82 @@ export async function importMaestroFile(file) {
 }
 
 /**
- * Tentative de parsing de la matrice des temps interverts
+ * Parse de la matrice de sécurité (temps interverts)
+ * Format : entrées de 4 octets [groupeA] [groupeB] [sec_A→B] [sec_B→A]
+ * Reconversion : intervert = sec + 3 si source V/B, sec si source P
  */
-function parseIntergreenMatrix(cmpData, startPos, endPos, numGroups, matrix, warnings) {
-    // Scanner la zone pour trouver des triplets [from, to, value] cohérents
-    for (let pos = startPos; pos < endPos - 2; pos++) {
-        const a = cmpData[pos];
-        const b = cmpData[pos + 1];
-        const c = cmpData[pos + 2];
+function parseIntergreenMatrix(cmpData, startPos, endPos, numGroups, matrix, groups, warnings) {
+    // Chercher la meilleure position pour des entrées 4 octets
+    let bestPos = -1;
+    let bestScore = 0;
 
-        if (a < numGroups && b < numGroups && a !== b && c >= 1 && c <= 20) {
-            let valid = 0;
-            let scanPos = pos;
-            while (scanPos < endPos - 2) {
-                const f = cmpData[scanPos];
-                const t = cmpData[scanPos + 1];
-                const v = cmpData[scanPos + 2];
-                if (f < numGroups && t < numGroups && f !== t && v >= 1 && v <= 20) {
-                    valid++;
-                    scanPos += 3;
-                } else {
-                    break;
-                }
-            }
+    for (let start = startPos; start < endPos - 8; start++) {
+        let pos = start;
+        let score = 0;
 
-            if (valid >= 5) {
-                let matPos = pos;
-                let count = 0;
-                while (matPos < endPos - 2) {
-                    const from = cmpData[matPos];
-                    const to = cmpData[matPos + 1];
-                    const val = cmpData[matPos + 2];
-                    if (from < numGroups && to < numGroups && from !== to && val >= 1 && val <= 20) {
-                        matrix[from][to] = val;
-                        count++;
-                        matPos += 3;
-                    } else {
-                        break;
-                    }
-                }
-                if (count > 0) {
-                    warnings.push(`Matrice : ${count} temps interverts importés (à vérifier)`);
-                }
-                return;
+        while (pos < endPos - 3 && score < 60) {
+            const a = cmpData[pos];
+            const b = cmpData[pos + 1];
+            const vAB = cmpData[pos + 2];
+            const vBA = cmpData[pos + 3];
+
+            // Entrée valide : a et b < numGroups, a ≠ b, valeurs raisonnables (0-20)
+            if (a < numGroups && b < numGroups && a !== b && vAB <= 20 && vBA <= 20) {
+                score++;
+                pos += 4;
+            } else {
+                break;
             }
         }
+
+        if (score > bestScore && score >= 5) {
+            bestScore = score;
+            bestPos = start;
+        }
     }
-    warnings.push('Matrice non trouvée - matrice vide');
+
+    if (bestPos < 0) {
+        warnings.push('Matrice de sécurité non trouvée dans le fichier');
+        return;
+    }
+
+    // Lire les entrées 4 octets et convertir sécurité → intervert
+    let pos = bestPos;
+    let count = 0;
+
+    while (pos < endPos - 3) {
+        const a = cmpData[pos];
+        const b = cmpData[pos + 1];
+        const secAB = cmpData[pos + 2];
+        const secBA = cmpData[pos + 3];
+
+        if (a >= numGroups || b >= numGroups || a === b || secAB > 20 || secBA > 20) break;
+
+        // A→B : source=A, intervert = sec + 3 si V/B, sec si P
+        const groupA = groups.find(g => g.id === a + 1);
+        const addA = (groupA && (groupA.type === 'V' || groupA.type === 'B')) ? 3 : 0;
+        const intAB = secAB + addA;
+
+        // B→A : source=B
+        const groupB = groups.find(g => g.id === b + 1);
+        const addB = (groupB && (groupB.type === 'V' || groupB.type === 'B')) ? 3 : 0;
+        const intBA = secBA + addB;
+
+        if (a < matrix.length && b < matrix[a].length) {
+            matrix[a][b] = intAB;
+            count++;
+        }
+        if (b < matrix.length && a < matrix[b].length) {
+            matrix[b][a] = intBA;
+            count++;
+        }
+
+        pos += 4;
+    }
+
+    if (count > 0) {
+        warnings.push(`Matrice : ${count} temps interverts importés`);
+    } else {
+        warnings.push('Matrice de sécurité non trouvée dans le fichier');
+    }
 }
