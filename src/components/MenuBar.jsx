@@ -165,7 +165,11 @@ const MenuBar = ({
                     type: 'submenu',
                     submenuId: 'importController',
                     submenu: [
-                        { label: '[redacted] ([redacted])...', action: 'import[redacted]' }
+                        { label: '[redacted] ([redacted])...', action: 'import[redacted]' },
+                        { label: 'Traffy', disabled: true },
+                        { label: 'Swarco', disabled: true },
+                        { label: 'Fareco', disabled: true },
+                        { label: 'SEA', disabled: true }
                     ]
                 },
                 ...(recentImportDirs.length > 0 ? [{
