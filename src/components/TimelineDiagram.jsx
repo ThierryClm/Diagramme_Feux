@@ -1,8 +1,8 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import LocalInput from './LocalInput';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, cycleLengthInput, setCycleLengthInput, setCycleLength }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -379,19 +379,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         });
     }, [startDrag, actionData]);
 
+    // During drag: action overlays update in real-time, group bars only visually
     const handleDragMove = useCallback((e) => {
         if (!dragState) return;
-
         const deltaX = e.clientX - dragState.initialMouseX;
         const deltaSeconds = Math.round(deltaX / pixelsPerSecond);
 
-        // Handle action overlay drag
+        // Action overlays (AV, EP, FA, OA): update in real-time
         if (dragState.actionId !== undefined && updateActionRow) {
             let newValue = dragState.initialValue + deltaSeconds;
-            // Wrap around cycle length
             newValue = ((newValue % cycleLength) + cycleLength) % cycleLength;
 
-            // For "Début de bande passante" and "Fin de bande passante", when dragging 'deb', also update 'fin' to maintain the gap
             if (dragState.initialFinValue !== null && dragState.initialFinValue !== undefined) {
                 const newFin = ((dragState.initialFinValue + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
                 updateActionRow(dragState.actionId, 'deb', newValue.toString());
@@ -402,75 +400,76 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             return;
         }
 
-        // Handle group bar drag
-        if (dragState.type === 'start') {
-            // Dragging start (offset)
-            let newOffset = dragState.initialValue + deltaSeconds;
-            // Wrap around cycle
-            newOffset = ((newOffset % cycleLength) + cycleLength) % cycleLength;
+        // Group bar drag: only update visual delta (no state update until mouseup)
+        setDragState(prev => prev ? { ...prev, deltaSeconds } : null);
+    }, [dragState, pixelsPerSecond, cycleLength, updateActionRow]);
 
-            // Also adjust duration to keep end position fixed
-            const group = groups.find(g => g.id === dragState.groupId);
-            if (group) {
-                const oldEnd = (group.offset + group.durations.green) % cycleLength;
-                let newDuration = oldEnd - newOffset;
-                if (newDuration <= 0) newDuration += cycleLength;
-                if (newDuration > 0 && newDuration <= cycleLength) {
-                    // Update group offset and duration WITHOUT triggering bande passante update in useTrafficLight
-                    // We handle bande passante update manually here using stored initial values
-                    updateGroupParams(dragState.groupId, {
-                        offset: newOffset,
-                        durations: { green: newDuration }
-                    });
+    // Apply group bar changes on mouseup (actions already applied in real-time)
+    const handleDragEnd = useCallback(() => {
+        if (dragState && dragState.deltaSeconds !== undefined && dragState.deltaSeconds !== 0) {
+            const deltaSeconds = dragState.deltaSeconds;
 
-                    // Update linked "Début de bande passante" actions
-                    // using stored initial values to avoid drift
-                    if (dragState.linkedDebutBandeActions && dragState.linkedDebutBandeActions.length > 0 && updateActionRow) {
-                        dragState.linkedDebutBandeActions.forEach(linkedAction => {
-                            const newDeb = ((linkedAction.initialDeb + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
-                            updateActionRow(linkedAction.id, 'deb', newDeb.toString());
-                            if (linkedAction.initialFin !== null) {
-                                const newFin = ((linkedAction.initialFin + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
-                                updateActionRow(linkedAction.id, 'fin', newFin.toString());
-                            }
+            // Action overlays already updated in real-time — skip
+            if (dragState.actionId !== undefined) {
+                // Nothing to do
+            }
+            // Handle group bar drag — apply final values
+            else if (dragState.type === 'start') {
+                let newOffset = dragState.initialValue + deltaSeconds;
+                newOffset = ((newOffset % cycleLength) + cycleLength) % cycleLength;
+
+                const group = groups.find(g => g.id === dragState.groupId);
+                if (group) {
+                    const oldEnd = (dragState.initialValue + group.durations.green) % cycleLength;
+                    let newDuration = oldEnd - newOffset;
+                    if (newDuration <= 0) newDuration += cycleLength;
+                    if (newDuration > 0 && newDuration <= cycleLength) {
+                        updateGroupParams(dragState.groupId, {
+                            offset: newOffset,
+                            durations: { green: newDuration }
                         });
+
+                        if (dragState.linkedDebutBandeActions && dragState.linkedDebutBandeActions.length > 0 && updateActionRow) {
+                            dragState.linkedDebutBandeActions.forEach(linkedAction => {
+                                const newDeb = ((linkedAction.initialDeb + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
+                                updateActionRow(linkedAction.id, 'deb', newDeb.toString());
+                                if (linkedAction.initialFin !== null) {
+                                    const newFin = ((linkedAction.initialFin + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
+                                    updateActionRow(linkedAction.id, 'fin', newFin.toString());
+                                }
+                            });
+                        }
                     }
                 }
-            }
-        } else if (dragState.type === 'end') {
-            // Dragging end (duration)
-            const group = groups.find(g => g.id === dragState.groupId);
-            if (group) {
-                const offset = group.offset % cycleLength;
-                let newEnd = dragState.initialValue + deltaSeconds;
-                // Wrap around cycle
-                newEnd = ((newEnd % cycleLength) + cycleLength) % cycleLength;
-                let newDuration = newEnd - offset;
-                if (newDuration <= 0) newDuration += cycleLength;
-                if (newDuration > 0 && newDuration <= cycleLength) {
-                    updateGroupParams(dragState.groupId, { durations: { green: newDuration } });
+            } else if (dragState.type === 'end') {
+                const group = groups.find(g => g.id === dragState.groupId);
+                if (group) {
+                    const offset = group.offset % cycleLength;
+                    let newEnd = dragState.initialValue + deltaSeconds;
+                    newEnd = ((newEnd % cycleLength) + cycleLength) % cycleLength;
+                    let newDuration = newEnd - offset;
+                    if (newDuration <= 0) newDuration += cycleLength;
+                    if (newDuration > 0 && newDuration <= cycleLength) {
+                        updateGroupParams(dragState.groupId, { durations: { green: newDuration } });
 
-                    // Update linked "Fin de bande passante" actions
-                    // using stored initial values to avoid drift
-                    if (dragState.linkedFinBandeActions && dragState.linkedFinBandeActions.length > 0 && updateActionRow) {
-                        dragState.linkedFinBandeActions.forEach(linkedAction => {
-                            const newDeb = ((linkedAction.initialDeb + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
-                            updateActionRow(linkedAction.id, 'deb', newDeb.toString());
-                            if (linkedAction.initialFin !== null) {
-                                const newFin = ((linkedAction.initialFin + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
-                                updateActionRow(linkedAction.id, 'fin', newFin.toString());
-                            }
-                        });
+                        if (dragState.linkedFinBandeActions && dragState.linkedFinBandeActions.length > 0 && updateActionRow) {
+                            dragState.linkedFinBandeActions.forEach(linkedAction => {
+                                const newDeb = ((linkedAction.initialDeb + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
+                                updateActionRow(linkedAction.id, 'deb', newDeb.toString());
+                                if (linkedAction.initialFin !== null) {
+                                    const newFin = ((linkedAction.initialFin + deltaSeconds) % cycleLength + cycleLength) % cycleLength;
+                                    updateActionRow(linkedAction.id, 'fin', newFin.toString());
+                                }
+                            });
+                        }
                     }
                 }
             }
         }
-    }, [dragState, pixelsPerSecond, cycleLength, groups, updateGroupParams, updateActionRow]);
 
-    const handleDragEnd = useCallback(() => {
-        if (endDrag) endDrag(); // End drag mode
+        if (endDrag) endDrag();
         setDragState(null);
-    }, [endDrag]);
+    }, [dragState, endDrag, cycleLength, groups, updateGroupParams, updateActionRow]);
 
     // Global mouse event listeners for drag
     useEffect(() => {
@@ -497,6 +496,69 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                 (!simulationFilter || !simulationFilter.has(action.id));
         });
     };
+
+    // Recalculate conflicts in real-time during drag (simplified: intergreen + overlap only)
+    const dragConflicts = useMemo(() => {
+        if (!dragState || dragState.deltaSeconds === undefined || dragState.deltaSeconds === 0) return null;
+        if (!dragState.groupId) return null; // Only for group drags
+
+        const ds = dragState.deltaSeconds;
+        const dragGroupId = dragState.groupId;
+        const list = [];
+
+        // Build virtual groups with drag offset applied
+        const getVirtualOffset = (g) => {
+            if (g.id !== dragGroupId) return g.offset % cycleLength;
+            if (dragState.type === 'start') {
+                return ((dragState.initialValue + ds) % cycleLength + cycleLength) % cycleLength;
+            }
+            return g.offset % cycleLength;
+        };
+        const getVirtualGreen = (g) => {
+            if (g.id !== dragGroupId) return g.durations.green;
+            if (dragState.type === 'start') {
+                const newOffset = ((dragState.initialValue + ds) % cycleLength + cycleLength) % cycleLength;
+                const oldEnd = (dragState.initialValue + g.durations.green) % cycleLength;
+                let dur = oldEnd - newOffset;
+                if (dur <= 0) dur += cycleLength;
+                return (dur > 0 && dur <= cycleLength) ? dur : g.durations.green;
+            }
+            if (dragState.type === 'end') {
+                let newEnd = ((dragState.initialValue + ds) % cycleLength + cycleLength) % cycleLength;
+                const offset = g.offset % cycleLength;
+                let dur = newEnd - offset;
+                if (dur <= 0) dur += cycleLength;
+                return (dur > 0 && dur <= cycleLength) ? dur : g.durations.green;
+            }
+            return g.durations.green;
+        };
+
+        for (let from = 0; from < groups.length; from++) {
+            if (!conflictMatrix[from]) continue;
+            for (let to = 0; to < groups.length; to++) {
+                const minGap = conflictMatrix[from][to];
+                if ((minGap === '' || minGap === undefined || minGap === null) || from === to) continue;
+
+                const gFrom = groups[from], gTo = groups[to];
+                const endA = (getVirtualOffset(gFrom) + getVirtualGreen(gFrom)) % cycleLength;
+                const startB = getVirtualOffset(gTo);
+                let distance = (startB - endA + cycleLength) % cycleLength;
+
+                if (distance < minGap) {
+                    list.push({ from: gFrom.id, to: gTo.id, required: minGap, actual: distance, type: 'intergreen' });
+                }
+            }
+        }
+        return list;
+    }, [dragState, groups, conflictMatrix, cycleLength]);
+
+    // Use drag conflicts when dragging, otherwise use prop conflicts
+    const activeConflicts = dragConflicts || conflicts;
+
+    // Notify parent of drag conflicts for list/counter display
+    useEffect(() => {
+        if (onDragConflicts) onDragConflicts(dragConflicts);
+    }, [dragConflicts, onDragConflicts]);
 
     // Get SELECTED "Escamotage de phase" actions (for hiding overlays and arrows within their range)
     const selectedEscamotageDePhase = simulationFilter ? actionData.filter(action =>
@@ -1107,7 +1169,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {groups.map((group) => {
                             const groupActions = getActionsForGroup(group.id);
                             // Filter out conflicts that are managed by a SELECTED Escamotage action
-                            const isConflict = conflicts && conflicts.some(c => {
+                            const isConflict = activeConflicts && activeConflicts.some(c => {
                                 if (c.from !== group.id && c.to !== group.id) return false;
                                 // Check if this conflict is inhibited by a selected Escamotage action
                                 const isInhibitedByEscamotage = selectedEscamotageGroup.some(action => {
@@ -1129,12 +1191,35 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const isEscamoted = simGroup?.isEscamoted || false;
 
                             // Use simulated values when in simulation mode, otherwise use original values
-                            const offset = simGroup
+                            let offset = simGroup
                                 ? (simGroup.simulatedOffset % effectiveCycleLength)
                                 : (group.offset % cycleLength);
-                            const greenDuration = simGroup
+                            let greenDuration = simGroup
                                 ? simGroup.simulatedGreen
                                 : group.durations.green;
+
+                            // Apply visual drag offset (no state update yet, just visual)
+                            if (dragState?.groupId === group.id && dragState.deltaSeconds) {
+                                const ds = dragState.deltaSeconds;
+                                if (dragState.type === 'start') {
+                                    const newOffset = ((dragState.initialValue + ds) % cycleLength + cycleLength) % cycleLength;
+                                    const oldEnd = (dragState.initialValue + greenDuration) % cycleLength;
+                                    let newDur = oldEnd - newOffset;
+                                    if (newDur <= 0) newDur += cycleLength;
+                                    if (newDur > 0 && newDur <= cycleLength) {
+                                        offset = newOffset;
+                                        greenDuration = newDur;
+                                    }
+                                } else if (dragState.type === 'end') {
+                                    let newEnd = ((dragState.initialValue + ds) % cycleLength + cycleLength) % cycleLength;
+                                    let newDur = newEnd - offset;
+                                    if (newDur <= 0) newDur += cycleLength;
+                                    if (newDur > 0 && newDur <= cycleLength) {
+                                        greenDuration = newDur;
+                                    }
+                                }
+                            }
+
                             const endValue = (offset + greenDuration) % effectiveCycleLength;
                             const hasPhase = !isEscamoted && greenDuration > 0;
 
