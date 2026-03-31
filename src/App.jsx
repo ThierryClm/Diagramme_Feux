@@ -150,6 +150,8 @@ function App() {
         });
     }, [projectProperties.horsAgglomeration]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const [dragConflictsFromDiagram, setDragConflictsFromDiagram] = useState(null);
+
     // Filter conflicts to exclude those managed by SELECTED Escamotage actions (in simulation mode)
     const filteredConflicts = useMemo(() => {
         if (!simulationEnabled || !simulationSelectedActions || simulationSelectedActions.length === 0) {
@@ -186,6 +188,16 @@ function App() {
             return !fromGroup?.phaseFlag;
         });
     }, [filteredConflicts, groups]);
+
+    // During drag, use drag conflicts from TimelineDiagram; otherwise use normal conflicts
+    const displayConflicts = dragConflictsFromDiagram || filteredConflicts;
+    const displayActiveConflicts = useMemo(() => {
+        return (dragConflictsFromDiagram || activeConflicts).filter ?
+            (dragConflictsFromDiagram || filteredConflicts).filter(c => {
+                const fromGroup = groups.find(g => g.id === c.from);
+                return !fromGroup?.phaseFlag;
+            }) : activeConflicts;
+    }, [dragConflictsFromDiagram, filteredConflicts, activeConflicts, groups]);
 
     // Check if a conflict's first group has phaseFlag (for grayed display)
     const isConflictGrayed = useCallback((c) => {
@@ -1125,8 +1137,12 @@ function App() {
             let message = `Import Maestro réussi !\n\n${importedData.groups.length} groupes importés\nDurée de cycle : ${importedData.cycleLength}s`;
             if (actionsCount > 0) message += `\n${actionsCount} conditions micro importées`;
             if (microFields.length > 0) message += `\n${microFields.length} variables micro importées`;
-            if (importedData.warnings && importedData.warnings.length > 0) {
-                message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
+            // Séparer les infos des vrais avertissements
+            const infos = (importedData.warnings || []).filter(w => w.startsWith('Matrice :'));
+            const realWarnings = (importedData.warnings || []).filter(w => !w.startsWith('Matrice :'));
+            if (infos.length > 0) message += `\n${infos.join('\n')}`;
+            if (realWarnings.length > 0) {
+                message += `\n\n⚠️ Avertissements (${realWarnings.length}) :\n${realWarnings.join('\n')}`;
             }
             alert(message);
         } catch (e) {
@@ -1368,9 +1384,9 @@ function App() {
                 </div>
 
                 <div className="status-bar">
-                    {activeConflicts.length > 0 ? (
+                    {displayActiveConflicts.length > 0 ? (
                         <div className="status-error">
-                            {activeConflicts.length} CONFLITS !
+                            {displayActiveConflicts.length} CONFLITS !
                         </div>
                     ) : (
                         <button
@@ -1627,11 +1643,11 @@ function App() {
                                 </div>
                             )}
 
-                            {filteredConflicts.length > 0 && (
+                            {displayConflicts.length > 0 && (
                                 <div className="conflict-list">
                                     <h4>Conflits:</h4>
                                     <ul>
-                                        {filteredConflicts.map((c, i) => {
+                                        {displayConflicts.map((c, i) => {
                                             const grayed = isConflictGrayed(c);
                                             const fromGroup = groups.find(g => g.id === c.from);
                                             const toGroup = groups.find(g => g.id === c.to);
@@ -1789,7 +1805,8 @@ function App() {
                                 getGroupState={getGroupState}
                                 onGroupClick={(g) => setSelectedGroupId(g.id)}
                                 pixelsPerSecond={pixelsPerSecond}
-                                conflicts={filteredConflicts}
+                                conflicts={displayConflicts}
+                                onDragConflicts={setDragConflictsFromDiagram}
                                 conflictMatrix={conflictMatrix}
                                 updateGroupParams={updateGroupParams}
                                 cycleLength={cycleLength}
