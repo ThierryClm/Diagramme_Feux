@@ -179,6 +179,7 @@ const MenuBar = ({
                     submenu: recentImportDirsSubmenu,
                     disabled: !hasPermission('canImportExcel')
                 }] : [{ label: 'Importer Excel...', action: 'import', disabled: !hasPermission('canImportExcel') }]),
+                { label: 'Lire une boîte noire (.bn)...', action: 'openBlackBox' },
                 { label: 'Liens externes...', action: 'externalLinks' },
                 { type: 'separator' },
                 { label: 'Imprimer le projet...', action: 'printDossier' },
