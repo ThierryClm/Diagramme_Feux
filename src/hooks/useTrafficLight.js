@@ -672,6 +672,13 @@ export const useTrafficLight = () => {
 
     // Save/Load Logic - saveProject is defined later after all state declarations
 
+    // Centralized ref for PF sync reset — filled in later when individual refs are created,
+    // but callable from loadProject / loadFullState immediately.
+    const pfSyncRefsResetRef = useRef(null);
+    const resetPfSyncRefs = (newActivePFId) => {
+        if (pfSyncRefsResetRef.current) pfSyncRefsResetRef.current(newActivePFId);
+    };
+
     // Flag to prevent auto-save during project loading
     const isLoadingProjectRef = useRef(false);
 
@@ -889,8 +896,10 @@ export const useTrafficLight = () => {
             updateProjectOrder(name);
 
             // Reset loading flag after a delay to let React batch updates settle
+            const loadedActivePFId = data.activePFId || 1;
             setTimeout(() => {
                 isLoadingProjectRef.current = false;
+                resetPfSyncRefs(loadedActivePFId);
             }, 3000);
 
             return data;
@@ -1105,6 +1114,9 @@ export const useTrafficLight = () => {
             // Load matrices locked state (reset to false if not present)
             setMatricesLocked(state.matricesLocked === true);
 
+            // Reset PF sync refs so forward/reverse sync start fresh
+            resetPfSyncRefs(state.activePFId || 1);
+
             // Load external links
             if (state.externalLinks && Array.isArray(state.externalLinks)) {
                 setExternalLinks(state.externalLinks);
@@ -1142,6 +1154,7 @@ export const useTrafficLight = () => {
         });
         setPfTabs([{ id: 1, name: 'PF1', data: Array.from({ length: 30 }, (_, i) => emptyRow(i + 1)) }]);
         setActivePFIdRaw(1);
+        resetPfSyncRefs(1);
 
         // Reset traffic datasets
         setTrafficDatasets({});
@@ -1594,10 +1607,22 @@ export const useTrafficLight = () => {
         const currentData = JSON.parse(JSON.stringify(actionData));
         const currentPF = pfTabs.find(pf => pf.id === activePFId);
         const currentRemarques = currentPF?.remarques || '';
-        setPfTabs(prev => [...prev, { id: nextId, name: newName, data: currentData, remarques: currentRemarques, conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix)) }]);
+        const currentDiagram = currentPF?.diagram ? JSON.parse(JSON.stringify(currentPF.diagram)) : [];
+        const currentCycleLength = currentPF?.cycleLength || cycleLength;
+        const currentMicro = currentPF?.microCustomFields ? JSON.parse(JSON.stringify(currentPF.microCustomFields)) : [];
+        setPfTabs(prev => [...prev, {
+            id: nextId,
+            name: newName,
+            data: currentData,
+            remarques: currentRemarques,
+            conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix)),
+            diagram: currentDiagram,
+            cycleLength: currentCycleLength,
+            microCustomFields: currentMicro
+        }]);
         setActivePFId(nextId);
         return nextId;
-    }, [pfTabs, actionData, activePFId, conflictMatrix]);
+    }, [pfTabs, actionData, activePFId, conflictMatrix, cycleLength]);
 
     // Delete a PF (cannot delete if only one remains)
     const deletePF = useCallback((pfId) => {
@@ -1832,6 +1857,7 @@ export const useTrafficLight = () => {
         // Allow sync after a short delay to let initial data settle
         const timer = setTimeout(() => {
             isInitialLoadRef.current = false;
+            resetPfSyncRefs(activePFId);
         }, 2000);
         return () => clearTimeout(timer);
     }, []);
@@ -1854,22 +1880,19 @@ export const useTrafficLight = () => {
             const oldPFId = prevActivePFIdForMatrixSyncRef.current;
             prevActivePFIdForMatrixSyncRef.current = activePFId;
 
-            // Save any unsaved matrix changes to the OLD PF
-            // (skip on first run after init — lastSyncedMatrixRef is still null)
-            if (lastSyncedMatrixRef.current !== null && lastSyncedMatrixRef.current !== matrixKey) {
-                setPfTabs(prevTabs => {
-                    const tabIndex = prevTabs.findIndex(pf => pf.id === oldPFId);
-                    if (tabIndex === -1) return prevTabs;
-                    const currentPfMatrix = prevTabs[tabIndex].conflictMatrix;
-                    if (JSON.stringify(currentPfMatrix) === matrixKey) return prevTabs;
-                    const newTabs = [...prevTabs];
-                    newTabs[tabIndex] = {
-                        ...newTabs[tabIndex],
-                        conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix))
-                    };
-                    return newTabs;
-                });
-            }
+            // Save current matrix to the OLD PF before switching
+            setPfTabs(prevTabs => {
+                const tabIndex = prevTabs.findIndex(pf => pf.id === oldPFId);
+                if (tabIndex === -1) return prevTabs;
+                const currentPfMatrix = prevTabs[tabIndex].conflictMatrix;
+                if (JSON.stringify(currentPfMatrix) === matrixKey) return prevTabs;
+                const newTabs = [...prevTabs];
+                newTabs[tabIndex] = {
+                    ...newTabs[tabIndex],
+                    conflictMatrix: JSON.parse(JSON.stringify(conflictMatrix))
+                };
+                return newTabs;
+            });
             // Reset sync ref so that the next render (after reverse sync loads
             // the new PF's matrix) will pick it up correctly
             lastSyncedMatrixRef.current = null;
@@ -1930,23 +1953,20 @@ export const useTrafficLight = () => {
             const oldPFId = prevActivePFIdForGroupsSyncRef.current;
             prevActivePFIdForGroupsSyncRef.current = activePFId;
 
-            // Save any unsaved group changes to the OLD PF
-            // (skip on first run after init — lastSyncedGroupsRef is still null)
-            if (lastSyncedGroupsRef.current !== null && lastSyncedGroupsRef.current !== syncKey) {
-                setPfTabs(prevTabs => {
-                    const tabIndex = prevTabs.findIndex(pf => pf.id === oldPFId);
-                    if (tabIndex === -1) return prevTabs;
-                    const currentPfDiagram = prevTabs[tabIndex].diagram;
-                    if (JSON.stringify(currentPfDiagram) === groupsKey && prevTabs[tabIndex].cycleLength === cycleLength) return prevTabs;
-                    const newTabs = [...prevTabs];
-                    newTabs[tabIndex] = {
-                        ...newTabs[tabIndex],
-                        diagram: diagramData,
-                        cycleLength: cycleLength
-                    };
-                    return newTabs;
-                });
-            }
+            // Save current group data to the OLD PF before switching
+            setPfTabs(prevTabs => {
+                const tabIndex = prevTabs.findIndex(pf => pf.id === oldPFId);
+                if (tabIndex === -1) return prevTabs;
+                const currentPfDiagram = prevTabs[tabIndex].diagram;
+                if (JSON.stringify(currentPfDiagram) === groupsKey && prevTabs[tabIndex].cycleLength === cycleLength) return prevTabs;
+                const newTabs = [...prevTabs];
+                newTabs[tabIndex] = {
+                    ...newTabs[tabIndex],
+                    diagram: diagramData,
+                    cycleLength: cycleLength
+                };
+                return newTabs;
+            });
             lastSyncedGroupsRef.current = null;
             return;
         }
@@ -1981,6 +2001,15 @@ export const useTrafficLight = () => {
     // Use a ref to track the last applied PF to avoid unnecessary re-renders
     const lastAppliedPFRef = useRef(null);
 
+    // Wire up the centralized reset function now that all sync refs exist
+    pfSyncRefsResetRef.current = (newActivePFId) => {
+        prevActivePFIdForGroupsSyncRef.current = newActivePFId;
+        prevActivePFIdForMatrixSyncRef.current = newActivePFId;
+        lastSyncedGroupsRef.current = null;
+        lastSyncedMatrixRef.current = null;
+        lastAppliedPFRef.current = null;
+    };
+
     useEffect(() => {
         const activePF = pfTabs.find(pf => pf.id === activePFId);
 
@@ -1992,6 +2021,21 @@ export const useTrafficLight = () => {
                 return; // Already applied, skip
             }
             lastAppliedPFRef.current = pfKey;
+
+            // Synchronize lastSyncedGroupsRef so the forward sync knows
+            // it can save to the old PF when we switch away later
+            const diagramData = activePF.diagram.map(d => ({
+                groupId: d.groupId,
+                offset: d.offset,
+                greenDuration: d.greenDuration,
+                da: d.da || '',
+                comment: d.comment || '',
+                commentColor: d.commentColor || '',
+                phaseFlag: d.phaseFlag || ''
+            }));
+            const groupsKey = JSON.stringify(diagramData);
+            const cl = activePF.cycleLength || cycleLength;
+            lastSyncedGroupsRef.current = groupsKey + '|' + cl;
 
             // Update groups with diagram data from active PF
             setGroups(prevGroups => {
