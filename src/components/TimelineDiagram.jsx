@@ -401,7 +401,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         }
 
         // Group bar drag: only update visual delta (no state update until mouseup)
-        setDragState(prev => prev ? { ...prev, deltaSeconds } : null);
+        setDragState(prev => prev ? { ...prev, deltaSeconds, mouseX: e.clientX, mouseY: e.clientY } : null);
     }, [dragState, pixelsPerSecond, cycleLength, updateActionRow]);
 
     // Apply group bar changes on mouseup (actions already applied in real-time)
@@ -918,7 +918,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         return (startPos + greenDuration) > cycle;
     };
 
-    return (
+    return (<>
         <div className={`timeline-container ${dragState ? 'dragging' : ''}`} ref={containerRef}>
             <h3 className="diagram-title">
                 <span>Diagramme{planName ? ` : simulation du plan de feu ${planName}` : (activePFName ? ` - ${activePFName}` : '')}</span>
@@ -1311,7 +1311,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             <div
                                                                 className="drag-handle drag-handle-start"
                                                                 onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
-                                                                title="Glisser pour modifier le début"
+                                                                title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
                                                             />
                                                             <div className="phase-bar green" style={{ width: `${firstPartWidth}px` }}></div>
                                                             {showVUtileOverlay && vUtileFirstSec > 0 && (
@@ -1332,7 +1332,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                 className="drag-handle drag-handle-end"
                                                                 onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
                                                                 style={{ left: `${secondPartWidth}px` }}
-                                                                title="Glisser pour modifier la fin"
+                                                                title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
                                                             />
                                                         </div>
                                                         {/* Third part: orange continuation at start of cycle */}
@@ -1356,7 +1356,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         <div
                                                             className="drag-handle drag-handle-start"
                                                             onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
-                                                            title="Glisser pour modifier le début"
+                                                            title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
                                                         />
                                                         <div className="phase-bar green" style={{ width: `${firstPartWidth}px` }}></div>
                                                         {showVUtileOverlay && vUtileFirstSec > 0 && (
@@ -1377,7 +1377,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             className="drag-handle drag-handle-end"
                                                             onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
                                                             style={{ left: `${secondPartWidth}px` }}
-                                                            title="Glisser pour modifier la fin"
+                                                            title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
                                                         />
                                                     </div>
                                                 </React.Fragment>
@@ -1402,7 +1402,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         <div
                                                             className="drag-handle drag-handle-start"
                                                             onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
-                                                            title="Glisser pour modifier le début"
+                                                            title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
                                                         />
                                                         <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
                                                         <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeFirstPartWidth}px` }}></div>
@@ -1413,7 +1413,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             className="drag-handle drag-handle-end"
                                                             onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
                                                             style={{ left: `${greenWidth}px` }}
-                                                            title="Glisser pour modifier la fin"
+                                                            title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
                                                         />
                                                     </div>
                                                     {/* Orange continuation at start of cycle */}
@@ -1436,7 +1436,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 <div
                                                     className="drag-handle drag-handle-start"
                                                     onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
-                                                    title="Glisser pour modifier le début"
+                                                    title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
                                                 />
                                                 <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
                                                 <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
@@ -1451,7 +1451,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     className="drag-handle drag-handle-end"
                                                     onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
                                                     style={{ left: `${greenWidth}px` }}
-                                                    title="Glisser pour modifier la fin"
+                                                    title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
                                                 />
                                             </div>
                                         );
@@ -1690,7 +1690,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <div
                                                                         className="drag-handle drag-handle-start"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                                        title="Glisser pour modifier le début"
+                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                                     />
                                                                     <div className="phase-bar green-dark" style={{ width: `${firstPartWidth}px` }}></div>
                                                                 </div>
@@ -1707,7 +1707,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                         className="drag-handle drag-handle-end"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
                                                                         style={{ left: `${secondPartWidth}px` }}
-                                                                        title="Glisser pour modifier la fin"
+                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                                     />
                                                                 </div>
                                                             </React.Fragment>
@@ -1723,7 +1723,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             <div
                                                                 className="drag-handle drag-handle-start"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                                title="Glisser pour modifier le début"
+                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                             />
                                                             <div className="phase-bar green-dark" style={{ width: `${greenWidth}px` }}></div>
                                                             <div className={`phase-bar ${lucarneOrangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
@@ -1731,7 +1731,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                 className="drag-handle drag-handle-end"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
                                                                 style={{ left: `${greenWidth}px` }}
-                                                                title="Glisser pour modifier la fin"
+                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                             />
                                                         </div>
                                                     );
@@ -1776,7 +1776,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-start"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                                                        title="Glisser pour modifier le début"
+                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                                     />
                                                                 </div>
                                                                 <div
@@ -1789,7 +1789,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-end"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                                                        title="Glisser pour modifier la fin"
+                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                                     />
                                                                 </div>
                                                             </React.Fragment>
@@ -1806,12 +1806,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-start"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                                                title="Glisser pour modifier le début"
+                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                             />
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-end"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                                                title="Glisser pour modifier la fin"
+                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                             />
                                                         </div>
                                                     );
@@ -1834,7 +1834,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-start"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                                        title="Glisser pour modifier le début"
+                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                                     />
                                                                     {abrv && (
                                                                         <span className="ouverture-anticipee-label">{abrv}</span>
@@ -1849,7 +1849,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-end"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                                        title="Glisser pour modifier la fin"
+                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                                     />
                                                                 </div>
                                                             </React.Fragment>
@@ -1865,12 +1865,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-start"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                                title="Glisser pour modifier le début"
+                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                             />
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-end"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                                title="Glisser pour modifier la fin"
+                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                             />
                                                             {abrv && (
                                                                 <span className="ouverture-anticipee-label">{abrv}</span>
@@ -1937,7 +1937,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                                title="Glisser pour modifier le début"
+                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                             />
                                         </div>
                                         {/* Second part: from start of cycle to fin */}
@@ -1955,7 +1955,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                                title="Glisser pour modifier la fin"
+                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                             />
                                             {abrv && (
                                                 <span className="adaptatif-label">{abrv}</span>
@@ -1985,13 +1985,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     <div
                                         className="action-drag-handle action-drag-handle-start"
                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                        title="Glisser pour modifier le début"
+                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                     />
                                     {/* Drag handle for end (right edge) */}
                                     <div
                                         className="action-drag-handle action-drag-handle-end"
                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                        title="Glisser pour modifier la fin"
+                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                     />
                                     {abrv && (
                                         <span className="adaptatif-label">{abrv}</span>
@@ -2231,7 +2231,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                                title="Glisser pour modifier le début"
+                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                             />
                                         </div>
                                         {/* Second part: from start of cycle to fin */}
@@ -2249,7 +2249,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                                title="Glisser pour modifier la fin"
+                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                             />
                                             {abrv && (
                                                 <span className="escamotage-label">{abrv}</span>
@@ -2279,13 +2279,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     <div
                                         className="action-drag-handle action-drag-handle-start"
                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                        title="Glisser pour modifier le début"
+                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                     />
                                     {/* Drag handle for end (right edge) */}
                                     <div
                                         className="action-drag-handle action-drag-handle-end"
                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                        title="Glisser pour modifier la fin"
+                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                     />
                                     {abrv && (
                                         <span className="escamotage-label">{abrv}</span>
@@ -2519,14 +2519,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         <div
                                             className="action-drag-handle action-drag-handle-start"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                            title="Glisser pour modifier le début"
+                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                         {/* Drag handle for end (right edge) */}
                                         <div
                                             className="action-drag-handle action-drag-handle-end"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                            title="Glisser pour modifier la fin"
+                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                     </div>
@@ -2621,14 +2621,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         <div
                                             className="action-drag-handle action-drag-handle-start"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                            title="Glisser pour modifier le début"
+                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                         {/* Drag handle for end (right edge) */}
                                         <div
                                             className="action-drag-handle action-drag-handle-end"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                            title="Glisser pour modifier la fin"
+                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                     </div>
@@ -3065,7 +3065,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                title="Glisser pour modifier le début"
+                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                 style={{ pointerEvents: 'auto' }}
                                             />
                                         </div>
@@ -3092,7 +3092,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                title="Glisser pour modifier la fin"
+                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                 style={{ pointerEvents: 'auto', left: 'auto', right: '0' }}
                                             />
                                         </div>
@@ -3146,14 +3146,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         <div
                                             className="action-drag-handle action-drag-handle-start"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                            title="Glisser pour modifier le début"
+                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                         {/* Drag handle for end (right edge) */}
                                         <div
                                             className="action-drag-handle action-drag-handle-end"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                            title="Glisser pour modifier la fin"
+                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                     </div>
@@ -3260,7 +3260,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                title="Glisser pour modifier le début"
+                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                 style={{ pointerEvents: 'auto' }}
                                             />
                                         </div>
@@ -3285,7 +3285,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                title="Glisser pour modifier la fin"
+                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                 style={{ pointerEvents: 'auto' }}
                                             />
                                         </div>
@@ -3336,13 +3336,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                title="Glisser pour modifier le début"
+                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                 style={{ pointerEvents: 'auto' }}
                                             />
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                title="Glisser pour modifier la fin"
+                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
                                                 style={{ pointerEvents: 'auto' }}
                                             />
                                         </div>
@@ -4354,7 +4354,36 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                 })()}
             </div>
         </div>
-    );
+        {dragState && dragState.deltaSeconds !== undefined && dragState.mouseX !== undefined && dragState.groupId !== undefined && (() => {
+            const ds = dragState.deltaSeconds;
+            let displayValue;
+            if (dragState.type === 'start') {
+                displayValue = ((dragState.initialValue + ds) % cycleLength + cycleLength) % cycleLength;
+            } else {
+                displayValue = ((dragState.initialValue + ds) % cycleLength + cycleLength) % cycleLength;
+            }
+            return (
+                <div style={{
+                    position: 'fixed',
+                    left: dragState.mouseX + 12,
+                    top: dragState.mouseY - 28,
+                    background: '#222',
+                    color: '#4ecdc4',
+                    border: '1px solid #4ecdc4',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    fontFamily: 'monospace',
+                    pointerEvents: 'none',
+                    zIndex: 9999,
+                    whiteSpace: 'nowrap'
+                }}>
+                    {Math.round(displayValue)}s
+                </div>
+            );
+        })()}
+    </>);
 };
 
 export default TimelineDiagram;
