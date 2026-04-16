@@ -3473,8 +3473,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const startX = deb * pixelsPerSecond;
                             const endX = fin * pixelsPerSecond;
                             const startY = RULER_HEIGHT + 1 + (startGroupIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
-                            // End Y points to bottom of the bar (ROW_HEIGHT - 7 is bottom of bar)
-                            const endY = RULER_HEIGHT + 1 + (endGroupIndex * ROW_TOTAL_HEIGHT) + ROW_HEIGHT - 7;
+                            const endY = RULER_HEIGHT + 1 + (endGroupIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
                             const cycleEndX = cycleLength * pixelsPerSecond;
 
                             // Arrow head size
@@ -3514,7 +3513,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={cycleEndX}
                                                 y2={intermediateY}
                                                 stroke="#00cc00"
-                                                strokeWidth="0.3"
+                                                strokeWidth="1"
                                                 strokeDasharray="4,4"
                                             />
                                             {/* Second segment: from start of cycle to end */}
@@ -3524,7 +3523,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={endX}
                                                 y2={endY}
                                                 stroke="#00cc00"
-                                                strokeWidth="0.3"
+                                                strokeWidth="1"
                                                 strokeDasharray="4,4"
                                             />
                                             {/* Arrow head at end */}
@@ -3565,7 +3564,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             x2={endX}
                                             y2={endY}
                                             stroke="#00cc00"
-                                            strokeWidth="0.3"
+                                            strokeWidth="1"
                                             strokeDasharray="4,4"
                                         />
                                         {/* Arrow head at end */}
@@ -3606,8 +3605,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             const startX = deb * pixelsPerSecond;
                             const endX = fin * pixelsPerSecond;
                             const startY = RULER_HEIGHT + 1 + (startGroupIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
-                            // End Y points to bottom of the bar (ROW_HEIGHT - 7 is bottom of bar)
-                            const endY = RULER_HEIGHT + 1 + (endGroupIndex * ROW_TOTAL_HEIGHT) + ROW_HEIGHT - 7;
+                            const endY = RULER_HEIGHT + 1 + (endGroupIndex * ROW_TOTAL_HEIGHT) + (ROW_HEIGHT / 2);
                             const cycleEndX = cycleLength * pixelsPerSecond;
 
                             // Arrow head size
@@ -3647,7 +3645,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={cycleEndX}
                                                 y2={intermediateY}
                                                 stroke="#00cc00"
-                                                strokeWidth="0.3"
+                                                strokeWidth="1"
                                                 strokeDasharray="4,4"
                                             />
                                             {/* Second segment: from start of cycle to end */}
@@ -3657,7 +3655,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={endX}
                                                 y2={endY}
                                                 stroke="#00cc00"
-                                                strokeWidth="0.3"
+                                                strokeWidth="1"
                                                 strokeDasharray="4,4"
                                             />
                                             {/* Arrow head at end */}
@@ -3698,7 +3696,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             x2={endX}
                                             y2={endY}
                                             stroke="#00cc00"
-                                            strokeWidth="0.3"
+                                            strokeWidth="1"
                                             strokeDasharray="4,4"
                                         />
                                         {/* Arrow head at end */}
