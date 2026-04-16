@@ -836,6 +836,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     const ROW_HEIGHT = 30; // Height of each row in pixels
     const RULER_HEIGHT = 50; // Height of the ruler
     const ROW_TOTAL_HEIGHT = ROW_HEIGHT + 1; // Row height + 1px border
+    const svgHeight = RULER_HEIGHT + 1 + groups.length * ROW_TOTAL_HEIGHT + 30;
 
     // Helper to get the Y position for a group row (center of the row)
     const getGroupRowY = (groupId) => {
@@ -2096,12 +2097,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         <svg
                                             key={`arrow-${idx}-${tIdx}`}
                                             className="fermeture-arrow"
+
+                                            width={totalWidth}
+                                            height={svgHeight}
                                             style={{
                                                 position: 'absolute',
                                                 top: 0,
                                                 left: 0,
-                                                width: '100%',
-                                                height: '100%',
                                                 pointerEvents: 'none',
                                                 zIndex: 20
                                             }}
@@ -2148,12 +2150,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     <svg
                                         key={`arrow-${idx}-${tIdx}`}
                                         className="fermeture-arrow"
+
+                                        width={totalWidth}
+                                        height={svgHeight}
                                         style={{
                                             position: 'absolute',
                                             top: 0,
                                             left: 0,
-                                            width: '100%',
-                                            height: '100%',
                                             pointerEvents: 'none',
                                             zIndex: 20
                                         }}
@@ -2388,12 +2391,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     />
                                     <svg
                                         className={`escamotage-arrows ${isHighlighted ? 'highlighted' : ''}`}
+
+                                        width={totalWidth}
+                                        height={svgHeight}
                                         style={{
                                             position: 'absolute',
                                             top: 0,
                                             left: 0,
-                                            width: '100%',
-                                            height: '100%',
                                             pointerEvents: 'none',
                                             zIndex: 20
                                         }}
@@ -2713,12 +2717,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 <React.Fragment key={`point-repos-${idx}`}>
                                     <svg
                                         className={`point-repos-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        width={totalWidth}
+                                        height={svgHeight}
                                         style={{
                                             position: 'absolute',
                                             top: 0,
                                             left: 0,
-                                            width: '100%',
-                                            height: '100%',
                                             pointerEvents: 'none',
                                             zIndex: 100,
                                             overflow: 'visible'
@@ -2816,12 +2820,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 <React.Fragment key={`synchro-bts-${idx}`}>
                                     <svg
                                         className={`synchro-bts-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        width={totalWidth}
+                                        height={svgHeight}
                                         style={{
                                             position: 'absolute',
                                             top: 0,
                                             left: 0,
-                                            width: '100%',
-                                            height: '100%',
                                             pointerEvents: 'none',
                                             zIndex: 100,
                                             overflow: 'visible'
@@ -2919,12 +2923,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 <React.Fragment key={`instant-co-${idx}`}>
                                     <svg
                                         className={`instant-co-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        width={totalWidth}
+                                        height={svgHeight}
                                         style={{
                                             position: 'absolute',
                                             top: 0,
                                             left: 0,
-                                            width: '100%',
-                                            height: '100%',
                                             pointerEvents: 'none',
                                             zIndex: 100,
                                             overflow: 'visible'
@@ -3495,12 +3499,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     <React.Fragment key={`debut-bande-${idx}`}>
                                         <svg
                                             className={`debut-bande-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                            width={totalWidth}
+                                            height={svgHeight}
                                             style={{
                                                 position: 'absolute',
                                                 top: 0,
                                                 left: 0,
-                                                width: '100%',
-                                                height: '100%',
                                                 pointerEvents: 'none',
                                                 zIndex: 50,
                                                 overflow: 'visible'
@@ -3513,7 +3517,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={cycleEndX}
                                                 y2={intermediateY}
                                                 stroke="#00cc00"
-                                                strokeWidth="1"
                                                 strokeDasharray="4,4"
                                             />
                                             {/* Second segment: from start of cycle to end */}
@@ -3523,7 +3526,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={endX}
                                                 y2={endY}
                                                 stroke="#00cc00"
-                                                strokeWidth="1"
                                                 strokeDasharray="4,4"
                                             />
                                             {/* Arrow head at end */}
@@ -3546,12 +3548,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 <React.Fragment key={`debut-bande-${idx}`}>
                                     <svg
                                         className={`debut-bande-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        width={totalWidth}
+                                        height={svgHeight}
                                         style={{
                                             position: 'absolute',
                                             top: 0,
                                             left: 0,
-                                            width: '100%',
-                                            height: '100%',
                                             pointerEvents: 'none',
                                             zIndex: 50,
                                             overflow: 'visible'
@@ -3564,7 +3566,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             x2={endX}
                                             y2={endY}
                                             stroke="#00cc00"
-                                            strokeWidth="1"
                                             strokeDasharray="4,4"
                                         />
                                         {/* Arrow head at end */}
@@ -3627,12 +3628,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     <React.Fragment key={`fin-bande-${idx}`}>
                                         <svg
                                             className={`fin-bande-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                            width={totalWidth}
+                                            height={svgHeight}
                                             style={{
                                                 position: 'absolute',
                                                 top: 0,
                                                 left: 0,
-                                                width: '100%',
-                                                height: '100%',
                                                 pointerEvents: 'none',
                                                 zIndex: 50,
                                                 overflow: 'visible'
@@ -3645,7 +3646,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={cycleEndX}
                                                 y2={intermediateY}
                                                 stroke="#00cc00"
-                                                strokeWidth="1"
                                                 strokeDasharray="4,4"
                                             />
                                             {/* Second segment: from start of cycle to end */}
@@ -3655,7 +3655,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 x2={endX}
                                                 y2={endY}
                                                 stroke="#00cc00"
-                                                strokeWidth="1"
                                                 strokeDasharray="4,4"
                                             />
                                             {/* Arrow head at end */}
@@ -3678,12 +3677,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 <React.Fragment key={`fin-bande-${idx}`}>
                                     <svg
                                         className={`fin-bande-arrows ${isHighlighted ? 'highlighted' : ''}`}
+                                        width={totalWidth}
+                                        height={svgHeight}
                                         style={{
                                             position: 'absolute',
                                             top: 0,
                                             left: 0,
-                                            width: '100%',
-                                            height: '100%',
                                             pointerEvents: 'none',
                                             zIndex: 50,
                                             overflow: 'visible'
@@ -3696,7 +3695,6 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             x2={endX}
                                             y2={endY}
                                             stroke="#00cc00"
-                                            strokeWidth="1"
                                             strokeDasharray="4,4"
                                         />
                                         {/* Arrow head at end */}
@@ -3717,12 +3715,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         {(showDependencies || hoveredConflict) && (
                             <svg
                                 className="dependency-arrows"
+                                width={totalWidth}
+                                height={svgHeight}
                                 style={{
                                     position: 'absolute',
                                     top: 0,
                                     left: 0,
-                                    width: '100%',
-                                    height: '100%',
                                     pointerEvents: 'none',
                                     zIndex: 5
                                 }}
