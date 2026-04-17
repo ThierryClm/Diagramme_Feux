@@ -254,6 +254,7 @@ function App() {
     const [hoveredArrowGroupId, setHoveredArrowGroupId] = useState(null);
     const [hoveredArrowGroupSaturated, setHoveredArrowGroupSaturated] = useState(false);
     const [hoveredConflict, setHoveredConflict] = useState(null); // {from, to} for conflict hover
+    const [isSaving, setIsSaving] = useState(false);
 
     // Track whether project has been modified (for "Nouveau projet" menu)
     const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip, hasUnsavedChanges } =
@@ -610,7 +611,11 @@ function App() {
                 setOpenModal(true);
                 break;
             case 'save':
-                handleSaveFileWithPicker();
+                (async () => {
+                    setIsSaving(true);
+                    try { await handleSaveFileWithPicker(); }
+                    finally { setIsSaving(false); }
+                })();
                 break;
             case 'printDossier':
                 // Ouvrir le dialog de sélection des sections
@@ -837,7 +842,11 @@ function App() {
                     // Save to recent directory
                     const dirIndex = parseInt(action.replace('saveToRecentDir:', ''));
                     if (recentSaveDirs[dirIndex]) {
-                        handleSaveFileToRecentDir(dirIndex);
+                        (async () => {
+                            setIsSaving(true);
+                            try { await handleSaveFileToRecentDir(dirIndex); }
+                            finally { setIsSaving(false); }
+                        })();
                     }
                 } else {
                     console.log('Action non implémentée:', action);
@@ -4388,6 +4397,32 @@ draw();
                                 <span>Synchro BTS</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+            {isSaving && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 99999
+                }}>
+                    <div style={{
+                        background: '#222',
+                        color: '#4ecdc4',
+                        border: '1px solid #4ecdc4',
+                        borderRadius: '8px',
+                        padding: '20px 40px',
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                    }}>
+                        Sauvegarde en cours...
                     </div>
                 </div>
             )}
