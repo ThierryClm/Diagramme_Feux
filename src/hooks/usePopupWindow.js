@@ -13,14 +13,14 @@ let lastBringTime = 0;
 function bringAllPopupsToFront(except) {
     if (isBringingToFront || openPopups.size === 0 || isFilePickerActive()) return;
     const now = Date.now();
-    if (now - lastBringTime < 500) return;
+    if (now - lastBringTime < 200) return;
     isBringingToFront = true;
     lastBringTime = now;
     openPopups.forEach(p => {
         if (p !== except && !p.closed) p.focus();
     });
     if (except && !except.closed) except.focus();
-    setTimeout(() => { isBringingToFront = false; }, 500);
+    setTimeout(() => { isBringingToFront = false; }, 200);
 }
 
 // Install shared listeners on the main window (once)
@@ -36,10 +36,8 @@ function installMainListener() {
         bringPopupsTimer = setTimeout(() => {
             bringPopupsTimer = null;
             if (isFilePickerActive()) return;
-            const ae = document.activeElement;
-            if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT' || ae.isContentEditable)) return;
             bringAllPopupsToFront(null);
-        }, 150);
+        }, 2000);
     };
 
     // When main window regains focus from outside (alt-tab, taskbar)
@@ -76,7 +74,7 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
             const popup = window.open(
                 '',
                 title.replace(/\s+/g, '_'),
-                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no,status=no`
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,menubar=no,toolbar=yes,location=yes,status=no`
             );
 
             if (!popup) {
