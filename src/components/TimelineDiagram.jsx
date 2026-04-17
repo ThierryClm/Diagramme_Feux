@@ -838,6 +838,29 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     const ROW_TOTAL_HEIGHT = ROW_HEIGHT + 1; // Row height + 1px border
     const svgHeight = RULER_HEIGHT + 1 + groups.length * ROW_TOTAL_HEIGHT + 30;
 
+    // Helper: generate a manually dashed SVG path (dash=5px, gap=5px)
+    // Used for bande passante arrows because stroke-dasharray is lost at print time
+    const dashedPath = (x1, y1, x2, y2, dashLen = 5) => {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist === 0) return '';
+        const ux = dx / dist;
+        const uy = dy / dist;
+        const segments = [];
+        let pos = 0;
+        let drawing = true;
+        while (pos < dist) {
+            const segEnd = Math.min(pos + dashLen, dist);
+            if (drawing) {
+                segments.push(`M${x1 + ux * pos},${y1 + uy * pos}L${x1 + ux * segEnd},${y1 + uy * segEnd}`);
+            }
+            pos = segEnd;
+            drawing = !drawing;
+        }
+        return segments.join('');
+    };
+
     // Helper to get the Y position for a group row (center of the row)
     const getGroupRowY = (groupId) => {
         const groupIndex = groups.findIndex(g => g.id === parseInt(groupId));
@@ -3511,23 +3534,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             }}
                                         >
                                             {/* First segment: from start to end of cycle */}
-                                            <line
-                                                x1={startX}
-                                                y1={startY}
-                                                x2={cycleEndX}
-                                                y2={intermediateY}
-                                                stroke="#00cc00"
-                                                strokeDasharray="4,4"
-                                            />
+                                            <path d={dashedPath(startX, startY, cycleEndX, intermediateY)} stroke="#00cc00" strokeWidth="0.7" fill="none" />
                                             {/* Second segment: from start of cycle to end */}
-                                            <line
-                                                x1={0}
-                                                y1={intermediateY}
-                                                x2={endX}
-                                                y2={endY}
-                                                stroke="#00cc00"
-                                                strokeDasharray="4,4"
-                                            />
+                                            <path d={dashedPath(0, intermediateY, endX, endY)} stroke="#00cc00" strokeWidth="0.7" fill="none" />
                                             {/* Arrow head at end */}
                                             <polygon
                                                 points={`
@@ -3536,6 +3545,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     ${endX - arrowSize * Math.cos(angle2 + Math.PI / 6)},${endY - arrowSize * Math.sin(angle2 + Math.PI / 6)}
                                                 `}
                                                 fill="#00cc00"
+                                                stroke="none"
                                             />
                                         </svg>
                                     </React.Fragment>
@@ -3560,14 +3570,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         }}
                                     >
                                         {/* Dashed diagonal line */}
-                                        <line
-                                            x1={startX}
-                                            y1={startY}
-                                            x2={endX}
-                                            y2={endY}
-                                            stroke="#00cc00"
-                                            strokeDasharray="4,4"
-                                        />
+                                        <path d={dashedPath(startX, startY, endX, endY)} stroke="#00cc00" strokeWidth="0.7" fill="none" />
                                         {/* Arrow head at end */}
                                         <polygon
                                             points={`
@@ -3576,6 +3579,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 ${endX - arrowSize * Math.cos(angle + Math.PI / 6)},${endY - arrowSize * Math.sin(angle + Math.PI / 6)}
                                             `}
                                             fill="#00cc00"
+                                            stroke="none"
                                         />
                                     </svg>
                                 </React.Fragment>
@@ -3640,23 +3644,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             }}
                                         >
                                             {/* First segment: from start to end of cycle */}
-                                            <line
-                                                x1={startX}
-                                                y1={startY}
-                                                x2={cycleEndX}
-                                                y2={intermediateY}
-                                                stroke="#00cc00"
-                                                strokeDasharray="4,4"
-                                            />
+                                            <path d={dashedPath(startX, startY, cycleEndX, intermediateY)} stroke="#00cc00" strokeWidth="0.7" fill="none" />
                                             {/* Second segment: from start of cycle to end */}
-                                            <line
-                                                x1={0}
-                                                y1={intermediateY}
-                                                x2={endX}
-                                                y2={endY}
-                                                stroke="#00cc00"
-                                                strokeDasharray="4,4"
-                                            />
+                                            <path d={dashedPath(0, intermediateY, endX, endY)} stroke="#00cc00" strokeWidth="0.7" fill="none" />
                                             {/* Arrow head at end */}
                                             <polygon
                                                 points={`
@@ -3665,6 +3655,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     ${endX - arrowSize * Math.cos(angle2 + Math.PI / 6)},${endY - arrowSize * Math.sin(angle2 + Math.PI / 6)}
                                                 `}
                                                 fill="#00cc00"
+                                                stroke="none"
                                             />
                                         </svg>
                                     </React.Fragment>
@@ -3689,14 +3680,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         }}
                                     >
                                         {/* Dashed diagonal line */}
-                                        <line
-                                            x1={startX}
-                                            y1={startY}
-                                            x2={endX}
-                                            y2={endY}
-                                            stroke="#00cc00"
-                                            strokeDasharray="4,4"
-                                        />
+                                        <path d={dashedPath(startX, startY, endX, endY)} stroke="#00cc00" strokeWidth="0.7" fill="none" />
                                         {/* Arrow head at end */}
                                         <polygon
                                             points={`
@@ -3705,6 +3689,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 ${endX - arrowSize * Math.cos(angle + Math.PI / 6)},${endY - arrowSize * Math.sin(angle + Math.PI / 6)}
                                             `}
                                             fill="#00cc00"
+                                            stroke="none"
                                         />
                                     </svg>
                                 </React.Fragment>
