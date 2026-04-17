@@ -244,6 +244,7 @@ function App() {
     } = useUILayout();
     const [showDependencies, setShowDependencies] = useState(false);
     const [hoveredActionId, setHoveredActionId] = useState(null);
+    const [showMicroOnHover, setShowMicroOnHover] = useState(true);
 
     // Intersection image animation state
     const {
@@ -708,6 +709,9 @@ function App() {
                 break;
             case 'legend':
                 setShowFloatingLegend(true);
+                break;
+            case 'toggleMicroOnHover':
+                setShowMicroOnHover(v => !v);
                 break;
             case 'help':
                 setHelpModal(true);
@@ -1404,6 +1408,7 @@ draw();
                     layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
+                    showMicroOnHover={showMicroOnHover}
                 />
             <header className="app-header" onMouseEnter={() => { helpZoneRef.current = 'interface'; }}>
                 <div className="header-inputs">
@@ -1945,6 +1950,7 @@ draw();
                                 showComments={simulationEnabled ? false : showComments}
                                 showRemarks={simulationEnabled ? false : showRemarks}
                                 showGroupNames={showGroupNamesDiagram}
+                                showMicroOnHover={showMicroOnHover}
                             />
                         </div>
                     )}

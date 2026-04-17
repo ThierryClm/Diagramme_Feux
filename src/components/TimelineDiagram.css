@@ -918,6 +918,93 @@
     fill: #00ff00;
 }
 
+/* Action hover tooltip */
+.action-hover-tooltip {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    border: 1px solid #4ecdc4;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-family: monospace;
+}
+.action-hover-tooltip-name {
+    color: #4ecdc4;
+    font-weight: bold;
+}
+.action-hover-tooltip-seconds {
+    color: #aaa;
+}
+.action-hover-tooltip-micro {
+    border-top: 1px solid #444;
+    margin-top: 4px;
+    padding-top: 4px;
+    white-space: pre-wrap;
+}
+.action-hover-tooltip-micro .micro-keyword {
+    color: rgb(180, 50, 255);
+}
+.action-hover-tooltip-micro .micro-bold {
+    font-weight: bold;
+}
+
+/* High-contrast mode */
+body.high-contrast-mode .action-hover-tooltip {
+    background: #000;
+    color: #fff;
+    border-color: #ffff00;
+}
+body.high-contrast-mode .action-hover-tooltip-name {
+    color: #ffff00;
+}
+body.high-contrast-mode .action-hover-tooltip-seconds {
+    color: #ccc;
+}
+body.high-contrast-mode .action-hover-tooltip-micro {
+    border-top-color: #666;
+}
+body.high-contrast-mode .action-hover-tooltip-micro .micro-keyword {
+    color: #ff80ff;
+}
+
+/* Amber mode */
+body.amber-mode .action-hover-tooltip {
+    background: #1a1200;
+    color: #ffcc00;
+    border-color: #ff8800;
+}
+body.amber-mode .action-hover-tooltip-name {
+    color: #ff8800;
+}
+body.amber-mode .action-hover-tooltip-seconds {
+    color: #cc9900;
+}
+body.amber-mode .action-hover-tooltip-micro {
+    border-top-color: #554400;
+}
+body.amber-mode .action-hover-tooltip-micro .micro-keyword {
+    color: #ff6600;
+}
+
+/* Light mode */
+body.light-mode .action-hover-tooltip {
+    background: #fff;
+    color: #333;
+    border-color: #2196f3;
+}
+body.light-mode .action-hover-tooltip-name {
+    color: #1565c0;
+}
+body.light-mode .action-hover-tooltip-seconds {
+    color: #666;
+}
+body.light-mode .action-hover-tooltip-micro {
+    border-top-color: #ddd;
+}
+body.light-mode .action-hover-tooltip-micro .micro-keyword {
+    color: rgb(130, 0, 200);
+}
+
 /* Simulation playhead cursor */
 .simulation-playhead {
     position: absolute;

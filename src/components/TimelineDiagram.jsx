@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import LocalInput from './LocalInput';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts }) => {
     const containerRef = useRef(null);
 
     // Drag state - supports both group bars and action overlays
@@ -17,6 +17,44 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             setHoveredGroupIdProp(id);
         }
     }, [setHoveredGroupIdProp]);
+    // Action tooltip: immediate info + micro condition after 2s
+    const [actionTooltip, setActionTooltip] = useState(null); // { actionId, showMicro, x, y }
+    const microTimerRef = useRef(null);
+    const actionTooltipMouseRef = useRef({ x: 0, y: 0 });
+
+    useEffect(() => {
+        if (microTimerRef.current) { clearTimeout(microTimerRef.current); microTimerRef.current = null; }
+
+        if (!hoveredActionId) { setActionTooltip(null); return; }
+
+        const action = actionData.find(a => a.id === hoveredActionId);
+        if (!action) { setActionTooltip(null); return; }
+
+        // Capture mouse position at hover start (fixed top-left corner)
+        const pos = { ...actionTooltipMouseRef.current };
+
+        // Show tooltip immediately (without micro)
+        setActionTooltip({ actionId: hoveredActionId, showMicro: false, x: pos.x, y: pos.y });
+
+        // After 2s, enrich with micro text if enabled and available
+        if (showMicroOnHover && action.micro) {
+            microTimerRef.current = setTimeout(() => {
+                setActionTooltip(prev => prev && prev.actionId === hoveredActionId ? { ...prev, showMicro: true } : prev);
+            }, 2000);
+        }
+
+        return () => {
+            if (microTimerRef.current) { clearTimeout(microTimerRef.current); microTimerRef.current = null; }
+        };
+    }, [hoveredActionId, showMicroOnHover, actionData]);
+
+    // Track mouse position for tooltip placement
+    useEffect(() => {
+        const handler = (e) => { actionTooltipMouseRef.current = { x: e.clientX, y: e.clientY }; };
+        document.addEventListener('mousemove', handler);
+        return () => document.removeEventListener('mousemove', handler);
+    }, []);
+
     // Phase flag tooltip (aiguillage/escamotage)
     const [phaseFlagTooltipId, setPhaseFlagTooltipId] = useState(null);
     const phaseFlagTimerRef = useRef(null);
@@ -1713,7 +1751,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <div
                                                                         className="drag-handle drag-handle-start"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                                     />
                                                                     <div className="phase-bar green-dark" style={{ width: `${firstPartWidth}px` }}></div>
                                                                 </div>
@@ -1730,7 +1768,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                         className="drag-handle drag-handle-end"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
                                                                         style={{ left: `${secondPartWidth}px` }}
-                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                                     />
                                                                 </div>
                                                             </React.Fragment>
@@ -1746,7 +1784,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             <div
                                                                 className="drag-handle drag-handle-start"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                             />
                                                             <div className="phase-bar green-dark" style={{ width: `${greenWidth}px` }}></div>
                                                             <div className={`phase-bar ${lucarneOrangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
@@ -1754,7 +1792,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                 className="drag-handle drag-handle-end"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
                                                                 style={{ left: `${greenWidth}px` }}
-                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                             />
                                                         </div>
                                                     );
@@ -1799,7 +1837,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-start"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                                     />
                                                                 </div>
                                                                 <div
@@ -1812,7 +1850,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-end"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                                     />
                                                                 </div>
                                                             </React.Fragment>
@@ -1829,12 +1867,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-start"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                             />
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-end"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                             />
                                                         </div>
                                                     );
@@ -1857,7 +1895,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-start"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                                     />
                                                                     {abrv && (
                                                                         <span className="ouverture-anticipee-label">{abrv}</span>
@@ -1872,7 +1910,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                                     <div
                                                                         className="action-drag-handle action-drag-handle-end"
                                                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                                     />
                                                                 </div>
                                                             </React.Fragment>
@@ -1888,12 +1926,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-start"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                             />
                                                             <div
                                                                 className="action-drag-handle action-drag-handle-end"
                                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                             />
                                                             {abrv && (
                                                                 <span className="ouverture-anticipee-label">{abrv}</span>
@@ -1960,7 +1998,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                             />
                                         </div>
                                         {/* Second part: from start of cycle to fin */}
@@ -1978,7 +2016,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                             />
                                             {abrv && (
                                                 <span className="adaptatif-label">{abrv}</span>
@@ -2008,13 +2046,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     <div
                                         className="action-drag-handle action-drag-handle-start"
                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
+
                                     />
                                     {/* Drag handle for end (right edge) */}
                                     <div
                                         className="action-drag-handle action-drag-handle-end"
                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
+
                                     />
                                     {abrv && (
                                         <span className="adaptatif-label">{abrv}</span>
@@ -2254,7 +2294,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                             />
                                         </div>
                                         {/* Second part: from start of cycle to fin */}
@@ -2272,7 +2312,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                             />
                                             {abrv && (
                                                 <span className="escamotage-label">{abrv}</span>
@@ -2302,13 +2342,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     <div
                                         className="action-drag-handle action-drag-handle-start"
                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', origDeb)}
-                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
+
                                     />
                                     {/* Drag handle for end (right edge) */}
                                     <div
                                         className="action-drag-handle action-drag-handle-end"
                                         onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', origFin)}
-                                        title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
+
                                     />
                                     {abrv && (
                                         <span className="escamotage-label">{abrv}</span>
@@ -2542,14 +2584,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         <div
                                             className="action-drag-handle action-drag-handle-start"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                         {/* Drag handle for end (right edge) */}
                                         <div
                                             className="action-drag-handle action-drag-handle-end"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                     </div>
@@ -2644,14 +2686,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         <div
                                             className="action-drag-handle action-drag-handle-start"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                         {/* Drag handle for end (right edge) */}
                                         <div
                                             className="action-drag-handle action-drag-handle-end"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                     </div>
@@ -3088,7 +3130,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                 style={{ pointerEvents: 'auto' }}
                                             />
                                         </div>
@@ -3115,7 +3157,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                 style={{ pointerEvents: 'auto', left: 'auto', right: '0' }}
                                             />
                                         </div>
@@ -3169,14 +3211,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         <div
                                             className="action-drag-handle action-drag-handle-start"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                         {/* Drag handle for end (right edge) */}
                                         <div
                                             className="action-drag-handle action-drag-handle-end"
                                             onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                            title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                             style={{ pointerEvents: 'auto' }}
                                         />
                                     </div>
@@ -3283,7 +3325,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                 style={{ pointerEvents: 'auto' }}
                                             />
                                         </div>
@@ -3308,7 +3350,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                 style={{ pointerEvents: 'auto' }}
                                             />
                                         </div>
@@ -3359,13 +3401,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             <div
                                                 className="action-drag-handle action-drag-handle-start"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', deb)}
-                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                 style={{ pointerEvents: 'auto' }}
                                             />
                                             <div
                                                 className="action-drag-handle action-drag-handle-end"
                                                 onMouseDown={(e) => handleActionDragStart(e, action.id, 'fin', fin)}
-                                                title={`${action.action}\nseconde ${Math.round(deb)} à ${Math.round(fin)}`}
+
                                                 style={{ pointerEvents: 'auto' }}
                                             />
                                         </div>
@@ -4365,6 +4407,37 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     whiteSpace: 'nowrap'
                 }}>
                     {Math.round(displayValue)}s
+                </div>
+            );
+        })()}
+        {actionTooltip && (() => {
+            const action = actionData.find(a => a.id === actionTooltip.actionId);
+            if (!action) return null;
+            const deb = parseInt(action.deb) || 0;
+            const fin = parseInt(action.fin) || 0;
+            const hasMicro = actionTooltip.showMicro && action.micro;
+            return (
+                <div className="action-hover-tooltip" style={{
+                    position: 'fixed',
+                    left: actionTooltip.x + 12,
+                    top: actionTooltip.y + 8,
+                    pointerEvents: 'none',
+                    zIndex: 9999,
+                    maxWidth: '350px'
+                }}>
+                    <div className="action-hover-tooltip-name">{action.action}</div>
+                    <div className="action-hover-tooltip-seconds">seconde {deb} à {fin}</div>
+                    {hasMicro && (
+                        <div className="action-hover-tooltip-micro">
+                            {(action.micro || '').split(/(\b\w*(?:DA|TPPh|AVert|TMAB)\w*\b|[{}\[\]()]|\b(?:et|ou)\b)/g).map((part, i) =>
+                                /DA|TPPh|AVert|TMAB/.test(part)
+                                    ? <span key={i} className="micro-keyword">{part}</span>
+                                    : /^[{}\[\]()]$/.test(part) || /^(et|ou)$/.test(part)
+                                        ? <span key={i} className="micro-bold">{part}</span>
+                                        : part
+                            )}
+                        </div>
+                    )}
                 </div>
             );
         })()}

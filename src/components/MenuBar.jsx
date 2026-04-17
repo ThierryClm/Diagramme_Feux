@@ -16,7 +16,8 @@ const MenuBar = ({
     biCarrefourSeparator = null,
     layoutOptions = {},
     pixelsPerSecond = 10,
-    onPixelsPerSecondChange
+    onPixelsPerSecondChange,
+    showMicroOnHover = true
 }) => {
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -251,7 +252,9 @@ const MenuBar = ({
                         { label: 'Points', action: 'arrowStyle:dotted', styleId: 'dotted' },
                         { label: 'Double trait', action: 'arrowStyle:double', styleId: 'double' },
                         { type: 'separator' },
-                        { label: 'Légende', action: 'legend' }
+                        { label: 'Légende', action: 'legend' },
+                        { type: 'separator' },
+                        { label: 'Condition micro au survol', action: 'toggleMicroOnHover', checked: showMicroOnHover }
                     ]
                 }
             ]
@@ -346,9 +349,10 @@ const MenuBar = ({
         return (
             <button
                 key={subIdx}
-                className="menu-item"
+                className={`menu-item ${subItem.checked ? 'checked' : ''}`}
                 onClick={() => handleItemClick(subItem.action)}
             >
+                {subItem.checked !== undefined && subItem.checked && <span className="checkmark" style={{ color: '#2ecc71' }}>✓</span>}
                 {subItem.label}
             </button>
         );
