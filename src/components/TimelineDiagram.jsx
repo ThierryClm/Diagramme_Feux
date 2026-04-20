@@ -7,6 +7,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
     // Saved selection range for remarques font-size buttons
     const remarquesSelectionRef = useRef(null);
+    // Whether the mouse is currently over the diagram container (not the action table)
+    // Used to suppress the action tooltip when hovering actions via the ActionTable rows
+    const [isMouseInDiagram, setIsMouseInDiagram] = useState(false);
 
     // Drag state - supports both group bars and action overlays
     const [dragState, setDragState] = useState(null);
@@ -31,7 +34,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         if (tooltipTimer2Ref.current) { clearTimeout(tooltipTimer2Ref.current); tooltipTimer2Ref.current = null; }
         setActionTooltip(null);
 
-        if (!hoveredActionId) return;
+        // Only show the tooltip when the mouse is in the diagram,
+        // not when the hover comes from the ActionTable (to avoid redundancy with the micro field)
+        if (!hoveredActionId || !isMouseInDiagram) return;
 
         const action = actionData.find(a => a.id === hoveredActionId);
         if (!action) return;
@@ -55,7 +60,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             if (tooltipTimer1Ref.current) { clearTimeout(tooltipTimer1Ref.current); tooltipTimer1Ref.current = null; }
             if (tooltipTimer2Ref.current) { clearTimeout(tooltipTimer2Ref.current); tooltipTimer2Ref.current = null; }
         };
-    }, [hoveredActionId, showMicroOnHover, actionData]);
+    }, [hoveredActionId, showMicroOnHover, actionData, isMouseInDiagram]);
 
     // Track mouse position for tooltip placement
     useEffect(() => {
@@ -989,7 +994,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
     };
 
     return (<>
-        <div className={`timeline-container ${dragState ? 'dragging' : ''}`} ref={containerRef}>
+        <div
+            className={`timeline-container ${dragState ? 'dragging' : ''}`}
+            ref={containerRef}
+            onMouseEnter={() => setIsMouseInDiagram(true)}
+            onMouseLeave={() => setIsMouseInDiagram(false)}
+        >
             <h3 className="diagram-title">
                 <span>Diagramme{planName ? ` : simulation du plan de feu ${planName}` : (activePFName ? ` - ${activePFName}` : '')}</span>
                 {setCycleLengthInput && (
