@@ -1135,6 +1135,19 @@ body.light-mode .action-hover-tooltip-micro .micro-keyword {
     color: #F44336;
 }
 
+.comment-size-btn {
+    font-weight: bold;
+    font-size: 1em;
+    cursor: pointer;
+    user-select: none;
+    color: #888;
+    margin-left: 4px;
+}
+
+.comment-size-btn:hover {
+    color: #ccc;
+}
+
 .comment-row {
     height: 30px;
     display: flex;

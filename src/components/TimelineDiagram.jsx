@@ -5,6 +5,9 @@ import './TimelineDiagram.css';
 const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts }) => {
     const containerRef = useRef(null);
 
+    // Saved selection range for remarques font-size buttons
+    const remarquesSelectionRef = useRef(null);
+
     // Drag state - supports both group bars and action overlays
     const [dragState, setDragState] = useState(null);
     // Hovered group id for showing dependencies only for that group
@@ -17,34 +20,40 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             setHoveredGroupIdProp(id);
         }
     }, [setHoveredGroupIdProp]);
-    // Action tooltip: immediate info + micro condition after 2s
+    // Action tooltip: info at 2s + micro condition at 4s
     const [actionTooltip, setActionTooltip] = useState(null); // { actionId, showMicro, x, y }
-    const microTimerRef = useRef(null);
+    const tooltipTimer1Ref = useRef(null);
+    const tooltipTimer2Ref = useRef(null);
     const actionTooltipMouseRef = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
-        if (microTimerRef.current) { clearTimeout(microTimerRef.current); microTimerRef.current = null; }
+        if (tooltipTimer1Ref.current) { clearTimeout(tooltipTimer1Ref.current); tooltipTimer1Ref.current = null; }
+        if (tooltipTimer2Ref.current) { clearTimeout(tooltipTimer2Ref.current); tooltipTimer2Ref.current = null; }
+        setActionTooltip(null);
 
-        if (!hoveredActionId) { setActionTooltip(null); return; }
+        if (!hoveredActionId) return;
 
         const action = actionData.find(a => a.id === hoveredActionId);
-        if (!action) { setActionTooltip(null); return; }
+        if (!action) return;
 
         // Capture mouse position at hover start (fixed top-left corner)
         const pos = { ...actionTooltipMouseRef.current };
 
-        // Show tooltip immediately (without micro)
-        setActionTooltip({ actionId: hoveredActionId, showMicro: false, x: pos.x, y: pos.y });
+        // After 0.5s: show tooltip with action name + seconds
+        tooltipTimer1Ref.current = setTimeout(() => {
+            setActionTooltip({ actionId: hoveredActionId, showMicro: false, x: pos.x, y: pos.y });
+        }, 500);
 
-        // After 2s, enrich with micro text if enabled and available
+        // After 3s: enrich with micro text if enabled and available
         if (showMicroOnHover && action.micro) {
-            microTimerRef.current = setTimeout(() => {
+            tooltipTimer2Ref.current = setTimeout(() => {
                 setActionTooltip(prev => prev && prev.actionId === hoveredActionId ? { ...prev, showMicro: true } : prev);
-            }, 2000);
+            }, 3000);
         }
 
         return () => {
-            if (microTimerRef.current) { clearTimeout(microTimerRef.current); microTimerRef.current = null; }
+            if (tooltipTimer1Ref.current) { clearTimeout(tooltipTimer1Ref.current); tooltipTimer1Ref.current = null; }
+            if (tooltipTimer2Ref.current) { clearTimeout(tooltipTimer2Ref.current); tooltipTimer2Ref.current = null; }
         };
     }, [hoveredActionId, showMicroOnHover, actionData]);
 
@@ -4326,12 +4335,95 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 <span>Remarques</span>
                                 <span className="comment-color-btn comment-color-plus" title="Couleur verte (+)">+</span>
                                 <span className="comment-color-btn comment-color-minus" title="Couleur rouge (-)">−</span>
+                                <span
+                                    className="comment-size-btn"
+                                    title="Agrandir le texte sélectionné"
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        const range = remarquesSelectionRef.current;
+                                        if (!range || range.collapsed) return;
+                                        const container = range.commonAncestorContainer;
+                                        const editable = container.nodeType === 1 ? container.closest('.input-remarques') : container.parentElement?.closest('.input-remarques');
+                                        if (!editable) return;
+                                        const parentEl = container.nodeType === 1 ? container : container.parentElement;
+                                        const current = parentEl ? parseFloat(window.getComputedStyle(parentEl).fontSize) : 14;
+                                        const span = document.createElement('span');
+                                        span.style.fontSize = (current + 2) + 'px';
+                                        try {
+                                            const contents = range.extractContents();
+                                            span.appendChild(contents);
+                                            range.insertNode(span);
+                                        } catch { return; }
+                                        // Restore and save selection on the new span
+                                        // Don't call updateRemarques here: it would trigger a React re-render
+                                        // that replaces the DOM via dangerouslySetInnerHTML, destroying the selection.
+                                        // The onBlur handler will save the state when the user leaves the field.
+                                        const newRange = document.createRange();
+                                        newRange.selectNodeContents(span);
+                                        const sel = window.getSelection();
+                                        sel.removeAllRanges();
+                                        sel.addRange(newRange);
+                                        remarquesSelectionRef.current = newRange.cloneRange();
+                                        editable.focus();
+                                    }}
+                                >▲</span>
+                                <span
+                                    className="comment-size-btn"
+                                    title="Réduire le texte sélectionné"
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        const range = remarquesSelectionRef.current;
+                                        if (!range || range.collapsed) return;
+                                        const container = range.commonAncestorContainer;
+                                        const editable = container.nodeType === 1 ? container.closest('.input-remarques') : container.parentElement?.closest('.input-remarques');
+                                        if (!editable) return;
+                                        const parentEl = container.nodeType === 1 ? container : container.parentElement;
+                                        const current = parentEl ? parseFloat(window.getComputedStyle(parentEl).fontSize) : 14;
+                                        const newSize = Math.max(8, current - 2);
+                                        const span = document.createElement('span');
+                                        span.style.fontSize = newSize + 'px';
+                                        try {
+                                            const contents = range.extractContents();
+                                            span.appendChild(contents);
+                                            range.insertNode(span);
+                                        } catch { return; }
+                                        // Restore and save selection on the new span
+                                        // Don't call updateRemarques here: it would trigger a React re-render
+                                        // that replaces the DOM via dangerouslySetInnerHTML, destroying the selection.
+                                        // The onBlur handler will save the state when the user leaves the field.
+                                        const newRange = document.createRange();
+                                        newRange.selectNodeContents(span);
+                                        const sel = window.getSelection();
+                                        sel.removeAllRanges();
+                                        sel.addRange(newRange);
+                                        remarquesSelectionRef.current = newRange.cloneRange();
+                                        editable.focus();
+                                    }}
+                                >▼</span>
                             </div>
                             <div
                                 className="input-remarques"
                                 contentEditable
                                 suppressContentEditableWarning
                                 dangerouslySetInnerHTML={{ __html: remarques || '' }}
+                                onMouseUp={() => {
+                                    const sel = window.getSelection();
+                                    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                                        remarquesSelectionRef.current = sel.getRangeAt(0).cloneRange();
+                                    }
+                                }}
+                                onKeyUp={() => {
+                                    const sel = window.getSelection();
+                                    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                                        remarquesSelectionRef.current = sel.getRangeAt(0).cloneRange();
+                                    }
+                                }}
+                                onSelect={() => {
+                                    const sel = window.getSelection();
+                                    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                                        remarquesSelectionRef.current = sel.getRangeAt(0).cloneRange();
+                                    }
+                                }}
                                 onBlur={(e) => {
                                     const html = e.currentTarget.innerHTML;
                                     const text = e.currentTarget.textContent || '';
