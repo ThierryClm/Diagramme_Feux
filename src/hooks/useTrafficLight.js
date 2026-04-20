@@ -1044,20 +1044,26 @@ export const useTrafficLight = () => {
             }
 
             // Handle new pfTabs format or old actionData format
+            // All branches produce PFs with guaranteed complete structure
             if (state.pfTabs && Array.isArray(state.pfTabs) && state.pfTabs.length > 0) {
-                setPfTabs(state.pfTabs);
+                setPfTabs(ensurePFIntegrity(state.pfTabs, state.groups, state.conflictMatrix));
                 setActivePFIdRaw(state.activePFId || 1);
             } else if (state.actionData && Array.isArray(state.actionData)) {
-                setPfTabs([{ id: 1, name: 'PF1', data: state.actionData }]);
+                setPfTabs([createEmptyPF({
+                    id: 1,
+                    name: 'PF1',
+                    data: state.actionData,
+                    sourceGroups: state.groups,
+                    conflictMatrix: state.conflictMatrix
+                })]);
                 setActivePFIdRaw(1);
             } else {
-                // Réinitialiser avec un PF vide (structure inline pour éviter dépendance)
-                const emptyRow = (id) => ({
-                    id, gf: '', action: '', description: '', deb: '', fin: '',
-                    abrv: '', micro: '', plage1: '', plage2: '',
-                    actGf1: '', actGf1Gf2: '', actGf1Gf3: '', actGf1Gf4: ''
-                });
-                setPfTabs([{ id: 1, name: 'PF1', data: Array.from({ length: 20 }, (_, i) => emptyRow(i + 1)) }]);
+                setPfTabs([createEmptyPF({
+                    id: 1,
+                    name: 'PF1',
+                    sourceGroups: state.groups,
+                    conflictMatrix: state.conflictMatrix
+                })]);
                 setActivePFIdRaw(1);
             }
 
@@ -1146,13 +1152,8 @@ export const useTrafficLight = () => {
         // Reset conflict matrix (8x8)
         setConflictMatrix(Array.from({ length: 8 }, () => Array(8).fill('')));
 
-        // Reset to single empty PF tab
-        const emptyRow = (id) => ({
-            id, gf: '', action: '', description: '', deb: '', fin: '',
-            abrv: '', micro: '', plage1: '', plage2: '',
-            actGf1: '', actGf1Gf2: '', actGf1Gf3: '', actGf1Gf4: ''
-        });
-        setPfTabs([{ id: 1, name: 'PF1', data: Array.from({ length: 30 }, (_, i) => emptyRow(i + 1)) }]);
+        // Reset to single empty PF tab (all fields guaranteed)
+        setPfTabs([createEmptyPF({ id: 1, name: 'PF1', sourceGroups: newGroups, groupCount: 8 })]);
         setActivePFIdRaw(1);
         resetPfSyncRefs(1);
 
@@ -1235,6 +1236,92 @@ export const useTrafficLight = () => {
     });
 
     const createEmptyActionData = () => Array.from({ length: 30 }, (_, i) => createEmptyActionRow(i + 1));
+
+    /**
+     * Build a diagram array from a list of groups.
+     * Used to initialize pf.diagram when missing.
+     */
+    const buildDiagramFromGroups = (sourceGroups) => {
+        if (!Array.isArray(sourceGroups)) return [];
+        return sourceGroups.map(g => ({
+            groupId: g.id,
+            offset: (g.offset !== undefined && !isNaN(g.offset)) ? g.offset : 0,
+            greenDuration: (g.durations?.green !== undefined && !isNaN(g.durations.green)) ? g.durations.green : 10,
+            da: g.da || '',
+            comment: g.comment || '',
+            commentColor: g.commentColor || '',
+            phaseFlag: g.phaseFlag || ''
+        }));
+    };
+
+    /**
+     * Build an empty conflict matrix sized to groupCount x groupCount.
+     */
+    const buildEmptyMatrix = (groupCount) => {
+        const n = Math.max(0, groupCount || 0);
+        return Array.from({ length: n }, () => new Array(n).fill(''));
+    };
+
+    /**
+     * Create a new PF with all required fields guaranteed.
+     * @param {Object} opts - { id, name, data, diagram, cycleLength, microCustomFields, conflictMatrix, remarques, sourceGroups, groupCount }
+     */
+    const createEmptyPF = (opts = {}) => {
+        const { id, name, sourceGroups, groupCount } = opts;
+        return {
+            id: id ?? 1,
+            name: name ?? `PF${id ?? 1}`,
+            data: Array.isArray(opts.data) && opts.data.length > 0 ? opts.data : createEmptyActionData(),
+            diagram: Array.isArray(opts.diagram) && opts.diagram.length > 0
+                ? opts.diagram
+                : buildDiagramFromGroups(sourceGroups),
+            cycleLength: opts.cycleLength ?? DEFAULT_CYCLE,
+            microCustomFields: Array.isArray(opts.microCustomFields) ? opts.microCustomFields : [],
+            conflictMatrix: Array.isArray(opts.conflictMatrix) && opts.conflictMatrix.length > 0
+                ? opts.conflictMatrix
+                : buildEmptyMatrix(groupCount ?? (sourceGroups?.length || 0)),
+            remarques: opts.remarques ?? ''
+        };
+    };
+
+    /**
+     * Ensure every PF in the array has a complete structure.
+     * Idempotent: preserves existing valid fields, fills only what's missing.
+     * @param {Array} pfTabsArr - array of PF objects (possibly incomplete)
+     * @param {Array} fallbackGroups - groups to use for building diagrams if missing
+     * @param {Array} fallbackMatrix - main conflict matrix to use if pf.conflictMatrix is missing
+     */
+    const ensurePFIntegrity = (pfTabsArr, fallbackGroups, fallbackMatrix) => {
+        if (!Array.isArray(pfTabsArr)) return [];
+        const groupCount = fallbackGroups?.length || 0;
+        return pfTabsArr.map(pf => {
+            if (!pf || typeof pf !== 'object') return null;
+            const hasDiagram = Array.isArray(pf.diagram) && pf.diagram.length > 0;
+            const hasMatrix = Array.isArray(pf.conflictMatrix) && pf.conflictMatrix.length > 0;
+            return {
+                id: pf.id,
+                name: pf.name || `PF${pf.id}`,
+                data: Array.isArray(pf.data) && pf.data.length > 0 ? pf.data : createEmptyActionData(),
+                diagram: hasDiagram
+                    ? pf.diagram.map(d => ({
+                        ...d,
+                        offset: (d.offset !== undefined && !isNaN(d.offset)) ? d.offset : 0,
+                        greenDuration: (d.greenDuration !== undefined && !isNaN(d.greenDuration)) ? d.greenDuration : 10
+                    }))
+                    : buildDiagramFromGroups(fallbackGroups),
+                cycleLength: pf.cycleLength ?? DEFAULT_CYCLE,
+                microCustomFields: Array.isArray(pf.microCustomFields) ? pf.microCustomFields : [],
+                conflictMatrix: hasMatrix
+                    ? pf.conflictMatrix
+                    : (Array.isArray(fallbackMatrix) && fallbackMatrix.length > 0
+                        ? fallbackMatrix.map(row => [...row])
+                        : buildEmptyMatrix(groupCount)),
+                remarques: pf.remarques ?? '',
+                // Preserve any additional field that might exist (color, etc.)
+                ...(pf.color !== undefined ? { color: pf.color } : {})
+            };
+        }).filter(Boolean);
+    };
 
     // Multiple PF (Plans de Feux) support
     const [pfTabs, setPfTabs] = useState(() => [{ id: 1, name: 'PF1', data: createEmptyActionData(), remarques: '' }]);
@@ -1932,30 +2019,16 @@ export const useTrafficLight = () => {
         // Skip during initial load
         if (isInitialLoadRef.current) return;
 
-        // Build diagram data from groups
-        const diagramData = groups.map(g => ({
-            groupId: g.id,
-            offset: g.offset,
-            greenDuration: g.durations.green,
-            da: g.da || '',
-            comment: g.comment || '',
-            commentColor: g.commentColor || '',
-            phaseFlag: g.phaseFlag || ''
-        }));
+        // Build diagram data from groups (uses shared helper for consistency)
+        const diagramData = buildDiagramFromGroups(groups);
         const groupsKey = JSON.stringify(diagramData);
         // Include cycleLength in sync key so that cycle-only changes are saved
         const syncKey = groupsKey + '|' + cycleLength;
 
-        // When PF just changed: don't save to the new PF — let the reverse sync
-        // load the new PF's data first. Save pending edits to the OLD PF only
-        // if we've been actively syncing (lastSyncedGroupsRef !== null).
-        if (prevActivePFIdForGroupsSyncRef.current !== activePFId) {
-            const oldPFId = prevActivePFIdForGroupsSyncRef.current;
-            prevActivePFIdForGroupsSyncRef.current = activePFId;
-
-            // Save current group data to the OLD PF before switching
+        // Helper: write diagram + cycleLength to a specific PF, skipping if unchanged
+        const writeDiagramToPF = (pfId) => {
             setPfTabs(prevTabs => {
-                const tabIndex = prevTabs.findIndex(pf => pf.id === oldPFId);
+                const tabIndex = prevTabs.findIndex(pf => pf.id === pfId);
                 if (tabIndex === -1) return prevTabs;
                 const currentPfDiagram = prevTabs[tabIndex].diagram;
                 if (JSON.stringify(currentPfDiagram) === groupsKey && prevTabs[tabIndex].cycleLength === cycleLength) return prevTabs;
@@ -1967,6 +2040,13 @@ export const useTrafficLight = () => {
                 };
                 return newTabs;
             });
+        };
+
+        // When PF just changed: save pending edits to the OLD PF, then let reverse sync load the new one
+        if (prevActivePFIdForGroupsSyncRef.current !== activePFId) {
+            const oldPFId = prevActivePFIdForGroupsSyncRef.current;
+            prevActivePFIdForGroupsSyncRef.current = activePFId;
+            writeDiagramToPF(oldPFId);
             lastSyncedGroupsRef.current = null;
             return;
         }
@@ -1976,25 +2056,7 @@ export const useTrafficLight = () => {
         }
         lastSyncedGroupsRef.current = syncKey;
 
-        setPfTabs(prevTabs => {
-            const tabIndex = prevTabs.findIndex(pf => pf.id === activePFId);
-            if (tabIndex === -1) return prevTabs;
-
-            // Check if diagram or cycleLength actually changed
-            const currentPfDiagram = prevTabs[tabIndex].diagram;
-            if (JSON.stringify(currentPfDiagram) === groupsKey && prevTabs[tabIndex].cycleLength === cycleLength) {
-                return prevTabs; // No change needed
-            }
-
-            // Update the PF with the new diagram data
-            const newTabs = [...prevTabs];
-            newTabs[tabIndex] = {
-                ...newTabs[tabIndex],
-                diagram: diagramData,
-                cycleLength: cycleLength
-            };
-            return newTabs;
-        });
+        writeDiagramToPF(activePFId);
     }, [groups, cycleLength, activePFId]);
 
     // Apply diagram data from active PF tab to groups when changing tabs
