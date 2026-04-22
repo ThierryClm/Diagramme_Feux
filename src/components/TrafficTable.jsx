@@ -314,7 +314,7 @@ const TrafficTable = ({
             </div>
             <div style={{ position: 'relative' }}>
             {isDatasetEmpty && (
-                <div className="empty-state-overlay">
+                <div className="empty-state-overlay" style={{ alignItems: 'flex-start', paddingTop: '120px' }}>
                     <EmptyState
                         icon="traffic"
                         title="Données trafic non renseignées"

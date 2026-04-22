@@ -30,10 +30,30 @@ const ICONS = {
     ),
     traffic: (
         <svg viewBox="0 0 64 64" width="56" height="56" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="8" y1="54" x2="56" y2="54" />
-            <rect x="12" y="38" width="8" height="16" rx="1" />
-            <rect x="26" y="28" width="8" height="26" rx="1" />
-            <rect x="40" y="18" width="8" height="36" rx="1" />
+            {/* Calculator body */}
+            <rect x="12" y="8" width="40" height="48" rx="3" />
+            {/* Screen */}
+            <rect x="18" y="14" width="28" height="10" rx="1" />
+            {/* Buttons (3x3 grid) */}
+            <circle cx="22" cy="32" r="1.5" fill="currentColor" />
+            <circle cx="32" cy="32" r="1.5" fill="currentColor" />
+            <circle cx="42" cy="32" r="1.5" fill="currentColor" />
+            <circle cx="22" cy="42" r="1.5" fill="currentColor" />
+            <circle cx="32" cy="42" r="1.5" fill="currentColor" />
+            <circle cx="42" cy="42" r="1.5" fill="currentColor" />
+            <circle cx="22" cy="50" r="1.5" fill="currentColor" />
+            <circle cx="32" cy="50" r="1.5" fill="currentColor" />
+            <circle cx="42" cy="50" r="1.5" fill="currentColor" />
+        </svg>
+    ),
+    list: (
+        <svg viewBox="0 0 64 64" width="56" height="56" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="14" cy="16" r="2" fill="currentColor" />
+            <line x1="24" y1="16" x2="54" y2="16" />
+            <circle cx="14" cy="32" r="2" fill="currentColor" />
+            <line x1="24" y1="32" x2="54" y2="32" />
+            <circle cx="14" cy="48" r="2" fill="currentColor" />
+            <line x1="24" y1="48" x2="54" y2="48" />
         </svg>
     )
 };

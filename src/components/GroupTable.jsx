@@ -55,7 +55,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
             {groups.length > 0 && groups.every(g => !g.type || g.type === '') && (
                 <div className="empty-state-overlay">
                     <EmptyState
-                        icon="matrix"
+                        icon="list"
                         title="Formulaire non renseigné"
                         hint="Saisissez les noms des groupes de feu ainsi que les types (Véhicules, Piéton, Cycliste, etc.) dans la colonne « Type »."
                     />

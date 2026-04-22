@@ -1221,15 +1221,25 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
                 <div className="timeline-scroll-area" style={{ width: `${totalWidth}px`, position: 'relative' }}>
                     {/* Empty state: no group has a configured green duration */}
-                    {groups.length > 0 && !groups.some(g => (g.durations?.green || 0) > 0) && (
-                        <div className="empty-state-overlay">
-                            <EmptyState
-                                icon="diagram"
-                                title="Diagramme vide"
-                                hint="Saisissez les durées de vert de vos groupes de feux dans le panneau de gauche (onglet Configuration) pour voir les phases apparaître ici."
-                            />
-                        </div>
-                    )}
+                    {groups.length > 0 && !groups.some(g => (g.durations?.green || 0) > 0) && (() => {
+                        const formEmpty = groups.every(g => !g.type || g.type === '');
+                        const matrixEmpty = Array.isArray(conflictMatrix) && conflictMatrix.length > 0 &&
+                            conflictMatrix.every(row => row.every(v => v === '' || v === null || v === undefined));
+                        const steps = [];
+                        if (formEmpty) steps.push("Renseigner le formulaire des groupes de feu (onglet Configuration)");
+                        if (matrixEmpty) steps.push("Renseigner la matrice des temps interverts");
+                        steps.push("Saisir les durées de vert pour voir les phases apparaître");
+                        const hint = 'Veuillez :\n' + steps.map(s => `•  ${s}`).join('\n');
+                        return (
+                            <div className="empty-state-overlay">
+                                <EmptyState
+                                    icon="diagram"
+                                    title="Diagramme vide"
+                                    hint={hint}
+                                />
+                            </div>
+                        );
+                    })()}
                     <div className="timeline-track-container" style={{ width: `${totalWidth}px` }}>
                         {/* Grid lines */}
                         <div className="timeline-grid">
