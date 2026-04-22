@@ -791,6 +791,24 @@
     margin-bottom: 0;
 }
 
+.help-section dl dt {
+    color: #4ecdc4;
+    margin-top: 10px;
+}
+
+.help-section dl dt:first-child {
+    margin-top: 0;
+}
+
+.help-section dl dd {
+    margin: 4px 0 8px 16px;
+    color: #ddd;
+}
+
+.help-toc a:hover {
+    text-decoration: underline;
+}
+
 .help-section h4 {
     color: #3498db;
     margin: 0 0 10px 0;
