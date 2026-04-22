@@ -846,6 +846,10 @@
     stroke-width: 3;
 }
 
+.point-repos-arrows.highlighted polygon {
+    fill: #ffcc00;
+}
+
 /* Synchro BTS arrows */
 .synchro-bts-arrows {
     overflow: visible;
@@ -858,6 +862,35 @@
 .synchro-bts-arrows.highlighted line {
     stroke: #ffcc00;
     stroke-width: 3;
+}
+
+.synchro-bts-arrows.highlighted polygon {
+    fill: #ffcc00;
+}
+
+/* Instant CO arrows */
+.instant-co-arrows {
+    overflow: visible;
+}
+
+.instant-co-arrows line {
+    transition: stroke-width 0.15s ease;
+}
+
+.instant-co-arrows.highlighted line {
+    stroke: #ffcc00;
+    stroke-width: 3;
+}
+
+.instant-co-arrows.highlighted polygon {
+    fill: #ffcc00;
+}
+
+/* Labels below the arrows: cursor indicates hover target */
+.point-repos-label,
+.synchro-bts-label,
+.instant-co-label {
+    cursor: pointer;
 }
 
 /* Priorité piétons intermittent yellow bar */
