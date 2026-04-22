@@ -25,8 +25,10 @@
 .empty-state-hint {
     font-size: 12px;
     color: #888;
-    max-width: 360px;
-    line-height: 1.4;
+    max-width: 400px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    text-align: left;
 }
 
 /* Overlay positioning for use inside existing containers */
