@@ -198,12 +198,19 @@ const MenuBar = ({
                 { label: 'Noms GF dans le formulaire', action: 'toggleGroupNamesForm', toggle: true, checked: layoutOptions.showGroupNamesForm },
                 { label: 'Noms GF dans la matrice', action: 'toggleGroupNamesMatrix', toggle: true, checked: layoutOptions.showGroupNamesMatrix },
                 { label: 'Noms GF dans les diagrammes', action: 'toggleGroupNamesDiagram', toggle: true, checked: layoutOptions.showGroupNamesDiagram },
-                { label: 'Détachement du formulaire', action: 'toggleFloatingForm', toggle: true, checked: layoutOptions.showFloatingForm },
-                { label: 'Détachement de la matrice interverts', action: 'toggleFloatingMatrix', toggle: true, checked: layoutOptions.showFloatingMatrix },
-                { label: 'Détachement des données trafic', action: 'toggleFloatingTraffic', toggle: true, checked: layoutOptions.showFloatingTraffic },
-                { label: 'Détachement des conditions de micro-régulation', action: 'toggleFloatingConditions', toggle: true, checked: layoutOptions.showFloatingConditions },
-                { label: 'Détachement des variables micro', action: 'toggleFloatingVariables', toggle: true, checked: layoutOptions.showFloatingVariables },
-                { label: 'Détachement de l\'image du carrefour', action: 'toggleFloatingImage', toggle: true, checked: layoutOptions.showFloatingImage, disabled: !layoutOptions.hasIntersectionImage },
+                {
+                    label: 'Détachement...',
+                    type: 'submenu',
+                    submenuId: 'detachement',
+                    submenu: [
+                        { label: 'Formulaire', action: 'toggleFloatingForm', checked: layoutOptions.showFloatingForm },
+                        { label: 'Matrice interverts', action: 'toggleFloatingMatrix', checked: layoutOptions.showFloatingMatrix },
+                        { label: 'Données trafic', action: 'toggleFloatingTraffic', checked: layoutOptions.showFloatingTraffic },
+                        { label: 'Conditions de micro-régulation', action: 'toggleFloatingConditions', checked: layoutOptions.showFloatingConditions },
+                        { label: 'Variables micro', action: 'toggleFloatingVariables', checked: layoutOptions.showFloatingVariables },
+                        { label: 'Image du carrefour', action: 'toggleFloatingImage', checked: layoutOptions.showFloatingImage, disabled: !layoutOptions.hasIntersectionImage }
+                    ]
+                },
                 { type: 'separator' },
                 {
                     label: 'Dilatation du diagramme',
@@ -232,7 +239,8 @@ const MenuBar = ({
                         { label: 'Messages de succès', action: 'toggleToastSuccess', checked: layoutOptions.toastPrefs?.success },
                         { label: 'Messages d\'erreur', action: 'toggleToastError', checked: layoutOptions.toastPrefs?.error },
                         { label: 'Messages d\'info', action: 'toggleToastInfo', checked: layoutOptions.toastPrefs?.info },
-                        { label: 'Notifications nouveau projet', action: 'toggleOpenPropertiesOnNewProject', checked: layoutOptions.openPropertiesOnNewProject }
+                        { label: 'Notifications nouveau projet', action: 'toggleOpenPropertiesOnNewProject', checked: layoutOptions.openPropertiesOnNewProject },
+                        { label: 'Valeur hors cycle dans le diagramme', action: 'toggleShowWrapFlash', checked: layoutOptions.showWrapFlash }
                     ]
                 }
             ]
@@ -281,7 +289,7 @@ const MenuBar = ({
             label: 'A propos',
             items: [
                 { label: 'Aide', action: 'help' },
-                { label: 'Crédit', action: 'credit' },
+                { label: 'À propos', action: 'credit' },
                 ...(currentUser?.isAdmin ? [
                     { type: 'separator' },
                     { label: 'Utilisateurs', type: 'submenu', submenuId: 'utilisateurs', submenu: [

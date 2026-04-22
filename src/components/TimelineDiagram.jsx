@@ -1,10 +1,11 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import LocalInput from './LocalInput';
+import NumericInput from './NumericInput';
 import CustomTooltip from './CustomTooltip';
 import EmptyState from './EmptyState';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, showWrapFlash = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts }) => {
     const containerRef = useRef(null);
 
     // Saved selection range for remarques font-size buttons
@@ -1019,25 +1020,21 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     ) : (
                         <label className="cycle-input-label" style={{ marginLeft: '50px', fontSize: '14px', fontWeight: 'normal' }}>
                             Cycle:
-                            <input
-                                type="number"
-                                min="10"
+                            <NumericInput
+                                className="input-count"
                                 value={cycleLengthInput}
-                                onChange={(e) => setCycleLengthInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.target.blur();
-                                    }
-                                }}
-                                onBlur={() => {
-                                    const newCycle = parseInt(cycleLengthInput);
+                                min={10}
+                                allowEmpty={false}
+                                selectOnFocus
+                                onCommit={(val) => {
+                                    const newCycle = parseInt(val);
                                     if (!isNaN(newCycle) && newCycle >= 10 && newCycle !== cycleLength) {
                                         setCycleLength(newCycle);
                                     } else {
                                         setCycleLengthInput(cycleLength.toString());
                                     }
                                 }}
-                                className="input-count"
+                                title="Durée du cycle (min 10s)"
                             />
                             <span>s</span>
                         </label>
@@ -1165,8 +1162,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 )}
                                 {g.type ? (
                                     <>
-                                        <LocalInput
-                                            type="number"
+                                        <NumericInput
                                             className="input-time-sm"
                                             value={hasValue ? start : ''}
                                             onCommit={(val) => !simulationResult && handleStartChange(g.id, val)}
@@ -1174,16 +1170,19 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             onClick={(e) => e.stopPropagation()}
                                             selectOnFocus
                                             placeholder=""
+                                            wrapAt={cycleLength}
+                                            showWrapFlash={showWrapFlash}
                                             style={simulationResult ? { cursor: 'default', background: 'transparent', border: 'none' } : undefined}
                                         />
-                                        <LocalInput
-                                            type="number"
+                                        <NumericInput
                                             className="input-time-sm"
                                             value={hasValue ? end : ''}
                                             onCommit={(val) => !simulationResult && handleEndChange(g.id, val, start)}
                                             readOnly={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
                                             selectOnFocus
+                                            wrapAt={cycleLength}
+                                            showWrapFlash={showWrapFlash}
                                             style={simulationResult
                                                 ? { color: duration < g.minGreen ? '#ff4d4d' : 'inherit', cursor: 'default', background: 'transparent', border: 'none' }
                                                 : { color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }

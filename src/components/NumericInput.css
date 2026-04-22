@@ -1,0 +1,40 @@
+.numeric-input-error {
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 0 1px rgba(231, 76, 60, 0.4);
+    background-color: rgba(231, 76, 60, 0.08) !important;
+}
+
+body.light-mode .numeric-input-error {
+    border-color: #c0392b !important;
+    background-color: rgba(192, 57, 43, 0.08) !important;
+}
+
+body.high-contrast-mode .numeric-input-error {
+    border-color: #ff0000 !important;
+    box-shadow: 0 0 0 2px #ff0000;
+    background-color: #000 !important;
+    color: #ff6666 !important;
+}
+
+body.amber-mode .numeric-input-error {
+    border-color: #ff3300 !important;
+    background-color: rgba(255, 51, 0, 0.1) !important;
+}
+
+/* Brief flash when a non-numeric character is typed and ignored */
+.numeric-input-rejected {
+    animation: numeric-input-reject-flash 0.35s ease-out;
+}
+@keyframes numeric-input-reject-flash {
+    0% { background-color: rgba(231, 76, 60, 0.35); }
+    100% { background-color: transparent; }
+}
+
+/* Flash when a committed value is wrapped (modulo cycle applied) */
+.numeric-input-wrapped {
+    animation: numeric-input-wrap-flash 0.6s ease-out;
+}
+@keyframes numeric-input-wrap-flash {
+    0% { background-color: rgba(243, 156, 18, 0.45); box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.6); }
+    100% { background-color: transparent; box-shadow: none; }
+}
