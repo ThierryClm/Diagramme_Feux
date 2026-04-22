@@ -11,6 +11,7 @@ import ActionTable from './components/ActionTable';
 import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
+import { APP_VERSION, APP_NAME, APP_DESCRIPTION } from './version';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import GreenWaveViewer from './components/GreenWaveViewer';
 import SimulationPanel from './components/SimulationPanel';
@@ -252,9 +253,14 @@ function App() {
         const saved = localStorage.getItem('openPropertiesOnNewProject');
         return saved === null ? true : saved === 'true';
     });
+    const [showWrapFlash, setShowWrapFlash] = useState(() => {
+        const saved = localStorage.getItem('showWrapFlash');
+        return saved === null ? true : saved === 'true';
+    });
     const projectNameInputRef = useRef(null);
     const helpContentRef = useRef(null);
     const [helpToc, setHelpToc] = useState([]);
+    const [aboutModal, setAboutModal] = useState(false);
 
     // Intersection image animation state
     const {
@@ -782,6 +788,12 @@ function App() {
                 localStorage.setItem('openPropertiesOnNewProject', String(newVal));
                 break;
             }
+            case 'toggleShowWrapFlash': {
+                const newVal = !showWrapFlash;
+                setShowWrapFlash(newVal);
+                localStorage.setItem('showWrapFlash', String(newVal));
+                break;
+            }
             case 'help':
                 setHelpModal(true);
                 break;
@@ -808,7 +820,7 @@ function App() {
                 setImportHTMModal(true);
                 break;
             case 'credit':
-                alert('Diagramme de Feux\n\nDéveloppé avec React + Vite\n2024');
+                setAboutModal(true);
                 break;
             case 'toggleParameters':
                 setSidebarVisible(v => !v);
@@ -1474,7 +1486,7 @@ draw();
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -2024,6 +2036,7 @@ draw();
                                 showRemarks={simulationEnabled ? false : showRemarks}
                                 showGroupNames={showGroupNamesDiagram}
                                 showMicroOnHover={showMicroOnHover}
+                                showWrapFlash={showWrapFlash}
                             />
                         </div>
                     )}
@@ -2174,6 +2187,7 @@ draw();
                                 setShowFloatingConditions={setShowFloatingConditions}
                                 showFloatingVariables={showFloatingVariables}
                                 setShowFloatingVariables={setShowFloatingVariables}
+                                showWrapFlash={showWrapFlash}
                             />
                         </div>
                     </div>
@@ -3151,6 +3165,26 @@ draw();
                             <dd>Durée minimale obligatoire du vert d'un groupe, pour garantir la sécurité et le confort des usagers (traversée piétonne complète, dégagement véhicule, etc.). Seuil en dessous duquel une alerte se déclenche.</dd>
                         </dl>
                     </section>
+                </div>
+            </Modal>
+
+            {/* Modal À propos */}
+            <Modal isOpen={aboutModal} onClose={() => setAboutModal(false)} title={`À propos — ${APP_NAME}`}>
+                <div style={{ padding: '10px 4px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#4ecdc4', marginBottom: '8px' }}>
+                        {APP_NAME}
+                    </div>
+                    <div style={{ fontSize: '1.1em', color: '#aaa', marginBottom: '4px' }}>
+                        Version {APP_VERSION}
+                    </div>
+                    <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '20px', maxWidth: '400px', margin: '0 auto 20px' }}>
+                        {APP_DESCRIPTION}
+                    </div>
+                    <hr style={{ border: 'none', borderTop: '1px solid #444', margin: '16px 0' }} />
+                    <div style={{ fontSize: '0.85em', color: '#888', lineHeight: '1.6' }}>
+                        <div>Développée avec <strong>React</strong> + <strong>Vite</strong></div>
+                        <div style={{ marginTop: '8px' }}>© 2026 — Tous droits réservés</div>
+                    </div>
                 </div>
             </Modal>
 

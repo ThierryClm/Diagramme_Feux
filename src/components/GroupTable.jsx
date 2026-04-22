@@ -1,5 +1,6 @@
 import React from 'react';
 import LocalInput from './LocalInput';
+import NumericInput from './NumericInput';
 import EmptyState from './EmptyState';
 import './GroupTable.css';
 
@@ -138,22 +139,28 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                                 </td>
                                 {/* Min Green */}
                                 <td>
-                                    <LocalInput
-                                        type="number"
+                                    <NumericInput
                                         className="input-mini"
                                         value={g.minGreen}
                                         onCommit={(val) => handleMinGreenChange(g.id, val)}
                                         selectOnFocus
+                                        min={0}
+                                        max={cycleLength}
+                                        allowEmpty={false}
+                                        title="Durée minimale du vert"
                                     />
                                 </td>
                                 {/* Yellow Duration */}
                                 <td>
-                                    <LocalInput
-                                        type="number"
+                                    <NumericInput
                                         className="input-yellow"
                                         value={g.durations.orange}
                                         onCommit={(val) => handleYellowChange(g.id, val)}
                                         selectOnFocus
+                                        min={0}
+                                        max={cycleLength}
+                                        allowEmpty={false}
+                                        title="Durée de l'orange / dégagement piéton"
                                     />
                                 </td>
                             </tr>

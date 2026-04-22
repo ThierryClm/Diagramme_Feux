@@ -1,11 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import EmptyState from './EmptyState';
 import './IntergreenMatrix.css';
+import './NumericInput.css';
 
 // Input component with local state for intermediate values during typing
 const MatrixInput = ({ value, onChange, className }) => {
     const [localValue, setLocalValue] = useState(value === '' ? '' : String(value));
     const [isEditing, setIsEditing] = useState(false);
+    const [rejected, setRejected] = useState(false);
+    const rejectTimerRef = React.useRef(null);
 
     // Sync local value with prop when not editing
     React.useEffect(() => {
@@ -16,8 +19,18 @@ const MatrixInput = ({ value, onChange, className }) => {
 
     const handleChange = (e) => {
         // Only allow digits
-        const newValue = e.target.value.replace(/[^0-9]/g, '');
-        setLocalValue(newValue);
+        const raw = e.target.value;
+        const filtered = raw.replace(/[^0-9]/g, '');
+        if (raw !== filtered) {
+            setRejected(true);
+            if (rejectTimerRef.current) clearTimeout(rejectTimerRef.current);
+            rejectTimerRef.current = setTimeout(() => setRejected(false), 350);
+        }
+        // Keep previous value if the user's keystroke would wipe a non-empty field
+        if (filtered === '' && raw !== '' && localValue !== '') {
+            return;
+        }
+        setLocalValue(filtered);
     };
 
     const handleFocus = (e) => {
@@ -45,7 +58,7 @@ const MatrixInput = ({ value, onChange, className }) => {
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
-            className={className}
+            className={`${className || ''} ${rejected ? 'numeric-input-rejected' : ''}`.trim()}
             value={isEditing ? localValue : (value === '' ? '' : String(value))}
             onChange={handleChange}
             onFocus={handleFocus}
