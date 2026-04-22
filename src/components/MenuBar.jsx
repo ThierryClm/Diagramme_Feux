@@ -184,6 +184,7 @@ const MenuBar = ({
                 { label: 'Liens externes...', action: 'externalLinks' },
                 { type: 'separator' },
                 { label: 'Imprimer le projet...', action: 'printDossier' },
+                { label: 'Exporter le diagramme en PNG', action: 'exportDiagramPNG' },
                 { type: 'separator' },
                 { label: 'Fermer', action: 'close' }
             ]

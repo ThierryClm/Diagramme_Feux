@@ -12,6 +12,7 @@ import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
 import { APP_VERSION, APP_NAME, APP_DESCRIPTION } from './version';
+import { exportElementAsPDF, exportElementAsPNG, buildExportFilename } from './utils/exportHelpers';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import GreenWaveViewer from './components/GreenWaveViewer';
 import SimulationPanel from './components/SimulationPanel';
@@ -261,6 +262,7 @@ function App() {
     const helpContentRef = useRef(null);
     const [helpToc, setHelpToc] = useState([]);
     const [aboutModal, setAboutModal] = useState(false);
+    const printPreviewPageRef = useRef(null);
 
     // Intersection image animation state
     const {
@@ -622,20 +624,12 @@ function App() {
         return style;
     };
 
-    // Handler confirmation impression dossier
+    // Handler confirmation impression dossier — ouvre la modale d'aperçu avec les boutons
+    // Imprimer / Exporter PDF, l'utilisateur choisit
     const handleDossierConfirm = () => {
         setDossierDialog(false);
         setPrintType('dossier');
         setPrintPreviewModal(true);
-        setTimeout(() => {
-            document.body.classList.add('print-dossier');
-            const footerStyle = injectDossierFooterStyle();
-            window.print();
-            footerStyle.remove();
-            document.body.classList.remove('print-dossier');
-            setPrintPreviewModal(false);
-            setPrintType(null);
-        }, 500);
     };
 
     // Menu action handler
@@ -673,6 +667,22 @@ function App() {
                     setIsSaving(true);
                     try { await handleSaveFileWithPicker(); }
                     finally { setIsSaving(false); }
+                })();
+                break;
+            case 'exportDiagramPNG':
+                (async () => {
+                    const el = document.querySelector('.timeline-container');
+                    if (!el) { toast.error('Diagramme introuvable'); return; }
+                    try {
+                        const pfName = pfTabs.find(pf => pf.id === activePFId)?.name || '';
+                        const filename = buildExportFilename(intersectionName, `${pfName}_Diagramme`);
+                        toast.info('Export PNG en cours...');
+                        await exportElementAsPNG(el, filename);
+                        toast.success(`PNG exporté : ${filename}.png`);
+                    } catch (e) {
+                        console.error('Erreur export PNG:', e);
+                        toast.error('Échec de l\'export PNG : ' + e.message);
+                    }
                 })();
                 break;
             case 'printDossier':
@@ -3672,7 +3682,7 @@ draw();
                             <button className="modal-close" onClick={() => setPrintPreviewModal(false)}>×</button>
                         </div>
                         <div className="print-preview-container">
-                            <div className="print-preview-page">
+                            <div className="print-preview-page" ref={printPreviewPageRef}>
                                 {/* Header commun (sauf pour diagramme qui a son propre en-tête) */}
                                 {printType !== 'diagram' && printType !== 'dossier' && (
                                     <div className="print-preview-header">
@@ -4498,6 +4508,25 @@ draw();
                         <div className="modal-footer">
                             <button className="btn-cancel" onClick={() => setPrintPreviewModal(false)}>
                                 Annuler
+                            </button>
+                            <button
+                                className="btn-confirm"
+                                onClick={async () => {
+                                    if (!printPreviewPageRef.current) return;
+                                    try {
+                                        const pfName = pfTabs.find(pf => pf.id === activePFId)?.name || '';
+                                        const typeLabel = printType === 'matrix' ? 'Matrice' : printType === 'form' ? 'Formulaire' : printType === 'diagram' ? 'Diagramme' : 'Dossier';
+                                        const filename = buildExportFilename(intersectionName, `${pfName}_${typeLabel}`);
+                                        toast.info('Export PDF en cours...');
+                                        await exportElementAsPDF(printPreviewPageRef.current, filename);
+                                        toast.success(`PDF exporté : ${filename}.pdf`);
+                                    } catch (e) {
+                                        console.error('Erreur export PDF:', e);
+                                        toast.error('Échec de l\'export PDF : ' + e.message);
+                                    }
+                                }}
+                            >
+                                Exporter PDF
                             </button>
                             <button
                                 className="btn-confirm"
