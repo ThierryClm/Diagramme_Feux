@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import EmptyState from './EmptyState';
 import './IntergreenMatrix.css';
 
 // Input component with local state for intermediate values during typing
@@ -373,7 +374,16 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                 )}
             </h3>
 
-            <div className="matrix-scroll">
+            <div className="matrix-scroll" style={{ position: 'relative' }}>
+                {Array.isArray(conflictMatrix) && conflictMatrix.length > 0 && conflictMatrix.every(row => row.every(v => v === '' || v === null || v === undefined)) && (
+                    <div className="empty-state-overlay">
+                        <EmptyState
+                            icon="matrix"
+                            title="Matrice non renseignée"
+                            hint="Saisissez les temps interverts (en secondes) entre les groupes de feux antagonistes. Un clic dans une cellule suffit."
+                        />
+                    </div>
+                )}
                 <table className="matrix-grid">
                     <thead>
                         <tr>

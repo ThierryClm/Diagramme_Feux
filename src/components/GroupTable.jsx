@@ -1,5 +1,6 @@
 import React from 'react';
 import LocalInput from './LocalInput';
+import EmptyState from './EmptyState';
 import './GroupTable.css';
 
 const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = true, onDetach, hoveredGroupId }) => {
@@ -50,6 +51,16 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                     </button>
                 )}
             </h3>
+            <div style={{ position: 'relative' }}>
+            {groups.length > 0 && groups.every(g => !g.type || g.type === '') && (
+                <div className="empty-state-overlay">
+                    <EmptyState
+                        icon="matrix"
+                        title="Formulaire non renseigné"
+                        hint="Saisissez les noms des groupes de feu ainsi que les types (Véhicules, Piéton, Cycliste, etc.) dans la colonne « Type »."
+                    />
+                </div>
+            )}
             <table className="group-table">
                 <thead>
                     <tr>
@@ -150,6 +161,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                     })}
                 </tbody>
             </table>
+            </div>
         </div>
     );
 };

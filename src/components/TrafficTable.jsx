@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
+import EmptyState from './EmptyState';
 import './TrafficTable.css';
 
 const TrafficTable = ({
@@ -311,6 +312,16 @@ const TrafficTable = ({
                     )}
                 </div>
             </div>
+            <div style={{ position: 'relative' }}>
+            {isDatasetEmpty && (
+                <div className="empty-state-overlay">
+                    <EmptyState
+                        icon="traffic"
+                        title="Données trafic non renseignées"
+                        hint={`Saisissez les volumes de trafic (véh/h) dans la colonne "${activeTrafficDataset}" pour les groupes véhicules. Les coefficients de voie permettent d'affiner le calcul de capacité.`}
+                    />
+                </div>
+            )}
             <table className="traffic-table">
                 <thead>
                     <tr>
@@ -512,6 +523,7 @@ const TrafficTable = ({
                     })}
                 </tbody>
             </table>
+            </div>
         </div>
     );
 };

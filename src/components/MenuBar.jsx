@@ -223,6 +223,17 @@ const MenuBar = ({
                         { label: 'Haut contraste', action: 'themeHighContrast', themeId: 'high-contrast' },
                         { label: 'Contraste ambre', action: 'themeAmber', themeId: 'amber' }
                     ]
+                },
+                {
+                    label: 'Notifications',
+                    type: 'submenu',
+                    submenuId: 'notifications',
+                    submenu: [
+                        { label: 'Messages de succès', action: 'toggleToastSuccess', checked: layoutOptions.toastPrefs?.success },
+                        { label: 'Messages d\'erreur', action: 'toggleToastError', checked: layoutOptions.toastPrefs?.error },
+                        { label: 'Messages d\'info', action: 'toggleToastInfo', checked: layoutOptions.toastPrefs?.info },
+                        { label: 'Notifications nouveau projet', action: 'toggleOpenPropertiesOnNewProject', checked: layoutOptions.openPropertiesOnNewProject }
+                    ]
                 }
             ]
         },

@@ -1,0 +1,86 @@
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px;
+    color: #888;
+    text-align: center;
+    pointer-events: none;
+}
+
+.empty-state-icon {
+    color: #555;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+
+.empty-state-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #bbb;
+}
+
+.empty-state-hint {
+    font-size: 12px;
+    color: #888;
+    max-width: 360px;
+    line-height: 1.4;
+}
+
+/* Overlay positioning for use inside existing containers */
+.empty-state-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    pointer-events: none;
+    background: rgba(30, 30, 30, 0.3);
+}
+
+/* Light mode */
+body.light-mode .empty-state {
+    color: #666;
+}
+body.light-mode .empty-state-icon {
+    color: #aaa;
+}
+body.light-mode .empty-state-title {
+    color: #444;
+}
+body.light-mode .empty-state-hint {
+    color: #666;
+}
+body.light-mode .empty-state-overlay {
+    background: rgba(240, 240, 240, 0.5);
+}
+
+/* High-contrast mode */
+body.high-contrast-mode .empty-state-icon {
+    color: #ffff00;
+    opacity: 1;
+}
+body.high-contrast-mode .empty-state-title {
+    color: #ffff00;
+}
+body.high-contrast-mode .empty-state-hint {
+    color: #ccc;
+}
+
+/* Amber mode */
+body.amber-mode .empty-state-icon {
+    color: #ff8800;
+    opacity: 1;
+}
+body.amber-mode .empty-state-title {
+    color: #ff8800;
+}
+body.amber-mode .empty-state-hint {
+    color: #cc9900;
+}

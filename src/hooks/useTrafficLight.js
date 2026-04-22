@@ -1151,8 +1151,8 @@ export const useTrafficLight = () => {
         setProjectName(null);
         setIntersectionName("Nouveau Carrefour");
 
-        // Reset to 8 groups with default cycle
-        const newGroups = Array.from({ length: 8 }, (_, i) => createGroup(i + 1));
+        // Reset to 8 groups with default cycle (type vide pour inviter à la saisie)
+        const newGroups = Array.from({ length: 8 }, (_, i) => ({ ...createGroup(i + 1), type: '' }));
         setGroups(newGroups);
         setCycleLength(DEFAULT_CYCLE);
 
