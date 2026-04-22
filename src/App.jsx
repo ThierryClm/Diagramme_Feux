@@ -253,6 +253,8 @@ function App() {
         return saved === null ? true : saved === 'true';
     });
     const projectNameInputRef = useRef(null);
+    const helpContentRef = useRef(null);
+    const [helpToc, setHelpToc] = useState([]);
 
     // Intersection image animation state
     const {
@@ -446,6 +448,39 @@ function App() {
         saveDirectoryHandle,
         loadDirectoryHandle
     } = useDirectoryHandles();
+
+    // Build the help TOC by scanning h3 (chapters) and h4 (sections) and assigning ids
+    useEffect(() => {
+        if (!helpModal) return;
+        const root = helpContentRef.current;
+        if (!root) return;
+        const slug = (s) => s.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').substring(0, 60);
+        const toc = [];
+        let currentChapter = null;
+        root.querySelectorAll('h3, h4').forEach(node => {
+            const text = node.textContent.trim();
+            if (!node.id) node.id = slug(text);
+            if (node.tagName === 'H3') {
+                currentChapter = { id: node.id, title: text, sections: [] };
+                toc.push(currentChapter);
+            } else if (node.tagName === 'H4' && currentChapter) {
+                currentChapter.sections.push({ id: node.id, title: text });
+            }
+            // Add a "back to TOC" link to each h4 (skip if already added)
+            if (node.tagName === 'H4' && !node.querySelector('.back-to-toc')) {
+                const link = document.createElement('a');
+                link.href = '#help-sommaire';
+                link.className = 'back-to-toc';
+                link.textContent = '↑ Sommaire';
+                link.style.cssText = 'float:right;font-size:0.75em;font-weight:normal;color:#888;text-decoration:none;margin-top:4px;';
+                link.onmouseenter = () => link.style.color = '#4ecdc4';
+                link.onmouseleave = () => link.style.color = '#888';
+                link.onclick = (e) => { e.preventDefault(); document.getElementById('help-sommaire')?.scrollIntoView({ behavior: 'auto', block: 'start' }); };
+                node.appendChild(link);
+            }
+        });
+        setHelpToc(toc);
+    }, [helpModal]);
 
     // Liste des 5 derniers répertoires par type (pour affichage dans les menus)
     const {
@@ -2394,7 +2429,40 @@ draw();
 
             {/* Modal Aide en ligne */}
             <Modal isOpen={helpModal} onClose={() => setHelpModal(false)} title="Aide - Diagramme de Feux" className="modal-wide">
-                <div className="help-content">
+                <div className="help-content" ref={helpContentRef}>
+                    {helpToc.length > 0 && (
+                        <nav id="help-sommaire" className="help-toc" style={{ background: '#2a2a2a', border: '1px solid #444', borderRadius: '6px', padding: '12px 16px', marginBottom: '20px' }}>
+                            <h3 style={{ color: '#4ecdc4', marginTop: 0, marginBottom: '10px', fontSize: '1em' }}>Sommaire</h3>
+                            {helpToc.map(chapter => (
+                                <div key={chapter.id} style={{ marginBottom: '8px' }}>
+                                    <a
+                                        href={`#${chapter.id}`}
+                                        onClick={(e) => { e.preventDefault(); document.getElementById(chapter.id)?.scrollIntoView({ behavior: 'auto', block: 'start' }); }}
+                                        style={{ color: '#4ecdc4', fontWeight: 'bold', textDecoration: 'none' }}
+                                    >
+                                        {chapter.title}
+                                    </a>
+                                    {chapter.sections.length > 0 && (
+                                        <ul style={{ margin: '4px 0 0 20px', padding: 0, listStyle: 'disc' }}>
+                                            {chapter.sections.map(s => (
+                                                <li key={s.id} style={{ margin: '2px 0' }}>
+                                                    <a
+                                                        href={`#${s.id}`}
+                                                        onClick={(e) => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ behavior: 'auto', block: 'start' }); }}
+                                                        style={{ color: '#ccc', textDecoration: 'none' }}
+                                                        onMouseEnter={(e) => e.target.style.color = '#fff'}
+                                                        onMouseLeave={(e) => e.target.style.color = '#ccc'}
+                                                    >
+                                                        {s.title}
+                                                    </a>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            ))}
+                        </nav>
+                    )}
                     <h3 style={{ color: '#4ecdc4', borderBottom: '1px solid #4ecdc4', paddingBottom: '8px', marginBottom: '16px' }}>Chapitre 1 — Boite à outils d'optimisation des diagrammes de feu</h3>
                     <section className="help-section">
                         <h4>Présentation</h4>
@@ -2402,6 +2470,7 @@ draw();
                         <p>Elle permet de concevoir, visualiser et valider les plans de feux d'un carrefour à feux tricolores. L'application couvre l'ensemble du processus : définition des groupes de feux et de leurs paramètres temporels (vert, orange, rouge), saisie de la matrice des temps de dégagement entre groupes conflictuels, configuration des actions de micro-régulation (adaptatif, escamotage, fermeture anticipée, ouverture anticipée), gestion des données de trafic et de capacité, et coordination des feux sur un axe via l'outil onde verte. Elle génère un dossier imprimable complet incluant le formulaire, les matrices, les diagrammes, le phasage bulle et les conditions de micro-régulation pour chaque plan de feu.</p>
                         <p>Chaque modification se répercute instantanément sur l'ensemble de l'interface : ajustez un temps de vert dans le formulaire et le diagramme se redessine en temps réel ; déplacez une barre directement sur le diagramme et les valeurs du formulaire suivent ; modifiez la matrice des temps interverts et la détection des conflits se met à jour immédiatement. Cette interactivité permanente entre le formulaire, le diagramme, la matrice et le tableau des actions vous offre une vision globale et cohérente à chaque instant.</p>
                         <p>Le glisser-déposer des barres, la surbrillance croisée entre le tableau des actions et le diagramme, les flèches de dépendance, le calcul automatique des conflits et des données trafic : tout est pensé pour vous accompagner dans la mise au point de vos plans de feux, de la première esquisse jusqu'à la validation finale.</p>
+                        <p><strong>Une ergonomie pensée pour tout utilisateur allant de néophyte à traficien ou expert.</strong> L'application met l'accent sur le détail qui fait la différence : les éléments du diagramme livrent leurs informations clés au simple survol, sans clic ; les états vides guident pas à pas le renseignement initial (types de groupes, matrice d'interverts, durées de vert) ; les opérations sensibles (sauvegarde, duplication, annulation) donnent lieu à des notifications discrètes ; le basculement entre plans de feux, le drag direct sur le diagramme ou la détection temps-réel des conflits se font sans rupture. Autant d'attentions qui laissent à l'utilisateur toute la place pour son analyse, plutôt que de le contraindre dans un workflow figé. La souplesse de l'application épouse le niveau de connaissance de son utilisateur : accessible à qui découvre la régulation de trafic, elle déploie toute sa richesse aux mains d'un praticien expérimenté.</p>
                     </section>
 
                     <section id="help-interface" className="help-section">
@@ -2972,6 +3041,115 @@ draw();
                             <li><strong>Ouverture :</strong> Menu Onde verte → Ouvrir une onde verte charge une onde verte existante depuis le local storage</li>
                             <li><strong>Paramètres par PF :</strong> Les vitesses, offsets et options d'affichage sont sauvegardés séparément pour chaque plan de feu, permettant de comparer facilement différents scénarios</li>
                         </ul>
+                    </section>
+
+                    <h3 style={{ color: '#4ecdc4', borderBottom: '1px solid #4ecdc4', paddingBottom: '8px', marginTop: '32px', marginBottom: '16px' }}>Glossaire</h3>
+                    <section className="help-section">
+                        <h4>Glossaire</h4>
+                        <dl style={{ margin: 0 }}>
+                            <dt><strong>Adaptatif vertical</strong></dt>
+                            <dd>Action de micro-régulation qui décale verticalement l'ensemble des groupes de feux à une période donnée du cycle, pour créer une contraction ou une dilatation temporaire des phases.</dd>
+
+                            <dt><strong>A vert (AVert)</strong></dt>
+                            <dd>« Avant vert » — variable indiquant le temps résiduel avant l'apparition du vert d'un groupe. Utilisée dans les conditions de micro-régulation pour déclencher une action juste avant l'ouverture d'un feu.</dd>
+
+                            <dt><strong>Bande passante (début / fin)</strong></dt>
+                            <dd>Actions de micro-régulation qui marquent les bornes de progression d'un véhicule d'un feu à l'autre sur un axe. Représentées dans le diagramme par des flèches vertes en pointillé.</dd>
+
+                            <dt><strong>Coefficient de voie</strong></dt>
+                            <dd>Pondération appliquée au débit de saturation théorique d'une voie pour refléter les particularités locales (pente, tourne-à-gauche, largeur, etc.). Utilisé dans les calculs de capacité et de taux d'occupation.</dd>
+
+                            <dt><strong>Courant</strong></dt>
+                            <dd>Description textuelle du mouvement de trafic associé au groupe de feux (ex : « Entrée Nord », « Tourne-à-gauche Est »).</dd>
+
+                            <dt><strong>Cycle</strong></dt>
+                            <dd>Durée totale (en secondes) d'une séquence complète des phases du carrefour. Paramètre principal du diagramme.</dd>
+
+                            <dt><strong>DA (Délai d'Approche)</strong></dt>
+                            <dd>Temps de parcours entre un point d'appel (détecteur ou position géographique) et la ligne d'effet. Utilisé notamment pour la priorité bus et les flèches d'anticipation.</dd>
+
+                            <dt><strong>Diagramme de feux</strong></dt>
+                            <dd>Représentation temporelle d'un cycle de feux, où chaque groupe dispose d'une ligne et chaque phase (vert, orange, rouge) est visualisée par une barre colorée.</dd>
+
+                            <dt><strong>Escamotage de phase</strong></dt>
+                            <dd>Action de micro-régulation qui supprime (contracte) une tranche temporelle du cycle sur tous les groupes, raccourcissant temporairement le cycle global.</dd>
+
+                            <dt><strong>Fermeture anticipée</strong></dt>
+                            <dd>Action qui raccourcit la durée de vert d'un groupe de feux en anticipant sa fin. Représentée par une accolade sur la fin du vert.</dd>
+
+                            <dt><strong>Flèche d'anticipation</strong></dt>
+                            <dd>Indication visuelle matérialisée par une barre intermittente jaune, représentant un dispositif visuel pour le conducteur (signal d'approche) en amont du groupe de feux.</dd>
+
+                            <dt><strong>Gestion par groupe de feu</strong></dt>
+                            <dd>Mode de régulation où chaque groupe de feux (GF) est piloté indépendamment, avec ses propres durées et conditions de vert. Offre une granularité fine mais demande une coordination rigoureuse.</dd>
+
+                            <dt><strong>Gestion par phase</strong></dt>
+                            <dd>Mode de régulation où les groupes compatibles sont regroupés en phases, pilotées de façon synchrone. Simplifie la configuration au prix d'une souplesse moindre qu'une gestion par groupe.</dd>
+
+                            <dt><strong>Groupe de feux (GF)</strong></dt>
+                            <dd>Ensemble de feux tricolores d'un même mouvement, pilotés simultanément. Chaque GF est caractérisé par un type (VL, TC, Piéton, Cycliste), un courant, une durée de vert minimal et des durées de phase.</dd>
+
+                            <dt><strong>HPM, HPS, HC, HN</strong></dt>
+                            <dd>Périodes types utilisées pour la caractérisation du trafic :
+                                <ul style={{ marginTop: '4px' }}>
+                                    <li><strong>HPM</strong> — Heure de Pointe du Matin</li>
+                                    <li><strong>HPS</strong> — Heure de Pointe du Soir</li>
+                                    <li><strong>HC</strong> — Heure Creuse (ou Heure moyenne)</li>
+                                    <li><strong>HN</strong> — Heure de Nuit</li>
+                                </ul>
+                            </dd>
+
+                            <dt><strong>Instant CO</strong></dt>
+                            <dd>Action de micro-régulation qui repère un instant précis du cycle (« Cycle Outil » / moment de coordination). Matérialisé dans le diagramme par des flèches verticales orange.</dd>
+
+                            <dt><strong>Intervert (temps d')</strong></dt>
+                            <dd>Temps de dégagement minimal (en secondes) à respecter entre la fin du vert d'un groupe et le début du vert d'un groupe antagoniste. Stocké dans la matrice des interverts.</dd>
+
+                            <dt><strong>Matrice des interverts</strong></dt>
+                            <dd>Tableau NxN (N = nombre de groupes) indiquant les temps de dégagement nécessaires entre chaque paire de groupes conflictuels. Permet la détection automatique des conflits dans le diagramme.</dd>
+
+                            <dt><strong>Micro-régulation</strong></dt>
+                            <dd>Ensemble des mécanismes (adaptatif, escamotage, fermeture/ouverture anticipée, priorité…) permettant d'ajuster le cycle en fonction de la demande réelle (détections, bus, piétons).</dd>
+
+                            <dt><strong>Onde verte</strong></dt>
+                            <dd>Coordination temporelle de plusieurs carrefours successifs sur un même axe, de façon à ce qu'un véhicule qui roule à la vitesse prévue rencontre des feux verts de manière continue.</dd>
+
+                            <dt><strong>Ouverture anticipée</strong></dt>
+                            <dd>Action symétrique à la fermeture anticipée : elle avance le début du vert d'un groupe de feux par rapport à sa durée nominale.</dd>
+
+                            <dt><strong>Phase</strong></dt>
+                            <dd>Sous-période du cycle pendant laquelle un ensemble de groupes compatibles est simultanément au vert.</dd>
+
+                            <dt><strong>Phasage bulle</strong></dt>
+                            <dd>Représentation graphique synthétique des phases d'un cycle sous forme de bulles colorées, utilisée comme vue d'ensemble du plan de feu.</dd>
+
+                            <dt><strong>Plan de feux (PF)</strong></dt>
+                            <dd>Configuration temporelle complète d'un cycle de feux (durées, offsets, actions). Une application peut contenir plusieurs plans de feux (PF1, PF2, ...) permettant de comparer des scénarios ou de gérer différentes périodes horaires.</dd>
+
+                            <dt><strong>Point de repos</strong></dt>
+                            <dd>Action de micro-régulation qui définit un point du cycle où le contrôleur « attend » (feu maintenu dans un état) jusqu'à ce qu'une condition de micro-régulation déclenche la suite. Représenté dans le diagramme par des flèches verticales rouges.</dd>
+
+                            <dt><strong>Priorité bus</strong></dt>
+                            <dd>Ensemble de mécanismes (allongement de vert, escamotage de phase, point de repos, etc.) permettant d'accorder un avantage temporel aux transports en commun détectés à l'approche du carrefour.</dd>
+
+                            <dt><strong>Priorité piétons</strong></dt>
+                            <dd>Action de micro-régulation qui réduit le temps d'attente d'un piéton en avançant le vert piéton dès qu'une détection piétonne le justifie.</dd>
+
+                            <dt><strong>Seconde lucarne</strong></dt>
+                            <dd>Second feu complémentaire pour un groupe, permettant un second vert dans le cycle — utilisé pour certains mouvements nécessitant deux créneaux (piéton bidirectionnel, par exemple).</dd>
+
+                            <dt><strong>Synchro BTS</strong></dt>
+                            <dd>Action de synchronisation de type « Base de Temps Système » — permet d'aligner le cycle local sur un signal de synchronisation externe (ex : coordination de carrefours en cascade). Représentée dans le diagramme par des flèches verticales bleues.</dd>
+
+                            <dt><strong>TMAB (Temps Moyen d'Attente Bus)</strong></dt>
+                            <dd>Indicateur de performance mesurant le temps moyen d'attente des bus à un carrefour. Utilisé pour évaluer l'efficacité de la priorité bus.</dd>
+
+                            <dt><strong>TPPh (Temps Passé dans la Phase)</strong></dt>
+                            <dd>Variable de micro-régulation indiquant le temps écoulé depuis le début de la phase en cours. Utilisée dans les conditions conditionnelles (ex : allonger le vert tant que TPPh {'<'} X).</dd>
+
+                            <dt><strong>Vert minimum (Vm)</strong></dt>
+                            <dd>Durée minimale obligatoire du vert d'un groupe, pour garantir la sécurité et le confort des usagers (traversée piétonne complète, dégagement véhicule, etc.). Seuil en dessous duquel une alerte se déclenche.</dd>
+                        </dl>
                     </section>
                 </div>
             </Modal>
