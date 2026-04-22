@@ -422,12 +422,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             initialFinValue = parseInt(action.fin) || 0;
         }
 
+        // Show floating position tooltip for vertical-arrow actions only
+        const tooltipActions = ['Point de repos', 'Synchro BTS', 'Instant CO'];
+        const showTooltip = action && tooltipActions.includes(action.action);
+
         setDragState({
             actionId,
             field, // 'deb' or 'fin'
             initialMouseX: e.clientX,
             initialValue: parseInt(currentValue) || 0,
-            initialFinValue // Store initial fin value for bande passante
+            initialFinValue, // Store initial fin value for bande passante
+            showTooltip
         });
     }, [startDrag, actionData]);
 
@@ -449,6 +454,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             } else {
                 updateActionRow(dragState.actionId, dragState.field, newValue.toString());
             }
+            // Also track mouse position + new value for the optional floating tooltip
+            setDragState(prev => prev ? { ...prev, deltaSeconds, mouseX: e.clientX, mouseY: e.clientY, currentValue: newValue } : null);
             return;
         }
 
@@ -2797,6 +2804,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             // Label position below the diagram
                             const labelY = RULER_HEIGHT + 1 + groups.length * ROW_TOTAL_HEIGHT + 20;
 
+                            // Hover zone half-width (px)
+                            const hoverHalf = 6;
                             return (
                                 <React.Fragment key={`point-repos-${idx}`}>
                                     <svg
@@ -2840,6 +2849,29 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             points={`${xPos - arrowSize},${upArrowEndY} ${xPos + arrowSize},${upArrowEndY} ${xPos},${upArrowEndY - arrowSize * 1.5}`}
                                             fill="#ff0000"
                                         />
+                                        {/* Invisible hover+drag zones for both arrows */}
+                                        <rect
+                                            x={xPos - hoverHalf}
+                                            y={downArrowStartY}
+                                            width={hoverHalf * 2}
+                                            height={downArrowEndY + arrowSize * 1.5 - downArrowStartY}
+                                            fill="transparent"
+                                            style={{ pointerEvents: 'auto', cursor: 'ew-resize' }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', rawDeb)}
+                                        />
+                                        <rect
+                                            x={xPos - hoverHalf}
+                                            y={upArrowEndY - arrowSize * 1.5}
+                                            width={hoverHalf * 2}
+                                            height={upArrowStartY - (upArrowEndY - arrowSize * 1.5)}
+                                            fill="transparent"
+                                            style={{ pointerEvents: 'auto', cursor: 'ew-resize' }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', rawDeb)}
+                                        />
                                     </svg>
                                     {/* Label below diagram */}
                                     {abrv && (
@@ -2856,6 +2888,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 whiteSpace: 'nowrap',
                                                 zIndex: 100
                                             }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
                                         >
                                             {abrv}
                                         </div>
@@ -2943,6 +2977,29 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             points={`${xPos - arrowSize},${upArrowEndY} ${xPos + arrowSize},${upArrowEndY} ${xPos},${upArrowEndY - arrowSize * 1.5}`}
                                             fill="#0000FF"
                                         />
+                                        {/* Invisible hover+drag zones */}
+                                        <rect
+                                            x={xPos - 6}
+                                            y={downArrowStartY}
+                                            width={12}
+                                            height={downArrowEndY + arrowSize * 1.5 - downArrowStartY}
+                                            fill="transparent"
+                                            style={{ pointerEvents: 'auto', cursor: 'ew-resize' }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', rawDeb)}
+                                        />
+                                        <rect
+                                            x={xPos - 6}
+                                            y={upArrowEndY - arrowSize * 1.5}
+                                            width={12}
+                                            height={upArrowStartY - (upArrowEndY - arrowSize * 1.5)}
+                                            fill="transparent"
+                                            style={{ pointerEvents: 'auto', cursor: 'ew-resize' }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', rawDeb)}
+                                        />
                                     </svg>
                                     {/* Label below diagram */}
                                     {abrv && (
@@ -2959,6 +3016,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 whiteSpace: 'nowrap',
                                                 zIndex: 100
                                             }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
                                         >
                                             {abrv}
                                         </div>
@@ -3046,6 +3105,29 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             points={`${xPos - arrowSize},${upArrowEndY} ${xPos + arrowSize},${upArrowEndY} ${xPos},${upArrowEndY - arrowSize * 1.5}`}
                                             fill="#FF8C00"
                                         />
+                                        {/* Invisible hover+drag zones */}
+                                        <rect
+                                            x={xPos - 6}
+                                            y={downArrowStartY}
+                                            width={12}
+                                            height={downArrowEndY + arrowSize * 1.5 - downArrowStartY}
+                                            fill="transparent"
+                                            style={{ pointerEvents: 'auto', cursor: 'ew-resize' }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', rawDeb)}
+                                        />
+                                        <rect
+                                            x={xPos - 6}
+                                            y={upArrowEndY - arrowSize * 1.5}
+                                            width={12}
+                                            height={upArrowStartY - (upArrowEndY - arrowSize * 1.5)}
+                                            fill="transparent"
+                                            style={{ pointerEvents: 'auto', cursor: 'ew-resize' }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
+                                            onMouseDown={(e) => handleActionDragStart(e, action.id, 'deb', rawDeb)}
+                                        />
                                     </svg>
                                     {/* Label below diagram */}
                                     {abrv && (
@@ -3062,6 +3144,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 whiteSpace: 'nowrap',
                                                 zIndex: 100
                                             }}
+                                            onMouseEnter={() => setHoveredActionId(action.id)}
+                                            onMouseLeave={() => setHoveredActionId(null)}
                                         >
                                             {abrv}
                                         </div>
@@ -4512,6 +4596,26 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                 </div>
             );
         })()}
+        {dragState && dragState.showTooltip && dragState.mouseX !== undefined && dragState.currentValue !== undefined && (
+            <div style={{
+                position: 'fixed',
+                left: dragState.mouseX + 12,
+                top: dragState.mouseY - 28,
+                background: '#222',
+                color: '#4ecdc4',
+                border: '1px solid #4ecdc4',
+                borderRadius: '4px',
+                padding: '2px 6px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                fontFamily: 'monospace',
+                pointerEvents: 'none',
+                zIndex: 9999,
+                whiteSpace: 'nowrap'
+            }}>
+                {Math.round(dragState.currentValue)}s
+            </div>
+        )}
         {actionTooltip && (() => {
             const action = actionData.find(a => a.id === actionTooltip.actionId);
             if (!action) return null;
