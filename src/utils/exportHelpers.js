@@ -1,0 +1,106 @@
+/**
+ * Helpers for exporting DOM elements as PNG or PDF.
+ * Uses html2canvas + jsPDF.
+ */
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+
+/**
+ * Build a safe filename base:  {Project}_{PF}_{YYYY-MM-DD}
+ */
+export const buildExportFilename = (projectName, pfName) => {
+    const parts = [];
+    if (projectName) parts.push(sanitize(projectName));
+    if (pfName) parts.push(sanitize(pfName));
+    const d = new Date();
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    parts.push(date);
+    return parts.join('_') || 'export';
+};
+
+const sanitize = (s) => String(s).replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-');
+
+/**
+ * Render the given element onto a canvas with high resolution.
+ */
+const renderToCanvas = async (element) => {
+    return html2canvas(element, {
+        backgroundColor: '#1e1e1e',
+        scale: 2,              // retina quality
+        useCORS: true,
+        logging: false,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+    });
+};
+
+/**
+ * Export a DOM element as a PNG file (downloaded).
+ */
+export const exportElementAsPNG = async (element, filename) => {
+    if (!element) throw new Error('Élément introuvable');
+    const canvas = await renderToCanvas(element);
+    canvas.toBlob((blob) => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${filename}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    }, 'image/png');
+};
+
+/**
+ * Export a DOM element as a PDF file (downloaded).
+ * Automatically chooses orientation (landscape if wider than tall).
+ * Splits into multiple A4 pages vertically if content is taller.
+ */
+export const exportElementAsPDF = async (element, filename, options = {}) => {
+    if (!element) throw new Error('Élément introuvable');
+    const canvas = await renderToCanvas(element);
+    const imgData = canvas.toDataURL('image/png');
+
+    // Determine orientation: landscape if canvas is wider than tall
+    const orientation = options.orientation || (canvas.width > canvas.height ? 'landscape' : 'portrait');
+    const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+
+    // A4 dimensions
+    const pageWidth = orientation === 'landscape' ? 297 : 210;
+    const pageHeight = orientation === 'landscape' ? 210 : 297;
+    const margin = 8; // mm
+
+    const usableWidth = pageWidth - 2 * margin;
+    // Scale so canvas width fits usable width
+    const imgWidthMm = usableWidth;
+    const imgHeightMm = (canvas.height * imgWidthMm) / canvas.width;
+
+    if (imgHeightMm <= pageHeight - 2 * margin) {
+        // Fits on one page
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidthMm, imgHeightMm);
+    } else {
+        // Split into multiple pages
+        const usableHeight = pageHeight - 2 * margin;
+        const pxPerMm = canvas.height / imgHeightMm;
+        const slicePx = usableHeight * pxPerMm;
+        let yOffset = 0;
+        while (yOffset < canvas.height) {
+            const sliceHeight = Math.min(slicePx, canvas.height - yOffset);
+            // Create a temporary canvas containing just this slice
+            const sliceCanvas = document.createElement('canvas');
+            sliceCanvas.width = canvas.width;
+            sliceCanvas.height = sliceHeight;
+            const ctx = sliceCanvas.getContext('2d');
+            ctx.fillStyle = '#1e1e1e';
+            ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+            ctx.drawImage(canvas, 0, -yOffset);
+            const sliceImgData = sliceCanvas.toDataURL('image/png');
+            const sliceHeightMm = (sliceHeight * imgWidthMm) / canvas.width;
+            if (yOffset > 0) pdf.addPage();
+            pdf.addImage(sliceImgData, 'PNG', margin, margin, imgWidthMm, sliceHeightMm);
+            yOffset += slicePx;
+        }
+    }
+
+    pdf.save(`${filename}.pdf`);
+};
