@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { safeShowOpenFilePicker, safeShowSaveFilePicker } from '../utils/filePicker';
+import { toast } from '../utils/toast';
 
 /**
  * Gère les opérations d'ouverture et de sauvegarde de fichiers projet
@@ -116,10 +117,12 @@ const useFileOperations = ({
                 setDossierSections(data.dossierSections);
             }
 
+            toast.success(`Projet ouvert : ${projName}`);
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier:', e);
-                alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
+                toast.error('Échec de l\'ouverture : ' + e.message);
             }
         }
     }, [loadFullState, saveDirectoryHandle, addRecentDirectory, setDiagramHeight]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -221,10 +224,12 @@ const useFileOperations = ({
                 setDossierSections(data.dossierSections);
             }
 
+            toast.success(`Projet ouvert : ${projName}`);
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier:', e);
-                alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
+                toast.error('Échec de l\'ouverture : ' + e.message);
             }
         }
     }, [recentOpenDirs, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, loadFullState, setDiagramHeight]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -319,10 +324,12 @@ const useFileOperations = ({
             // Sauvegarder aussi dans localStorage pour cohérence
             saveProject(savedName);
 
+            toast.success(`Projet sauvegardé : ${savedName}`);
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur sauvegarde fichier:', e);
-                alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
+                toast.error('Échec de la sauvegarde : ' + e.message);
             }
         }
     }, [projectName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle, addRecentDirectory, recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -416,10 +423,12 @@ const useFileOperations = ({
             // Sauvegarder aussi dans localStorage pour cohérence
             saveProject(savedName);
 
+            toast.success(`Projet sauvegardé : ${savedName}`);
+
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur sauvegarde fichier:', e);
-                alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
+                toast.error('Échec de la sauvegarde : ' + e.message);
             }
         }
     }, [recentSaveDirs, projectName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject, recentOpenDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -385,6 +385,13 @@
     font-weight: bold;
 }
 
+.tab-warning-icon {
+    color: #f39c12;
+    font-size: 0.9em;
+    margin-left: 4px;
+}
+
+
 @keyframes pulse {
     0% {
         opacity: 1;

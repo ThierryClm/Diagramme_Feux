@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useRef, useCallback, Fragment } fr
 import { useTrafficLight } from './hooks/useTrafficLight';
 import { useAuth, PERMISSIONS } from './hooks/useAuth';
 import TimelineDiagram from './components/TimelineDiagram';
+import ToastContainer from './components/ToastContainer';
+import { toast, getToastPrefs, setToastPref } from './utils/toast';
 import GroupTable from './components/GroupTable';
 import TrafficTable from './components/TrafficTable';
 import IntergreenMatrix from './components/IntergreenMatrix';
@@ -245,6 +247,12 @@ function App() {
     const [showDependencies, setShowDependencies] = useState(false);
     const [hoveredActionId, setHoveredActionId] = useState(null);
     const [showMicroOnHover, setShowMicroOnHover] = useState(true);
+    const [toastPrefs, setToastPrefsState] = useState(getToastPrefs());
+    const [openPropertiesOnNewProject, setOpenPropertiesOnNewProject] = useState(() => {
+        const saved = localStorage.getItem('openPropertiesOnNewProject');
+        return saved === null ? true : saved === 'true';
+    });
+    const projectNameInputRef = useRef(null);
 
     // Intersection image animation state
     const {
@@ -595,13 +603,21 @@ function App() {
             case 'new':
                 if (confirm('Créer un nouveau projet ? Les modifications non enregistrées seront perdues.')) {
                     resetToNewProject();
-                    setActiveTab('config');
+                    setActiveTab(openPropertiesOnNewProject ? 'properties' : 'config');
                     setDiagramHeight(null);
                     setGroupCountInput('8');
                     setCycleLengthInput('60');
                     setCurrentProjectPath('');
                     setProjectModified(false);
                     projectModifiedSkip.current = true;
+                    toast.success('Nouveau projet créé');
+                    // Place focus on project name input after render
+                    setTimeout(() => {
+                        if (projectNameInputRef.current) {
+                            projectNameInputRef.current.focus();
+                            projectNameInputRef.current.select();
+                        }
+                    }, 100);
                 }
                 break;
             case 'open':
@@ -646,18 +662,21 @@ function App() {
             case 'close':
                 window.close();
                 break;
-            case 'duplicate':
-                duplicatePF();
+            case 'duplicate': {
+                const newId = duplicatePF();
+                if (newId) toast.success(`PF dupliqué en PF${newId}`);
                 break;
+            }
             case 'deleteActiveDiagram':
                 if (pfTabs.length > 1) {
                     const activePF = pfTabs.find(pf => pf.id === activePFId);
                     const tabName = activePF?.name || `PF${activePFId}`;
                     if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'onglet "${tabName}" ?\nCette action est irréversible.`)) {
                         deletePF(activePFId);
+                        toast.success(`${tabName} supprimé`);
                     }
                 } else {
-                    alert('Impossible de supprimer le dernier onglet.');
+                    toast.error('Impossible de supprimer le dernier onglet.');
                 }
                 break;
             case 'moveGroup':
@@ -713,6 +732,21 @@ function App() {
             case 'toggleMicroOnHover':
                 setShowMicroOnHover(v => !v);
                 break;
+            case 'toggleToastSuccess':
+            case 'toggleToastError':
+            case 'toggleToastInfo': {
+                const type = action === 'toggleToastSuccess' ? 'success' : action === 'toggleToastError' ? 'error' : 'info';
+                const newVal = !toastPrefs[type];
+                setToastPref(type, newVal);
+                setToastPrefsState({ ...toastPrefs, [type]: newVal });
+                break;
+            }
+            case 'toggleOpenPropertiesOnNewProject': {
+                const newVal = !openPropertiesOnNewProject;
+                setOpenPropertiesOnNewProject(newVal);
+                localStorage.setItem('openPropertiesOnNewProject', String(newVal));
+                break;
+            }
             case 'help':
                 setHelpModal(true);
                 break;
@@ -1271,10 +1305,10 @@ draw();
 
             if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
                 e.preventDefault();
-                undo();
+                if (undo() !== false) toast.info('Action annulée');
             } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
                 e.preventDefault();
-                redo();
+                if (redo() !== false) toast.info('Action rétablie');
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'n' && !isInput) {
                 e.preventDefault();
                 handleMenuActionRef.current('new');
@@ -1405,7 +1439,7 @@ draw();
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -1413,6 +1447,7 @@ draw();
             <header className="app-header" onMouseEnter={() => { helpZoneRef.current = 'interface'; }}>
                 <div className="header-inputs">
                     <input
+                        ref={projectNameInputRef}
                         className="input-name"
                         type="text"
                         value={projectName || ''}
@@ -1455,7 +1490,7 @@ draw();
                 <div className="header-actions">
                     <button
                         className="undo-btn"
-                        onClick={undo}
+                        onClick={() => { if (undo() !== false) toast.info('Action annulée'); }}
                         disabled={!canUndo}
                         title="Annuler (Ctrl+Z)"
                     >
@@ -1463,7 +1498,7 @@ draw();
                     </button>
                     <button
                         className="undo-btn"
-                        onClick={redo}
+                        onClick={() => { if (redo() !== false) toast.info('Action rétablie'); }}
                         disabled={!canRedo}
                         title="Refaire (Ctrl+Y)"
                     >
@@ -1631,6 +1666,9 @@ draw();
                                     }}
                                 >
                                     Configuration
+                                    {groups.length > 0 && groups.every(g => !g.type || g.type === '') && (
+                                        <span className="tab-warning-icon" title="Formulaire non renseigné"> ⚠</span>
+                                    )}
                                 </button>
                                 <button
                                     className={`tab-btn ${activeTab === 'matrix' ? 'active' : ''}`}
@@ -4432,6 +4470,7 @@ draw();
                     </div>
                 </div>
             )}
+            <ToastContainer />
         </div>
     )
 }

@@ -1,5 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import LocalInput from './LocalInput';
+import CustomTooltip from './CustomTooltip';
+import EmptyState from './EmptyState';
 import './TimelineDiagram.css';
 
 const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts }) => {
@@ -1043,29 +1045,32 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                 )}
                 {planName && setIsPlayingSimulation && (
                     <div className="diagram-playback" style={{ marginLeft: '20px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 'normal' }}>
-                        <button
-                            className={`sim-btn ${isPlayingSimulation ? 'playing' : ''}`}
-                            onClick={() => setIsPlayingSimulation(!isPlayingSimulation)}
-                            title={isPlayingSimulation ? 'Pause' : 'Lecture'}
-                        >
-                            {isPlayingSimulation ? '⏸' : '▶'}
-                        </button>
-                        <button
-                            className="sim-btn reset-btn"
-                            onClick={() => { setIsPlayingSimulation(false); setSimulationCurrentTime(0); }}
-                            title="Réinitialiser"
-                        >
-                            ⏹
-                        </button>
-                        <input
-                            type="range"
-                            min="0"
-                            max={(simulationResult?.simulatedCycleLength || cycleLength) - 1}
-                            value={simulationCurrentTime || 0}
-                            onChange={(e) => setSimulationCurrentTime(parseInt(e.target.value) || 0)}
-                            className="time-slider"
-                            title="Position dans le cycle"
-                        />
+                        <CustomTooltip text={isPlayingSimulation ? 'Pause' : 'Lecture'}>
+                            <button
+                                className={`sim-btn ${isPlayingSimulation ? 'playing' : ''}`}
+                                onClick={() => setIsPlayingSimulation(!isPlayingSimulation)}
+                            >
+                                {isPlayingSimulation ? '⏸' : '▶'}
+                            </button>
+                        </CustomTooltip>
+                        <CustomTooltip text="Réinitialiser">
+                            <button
+                                className="sim-btn reset-btn"
+                                onClick={() => { setIsPlayingSimulation(false); setSimulationCurrentTime(0); }}
+                            >
+                                ⏹
+                            </button>
+                        </CustomTooltip>
+                        <CustomTooltip text="Position dans le cycle">
+                            <input
+                                type="range"
+                                min="0"
+                                max={(simulationResult?.simulatedCycleLength || cycleLength) - 1}
+                                value={simulationCurrentTime || 0}
+                                onChange={(e) => setSimulationCurrentTime(parseInt(e.target.value) || 0)}
+                                className="time-slider"
+                            />
+                        </CustomTooltip>
                         <span className="sim-time" style={{ color: '#fff', whiteSpace: 'nowrap', fontSize: '14px' }}>
                             {simulationCurrentTime || 0}s / {simulationResult?.simulatedCycleLength || cycleLength}s
                         </span>
@@ -1144,16 +1149,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     </div>
                                 )}
                                 {(g.type === 'V' || g.type === 'B') ? (
-                                    <LocalInput
-                                        className="input-da"
-                                        value={g.da || ''}
-                                        onCommit={(val) => updateGroupParams(g.id, { da: val.slice(0, 2) })}
-                                        onClick={(e) => e.stopPropagation()}
-                                        selectOnFocus
-                                        title="Code trajet"
-                                        maxLength={2}
-                                        placeholder=""
-                                    />
+                                    <CustomTooltip text="Code trajet">
+                                        <LocalInput
+                                            className="input-da"
+                                            value={g.da || ''}
+                                            onCommit={(val) => updateGroupParams(g.id, { da: val.slice(0, 2) })}
+                                            onClick={(e) => e.stopPropagation()}
+                                            selectOnFocus
+                                            maxLength={2}
+                                            placeholder=""
+                                        />
+                                    </CustomTooltip>
                                 ) : (
                                     <span className="input-da-placeholder"></span>
                                 )}
@@ -1184,13 +1190,13 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             }
                                             placeholder=""
                                         />
+                                        <CustomTooltip text="Durée nominale dans le cycle">
                                         <input
                                             type="number"
                                             className="input-time-sm"
                                             value={hasValue && duration > 0 ? duration : ''}
                                             readOnly
                                             onClick={(e) => e.stopPropagation()}
-                                            title="Durée"
                                             style={{
                                                 color: duration < g.minGreen ? '#ff4d4d' : 'inherit',
                                                 cursor: 'default',
@@ -1199,6 +1205,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             }}
                                             placeholder=""
                                         />
+                                        </CustomTooltip>
                                     </>
                                 ) : (
                                     <>
@@ -1212,7 +1219,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     })}
                 </div>
 
-                <div className="timeline-scroll-area" style={{ width: `${totalWidth}px` }}>
+                <div className="timeline-scroll-area" style={{ width: `${totalWidth}px`, position: 'relative' }}>
+                    {/* Empty state: no group has a configured green duration */}
+                    {groups.length > 0 && !groups.some(g => (g.durations?.green || 0) > 0) && (
+                        <div className="empty-state-overlay">
+                            <EmptyState
+                                icon="diagram"
+                                title="Diagramme vide"
+                                hint="Saisissez les durées de vert de vos groupes de feux dans le panneau de gauche (onglet Configuration) pour voir les phases apparaître ici."
+                            />
+                        </div>
+                    )}
                     <div className="timeline-track-container" style={{ width: `${totalWidth}px` }}>
                         {/* Grid lines */}
                         <div className="timeline-grid">
@@ -1395,14 +1412,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                             style={{ left: `${offset * pixelsPerSecond}px` }}
                                                         >
-                                                            <div
-                                                                className="drag-handle drag-handle-start"
-                                                                onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
-                                                                title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
-                                                            />
+                                                            <CustomTooltip text={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}>
+                                                                <div
+                                                                    className="drag-handle drag-handle-start"
+                                                                    onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
+                                                                />
+                                                            </CustomTooltip>
                                                             <div className="phase-bar green" style={{ width: `${firstPartWidth}px` }}></div>
                                                             {showVUtileOverlay && vUtileFirstSec > 0 && (
-                                                                <div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileFirstSec * pixelsPerSecond}px` }} title={vUtileTitle} />
+                                                                <CustomTooltip text={vUtileTitle}><div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileFirstSec * pixelsPerSecond}px` }} /></CustomTooltip>
                                                             )}
                                                         </div>
                                                         {/* Second part: green from 0 + orange first part to end of cycle */}
@@ -1413,14 +1431,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                             <div className="phase-bar green" style={{ width: `${secondPartWidth}px` }}></div>
                                                             <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeFirstPartWidth}px` }}></div>
                                                             {showVUtileOverlay && vUtileSecondSec > 0 && (
-                                                                <div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileSecondSec * pixelsPerSecond}px` }} title={vUtileTitle} />
+                                                                <CustomTooltip text={vUtileTitle}><div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileSecondSec * pixelsPerSecond}px` }} /></CustomTooltip>
                                                             )}
-                                                            <div
-                                                                className="drag-handle drag-handle-end"
-                                                                onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
-                                                                style={{ left: `${secondPartWidth}px` }}
-                                                                title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
-                                                            />
+                                                            <CustomTooltip text={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}>
+                                                                <div
+                                                                    className="drag-handle drag-handle-end"
+                                                                    onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
+                                                                    style={{ left: `${secondPartWidth}px` }}
+                                                                />
+                                                            </CustomTooltip>
                                                         </div>
                                                         {/* Third part: orange continuation at start of cycle */}
                                                         <div
@@ -1440,14 +1459,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                         style={{ left: `${offset * pixelsPerSecond}px` }}
                                                     >
-                                                        <div
-                                                            className="drag-handle drag-handle-start"
-                                                            onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
-                                                            title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
-                                                        />
+                                                        <CustomTooltip text={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}>
+                                                            <div
+                                                                className="drag-handle drag-handle-start"
+                                                                onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
+                                                            />
+                                                        </CustomTooltip>
                                                         <div className="phase-bar green" style={{ width: `${firstPartWidth}px` }}></div>
                                                         {showVUtileOverlay && vUtileFirstSec > 0 && (
-                                                            <div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileFirstSec * pixelsPerSecond}px` }} title={vUtileTitle} />
+                                                            <CustomTooltip text={vUtileTitle}><div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileFirstSec * pixelsPerSecond}px` }} /></CustomTooltip>
                                                         )}
                                                     </div>
                                                     {/* Second part: from start of cycle to end */}
@@ -1458,14 +1478,15 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         <div className="phase-bar green" style={{ width: `${secondPartWidth}px` }}></div>
                                                         <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
                                                         {showVUtileOverlay && vUtileSecondSec > 0 && (
-                                                            <div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileSecondSec * pixelsPerSecond}px` }} title={vUtileTitle} />
+                                                            <CustomTooltip text={vUtileTitle}><div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileSecondSec * pixelsPerSecond}px` }} /></CustomTooltip>
                                                         )}
-                                                        <div
-                                                            className="drag-handle drag-handle-end"
-                                                            onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
-                                                            style={{ left: `${secondPartWidth}px` }}
-                                                            title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
-                                                        />
+                                                        <CustomTooltip text={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}>
+                                                            <div
+                                                                className="drag-handle drag-handle-end"
+                                                                onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
+                                                                style={{ left: `${secondPartWidth}px` }}
+                                                            />
+                                                        </CustomTooltip>
                                                     </div>
                                                 </React.Fragment>
                                             );
@@ -1486,22 +1507,24 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                         className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                         style={{ left: `${offset * pixelsPerSecond}px` }}
                                                     >
-                                                        <div
-                                                            className="drag-handle drag-handle-start"
-                                                            onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
-                                                            title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
-                                                        />
+                                                        <CustomTooltip text={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}>
+                                                            <div
+                                                                className="drag-handle drag-handle-start"
+                                                                onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
+                                                            />
+                                                        </CustomTooltip>
                                                         <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
                                                         <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeFirstPartWidth}px` }}></div>
                                                         {showVUtileOverlay && vUtileSec > 0 && (
-                                                            <div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileWidthPx}px` }} title={vUtileTitle} />
+                                                            <CustomTooltip text={vUtileTitle}><div className={`vutile-overlay ${vUtileColorClass}`} style={{ width: `${vUtileWidthPx}px` }} /></CustomTooltip>
                                                         )}
-                                                        <div
-                                                            className="drag-handle drag-handle-end"
-                                                            onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
-                                                            style={{ left: `${greenWidth}px` }}
-                                                            title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
-                                                        />
+                                                        <CustomTooltip text={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}>
+                                                            <div
+                                                                className="drag-handle drag-handle-end"
+                                                                onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
+                                                                style={{ left: `${greenWidth}px` }}
+                                                            />
+                                                        </CustomTooltip>
                                                     </div>
                                                     {/* Orange continuation at start of cycle */}
                                                     <div
@@ -1520,26 +1543,29 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                 className={`cycle-block ${dragState?.groupId === group.id ? 'dragging' : ''} ${arrowHighlightClass}`}
                                                 style={{ left: `${offset * pixelsPerSecond}px` }}
                                             >
-                                                <div
-                                                    className="drag-handle drag-handle-start"
-                                                    onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
-                                                    title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
-                                                />
+                                                <CustomTooltip text={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}>
+                                                    <div
+                                                        className="drag-handle drag-handle-start"
+                                                        onMouseDown={(e) => handleDragStart(e, group.id, 'start', offset)}
+                                                    />
+                                                </CustomTooltip>
                                                 <div className="phase-bar green" style={{ width: `${greenWidth}px` }}></div>
                                                 <div className={`phase-bar ${orangeClass}`} style={{ width: `${orangeWidth}px` }}></div>
                                                 {showVUtileOverlay && vUtileSec > 0 && (
-                                                    <div
-                                                        className={`vutile-overlay ${vUtileColorClass}`}
-                                                        style={{ width: `${vUtileSec * pixelsPerSecond}px` }}
-                                                        title={vUtileTitle}
-                                                    />
+                                                    <CustomTooltip text={vUtileTitle}>
+                                                        <div
+                                                            className={`vutile-overlay ${vUtileColorClass}`}
+                                                            style={{ width: `${vUtileSec * pixelsPerSecond}px` }}
+                                                        />
+                                                    </CustomTooltip>
                                                 )}
-                                                <div
-                                                    className="drag-handle drag-handle-end"
-                                                    onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
-                                                    style={{ left: `${greenWidth}px` }}
-                                                    title={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}
-                                                />
+                                                <CustomTooltip text={`${group.name}\nseconde ${Math.round(offset)} à ${Math.round(endValue)}`}>
+                                                    <div
+                                                        className="drag-handle drag-handle-end"
+                                                        onMouseDown={(e) => handleDragStart(e, group.id, 'end', endValue)}
+                                                        style={{ left: `${greenWidth}px` }}
+                                                    />
+                                                </CustomTooltip>
                                             </div>
                                         );
                                     })()}
@@ -4346,8 +4372,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     {/* Header for comments */}
                     <div className="comments-header">
                         <span>Commentaire</span>
-                        <span className="comment-color-btn comment-color-plus" title="Couleur verte (+)">+</span>
-                        <span className="comment-color-btn comment-color-minus" title="Couleur rouge (-)">−</span>
+                        <CustomTooltip text="Couleur verte (+)"><span className="comment-color-btn comment-color-plus">+</span></CustomTooltip>
+                        <CustomTooltip text="Couleur rouge (-)"><span className="comment-color-btn comment-color-minus">−</span></CustomTooltip>
                     </div>
 
                     {/* Comment input for each group */}
@@ -4427,11 +4453,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         <div className="timeline-remarques no-print">
                             <div className="remarques-header">
                                 <span>Remarques</span>
-                                <span className="comment-color-btn comment-color-plus" title="Couleur verte (+)">+</span>
-                                <span className="comment-color-btn comment-color-minus" title="Couleur rouge (-)">−</span>
-                                <span
+                                <CustomTooltip text="Couleur verte (+)"><span className="comment-color-btn comment-color-plus">+</span></CustomTooltip>
+                                <CustomTooltip text="Couleur rouge (-)"><span className="comment-color-btn comment-color-minus">−</span></CustomTooltip>
+                                <CustomTooltip text="Agrandir le texte sélectionné"><span
                                     className="comment-size-btn"
-                                    title="Agrandir le texte sélectionné"
                                     onMouseDown={(e) => {
                                         e.preventDefault();
                                         const range = remarquesSelectionRef.current;
@@ -4460,10 +4485,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         remarquesSelectionRef.current = newRange.cloneRange();
                                         editable.focus();
                                     }}
-                                >▲</span>
-                                <span
+                                >▲</span></CustomTooltip>
+                                <CustomTooltip text="Réduire le texte sélectionné"><span
                                     className="comment-size-btn"
-                                    title="Réduire le texte sélectionné"
                                     onMouseDown={(e) => {
                                         e.preventDefault();
                                         const range = remarquesSelectionRef.current;
@@ -4493,7 +4517,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         remarquesSelectionRef.current = newRange.cloneRange();
                                         editable.focus();
                                     }}
-                                >▼</span>
+                                >▼</span></CustomTooltip>
                             </div>
                             <div
                                 className="input-remarques"

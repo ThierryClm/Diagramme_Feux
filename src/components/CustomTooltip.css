@@ -1,0 +1,37 @@
+/* Custom tooltip — used across the diagram to replace native HTML title tooltips.
+   Theme-aware styling matches the existing tooltips used for action hover. */
+
+.custom-tooltip {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    border: 1px solid #4ecdc4;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    max-width: 300px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* High-contrast mode */
+body.high-contrast-mode .custom-tooltip {
+    background: #000;
+    color: #fff;
+    border-color: #ffff00;
+}
+
+/* Amber mode */
+body.amber-mode .custom-tooltip {
+    background: #1a1200;
+    color: #ffcc00;
+    border-color: #ff8800;
+}
+
+/* Light mode */
+body.light-mode .custom-tooltip {
+    background: #fff;
+    color: #333;
+    border-color: #2196f3;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}

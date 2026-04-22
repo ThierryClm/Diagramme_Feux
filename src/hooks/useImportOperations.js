@@ -1,6 +1,7 @@
 import { importExcelFile } from '../utils/excelImporter';
 import parseHTMFile from '../utils/parseHTMFile';
 import { safeShowOpenFilePicker } from '../utils/filePicker';
+import { toast } from '../utils/toast';
 
 /**
  * Gère les opérations d'import de fichiers :
@@ -97,16 +98,15 @@ const useImportOperations = ({
                 });
             }
 
-            // Afficher le résultat avec les avertissements éventuels
-            let message = `Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`;
+            toast.success(`Import réussi : ${importedData.groups.length} groupes, ${importedData.actionData.length} actions`);
             if (importedData.warnings && importedData.warnings.length > 0) {
-                message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
+                toast.info(`${importedData.warnings.length} avertissement(s) — voir console`);
+                console.warn('Avertissements import :', importedData.warnings);
             }
-            alert(message);
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur import Excel:', e);
-                alert('Erreur lors de l\'import: ' + e.message);
+                toast.error('Échec de l\'import : ' + e.message);
             }
         }
     };
@@ -114,7 +114,7 @@ const useImportOperations = ({
     // Import Excel depuis un répertoire récent
     const handleImportExcelFromRecentDir = async (dirIndex) => {
         if (!window.showOpenFilePicker) {
-            alert('API File System non supportée par ce navigateur');
+            toast.error('API File System non supportée par ce navigateur');
             return;
         }
 
@@ -177,16 +177,15 @@ const useImportOperations = ({
                 });
             }
 
-            // Afficher le résultat avec les avertissements éventuels
-            let message = `Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`;
+            toast.success(`Import réussi : ${importedData.groups.length} groupes, ${importedData.actionData.length} actions`);
             if (importedData.warnings && importedData.warnings.length > 0) {
-                message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
+                toast.info(`${importedData.warnings.length} avertissement(s) — voir console`);
+                console.warn('Avertissements import :', importedData.warnings);
             }
-            alert(message);
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur import Excel:', e);
-                alert('Erreur lors de l\'import: ' + e.message);
+                toast.error('Échec de l\'import : ' + e.message);
             }
         }
     };
@@ -232,12 +231,11 @@ const useImportOperations = ({
                 setImportModal(false);
                 setImportFile(null);
                 setImportError('');
-                // Afficher le résultat avec les avertissements éventuels
-                let message = `Import réussi !\n\n${importedData.groups.length} groupes importés\n${importedData.actionData.length} actions importées`;
+                toast.success(`Import réussi : ${importedData.groups.length} groupes, ${importedData.actionData.length} actions`);
                 if (importedData.warnings && importedData.warnings.length > 0) {
-                    message += `\n\n⚠️ Avertissements (${importedData.warnings.length}) :\n${importedData.warnings.join('\n')}`;
+                    toast.info(`${importedData.warnings.length} avertissement(s) — voir console`);
+                    console.warn('Avertissements import :', importedData.warnings);
                 }
-                alert(message);
             }
             // Handle CSV files
             else if (fileExt === 'csv') {
