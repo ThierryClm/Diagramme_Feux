@@ -1,0 +1,92 @@
+{
+    "projectName": "Carrefour Exemple",
+    "intersectionName": "Place de la Mairie",
+    "cycleLength": 90,
+    "groups": [
+        {
+            "id": 1,
+            "name": "GF1",
+            "type": "VL",
+            "offset": 0,
+            "minGreen": 10,
+            "durations": { "green": 30, "orange": 3, "red": 57 },
+            "da": "",
+            "phaseFlag": "",
+            "comment": "Axe principal Nord-Sud",
+            "commentColor": "",
+            "courant": ""
+        },
+        {
+            "id": 2,
+            "name": "GF2",
+            "type": "VL",
+            "offset": 33,
+            "minGreen": 10,
+            "durations": { "green": 25, "orange": 3, "red": 62 },
+            "da": "",
+            "phaseFlag": "",
+            "comment": "Axe secondaire Est-Ouest",
+            "commentColor": "",
+            "courant": ""
+        },
+        {
+            "id": 3,
+            "name": "GF3",
+            "type": "Piéton",
+            "offset": 5,
+            "minGreen": 8,
+            "durations": { "green": 18, "orange": 0, "red": 72 },
+            "da": "",
+            "phaseFlag": "",
+            "comment": "Traversée Nord",
+            "commentColor": "",
+            "courant": ""
+        },
+        {
+            "id": 4,
+            "name": "GF4",
+            "type": "Piéton",
+            "offset": 38,
+            "minGreen": 8,
+            "durations": { "green": 16, "orange": 0, "red": 74 },
+            "da": "",
+            "phaseFlag": "",
+            "comment": "Traversée Est",
+            "commentColor": "",
+            "courant": ""
+        }
+    ],
+    "conflictMatrix": [
+        ["", 5, "", 5],
+        [5, "", 5, ""],
+        ["", 5, "", 3],
+        [5, "", 3, ""]
+    ],
+    "pfTabs": [
+        {
+            "id": 1,
+            "name": "PF Jour",
+            "cycleLength": 90,
+            "actionData": [],
+            "remarques": "Plan de jour standard — exemple pédagogique."
+        }
+    ],
+    "activePFId": 1,
+    "intersectionImage": null,
+    "intersectionArrows": [],
+    "imageBrightness": 100,
+    "imageContrast": 100,
+    "trafficDatasets": {},
+    "activeTrafficDataset": 0,
+    "customTrafficDatasetNames": {},
+    "pfTrafficDatasetMap": {},
+    "dependencyGap": 0,
+    "biCarrefourSeparator": null,
+    "externalLinks": [],
+    "projectProperties": {
+        "commune": "(exemple)",
+        "moa": "",
+        "moe": "",
+        "dateModification": "2026-04-23T00:00:00.000Z"
+    }
+}

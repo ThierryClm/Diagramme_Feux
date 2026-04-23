@@ -1,1 +1,36 @@
+# Dependencies
 node_modules/
+
+# Build output
+dist/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Local development & IDE state
+.claude/
+.vscode/settings.json
+.vscode/tasks.json
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# User project data (real carrefour exports — never commit)
+/*.cmpx
+/*.bn
+/Car *.json
+/RSI_*.cmpx
+/samples/
+
+# Dev-only temporary artifacts
+/package_new.json
+/bn_viewer.html
+/tmpclaude-*

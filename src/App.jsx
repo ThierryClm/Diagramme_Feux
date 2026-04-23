@@ -3277,7 +3277,29 @@ draw();
                     <hr style={{ border: 'none', borderTop: '1px solid #444', margin: '16px 0' }} />
                     <div style={{ fontSize: '0.85em', color: '#888', lineHeight: '1.6' }}>
                         <div>Développée avec <strong>React</strong> + <strong>Vite</strong></div>
-                        <div style={{ marginTop: '8px' }}>© 2026 — Tous droits réservés</div>
+                        <div style={{ marginTop: '8px' }}>© 2026 Thierry Colmon</div>
+                        <div style={{ marginTop: '12px' }}>
+                            Licence{' '}
+                            <a
+                                href="https://www.gnu.org/licenses/agpl-3.0.html"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: '#4ecdc4' }}
+                            >
+                                GNU AGPL v3
+                            </a>
+                        </div>
+                        <div style={{ marginTop: '4px' }}>
+                            Code source :{' '}
+                            <a
+                                href="https://github.com/ThierryClm/Diagramme_Feux"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: '#4ecdc4' }}
+                            >
+                                github.com/ThierryClm/Diagramme_Feux
+                            </a>
+                        </div>
                     </div>
                 </div>
             </Modal>

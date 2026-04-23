@@ -1,7 +1,14 @@
 {
     "name": "traffic-light-diagram-app",
     "private": true,
-    "version": "0.0.0",
+    "version": "1.0.0",
+    "description": "Outil de conception et d'optimisation de diagrammes de feux tricolores",
+    "license": "AGPL-3.0-or-later",
+    "author": "Thierry Colmon",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ThierryClm/Diagramme_Feux.git"
+    },
     "type": "module",
     "scripts": {
         "dev": "vite",
