@@ -13,7 +13,8 @@ import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
 import { APP_VERSION, APP_NAME, APP_DESCRIPTION } from './version';
 import { exportElementAsPDF, exportElementAsPNG, buildExportFilename } from './utils/exportHelpers';
-import { buildDiagnosticReport, downloadDiagnosticReport } from './utils/diagnostics';
+import { buildDiagnosticReport, downloadDiagnosticReport, buildErrorJournal, buildDiagnosticJSON, downloadDiagnosticJSON } from './utils/diagnostics';
+import { getInterceptedEntries, clearInterceptedEntries } from './utils/errorInterceptor';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import GreenWaveViewer from './components/GreenWaveViewer';
 import SimulationPanel from './components/SimulationPanel';
@@ -269,6 +270,7 @@ function App() {
     const [aboutModal, setAboutModal] = useState(false);
     const [diagnosticModal, setDiagnosticModal] = useState(false);
     const [diagnosticIncludeProject, setDiagnosticIncludeProject] = useState(false);
+    const [diagnosticRefresh, setDiagnosticRefresh] = useState(0);
     const printPreviewPageRef = useRef(null);
 
     // Intersection image animation state
@@ -3283,6 +3285,8 @@ draw();
             {/* Modal Rapport de diagnostic */}
             <Modal isOpen={diagnosticModal} onClose={() => setDiagnosticModal(false)} title="Rapport de diagnostic" className="modal-wide">
                 {(() => {
+                    // diagnosticRefresh is read here so the modal re-renders when the journal is cleared
+                    void diagnosticRefresh;
                     const report = buildDiagnosticReport({
                         intersectionName,
                         projectName,
@@ -3295,12 +3299,26 @@ draw();
                         intersectionImage,
                         includeProject: diagnosticIncludeProject
                     });
+                    const journalEntries = getInterceptedEntries();
+                    const journalCount = journalEntries.length;
+                    const hasErrors = journalEntries.some(e => e.type === 'error' || e.type === 'runtime' || e.type === 'promise');
                     return (
                         <div style={{ padding: '8px 4px' }}>
                             <div style={{ fontSize: '0.9em', color: '#aaa', marginBottom: '12px' }}>
                                 Ce rapport contient des informations techniques utiles pour signaler un bug.
                                 Aucune donnée n'est envoyée — le contenu reste sur votre poste. Vous pouvez le
                                 copier dans le presse-papiers ou le télécharger comme fichier texte.
+                            </div>
+                            <div style={{
+                                fontSize: '0.85em',
+                                marginBottom: '10px',
+                                padding: '6px 10px',
+                                background: hasErrors ? '#3a2020' : journalCount > 0 ? '#3a3320' : '#203a20',
+                                border: `1px solid ${hasErrors ? '#8a4a4a' : journalCount > 0 ? '#8a8a4a' : '#4a8a4a'}`,
+                                borderRadius: '4px',
+                                color: '#e0e0e0'
+                            }}>
+                                Journal d'erreurs : <strong>{journalCount}</strong> entrée(s) interceptée(s) depuis l'ouverture de l'application.
                             </div>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', cursor: 'pointer' }}>
                                 <input
@@ -3326,12 +3344,40 @@ draw();
                                     resize: 'vertical'
                                 }}
                             />
-                            <div className="modal-actions" style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <div className="modal-actions" style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                 <button
                                     className="modal-btn modal-btn-secondary"
                                     onClick={() => setDiagnosticModal(false)}
                                 >
                                     Fermer
+                                </button>
+                                <button
+                                    className="modal-btn modal-btn-secondary"
+                                    disabled={journalCount === 0}
+                                    title={journalCount === 0 ? 'Aucune entrée à copier' : 'Copier uniquement le journal d\'erreurs'}
+                                    onClick={async () => {
+                                        try {
+                                            await navigator.clipboard.writeText(buildErrorJournal());
+                                            toast.success(`Journal copié (${journalCount} entrée${journalCount > 1 ? 's' : ''})`);
+                                        } catch (e) {
+                                            toast.error('Copie impossible : ' + e.message);
+                                        }
+                                    }}
+                                >
+                                    Copier le journal ({journalCount})
+                                </button>
+                                <button
+                                    className="modal-btn modal-btn-secondary"
+                                    disabled={journalCount === 0}
+                                    title={journalCount === 0 ? 'Journal déjà vide' : 'Vider le journal — utile pour repartir propre avant de reproduire un bug'}
+                                    onClick={() => {
+                                        const n = journalCount;
+                                        clearInterceptedEntries();
+                                        setDiagnosticRefresh(v => v + 1);
+                                        toast.success(`Journal vidé (${n} entrée${n > 1 ? 's' : ''} supprimée${n > 1 ? 's' : ''})`);
+                                    }}
+                                >
+                                    Vider le journal
                                 </button>
                                 <button
                                     className="modal-btn modal-btn-primary"
@@ -3344,16 +3390,38 @@ draw();
                                         }
                                     }}
                                 >
-                                    Copier
+                                    Copier le rapport
                                 </button>
                                 <button
                                     className="modal-btn modal-btn-primary"
                                     onClick={() => {
                                         downloadDiagnosticReport(report, 'diagnostic');
-                                        toast.success('Rapport téléchargé');
+                                        toast.success('Rapport téléchargé (.txt)');
                                     }}
                                 >
                                     Télécharger .txt
+                                </button>
+                                <button
+                                    className="modal-btn modal-btn-primary"
+                                    title="Version structurée (JSON) — plus facile à parser ou analyser"
+                                    onClick={() => {
+                                        const obj = buildDiagnosticJSON({
+                                            intersectionName,
+                                            projectName,
+                                            groups,
+                                            pfTabs,
+                                            activePFId,
+                                            cycleLength,
+                                            actionData,
+                                            conflictMatrix,
+                                            intersectionImage,
+                                            includeProject: diagnosticIncludeProject
+                                        });
+                                        downloadDiagnosticJSON(obj, 'diagnostic');
+                                        toast.success('Rapport téléchargé (.json)');
+                                    }}
+                                >
+                                    Télécharger .json
                                 </button>
                             </div>
                         </div>

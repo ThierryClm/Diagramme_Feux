@@ -44,6 +44,39 @@ const lsBool = (key, fallback = true) => {
 };
 
 /**
+ * Short label for an intercepted entry type.
+ */
+const entryLabel = (type) => {
+    if (type === 'error') return 'ERR';
+    if (type === 'warn') return 'WARN';
+    if (type === 'runtime') return 'RUN';
+    if (type === 'promise') return 'PROM';
+    return String(type).toUpperCase();
+};
+
+/**
+ * Build the error journal as a standalone plain-text block.
+ * Used both inside the full report and by the dedicated "Copier journal" button.
+ */
+export const buildErrorJournal = () => {
+    const entries = getInterceptedEntries();
+    const lines = [];
+    lines.push(`Journal d'erreurs — ${APP_NAME} v${APP_VERSION}`);
+    lines.push(`Généré le ${new Date().toLocaleString('fr-FR')}`);
+    lines.push('');
+    if (entries.length === 0) {
+        lines.push('(aucune erreur ni avertissement intercepté durant cette session)');
+    } else {
+        lines.push(`${entries.length} entrée(s) (plus récentes en dernier) :`);
+        lines.push('');
+        entries.forEach(e => {
+            lines.push(`[${e.ts}] ${entryLabel(e.type)} — ${e.message}`);
+        });
+    }
+    return lines.join('\n');
+};
+
+/**
  * Build the full diagnostic report as a plain-text string.
  */
 export const buildDiagnosticReport = (ctx) => {
@@ -144,12 +177,7 @@ export const buildDiagnosticReport = (ctx) => {
         lines.push(`  ${entries.length} entrée(s) interceptée(s) (plus récentes en dernier) :`);
         lines.push('');
         entries.forEach(e => {
-            const label = e.type === 'error' ? 'ERR'
-                : e.type === 'warn' ? 'WARN'
-                : e.type === 'runtime' ? 'RUN'
-                : e.type === 'promise' ? 'PROM'
-                : e.type.toUpperCase();
-            lines.push(`  [${e.ts}] ${label} — ${e.message}`);
+            lines.push(`  [${e.ts}] ${entryLabel(e.type)} — ${e.message}`);
         });
     }
     lines.push('');
@@ -182,18 +210,153 @@ export const buildDiagnosticReport = (ctx) => {
 };
 
 /**
- * Trigger download of the report as a .txt file.
+ * Build a structured JSON diagnostic object — machine-readable equivalent
+ * of buildDiagnosticReport. Easier to parse / forward automatically.
  */
-export const downloadDiagnosticReport = (content, filename = 'diagnostic') => {
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+export const buildDiagnosticJSON = (ctx) => {
+    const {
+        intersectionName,
+        projectName,
+        groups,
+        pfTabs,
+        activePFId,
+        cycleLength,
+        actionData,
+        conflictMatrix,
+        intersectionImage,
+        includeProject = false
+    } = ctx;
+
+    const filledActions = (actionData || []).filter(a => a && a.action && a.action.trim() !== '').length;
+
+    let matrixFilled = 0;
+    let matrixSize = 0;
+    if (Array.isArray(conflictMatrix)) {
+        matrixSize = conflictMatrix.length;
+        conflictMatrix.forEach((row, r) => {
+            if (Array.isArray(row)) {
+                row.forEach((v, c) => {
+                    if (r !== c && v !== '' && v !== null && v !== undefined) matrixFilled++;
+                });
+            }
+        });
+    }
+
+    const activePF = (pfTabs || []).find(p => p.id === activePFId);
+    const lsKb = estimateLocalStorageUsage();
+    const entries = getInterceptedEntries();
+
+    const out = {
+        meta: {
+            format: 'diagram-feux-diagnostic-v1',
+            generatedAt: new Date().toISOString()
+        },
+        app: {
+            name: APP_NAME,
+            version: APP_VERSION,
+            theme: detectTheme()
+        },
+        environment: {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform || null,
+            language: navigator.language || null,
+            viewport: { width: window.innerWidth, height: window.innerHeight },
+            screen: { width: window.screen.width, height: window.screen.height },
+            devicePixelRatio: window.devicePixelRatio || 1
+        },
+        preferences: {
+            toastSuccess: lsBool('toastPreferences.success', true),
+            toastError: lsBool('toastPreferences.error', true),
+            toastInfo: lsBool('toastPreferences.info', true),
+            openPropertiesOnNewProject: lsBool('openPropertiesOnNewProject'),
+            showWrapFlash: lsBool('showWrapFlash'),
+            showSaveReminder: lsBool('showSaveReminder')
+        },
+        project: {
+            name: projectName || null,
+            intersectionName: intersectionName || null,
+            cycleLength,
+            groupCount: (groups || []).length,
+            pfCount: (pfTabs || []).length,
+            activePFId: activePFId || null,
+            activePFName: activePF ? activePF.name : null,
+            filledActions,
+            totalActions: (actionData || []).length,
+            matrixSize,
+            matrixFilled,
+            hasImage: !!intersectionImage
+        },
+        pfDetails: (pfTabs || []).map(pf => ({
+            id: pf.id,
+            name: pf.name,
+            greensConfigured: Array.isArray(pf.diagram) ? pf.diagram.filter(d => d.greenDuration > 0).length : 0,
+            actionsFilled: Array.isArray(pf.data) ? pf.data.filter(a => a && a.action && a.action.trim() !== '').length : 0,
+            validated: pf.color || null
+        })),
+        storage: {
+            usageKb: lsKb,
+            quotaKbEstimate: 5120,
+            quotaWarning: lsKb !== null && lsKb > 4000
+        },
+        errorJournal: {
+            count: entries.length,
+            entries: entries.map(e => ({ ts: e.ts, type: e.type, message: e.message }))
+        }
+    };
+
+    if (includeProject) {
+        try {
+            out.projectDump = {
+                intersectionName,
+                projectName,
+                groups,
+                cycleLength,
+                conflictMatrix,
+                pfTabs,
+                activePFId
+            };
+        } catch (e) {
+            out.projectDump = { error: e.message };
+        }
+    }
+
+    return out;
+};
+
+/**
+ * Build a datestamped filename part — yyyy-mm-dd_hh-mm.
+ */
+const datePart = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}-${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+/**
+ * Trigger download of a Blob with the given filename.
+ */
+const triggerDownload = (blob, filename) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const d = new Date();
-    const datePart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}-${String(d.getMinutes()).padStart(2, '0')}`;
-    link.download = `${filename}_${datePart}.txt`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+};
+
+/**
+ * Trigger download of the report as a .txt file.
+ */
+export const downloadDiagnosticReport = (content, filename = 'diagnostic') => {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    triggerDownload(blob, `${filename}_${datePart()}.txt`);
+};
+
+/**
+ * Trigger download of the structured diagnostic as a .json file.
+ */
+export const downloadDiagnosticJSON = (obj, filename = 'diagnostic') => {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' });
+    triggerDownload(blob, `${filename}_${datePart()}.json`);
 };
