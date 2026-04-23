@@ -1,24 +1,12 @@
 /**
  * Helpers for exporting DOM elements as PNG or PDF.
- * Uses html2canvas + jsPDF.
+ * Uses html2canvas + jsPDF — this module is intentionally loaded on-demand
+ * (via dynamic import) so these heavy libs stay out of the initial bundle.
  */
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
-/**
- * Build a safe filename base:  {Project}_{PF}_{YYYY-MM-DD}
- */
-export const buildExportFilename = (projectName, pfName) => {
-    const parts = [];
-    if (projectName) parts.push(sanitize(projectName));
-    if (pfName) parts.push(sanitize(pfName));
-    const d = new Date();
-    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    parts.push(date);
-    return parts.join('_') || 'export';
-};
-
-const sanitize = (s) => String(s).replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-');
+export { buildExportFilename } from './exportFilename';
 
 /**
  * Render the given element onto a canvas with high resolution.

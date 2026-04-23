@@ -12,7 +12,7 @@ import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
 import { APP_VERSION, APP_NAME, APP_DESCRIPTION } from './version';
-import { exportElementAsPDF, exportElementAsPNG, buildExportFilename } from './utils/exportHelpers';
+import { buildExportFilename } from './utils/exportFilename';
 import { buildDiagnosticReport, downloadDiagnosticReport, buildErrorJournal, buildDiagnosticJSON, downloadDiagnosticJSON } from './utils/diagnostics';
 import { getInterceptedEntries, clearInterceptedEntries } from './utils/errorInterceptor';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
@@ -722,6 +722,7 @@ function App() {
                         const pfName = pfTabs.find(pf => pf.id === activePFId)?.name || '';
                         const filename = buildExportFilename(intersectionName, `${pfName}_Diagramme`);
                         toast.info('Export PNG en cours...');
+                        const { exportElementAsPNG } = await import('./utils/exportHelpers');
                         await exportElementAsPNG(el, filename);
                         toast.success(`PNG exporté : ${filename}.png`);
                     } catch (e) {

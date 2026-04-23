@@ -1,4 +1,3 @@
-import { importExcelFile } from '../utils/excelImporter';
 import parseHTMFile from '../utils/parseHTMFile';
 import { safeShowOpenFilePicker } from '../utils/filePicker';
 import { toast } from '../utils/toast';
@@ -73,6 +72,7 @@ const useImportOperations = ({
                 // getParent n'est pas toujours disponible
             }
 
+            const { importExcelFile } = await import('../utils/excelImporter');
             const importedData = await importExcelFile(file);
 
             // Load the imported data
@@ -154,6 +154,7 @@ const useImportOperations = ({
                 // getParent n'est pas toujours disponible
             }
 
+            const { importExcelFile } = await import('../utils/excelImporter');
             const importedData = await importExcelFile(file);
 
             loadFullState({
@@ -202,6 +203,7 @@ const useImportOperations = ({
 
             // Handle Excel files
             if (fileExt === 'xlsx' || fileExt === 'xls') {
+                const { importExcelFile } = await import('../utils/excelImporter');
                 const importedData = await importExcelFile(importFile);
 
                 // Load the imported data
