@@ -9,7 +9,7 @@ import { toast } from '../utils/toast';
 const useFileOperations = ({
     projectName, diagramHeight, floatingCrop, floatingZoom,
     setSelectedProject, setOpenModal, setCurrentProjectPath, setProjectModified,
-    projectModifiedSkip, hasUnsavedChanges,
+    projectModifiedSkip, hasUnsavedChanges, setHasUnsavedChanges,
     setDiagramHeight, setFloatingCrop, setFloatingZoom,
     setShowComments, setShowRemarks, setIntersectionName,
     loadFullState, getFullState, saveProject,
@@ -88,7 +88,7 @@ const useFileOperations = ({
             setCurrentProjectPath(file.name);
             setProjectModified(true); // active "Nouveau projet" dans le menu
             projectModifiedSkip.current = true; // absorbe le prochain changement de deps
-            hasUnsavedChanges.current = false; // pas de modifications non sauvegardées
+            setHasUnsavedChanges(false); // pas de modifications non sauvegardées
 
             // Restaurer la hauteur du diagramme si présente
             if (data.diagramHeight !== undefined) {
@@ -195,7 +195,7 @@ const useFileOperations = ({
             setCurrentProjectPath(file.name);
             setProjectModified(true); // active "Nouveau projet" dans le menu
             projectModifiedSkip.current = true; // absorbe le prochain changement de deps
-            hasUnsavedChanges.current = false; // pas de modifications non sauvegardées
+            setHasUnsavedChanges(false); // pas de modifications non sauvegardées
 
             // Restaurer la hauteur du diagramme si présente
             if (data.diagramHeight !== undefined) {
@@ -319,7 +319,7 @@ const useFileOperations = ({
             setCurrentProjectPath(fileHandle.name);
             setProjectModified(true); // active "Nouveau projet" dans le menu
             projectModifiedSkip.current = true; // absorbe setIntersectionName(savedName)
-            hasUnsavedChanges.current = false; // projet sauvegardé, pas de modifications
+            setHasUnsavedChanges(false); // projet sauvegardé, pas de modifications
 
             // Sauvegarder aussi dans localStorage pour cohérence
             saveProject(savedName);
@@ -418,7 +418,7 @@ const useFileOperations = ({
             setCurrentProjectPath(fileHandle.name);
             setProjectModified(true); // active "Nouveau projet" dans le menu
             projectModifiedSkip.current = true; // absorbe setIntersectionName(savedName)
-            hasUnsavedChanges.current = false; // projet sauvegardé, pas de modifications
+            setHasUnsavedChanges(false); // projet sauvegardé, pas de modifications
 
             // Sauvegarder aussi dans localStorage pour cohérence
             saveProject(savedName);
