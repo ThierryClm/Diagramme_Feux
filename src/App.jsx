@@ -1743,7 +1743,7 @@ draw();
                                 >
                                     Configuration
                                     {groups.length > 0 && groups.every(g => !g.type || g.type === '') && (
-                                        <span className="tab-warning-icon" title="Formulaire non renseigné"> ⚠</span>
+                                        <span className="tab-warning-icon" title="Formulaire non renseigné" role="img" aria-label="Formulaire non renseigné"> ⚠</span>
                                     )}
                                 </button>
                                 <button
@@ -3212,6 +3212,7 @@ draw();
                         className="help-back-to-top"
                         onClick={() => document.getElementById('help-sommaire')?.scrollIntoView({ behavior: 'auto', block: 'start' })}
                         title="Retour au sommaire"
+                        aria-label="Retour au sommaire de l'aide"
                     >
                         ↑
                     </button>
@@ -3436,7 +3437,7 @@ draw();
                     <div className="modal-content open-greenwave-modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>Ouvrir une onde verte</h3>
-                            <button className="modal-close" onClick={() => setOpenGreenWaveModal(false)}>×</button>
+                            <button className="modal-close" onClick={() => setOpenGreenWaveModal(false)} aria-label="Fermer la fenêtre">×</button>
                         </div>
                         <div className="modal-body">
                             {getSavedGreenWaves().length > 0 ? (
@@ -3608,7 +3609,7 @@ draw();
                     <div className="modal-content dossier-dialog" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>Imprimer le dossier</h3>
-                            <button className="modal-close" onClick={() => setDossierDialog(false)}>&times;</button>
+                            <button className="modal-close" onClick={() => setDossierDialog(false)} aria-label="Fermer la fenêtre">&times;</button>
                         </div>
                         <div className="dossier-dialog-body">
                             <label>
@@ -3720,7 +3721,7 @@ draw();
                                 {printType === 'diagram' && 'Aperçu - Diagramme'}
                                 {printType === 'dossier' && 'Aperçu - Dossier complet'}
                             </h3>
-                            <button className="modal-close" onClick={() => setPrintPreviewModal(false)}>×</button>
+                            <button className="modal-close" onClick={() => setPrintPreviewModal(false)} aria-label="Fermer la fenêtre">×</button>
                         </div>
                         <div className="print-preview-container">
                             <div className="print-preview-page" ref={printPreviewPageRef}>

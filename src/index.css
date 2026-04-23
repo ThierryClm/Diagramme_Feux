@@ -30,6 +30,48 @@ body {
     background-color: #242424;
 }
 
+/* Focus keyboard navigation: visible outline for accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid #4ecdc4;
+    outline-offset: 2px;
+}
+
+body.light-mode button:focus-visible,
+body.light-mode input:focus-visible,
+body.light-mode select:focus-visible,
+body.light-mode textarea:focus-visible,
+body.light-mode [role="button"]:focus-visible,
+body.light-mode a:focus-visible,
+body.light-mode [tabindex]:focus-visible {
+    outline: 2px solid #2196f3;
+}
+
+body.high-contrast-mode button:focus-visible,
+body.high-contrast-mode input:focus-visible,
+body.high-contrast-mode select:focus-visible,
+body.high-contrast-mode textarea:focus-visible,
+body.high-contrast-mode [role="button"]:focus-visible,
+body.high-contrast-mode a:focus-visible,
+body.high-contrast-mode [tabindex]:focus-visible {
+    outline: 3px solid #ffff00;
+}
+
+body.amber-mode button:focus-visible,
+body.amber-mode input:focus-visible,
+body.amber-mode select:focus-visible,
+body.amber-mode textarea:focus-visible,
+body.amber-mode [role="button"]:focus-visible,
+body.amber-mode a:focus-visible,
+body.amber-mode [tabindex]:focus-visible {
+    outline: 2px solid #ff8800;
+}
+
 /* Light mode overrides */
 body.light-mode {
     background-color: #ffffff;
