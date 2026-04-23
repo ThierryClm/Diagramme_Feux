@@ -141,6 +141,10 @@ td.matrix-hovered-col {
 
 .matrix-conflict-cell {
     background: rgba(255, 0, 0, 0.3) !important;
+    /* Marqueur non chromatique : bordure pointillée rouge foncé, visible même
+       pour les daltoniens qui ne perçoivent pas bien le rouge */
+    outline: 2px dashed #c0392b;
+    outline-offset: -2px;
 }
 
 .matrix-conflict-input {
@@ -151,6 +155,9 @@ td.matrix-hovered-col {
 
 .matrix-asymmetric-cell {
     background: rgba(255, 165, 0, 0.3) !important;
+    /* Marqueur non chromatique pour asymétrie : bordure pointillée orange */
+    outline: 2px dotted #d35400;
+    outline-offset: -2px;
 }
 
 .matrix-error-input {

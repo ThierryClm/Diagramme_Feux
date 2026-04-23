@@ -1046,6 +1046,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             <button
                                 className={`sim-btn ${isPlayingSimulation ? 'playing' : ''}`}
                                 onClick={() => setIsPlayingSimulation(!isPlayingSimulation)}
+                                aria-label={isPlayingSimulation ? 'Mettre la simulation en pause' : 'Lancer la simulation'}
                             >
                                 {isPlayingSimulation ? '⏸' : '▶'}
                             </button>
@@ -1054,6 +1055,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             <button
                                 className="sim-btn reset-btn"
                                 onClick={() => { setIsPlayingSimulation(false); setSimulationCurrentTime(0); }}
+                                aria-label="Réinitialiser la simulation"
                             >
                                 ⏹
                             </button>
@@ -1066,6 +1068,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 value={simulationCurrentTime || 0}
                                 onChange={(e) => setSimulationCurrentTime(parseInt(e.target.value) || 0)}
                                 className="time-slider"
+                                aria-label="Position courante dans le cycle de simulation"
                             />
                         </CustomTooltip>
                         <span className="sim-time" style={{ color: '#fff', whiteSpace: 'nowrap', fontSize: '14px' }}>
@@ -4381,8 +4384,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     {/* Header for comments */}
                     <div className="comments-header">
                         <span>Commentaire</span>
-                        <CustomTooltip text="Couleur verte (+)"><span className="comment-color-btn comment-color-plus">+</span></CustomTooltip>
-                        <CustomTooltip text="Couleur rouge (-)"><span className="comment-color-btn comment-color-minus">−</span></CustomTooltip>
+                        <CustomTooltip text="Couleur verte (+)"><span className="comment-color-btn comment-color-plus" role="button" aria-label="Colorer le texte sélectionné en vert">+</span></CustomTooltip>
+                        <CustomTooltip text="Couleur rouge (-)"><span className="comment-color-btn comment-color-minus" role="button" aria-label="Colorer le texte sélectionné en rouge">−</span></CustomTooltip>
                     </div>
 
                     {/* Comment input for each group */}
@@ -4462,10 +4465,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         <div className="timeline-remarques no-print">
                             <div className="remarques-header">
                                 <span>Remarques</span>
-                                <CustomTooltip text="Couleur verte (+)"><span className="comment-color-btn comment-color-plus">+</span></CustomTooltip>
-                                <CustomTooltip text="Couleur rouge (-)"><span className="comment-color-btn comment-color-minus">−</span></CustomTooltip>
+                                <CustomTooltip text="Couleur verte (+)"><span className="comment-color-btn comment-color-plus" role="button" aria-label="Colorer le texte sélectionné en vert">+</span></CustomTooltip>
+                                <CustomTooltip text="Couleur rouge (-)"><span className="comment-color-btn comment-color-minus" role="button" aria-label="Colorer le texte sélectionné en rouge">−</span></CustomTooltip>
                                 <CustomTooltip text="Agrandir le texte sélectionné"><span
                                     className="comment-size-btn"
+                                    role="button"
+                                    aria-label="Agrandir la taille du texte sélectionné"
                                     onMouseDown={(e) => {
                                         e.preventDefault();
                                         const range = remarquesSelectionRef.current;
@@ -4497,6 +4502,8 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 >▲</span></CustomTooltip>
                                 <CustomTooltip text="Réduire le texte sélectionné"><span
                                     className="comment-size-btn"
+                                    role="button"
+                                    aria-label="Réduire la taille du texte sélectionné"
                                     onMouseDown={(e) => {
                                         e.preventDefault();
                                         const range = remarquesSelectionRef.current;

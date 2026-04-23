@@ -249,6 +249,12 @@
     overflow: hidden;
 }
 
+/* Marqueur non chromatique de conflit : bordure gauche rouge épaisse,
+   visible même pour les daltoniens qui perçoivent mal les nuances de rouge */
+.timeline-row-track.row-conflict {
+    box-shadow: inset 4px 0 0 #e74c3c;
+}
+
 /* Green cut overlay - masks portions of green bar for Escamotage actions */
 .green-cut-overlay {
     position: absolute;
