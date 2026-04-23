@@ -466,6 +466,9 @@ function App() {
         const toc = [];
         let currentChapter = null;
         root.querySelectorAll('h3, h4').forEach(node => {
+            // Remove any previously-injected "back to TOC" link before reading text
+            const existing = node.querySelector('.back-to-toc');
+            if (existing) existing.remove();
             const text = node.textContent.trim();
             if (!node.id) node.id = slug(text);
             if (node.tagName === 'H3') {
@@ -473,18 +476,6 @@ function App() {
                 toc.push(currentChapter);
             } else if (node.tagName === 'H4' && currentChapter) {
                 currentChapter.sections.push({ id: node.id, title: text });
-            }
-            // Add a "back to TOC" link to each h4 (skip if already added)
-            if (node.tagName === 'H4' && !node.querySelector('.back-to-toc')) {
-                const link = document.createElement('a');
-                link.href = '#help-sommaire';
-                link.className = 'back-to-toc';
-                link.textContent = '↑ Sommaire';
-                link.style.cssText = 'float:right;font-size:0.75em;font-weight:normal;color:#888;text-decoration:none;margin-top:4px;';
-                link.onmouseenter = () => link.style.color = '#4ecdc4';
-                link.onmouseleave = () => link.style.color = '#888';
-                link.onclick = (e) => { e.preventDefault(); document.getElementById('help-sommaire')?.scrollIntoView({ behavior: 'auto', block: 'start' }); };
-                node.appendChild(link);
             }
         });
         setHelpToc(toc);
@@ -2607,7 +2598,7 @@ draw();
                             <li><strong>DA :</strong> Correspond au code trajet d'une ligne de bus en délai d'approche, communément noté T0, T1, T2...</li>
                             <li><strong>Déb (Début de vert) :</strong> Position de départ du vert dans le cycle (en secondes depuis le début du cycle)</li>
                             <li><strong>Fin (Fin de vert) :</strong> Position de fin du vert dans le cycle (en secondes depuis le début du cycle)</li>
-                            <li><strong>V (Vert) :</strong> Durée du feu vert, calculée automatiquement comme la différence entre Fin et Déb</li>
+                            <li><strong>Durée :</strong> Durée du feu vert, calculée automatiquement comme la différence entre Fin et Déb</li>
                             <li><strong>Indicateur aiguillage/escamotage :</strong> Lorsqu'une action <em>Escamotage</em> est définie dans les conditions de micro-régulation, un petit "e" s'affiche automatiquement en haut à droite du nom des groupes concernés (GF source et Action GF cibles). Les conflits où ce groupe est en première position (GFx dans "GFx ↔ GFy") sont alors grisés et non comptabilisés, ce qui peut permettre de valider le plan de feux. Il est également possible de poser manuellement cet indicateur : cliquez sur un nom de groupe puis utilisez <em>Alt+A</em> (aiguillage) ou <em>Alt+E</em> (escamotage) pour marquer le groupe. Un indicateur posé manuellement n'est pas écrasé par l'automatisme.</li>
                             <li><strong>Mode simulation :</strong> Lorsque l'onglet Simulation est actif, le diagramme passe en mode lecture seule : les valeurs DA, Déb, Fin et la durée du cycle ne sont plus modifiables. Le diagramme affiche en temps réel l'effet des actions de micro-régulation cochées dans le panneau de simulation. Les zones contractées (Adaptatif vertical, Escamotage de phase) réduisent visuellement le cycle, les fermetures anticipées ajustent les fins de vert, et les actions de micro-régulation (Priorité piétons, Signal aide conduite, Flèche d'anticipation) suivent les décalages. Ce mode permet de vérifier le comportement du carrefour sous différentes combinaisons d'actions avant la mise en service.</li>
                         </ul>
@@ -2803,13 +2794,26 @@ draw();
                     </section>
 
                     <section className="help-section">
-                        <h4>Commentaires et Remarques</h4>
-                        <p>Les champs Commentaire (par groupe) et Remarques (par plan de feu) permettent d'ajouter des annotations :</p>
+                        <h4>Commentaires</h4>
+                        <p>Le champ <strong>Commentaire</strong> est associé à chaque <em>groupe de feu</em>. Il permet d'annoter individuellement une ligne du diagramme avec une information libre (par exemple une remarque technique, un rappel de configuration, un point à valider avec le maître d'ouvrage). Chaque groupe de feu possède son propre commentaire, qui reste affiché sur sa ligne dans le diagramme. Les commentaires sont sauvegardés avec le projet et sont communs à tous les plans de feux (une même annotation reste valable pour tous les PF d'un groupe de feu donné).</p>
                         <ul>
-                            <li><strong>Coloration du texte :</strong> Sélectionnez du texte puis appuyez sur <span style={{color: '#4CAF50'}}>+</span> (vert) ou <span style={{color: '#F44336'}}>−</span> (rouge)</li>
-                            <li><strong>Coloration de toute la ligne :</strong> Sans sélection, + ou − colore tout le contenu</li>
-                            <li><strong>Basculer en blanc :</strong> Si une ligne entière est déjà colorée, appuyez à nouveau sur + ou − pour supprimer la couleur</li>
-                            <li><strong>Infobulle :</strong> L'infobulle s'affiche après 20 secondes de survol</li>
+                            <li><strong>Coloration du texte :</strong> Sélectionnez du texte puis appuyez sur <span style={{color: '#4CAF50'}}>+</span> (vert) ou <span style={{color: '#F44336'}}>−</span> (rouge).</li>
+                            <li><strong>Coloration de toute la ligne :</strong> Sans sélection, <span style={{color: '#4CAF50'}}>+</span> ou <span style={{color: '#F44336'}}>−</span> colore tout le contenu.</li>
+                            <li><strong>Basculer en blanc :</strong> Si une ligne entière est déjà colorée, appuyez à nouveau sur <span style={{color: '#4CAF50'}}>+</span> ou <span style={{color: '#F44336'}}>−</span> pour retirer la couleur.</li>
+                            <li><strong>Affichage :</strong> Les commentaires sont affichés dans la colonne dédiée du diagramme. L'option <em>Mise en page → Commentaires du diagramme</em> permet de les masquer globalement.</li>
+                            <li><strong>Impression :</strong> Les commentaires figurent dans l'export du dossier complet.</li>
+                        </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Remarques</h4>
+                        <p>Le champ <strong>Remarques</strong> est associé à chaque <em>plan de feu</em> (PF1, PF2, PF3...). Il permet de consigner des informations d'ensemble propres à un plan de feu : justification d'un choix de cycle, horaires d'activation, scénario de régulation, validation d'un comité, etc. Contrairement aux commentaires (par groupe), chaque plan de feu a ses propres remarques, indépendantes des autres PF. Changer d'onglet PF modifie le contenu affiché.</p>
+                        <ul>
+                            <li><strong>Coloration du texte :</strong> Sélectionnez du texte puis appuyez sur <span style={{color: '#4CAF50'}}>+</span> (vert) ou <span style={{color: '#F44336'}}>−</span> (rouge).</li>
+                            <li><strong>Taille du texte :</strong> Sélectionnez du texte puis appuyez sur <strong>▲</strong> (agrandir) ou <strong>▼</strong> (réduire). Utile pour hiérarchiser les informations (titre plus grand, détails plus petits).</li>
+                            <li><strong>Mise en forme conservée :</strong> Si vous collez depuis un traitement de texte (Word, LibreOffice...), la mise en forme (taille de police, couleurs) est préservée.</li>
+                            <li><strong>Affichage :</strong> Les remarques sont affichées dans une zone dédiée à droite du diagramme. L'option <em>Mise en page → Remarques du diagramme</em> permet de les masquer globalement.</li>
+                            <li><strong>Impression :</strong> Les remarques du PF actif figurent dans l'export du dossier complet.</li>
                         </ul>
                     </section>
 
@@ -3203,6 +3207,14 @@ draw();
                             <dd>Durée minimale obligatoire du vert d'un groupe, pour garantir la sécurité et le confort des usagers (traversée piétonne complète, dégagement véhicule, etc.). Seuil en dessous duquel une alerte se déclenche.</dd>
                         </dl>
                     </section>
+                    {/* Bouton flottant "retour au sommaire" */}
+                    <button
+                        className="help-back-to-top"
+                        onClick={() => document.getElementById('help-sommaire')?.scrollIntoView({ behavior: 'auto', block: 'start' })}
+                        title="Retour au sommaire"
+                    >
+                        ↑
+                    </button>
                 </div>
             </Modal>
 

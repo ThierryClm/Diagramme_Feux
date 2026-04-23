@@ -809,6 +809,53 @@
     text-decoration: underline;
 }
 
+/* Bouton flottant « retour au sommaire » dans l'aide */
+.help-back-to-top {
+    position: sticky;
+    bottom: 12px;
+    float: right;
+    margin-right: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #4ecdc4;
+    color: #1a1a2e;
+    border: none;
+    font-size: 1.3em;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.help-back-to-top:hover {
+    background: #6eeae0;
+    transform: translateY(-2px);
+}
+
+body.light-mode .help-back-to-top {
+    color: #fff;
+    background: #2196f3;
+}
+body.light-mode .help-back-to-top:hover {
+    background: #1976d2;
+}
+
+body.high-contrast-mode .help-back-to-top {
+    background: #ffff00;
+    color: #000;
+    border: 2px solid #ffff00;
+}
+
+body.amber-mode .help-back-to-top {
+    background: #ff8800;
+    color: #000;
+}
+
 .help-section h4 {
     color: #3498db;
     margin: 0 0 10px 0;
