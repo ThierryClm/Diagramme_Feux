@@ -2,7 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import GreenWavePage from './GreenWavePage.jsx'
+import { installErrorInterceptor } from './utils/errorInterceptor'
 import './index.css'
+
+installErrorInterceptor();
 
 // Check URL parameters to decide which component to render
 const urlParams = new URLSearchParams(window.location.search);
