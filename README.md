@@ -1,54 +1,65 @@
-# Diagramme Feux - Outil de Conception de Feux de Carrefour
+# Diagramme de Feux
 
-Une application web interactive développée avec **React** et **Vite** pour concevoir, visualiser et valider les cycles de feux de signalisation d'un carrefour.
+Outil web de conception et d'optimisation de diagrammes de feux tricolores, destiné aux traficiens et ingénieurs de la circulation.
 
-## 📋 Fonctionnalités
+Conçu pour être utilisé **localement**, sans serveur ni télémétrie : toutes les données restent dans le navigateur (localStorage) et sur votre poste.
 
-*   **Configuration du Carrefour** : Définition du nom, nombre de groupes de feux et longueur du cycle.
-*   **Gestion des Groupes** : Ajout et paramétrage des groupes de feux.
-*   **Matrice de Conflits (Intergreen)** : Saisie des temps de dégagement (jaune + rouge de dégagement) entre les groupes incompatibles pour assurer la sécurité.
-*   **Visualisation Temporelle** : Diagramme temporel interactif (Timeline) montrant l'état de chaque groupe sur la durée du cycle.
-*   **Validation en Temps Réel** : Détection automatique des conflits basée sur la matrice de temps de dégagement. Les conflits sont signalés visuellement.
-*   **Modes** :
-    *   *Configuration* : Pour le paramétrage des cycles et des temps de sécurité.
-    *   *Trafic* : Pour la saisie de données de trafic (débit, saturation).
+## Fonctionnalités principales
 
-## 🚀 Installation
+- Définition des groupes de feux (VL, TC, Cycliste, Piéton) avec durées vert/orange/rouge
+- Matrice d'intergreens avec détection automatique des conflits
+- Diagramme temporel horizontal avec tête de lecture
+- Plans de feux multiples (PF) gérés par onglets
+- Table d'actions par plan
+- Onde verte sur page dédiée
+- Import/export (JSON, CSV, Excel)
+- Export PDF et PNG du diagramme
+- Thèmes (sombre, clair, haut contraste, ambre)
+- Rapport de diagnostic pour signalement de bug (local, sans envoi réseau)
 
-Assurez-vous d'avoir [Node.js](https://nodejs.org/) installé sur votre machine.
+## Installation
 
-1.  Clonez ce dépôt (ou téléchargez les fichiers).
-2.  Installez les dépendances :
+Prérequis : [Node.js](https://nodejs.org/) 18 ou plus.
 
 ```bash
+git clone https://github.com/ThierryClm/Diagramme_Feux.git
+cd Diagramme_Feux
 npm install
-```
-
-## 🛠️ Démarrage
-
-Pour lancer l'application en mode développement :
-
-```bash
 npm run dev
 ```
 
-Ou si vous utilisez un terminal compatible Bash (comme Git Bash sur Windows) :
+L'application s'ouvre à `http://localhost:3000`.
 
-```bash
-./start.sh
-```
+## Commandes
 
-L'application sera accessible généralement à l'adresse `http://localhost:3000`.
+| Commande | Effet |
+|---|---|
+| `npm run dev` | Serveur de développement (rechargement à chaud) |
+| `npm run build` | Build de production dans `dist/` |
+| `npm run preview` | Aperçu local du build de production |
+| `npm test` | Lancer les tests (Vitest) |
 
-## 🏗️ Technologies
+## Exemple
 
-*   **Frontend** : [React](https://reactjs.org/)
-*   **Build Tool** : [Vite](https://vitejs.dev/)
-*   **Langage** : JavaScript / JSX
-*   **Styles** : CSS3
+Un projet d'exemple est fourni dans le dossier [`examples/`](examples/). Ouvrez l'application, puis utilisez **Fichier → Ouvrir un projet** et sélectionnez `examples/carrefour-exemple.json`.
 
-## 📁 Structure du Projet
+## Architecture
 
-*   `src/components` : Composants React (Tableaux, Diagrammes, Matrice).
-*   `src/hooks` : Logique métier (ex: `useTrafficLight` pour la gestion d'état).
-*   `src/App.jsx` : Composant principal orchestrant l'interface.
+Application React + Vite, état centralisé dans [`src/hooks/useTrafficLight.js`](src/hooks/useTrafficLight.js). Voir [`CLAUDE.md`](CLAUDE.md) pour les détails d'implémentation (structures de données, rendu du timeline, détection de conflits).
+
+## Contribuer
+
+Les contributions sont les bienvenues. Pour un bug ou une suggestion, ouvrez une [issue GitHub](https://github.com/ThierryClm/Diagramme_Feux/issues). Pour proposer un patch, forkez puis ouvrez une pull request.
+
+Un rapport de diagnostic peut être généré depuis l'app (**À propos → Rapport de diagnostic**) et joint à une issue pour faciliter le débogage.
+
+## Licence
+
+Ce projet est distribué sous licence **GNU Affero General Public License v3.0 ou ultérieure** (AGPL-3.0-or-later). Voir le fichier [`LICENSE`](LICENSE) pour le texte complet.
+
+En résumé :
+- Vous pouvez utiliser, modifier et redistribuer le logiciel.
+- Si vous distribuez une version modifiée (y compris en la rendant accessible sur un réseau), vous devez publier le code source correspondant sous la même licence.
+- Aucune garantie n'est fournie.
+
+© 2026 Thierry Colmon
