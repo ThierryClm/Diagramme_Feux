@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { safeShowOpenFilePicker, safeShowSaveFilePicker } from '../utils/filePicker';
 import { toast } from '../utils/toast';
+import { validateProject } from '../utils/projectValidator';
 
 /**
  * Gère les opérations d'ouverture et de sauvegarde de fichiers projet
@@ -62,6 +63,16 @@ const useFileOperations = ({
                       'Détails: ' + parseError.message + '\n\n' +
                       'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
                 return;
+            }
+
+            const validation = validateProject(data);
+            if (!validation.ok) {
+                toast.error(validation.error);
+                return;
+            }
+            if (validation.warnings.length > 0) {
+                console.warn('Avertissements validation projet :', validation.warnings);
+                toast.info(`Projet chargé avec ${validation.warnings.length} avertissement(s) — voir console`);
             }
 
             // Mémoriser le répertoire parent
@@ -171,6 +182,16 @@ const useFileOperations = ({
                       'Détails: ' + parseError.message + '\n\n' +
                       'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
                 return;
+            }
+
+            const validation = validateProject(data);
+            if (!validation.ok) {
+                toast.error(validation.error);
+                return;
+            }
+            if (validation.warnings.length > 0) {
+                console.warn('Avertissements validation projet :', validation.warnings);
+                toast.info(`Projet chargé avec ${validation.warnings.length} avertissement(s) — voir console`);
             }
 
             // Mémoriser le répertoire parent
