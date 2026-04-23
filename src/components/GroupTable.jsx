@@ -65,7 +65,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
             <table className="group-table">
                 <thead>
                     <tr>
-                        <th>Grp</th>
+                        <th>GF</th>
                         {showGroupNames && <th>Nom</th>}
                         <th>Type</th>
                         <th>Courant</th>

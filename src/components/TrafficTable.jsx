@@ -325,7 +325,7 @@ const TrafficTable = ({
             <table className="traffic-table">
                 <thead>
                     <tr>
-                        <th className="col-grp">Grp</th>
+                        <th className="col-grp">GF</th>
                         <th className="col-nom">Nom</th>
                         <th title="Coefficient de voie correspondant aux courants de circulation du groupe de feu">Coef</th>
                         <th className="col-trafic-header">

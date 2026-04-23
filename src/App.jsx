@@ -624,12 +624,40 @@ function App() {
         return style;
     };
 
-    // Handler confirmation impression dossier — ouvre la modale d'aperçu avec les boutons
-    // Imprimer / Exporter PDF, l'utilisateur choisit
+    // Handler confirmation impression dossier (Imprimer)
+    // Ouvre la modale d'aperçu (hors écran) puis déclenche window.print()
     const handleDossierConfirm = () => {
         setDossierDialog(false);
         setPrintType('dossier');
         setPrintPreviewModal(true);
+        setTimeout(() => {
+            document.body.classList.add('print-dossier');
+            const footerStyle = injectDossierFooterStyle();
+            window.print();
+            footerStyle.remove();
+            document.body.classList.remove('print-dossier');
+            setPrintPreviewModal(false);
+            setPrintType(null);
+        }, 500);
+    };
+
+    // Handler export PDF : même flow que Imprimer, avec un message invitant à
+    // choisir « Enregistrer au format PDF » comme imprimante. Garantit un rendu
+    // identique à l'impression.
+    const handleDossierExportPDF = () => {
+        setDossierDialog(false);
+        setPrintType('dossier');
+        setPrintPreviewModal(true);
+        toast.info('Dans la boîte d\'impression, sélectionnez « Enregistrer au format PDF »');
+        setTimeout(() => {
+            document.body.classList.add('print-dossier');
+            const footerStyle = injectDossierFooterStyle();
+            window.print();
+            footerStyle.remove();
+            document.body.classList.remove('print-dossier');
+            setPrintPreviewModal(false);
+            setPrintType(null);
+        }, 500);
     };
 
     // Menu action handler
@@ -3662,7 +3690,8 @@ draw();
                         </div>
                         <div className="modal-footer">
                             <button className="btn-cancel" onClick={() => setDossierDialog(false)}>Annuler</button>
-                            <button className="btn-confirm" onClick={handleDossierConfirm}>Confirmer</button>
+                            <button className="btn-confirm" onClick={handleDossierExportPDF}>Exporter PDF</button>
+                            <button className="btn-confirm" onClick={handleDossierConfirm}>Imprimer</button>
                         </div>
                     </div>
                 </div>
@@ -4508,25 +4537,6 @@ draw();
                         <div className="modal-footer">
                             <button className="btn-cancel" onClick={() => setPrintPreviewModal(false)}>
                                 Annuler
-                            </button>
-                            <button
-                                className="btn-confirm"
-                                onClick={async () => {
-                                    if (!printPreviewPageRef.current) return;
-                                    try {
-                                        const pfName = pfTabs.find(pf => pf.id === activePFId)?.name || '';
-                                        const typeLabel = printType === 'matrix' ? 'Matrice' : printType === 'form' ? 'Formulaire' : printType === 'diagram' ? 'Diagramme' : 'Dossier';
-                                        const filename = buildExportFilename(intersectionName, `${pfName}_${typeLabel}`);
-                                        toast.info('Export PDF en cours...');
-                                        await exportElementAsPDF(printPreviewPageRef.current, filename);
-                                        toast.success(`PDF exporté : ${filename}.pdf`);
-                                    } catch (e) {
-                                        console.error('Erreur export PDF:', e);
-                                        toast.error('Échec de l\'export PDF : ' + e.message);
-                                    }
-                                }}
-                            >
-                                Exporter PDF
                             </button>
                             <button
                                 className="btn-confirm"
