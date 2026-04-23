@@ -48,9 +48,11 @@ const MenuBar = ({
         setOpenSubmenu(null);
     };
 
-    const handleItemClick = (action) => {
-        setOpenMenu(null);
-        setOpenSubmenu(null);
+    const handleItemClick = (action, keepSubmenuOpen = false) => {
+        if (!keepSubmenuOpen) {
+            setOpenMenu(null);
+            setOpenSubmenu(null);
+        }
 
         // Handle special actions
         if (action === 'manageUsers' && onManageUsers) {
@@ -237,11 +239,12 @@ const MenuBar = ({
                     type: 'submenu',
                     submenuId: 'notifications',
                     submenu: [
-                        { label: 'Messages de succès', action: 'toggleToastSuccess', checked: layoutOptions.toastPrefs?.success },
-                        { label: 'Messages d\'erreur', action: 'toggleToastError', checked: layoutOptions.toastPrefs?.error },
-                        { label: 'Messages d\'info', action: 'toggleToastInfo', checked: layoutOptions.toastPrefs?.info },
-                        { label: 'Notifications nouveau projet', action: 'toggleOpenPropertiesOnNewProject', checked: layoutOptions.openPropertiesOnNewProject },
-                        { label: 'Valeur hors cycle dans le diagramme', action: 'toggleShowWrapFlash', checked: layoutOptions.showWrapFlash }
+                        { label: 'Messages de succès', action: 'toggleToastSuccess', checked: !!layoutOptions.toastPrefs?.success, keepSubmenuOpen: true },
+                        { label: 'Messages d\'erreur', action: 'toggleToastError', checked: !!layoutOptions.toastPrefs?.error, keepSubmenuOpen: true },
+                        { label: 'Messages d\'info', action: 'toggleToastInfo', checked: !!layoutOptions.toastPrefs?.info, keepSubmenuOpen: true },
+                        { label: 'Nouveau projet', action: 'toggleOpenPropertiesOnNewProject', checked: !!layoutOptions.openPropertiesOnNewProject, keepSubmenuOpen: true },
+                        { label: 'Valeur hors cycle dans le diagramme', action: 'toggleShowWrapFlash', checked: !!layoutOptions.showWrapFlash, keepSubmenuOpen: true },
+                        { label: 'Rappel de sauvegarde', action: 'toggleSaveReminder', checked: !!layoutOptions.showSaveReminder, keepSubmenuOpen: true }
                     ]
                 }
             ]
@@ -370,7 +373,7 @@ const MenuBar = ({
             <button
                 key={subIdx}
                 className={`menu-item ${subItem.checked ? 'checked' : ''}`}
-                onClick={() => handleItemClick(subItem.action)}
+                onClick={() => handleItemClick(subItem.action, subItem.keepSubmenuOpen)}
             >
                 {subItem.checked !== undefined && subItem.checked && <span className="checkmark" style={{ color: '#2ecc71' }}>✓</span>}
                 {subItem.label}

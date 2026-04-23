@@ -391,6 +391,15 @@
     margin-left: 4px;
 }
 
+.unsaved-indicator {
+    color: #f39c12;
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-left: 6px;
+    vertical-align: middle;
+    line-height: 1;
+}
+
 
 @keyframes pulse {
     0% {

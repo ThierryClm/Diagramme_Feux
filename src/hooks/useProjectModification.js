@@ -8,8 +8,11 @@ import { useState, useRef, useEffect } from 'react';
  */
 const useProjectModification = (deps) => {
     const [projectModified, setProjectModified] = useState(false);
+    // True when user has modified the project since last save — used to display
+    // the "unsaved changes" indicator (asterisk) in the UI. Also drives beforeunload.
+    const [isDirty, setIsDirty] = useState(false);
     const projectModifiedSkip = useRef(true);
-    // Tracks actual user edits (distinct from "project is loaded") for beforeunload
+    // Ref mirror of isDirty for use inside beforeunload handler (avoids stale closures)
     const hasUnsavedChanges = useRef(false);
     // Only track changes after all startup effects have settled
     const isReady = useRef(false);
@@ -29,6 +32,7 @@ const useProjectModification = (deps) => {
         setProjectModified(true);
         if (isReady.current) {
             hasUnsavedChanges.current = true;
+            setIsDirty(true);
         }
     }, deps); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -47,9 +51,16 @@ const useProjectModification = (deps) => {
         setProjectModified(false);
         projectModifiedSkip.current = true;
         hasUnsavedChanges.current = false;
+        setIsDirty(false);
     };
 
-    return { projectModified, setProjectModified, resetModified, projectModifiedSkip, hasUnsavedChanges };
+    // Wrap the ref setter so external callers (loaders/savers) also clear isDirty
+    const setHasUnsavedChanges = (val) => {
+        hasUnsavedChanges.current = val;
+        setIsDirty(val);
+    };
+
+    return { projectModified, setProjectModified, resetModified, projectModifiedSkip, hasUnsavedChanges, isDirty, setHasUnsavedChanges };
 };
 
 export default useProjectModification;

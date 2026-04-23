@@ -258,6 +258,10 @@ function App() {
         const saved = localStorage.getItem('showWrapFlash');
         return saved === null ? true : saved === 'true';
     });
+    const [showSaveReminder, setShowSaveReminder] = useState(() => {
+        const saved = localStorage.getItem('showSaveReminder');
+        return saved === null ? true : saved === 'true';
+    });
     const projectNameInputRef = useRef(null);
     const helpContentRef = useRef(null);
     const [helpToc, setHelpToc] = useState([]);
@@ -276,8 +280,25 @@ function App() {
     const [isSaving, setIsSaving] = useState(false);
 
     // Track whether project has been modified (for "Nouveau projet" menu)
-    const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip, hasUnsavedChanges } =
+    const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip, hasUnsavedChanges, isDirty, setHasUnsavedChanges } =
         useProjectModification([groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
+
+    // Update document title (browser tab) to reflect project name and unsaved status
+    useEffect(() => {
+        const prefix = isDirty ? '* ' : '';
+        const name = projectName || intersectionName || 'Nouveau projet';
+        document.title = `${prefix}${name} — Diagramme de Feux`;
+    }, [projectName, intersectionName, isDirty]);
+
+    // Save reminder: when isDirty becomes true, start a 10-minute inactivity timer.
+    // Any new modification resets the timer. On timeout, show a discreet toast.
+    useEffect(() => {
+        if (!showSaveReminder || !isDirty) return;
+        const timer = setTimeout(() => {
+            toast.info('Pensez à sauvegarder vos modifications');
+        }, 10 * 60 * 1000); // 10 minutes
+        return () => clearTimeout(timer);
+    }, [isDirty, projectName, intersectionName, groups, actionData, cycleLength, conflictMatrix, projectProperties, showSaveReminder]);
 
     // Floating matrix state
     const {
@@ -499,7 +520,7 @@ function App() {
     } = useFileOperations({
         projectName, diagramHeight, floatingCrop, floatingZoom,
         setSelectedProject, setOpenModal, setCurrentProjectPath, setProjectModified,
-        projectModifiedSkip, hasUnsavedChanges,
+        projectModifiedSkip, hasUnsavedChanges, setHasUnsavedChanges,
         setDiagramHeight, setFloatingCrop, setFloatingZoom,
         setShowComments, setShowRemarks, setIntersectionName,
         loadFullState, getFullState, saveProject,
@@ -821,6 +842,12 @@ function App() {
                 const newVal = !showWrapFlash;
                 setShowWrapFlash(newVal);
                 localStorage.setItem('showWrapFlash', String(newVal));
+                break;
+            }
+            case 'toggleSaveReminder': {
+                const newVal = !showSaveReminder;
+                setShowSaveReminder(newVal);
+                localStorage.setItem('showSaveReminder', String(newVal));
                 break;
             }
             case 'help':
@@ -1515,7 +1542,7 @@ draw();
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -1531,6 +1558,13 @@ draw();
                         placeholder="Nom du projet"
                         title="Nom du projet (utilisé pour la sauvegarde)"
                     />
+                    {isDirty && (
+                        <span
+                            className="unsaved-indicator"
+                            title="Modifications non sauvegardées"
+                            aria-label="Modifications non sauvegardées"
+                        >*</span>
+                    )}
                     <label className="gfx-label">
                         GFx
                         <input
