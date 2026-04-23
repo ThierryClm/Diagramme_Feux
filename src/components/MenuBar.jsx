@@ -293,6 +293,7 @@ const MenuBar = ({
             label: 'A propos',
             items: [
                 { label: 'Aide', action: 'help' },
+                { label: 'Rapport de diagnostic...', action: 'diagnosticReport' },
                 { label: 'À propos', action: 'credit' },
                 ...(currentUser?.isAdmin ? [
                     { type: 'separator' },

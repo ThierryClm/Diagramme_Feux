@@ -13,6 +13,7 @@ import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
 import { APP_VERSION, APP_NAME, APP_DESCRIPTION } from './version';
 import { exportElementAsPDF, exportElementAsPNG, buildExportFilename } from './utils/exportHelpers';
+import { buildDiagnosticReport, downloadDiagnosticReport } from './utils/diagnostics';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import GreenWaveViewer from './components/GreenWaveViewer';
 import SimulationPanel from './components/SimulationPanel';
@@ -266,6 +267,8 @@ function App() {
     const helpContentRef = useRef(null);
     const [helpToc, setHelpToc] = useState([]);
     const [aboutModal, setAboutModal] = useState(false);
+    const [diagnosticModal, setDiagnosticModal] = useState(false);
+    const [diagnosticIncludeProject, setDiagnosticIncludeProject] = useState(false);
     const printPreviewPageRef = useRef(null);
 
     // Intersection image animation state
@@ -877,6 +880,10 @@ function App() {
                 break;
             case 'credit':
                 setAboutModal(true);
+                break;
+            case 'diagnosticReport':
+                setDiagnosticIncludeProject(false);
+                setDiagnosticModal(true);
                 break;
             case 'toggleParameters':
                 setSidebarVisible(v => !v);
@@ -3271,6 +3278,87 @@ draw();
                         <div style={{ marginTop: '8px' }}>© 2026 — Tous droits réservés</div>
                     </div>
                 </div>
+            </Modal>
+
+            {/* Modal Rapport de diagnostic */}
+            <Modal isOpen={diagnosticModal} onClose={() => setDiagnosticModal(false)} title="Rapport de diagnostic" className="modal-wide">
+                {(() => {
+                    const report = buildDiagnosticReport({
+                        intersectionName,
+                        projectName,
+                        groups,
+                        pfTabs,
+                        activePFId,
+                        cycleLength,
+                        actionData,
+                        conflictMatrix,
+                        intersectionImage,
+                        includeProject: diagnosticIncludeProject
+                    });
+                    return (
+                        <div style={{ padding: '8px 4px' }}>
+                            <div style={{ fontSize: '0.9em', color: '#aaa', marginBottom: '12px' }}>
+                                Ce rapport contient des informations techniques utiles pour signaler un bug.
+                                Aucune donnée n'est envoyée — le contenu reste sur votre poste. Vous pouvez le
+                                copier dans le presse-papiers ou le télécharger comme fichier texte.
+                            </div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={diagnosticIncludeProject}
+                                    onChange={(e) => setDiagnosticIncludeProject(e.target.checked)}
+                                />
+                                Inclure le projet en cours (données détaillées — ne pas partager si sensibles)
+                            </label>
+                            <textarea
+                                readOnly
+                                value={report}
+                                style={{
+                                    width: '100%',
+                                    height: '360px',
+                                    fontFamily: 'monospace',
+                                    fontSize: '12px',
+                                    background: '#1a1a2e',
+                                    color: '#e0e0e0',
+                                    border: '1px solid #444',
+                                    borderRadius: '4px',
+                                    padding: '8px',
+                                    resize: 'vertical'
+                                }}
+                            />
+                            <div className="modal-actions" style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                <button
+                                    className="modal-btn modal-btn-secondary"
+                                    onClick={() => setDiagnosticModal(false)}
+                                >
+                                    Fermer
+                                </button>
+                                <button
+                                    className="modal-btn modal-btn-primary"
+                                    onClick={async () => {
+                                        try {
+                                            await navigator.clipboard.writeText(report);
+                                            toast.success('Rapport copié dans le presse-papiers');
+                                        } catch (e) {
+                                            toast.error('Copie impossible : ' + e.message);
+                                        }
+                                    }}
+                                >
+                                    Copier
+                                </button>
+                                <button
+                                    className="modal-btn modal-btn-primary"
+                                    onClick={() => {
+                                        downloadDiagnosticReport(report, 'diagnostic');
+                                        toast.success('Rapport téléchargé');
+                                    }}
+                                >
+                                    Télécharger .txt
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })()}
             </Modal>
 
             {/* Modal Importer CSV/Excel */}
