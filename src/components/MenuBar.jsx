@@ -228,10 +228,13 @@ const MenuBar = ({
                     type: 'submenu',
                     submenuId: 'contraste',
                     submenu: [
-                        { label: 'Blanc sur fond noir', action: 'themeDark', themeId: 'dark' },
-                        { label: 'Noir sur fond blanc', action: 'themeLight', themeId: 'light' },
-                        { label: 'Haut contraste', action: 'themeHighContrast', themeId: 'high-contrast' },
-                        { label: 'Contraste ambre', action: 'themeAmber', themeId: 'amber' }
+                        { label: 'Blanc sur fond noir', action: 'themeDark', themeId: 'dark', keepSubmenuOpen: true },
+                        { label: 'Noir sur fond blanc', action: 'themeLight', themeId: 'light', keepSubmenuOpen: true },
+                        { label: 'Haut contraste', action: 'themeHighContrast', themeId: 'high-contrast', keepSubmenuOpen: true },
+                        { label: 'Contraste ambre', action: 'themeAmber', themeId: 'amber', keepSubmenuOpen: true },
+                        { label: 'Daltonien', action: 'themeDaltonian', themeId: 'daltonian', keepSubmenuOpen: true },
+                        { label: 'Sépia', action: 'themeSepia', themeId: 'sepia', keepSubmenuOpen: true },
+                        { label: 'Bleu nuit', action: 'themeBlueNight', themeId: 'blue-night', keepSubmenuOpen: true }
                     ]
                 },
                 {
@@ -348,7 +351,7 @@ const MenuBar = ({
                 <button
                     key={subIdx}
                     className={`menu-item ${isActive ? 'checked' : ''}`}
-                    onClick={() => handleItemClick(subItem.action)}
+                    onClick={() => handleItemClick(subItem.action, subItem.keepSubmenuOpen)}
                 >
                     {isActive && <span className="checkmark">✓</span>}
                     {subItem.label}

@@ -2659,3 +2659,204 @@ input[type=number] {
 .visualization-section.full-width {
     width: 100%;
 }
+
+/* ============================================================
+ * Thèmes additionnels — version « starter »
+ * Couvre les surfaces les plus visibles (body, header, sidebar,
+ * panneaux, boutons, modales, focus). Les détails fins peuvent
+ * être ajustés au fil de l'usage.
+ * ============================================================ */
+
+/* ---------- Daltonien (palette sans axe rouge/vert) ---------- */
+body.daltonian-mode {
+    background-color: #0d1b2a;
+    color: #e0e1dd;
+}
+body.daltonian-mode .app-header {
+    background: #1b263b;
+    border-bottom: 2px solid #415a77;
+}
+body.daltonian-mode .sidebar,
+body.daltonian-mode .panel {
+    background: #1b263b;
+    color: #e0e1dd;
+    border-color: #415a77;
+}
+body.daltonian-mode button:focus-visible,
+body.daltonian-mode input:focus-visible,
+body.daltonian-mode select:focus-visible,
+body.daltonian-mode textarea:focus-visible,
+body.daltonian-mode [role="button"]:focus-visible,
+body.daltonian-mode a:focus-visible,
+body.daltonian-mode [tabindex]:focus-visible {
+    outline: 2px solid #f4a261;
+}
+body.daltonian-mode .gfx-label,
+body.daltonian-mode .app-header button {
+    color: #4cc9f0;
+}
+body.daltonian-mode input,
+body.daltonian-mode select,
+body.daltonian-mode textarea {
+    background: #1b263b;
+    color: #e0e1dd;
+    border: 1px solid #415a77;
+}
+body.daltonian-mode .modal-content {
+    background: #1b263b;
+    color: #e0e1dd;
+    border: 1px solid #415a77;
+}
+body.daltonian-mode .modal-btn-primary {
+    background: #4361ee;
+    color: white;
+}
+body.daltonian-mode .modal-btn-secondary {
+    background: #415a77;
+    color: #e0e1dd;
+}
+body.daltonian-mode .toggle-btn,
+body.daltonian-mode .undo-btn {
+    background: #1b263b;
+    color: #4cc9f0;
+    border: 1px solid #415a77;
+}
+body.daltonian-mode .toggle-btn.active {
+    background-color: rgba(67, 97, 238, 0.3);
+}
+body.daltonian-mode .validate-btn.validated {
+    background: rgba(76, 201, 240, 0.35);
+    border-color: #4cc9f0;
+    color: #4cc9f0;
+}
+body.daltonian-mode .validate-btn.invalidated {
+    background: rgba(244, 162, 97, 0.35);
+    border-color: #f4a261;
+    color: #f4a261;
+}
+
+/* ---------- Sépia (tons chauds, anti-fatigue) ---------- */
+body.sepia-mode {
+    background-color: #f4ecd8;
+    color: #5b4636;
+}
+body.sepia-mode .app-header {
+    background: #e8dcc0;
+    border-bottom: 2px solid #c9b88e;
+}
+body.sepia-mode .sidebar,
+body.sepia-mode .panel {
+    background: #ede2c5;
+    color: #5b4636;
+    border-color: #c9b88e;
+}
+body.sepia-mode button:focus-visible,
+body.sepia-mode input:focus-visible,
+body.sepia-mode select:focus-visible,
+body.sepia-mode textarea:focus-visible,
+body.sepia-mode [role="button"]:focus-visible,
+body.sepia-mode a:focus-visible,
+body.sepia-mode [tabindex]:focus-visible {
+    outline: 2px solid #8b4513;
+}
+body.sepia-mode .gfx-label,
+body.sepia-mode .app-header button {
+    color: #8b4513;
+}
+body.sepia-mode input,
+body.sepia-mode select,
+body.sepia-mode textarea {
+    background: #faf3e0;
+    color: #5b4636;
+    border: 1px solid #c9b88e;
+}
+body.sepia-mode .modal-content {
+    background: #faf3e0;
+    color: #5b4636;
+    border: 1px solid #c9b88e;
+}
+body.sepia-mode .modal-btn-primary {
+    background: #8b4513;
+    color: #faf3e0;
+}
+body.sepia-mode .modal-btn-secondary {
+    background: #c9b88e;
+    color: #5b4636;
+}
+body.sepia-mode .toggle-btn,
+body.sepia-mode .undo-btn {
+    background: #ede2c5;
+    color: #5b4636;
+    border: 1px solid #c9b88e;
+}
+body.sepia-mode .toggle-btn.active {
+    background-color: rgba(139, 69, 19, 0.2);
+}
+
+/* ---------- Bleu nuit (Solarized Dark) ---------- */
+body.blue-night-mode {
+    background-color: #002b36;
+    color: #93a1a1;
+}
+body.blue-night-mode .app-header {
+    background: #073642;
+    border-bottom: 2px solid #586e75;
+}
+body.blue-night-mode .sidebar,
+body.blue-night-mode .panel {
+    background: #073642;
+    color: #93a1a1;
+    border-color: #586e75;
+}
+body.blue-night-mode button:focus-visible,
+body.blue-night-mode input:focus-visible,
+body.blue-night-mode select:focus-visible,
+body.blue-night-mode textarea:focus-visible,
+body.blue-night-mode [role="button"]:focus-visible,
+body.blue-night-mode a:focus-visible,
+body.blue-night-mode [tabindex]:focus-visible {
+    outline: 2px solid #b58900;
+}
+body.blue-night-mode .gfx-label,
+body.blue-night-mode .app-header button {
+    color: #2aa198;
+}
+body.blue-night-mode input,
+body.blue-night-mode select,
+body.blue-night-mode textarea {
+    background: #073642;
+    color: #eee8d5;
+    border: 1px solid #586e75;
+}
+body.blue-night-mode .modal-content {
+    background: #073642;
+    color: #93a1a1;
+    border: 1px solid #586e75;
+}
+body.blue-night-mode .modal-btn-primary {
+    background: #268bd2;
+    color: #fdf6e3;
+}
+body.blue-night-mode .modal-btn-secondary {
+    background: #586e75;
+    color: #eee8d5;
+}
+body.blue-night-mode .toggle-btn,
+body.blue-night-mode .undo-btn {
+    background: #073642;
+    color: #2aa198;
+    border: 1px solid #586e75;
+}
+body.blue-night-mode .toggle-btn.active {
+    background-color: rgba(38, 139, 210, 0.3);
+}
+body.blue-night-mode .validate-btn.validated {
+    background: rgba(133, 153, 0, 0.35);
+    border-color: #859900;
+    color: #859900;
+}
+body.blue-night-mode .validate-btn.invalidated {
+    background: rgba(220, 50, 47, 0.35);
+    border-color: #dc322f;
+    color: #dc322f;
+}

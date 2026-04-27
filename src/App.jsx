@@ -909,6 +909,15 @@ function App() {
             case 'themeAmber':
                 setColorTheme('amber');
                 break;
+            case 'themeDaltonian':
+                setColorTheme('daltonian');
+                break;
+            case 'themeSepia':
+                setColorTheme('sepia');
+                break;
+            case 'themeBlueNight':
+                setColorTheme('blue-night');
+                break;
             case 'toggleGroupNamesForm':
                 setShowGroupNamesForm(v => !v);
                 break;
