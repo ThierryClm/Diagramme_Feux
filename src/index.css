@@ -2792,6 +2792,62 @@ body.sepia-mode .undo-btn {
 body.sepia-mode .toggle-btn.active {
     background-color: rgba(139, 69, 19, 0.2);
 }
+/* Overrides ciblés pour battre les règles de composants à forte spécificité */
+body.sepia-mode .group-table input,
+body.sepia-mode .group-table select,
+body.sepia-mode .group-table select.input-type,
+body.sepia-mode select.input-courant,
+body.sepia-mode .input-name-cell,
+body.sepia-mode .input-mini,
+body.sepia-mode .input-yellow,
+body.sepia-mode .input-readonly,
+body.sepia-mode .input-trafic-text,
+body.sepia-mode .input-trafic-num,
+body.sepia-mode .input-time,
+body.sepia-mode .input-time-sm,
+body.sepia-mode .input-time-xs,
+body.sepia-mode .input-da,
+body.sepia-mode .input-gf,
+body.sepia-mode .input-action,
+body.sepia-mode .input-desc,
+body.sepia-mode .input-abrv,
+body.sepia-mode .input-micro,
+body.sepia-mode .input-small,
+body.sepia-mode .action-table input,
+body.sepia-mode .action-table select,
+body.sepia-mode .action-table textarea,
+body.sepia-mode .traffic-table input,
+body.sepia-mode .traffic-table select,
+body.sepia-mode .custom-field-input {
+    background: #faf3e0 !important;
+    color: #5b4636 !important;
+    border: 1px solid #c9b88e !important;
+}
+body.sepia-mode .input-time-sm:focus,
+body.sepia-mode .input-time:focus,
+body.sepia-mode .input-da:focus,
+body.sepia-mode .action-table input:focus,
+body.sepia-mode .action-table select:focus,
+body.sepia-mode .action-table textarea:focus {
+    background: #ede2c5 !important;
+    border-color: #8b4513 !important;
+}
+body.sepia-mode .action-table input:disabled,
+body.sepia-mode .action-table input.input-disabled,
+body.sepia-mode .input-readonly {
+    background: #e8dcc0 !important;
+    color: #a09080 !important;
+}
+body.sepia-mode .action-table select option,
+body.sepia-mode select option {
+    background: #faf3e0;
+    color: #5b4636;
+}
+body.sepia-mode .col-id,
+body.sepia-mode .col-calculated,
+body.sepia-mode .col-name-readonly {
+    color: #5b4636 !important;
+}
 
 /* ---------- Bleu nuit (Solarized Dark) ---------- */
 body.blue-night-mode {
