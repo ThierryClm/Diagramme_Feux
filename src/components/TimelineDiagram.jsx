@@ -1764,6 +1764,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             const originalGreenEndMod = originalGreenEnd % cycleLength;
                                             const simulatedGreenEndMod = simulatedGreenEnd % effectiveCycleLength;
                                             if (originalGreenEndMod !== simulatedGreenEndMod) {
+                                                // Vérifier si un Point de repos étire ce vert. Dans ce cas, on
+                                                // ne repositionne PAS (la logique « suivre la fin de vert » est
+                                                // conçue pour AV/EP, où le vert se DÉPLACE ; avec PR il s'ÉTIRE,
+                                                // et la fermeture doit suivre la règle uniforme deb < t inchangé,
+                                                // deb >= t décalé — déjà calculée par getShiftedActionPosition).
+                                                const greenStartOrig = group.offset;
+                                                const greenEndOrig = group.offset + group.durations.green;
+                                                const restPointStretchesGreen = simulationResult.restPoints?.some(rp =>
+                                                    rp.originalDeb >= greenStartOrig && rp.originalDeb <= greenEndOrig
+                                                );
+
                                                 // Vérifier si l'accolade chevauche une zone AV/EP (début avant, fin dans ou après la zone)
                                                 let straddlesZone = false;
                                                 for (const zone of braceZoneRanges) {
@@ -1778,13 +1789,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                                     }
                                                 }
 
-                                                if (!straddlesZone) {
-                                                    // Pas de chevauchement : repositionner relativement à la fin de vert simulée
+                                                if (!straddlesZone && !restPointStretchesGreen) {
+                                                    // Pas de chevauchement AV/EP et pas d'étirement par PR :
+                                                    // repositionner relativement à la fin de vert simulée
                                                     const simGreenEnd = simulatedGreenEnd % effectiveCycleLength;
                                                     fermetureStartPos = ((simGreenEnd + (origDeb - originalGreenEnd)) % effectiveCycleLength + effectiveCycleLength) % effectiveCycleLength;
                                                     fermetureEndPos = ((simGreenEnd + (origFin - originalGreenEnd)) % effectiveCycleLength + effectiveCycleLength) % effectiveCycleLength;
                                                 }
-                                                // Si chevauchement : garder deb/fin de getShiftedActionPosition (déjà corrects)
+                                                // Sinon : garder deb/fin de getShiftedActionPosition (déjà corrects)
                                             }
                                         }
                                         // Tronquer l'accolade si elle chevauche une zone Adaptatif partiel
