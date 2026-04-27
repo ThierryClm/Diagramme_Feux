@@ -107,12 +107,61 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         return 0;
     };
 
+    // Track rest points (Point de repos) for diagram visualization
+    // Each rest point: { deb (in simulated timeline), originalDeb, duration, actionId }
+    const restPoints = [];
+
     // Process each action type in order:
+    // 0. Point de repos (extends cycle, shifts/stretches groups)
     // 1. Ouverture anticipée
     // 2. Fermeture anticipée
     // 3. Escamotage groupe (greenCuts sur cible)
     // 4. Adaptatif vertical
     // 5. Escamotage de phase (en dernier, pour ne pas cumuler avec les effets existants)
+
+    // 0. Point de repos — at each selected rest point t (in original timeline),
+    // freeze the cycle for REST_DURATION seconds. Cycle grows; groups whose green
+    // covers t are stretched (option A: green duration extended); groups starting
+    // after t are shifted to the right.
+    //
+    // Inhibition rule: a rest point that falls INSIDE the [deb, fin] zone of a
+    // selected Adaptatif vertical or Escamotage de phase action is ignored,
+    // because that zone is removed from the cycle later and the freeze cannot apply.
+    const REST_DURATION = 10;
+    const inhibitionZones = selectedActions
+        .filter(a => (a.action === 'Adaptatif vertical' || a.action === 'Escamotage de phase') && a.deb !== '' && a.fin !== '')
+        .map(a => ({ deb: parseInt(a.deb) || 0, fin: parseInt(a.fin) || 0 }));
+
+    const isRestPointInhibited = (rawDeb) =>
+        inhibitionZones.some(z => z.fin > z.deb && rawDeb >= z.deb && rawDeb < z.fin);
+
+    const restPointActions = selectedActions
+        .filter(a => a.action === 'Point de repos' && a.deb !== '')
+        .map(a => ({ id: a.id, rawDeb: parseInt(a.deb) || 0 }))
+        .filter(a => !isRestPointInhibited(a.rawDeb))
+        .sort((a, b) => a.rawDeb - b.rawDeb);
+
+    restPointActions.forEach(({ id, rawDeb }, idx) => {
+        // Effective position in the (already-stretched) simulated timeline:
+        // each prior rest point added REST_DURATION before this one.
+        const t = rawDeb + idx * REST_DURATION;
+
+        simulatedGroups.forEach(g => {
+            if (g.isEscamoted) return;
+            const greenEnd = g.simulatedOffset + g.simulatedGreen;
+            if (g.simulatedOffset >= t) {
+                // Group starts at/after the rest point → shift right
+                g.simulatedOffset += REST_DURATION;
+            } else if (greenEnd > t) {
+                // Green covers t → stretch (option A)
+                g.simulatedGreen += REST_DURATION;
+            }
+            // else: green ends before t → unchanged
+        });
+
+        simulatedCycleLength += REST_DURATION;
+        restPoints.push({ deb: t, originalDeb: rawDeb, duration: REST_DURATION, actionId: id });
+    });
 
     // 1. Ouverture anticipée - shift the start of green earlier
     const ouvertureActions = selectedActions.filter(a =>
@@ -497,7 +546,8 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
         conflicts,
         timeShifts,
         removedPeriods,
-        contractions
+        contractions,
+        restPoints
     };
 };
 

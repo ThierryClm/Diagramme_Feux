@@ -1308,3 +1308,40 @@ body.light-mode .action-hover-tooltip-micro .micro-keyword {
     visibility: visible;
     transition-delay: 20s;
 }
+
+/* Point de repos — bande grise semi-transparente couvrant la hauteur des groupes */
+.rest-point-band {
+    position: absolute;
+    top: 0;
+    background: repeating-linear-gradient(
+        135deg,
+        rgba(150, 150, 150, 0.18) 0px,
+        rgba(150, 150, 150, 0.18) 6px,
+        rgba(180, 180, 180, 0.28) 6px,
+        rgba(180, 180, 180, 0.28) 12px
+    );
+    border-left: 1px dashed rgba(200, 200, 200, 0.6);
+    border-right: 1px dashed rgba(200, 200, 200, 0.6);
+    pointer-events: auto;
+    z-index: 5;
+    overflow: hidden;
+}
+
+.rest-point-label {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7em;
+    font-weight: 600;
+    color: rgba(220, 220, 220, 0.85);
+    white-space: nowrap;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+    letter-spacing: 0.5px;
+}
+
+body.light-mode .rest-point-label,
+body.sepia-mode .rest-point-label {
+    color: rgba(60, 60, 60, 0.85);
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.6);
+}
