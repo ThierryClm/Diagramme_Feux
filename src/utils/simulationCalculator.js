@@ -152,8 +152,10 @@ export const calculateSimulatedDiagram = (groups, actionData, selectedActionIds,
             if (g.simulatedOffset >= t) {
                 // Group starts at/after the rest point → shift right
                 g.simulatedOffset += REST_DURATION;
-            } else if (greenEnd > t) {
-                // Green covers t → stretch (option A)
+            } else if (greenEnd >= t) {
+                // Green covers t (or ends exactly at t) → stretch (option A)
+                // Including the equality case: a green ending at t is treated as
+                // « still green at the freeze instant », so it continues during the freeze.
                 g.simulatedGreen += REST_DURATION;
             }
             // else: green ends before t → unchanged

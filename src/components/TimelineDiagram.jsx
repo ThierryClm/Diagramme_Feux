@@ -227,18 +227,17 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             });
         }
 
-        // Apply Point de repos expansions: each rest point shifts everything past it
-        // by REST_DURATION (10s). originalDeb is in the original timeline, so we compare
-        // against the un-shifted (deb, fin) values to decide which side of the rest point
-        // each end falls on.
+        // Compute Point de repos expansion shifts separately, applied at the very end
+        // so they don't interact with the totalShift / groupShift logic below.
+        // Rule: any value (deb or fin) >= rp.originalDeb is shifted by +rp.duration.
+        // This applies uniformly to all action types — including Fermeture anticipée
+        // and group-bound actions whose group offset may also have shifted.
+        let restShiftDeb = 0;
+        let restShiftFin = 0;
         if (simulationResult?.restPoints?.length) {
             simulationResult.restPoints.forEach(rp => {
-                if (deb >= rp.originalDeb) {
-                    adjustedDeb += rp.duration;
-                }
-                if (fin >= rp.originalDeb) {
-                    adjustedFin += rp.duration;
-                }
+                if (deb >= rp.originalDeb) restShiftDeb += rp.duration;
+                if (fin >= rp.originalDeb) restShiftFin += rp.duration;
             });
         }
 
@@ -329,16 +328,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
         // AV/EP overlays: no modulo — they are time zones, not phase bars
         // Their positions are already correctly adjusted by timeShifts above
         if (isAvOrEscamotage) {
-            return { deb: adjustedDeb - totalShift, fin: adjustedFin - totalShift, hidden };
+            return {
+                deb: adjustedDeb - totalShift + restShiftDeb,
+                fin: adjustedFin - totalShift + restShiftFin,
+                hidden
+            };
         }
 
-        const shiftedDeb = ((adjustedDeb - totalShift) % cycle + cycle) % cycle;
+        const shiftedDeb = ((adjustedDeb - totalShift) % cycle + cycle) % cycle + restShiftDeb;
 
         // If original fin equals cycle, don't apply modulo (keep at cycle position)
         const finAfterShift = adjustedFin - totalShift;
-        const shiftedFin = (fin === cycle)
+        const shiftedFin = ((fin === cycle)
             ? finAfterShift
-            : ((finAfterShift % cycle + cycle) % cycle);
+            : ((finAfterShift % cycle + cycle) % cycle)) + restShiftFin;
 
         return { deb: shiftedDeb, fin: shiftedFin, hidden };
     };

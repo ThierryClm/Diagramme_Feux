@@ -621,6 +621,18 @@ describe('calculateSimulatedDiagram', () => {
             expect(g1.simulatedGreen).toBe(20);
         });
 
+        it('groupe dont le vert se termine pile à t : étiré (cas limite)', () => {
+            // Vert de 0 à 30 ; PR à t=30 (greenEnd === t)
+            const groups = [makeGroup(1, 0, 30)];
+            const actions = [
+                makeAction(1, { action: 'Point de repos', deb: '30' })
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 90, emptyMatrix(1));
+            const g1 = result.simulatedGroups[0];
+            expect(g1.simulatedOffset).toBe(0);
+            expect(g1.simulatedGreen).toBe(40); // étiré, pas inchangé
+        });
+
         it('groupe dont le vert se termine avant t : inchangé', () => {
             const groups = [makeGroup(1, 0, 20)];
             const actions = [
