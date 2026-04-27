@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
  * Commits value to parent only on blur or Enter.
  * This prevents undo from capturing every keystroke.
  */
-const LocalInput = ({ value, onCommit, type = 'text', className, style, readOnly, onClick, placeholder, maxLength, title, selectOnFocus = false }) => {
+const LocalInput = ({ value, onCommit, type = 'text', className, style, readOnly, disabled, onClick, placeholder, maxLength, title, selectOnFocus = false }) => {
     const [localValue, setLocalValue] = useState(value === undefined || value === null ? '' : String(value));
     const [isEditing, setIsEditing] = useState(false);
     const inputRef = useRef(null);
@@ -18,7 +18,7 @@ const LocalInput = ({ value, onCommit, type = 'text', className, style, readOnly
     }, [value, isEditing]);
 
     const handleChange = (e) => {
-        if (readOnly) return;
+        if (readOnly || disabled) return;
         setLocalValue(e.target.value);
     };
 
@@ -60,6 +60,7 @@ const LocalInput = ({ value, onCommit, type = 'text', className, style, readOnly
             onKeyDown={handleKeyDown}
             onClick={onClick}
             readOnly={readOnly}
+            disabled={disabled}
             placeholder={placeholder}
             maxLength={maxLength}
             title={title}

@@ -1158,6 +1158,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             selectOnFocus
                                             maxLength={2}
                                             placeholder=""
+                                            disabled={!!simulationResult}
                                         />
                                     </CustomTooltip>
                                 ) : (
@@ -1169,27 +1170,23 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             className="input-time-sm"
                                             value={hasValue ? start : ''}
                                             onCommit={(val) => !simulationResult && handleStartChange(g.id, val)}
-                                            readOnly={!!simulationResult}
+                                            disabled={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
                                             selectOnFocus
                                             placeholder=""
                                             wrapAt={cycleLength}
                                             showWrapFlash={showWrapFlash}
-                                            style={simulationResult ? { cursor: 'default', background: 'transparent', border: 'none' } : undefined}
                                         />
                                         <NumericInput
                                             className="input-time-sm"
                                             value={hasValue ? end : ''}
                                             onCommit={(val) => !simulationResult && handleEndChange(g.id, val, start)}
-                                            readOnly={!!simulationResult}
+                                            disabled={!!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
                                             selectOnFocus
                                             wrapAt={cycleLength}
                                             showWrapFlash={showWrapFlash}
-                                            style={simulationResult
-                                                ? { color: duration < g.minGreen ? '#ff4d4d' : 'inherit', cursor: 'default', background: 'transparent', border: 'none' }
-                                                : { color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }
-                                            }
+                                            style={{ color: duration < g.minGreen ? '#ff4d4d' : 'inherit' }}
                                             placeholder=""
                                         />
                                         <CustomTooltip text="Durée nominale dans le cycle">
