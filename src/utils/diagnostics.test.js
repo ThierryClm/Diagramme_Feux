@@ -163,6 +163,24 @@ describe('buildDiagnosticReport — thème', () => {
         const out = buildDiagnosticReport(baseCtx());
         expect(out).toMatch(/Thème actif\s+:\s+Ambre/);
     });
+
+    it('thème "Daltonien"', () => {
+        document.body.classList.add('daltonian-mode');
+        const out = buildDiagnosticReport(baseCtx());
+        expect(out).toMatch(/Thème actif\s+:\s+Daltonien/);
+    });
+
+    it('thème "Sépia"', () => {
+        document.body.classList.add('sepia-mode');
+        const out = buildDiagnosticReport(baseCtx());
+        expect(out).toMatch(/Thème actif\s+:\s+Sépia/);
+    });
+
+    it('thème "Bleu nuit"', () => {
+        document.body.classList.add('blue-night-mode');
+        const out = buildDiagnosticReport(baseCtx());
+        expect(out).toMatch(/Thème actif\s+:\s+Bleu nuit/);
+    });
 });
 
 describe('buildDiagnosticReport — dump projet optionnel', () => {

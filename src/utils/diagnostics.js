@@ -31,6 +31,9 @@ const detectTheme = () => {
     if (c.contains('high-contrast-mode')) return 'Haut contraste';
     if (c.contains('amber-mode')) return 'Ambre';
     if (c.contains('light-mode')) return 'Clair';
+    if (c.contains('daltonian-mode')) return 'Daltonien';
+    if (c.contains('sepia-mode')) return 'Sépia';
+    if (c.contains('blue-night-mode')) return 'Bleu nuit';
     return 'Sombre (défaut)';
 };
 
