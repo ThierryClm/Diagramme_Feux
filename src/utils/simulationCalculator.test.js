@@ -575,4 +575,106 @@ describe('calculateSimulatedDiagram', () => {
             expect(g1.simulatedGreen).toBe(20); // same as original green duration
         });
     });
+
+    describe('Point de repos', () => {
+        it('non sélectionné : restPoints vide, cycle inchangé', () => {
+            const groups = [makeGroup(1, 0, 30), makeGroup(2, 40, 20)];
+            const actions = [
+                makeAction(1, { action: 'Point de repos', deb: '20' })
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [], 90, emptyMatrix(2));
+            expect(result.restPoints).toEqual([]);
+            expect(result.simulatedCycleLength).toBe(90);
+        });
+
+        it('sélectionné : étire le cycle de 10s', () => {
+            const groups = [makeGroup(1, 0, 30)];
+            const actions = [
+                makeAction(1, { action: 'Point de repos', deb: '20' })
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 90, emptyMatrix(1));
+            expect(result.simulatedCycleLength).toBe(100);
+            expect(result.restPoints).toHaveLength(1);
+            expect(result.restPoints[0]).toMatchObject({ deb: 20, originalDeb: 20, duration: 10 });
+        });
+
+        it('groupe dont le vert traverse t : étire le vert de +10s', () => {
+            // Vert de 0 à 30 ; PR à t=15 (à l'intérieur du vert)
+            const groups = [makeGroup(1, 0, 30)];
+            const actions = [
+                makeAction(1, { action: 'Point de repos', deb: '15' })
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 90, emptyMatrix(1));
+            const g1 = result.simulatedGroups[0];
+            expect(g1.simulatedOffset).toBe(0);
+            expect(g1.simulatedGreen).toBe(40);
+        });
+
+        it('groupe dont l\'offset > t : décale l\'offset de +10s', () => {
+            const groups = [makeGroup(1, 40, 20)];
+            const actions = [
+                makeAction(1, { action: 'Point de repos', deb: '20' })
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 90, emptyMatrix(1));
+            const g1 = result.simulatedGroups[0];
+            expect(g1.simulatedOffset).toBe(50);
+            expect(g1.simulatedGreen).toBe(20);
+        });
+
+        it('groupe dont le vert se termine avant t : inchangé', () => {
+            const groups = [makeGroup(1, 0, 20)];
+            const actions = [
+                makeAction(1, { action: 'Point de repos', deb: '30' })
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1], 90, emptyMatrix(1));
+            const g1 = result.simulatedGroups[0];
+            expect(g1.simulatedOffset).toBe(0);
+            expect(g1.simulatedGreen).toBe(20);
+        });
+
+        it('plusieurs PR cumulés : cycle étendu de N×10s', () => {
+            const groups = [makeGroup(1, 60, 20)];
+            const actions = [
+                makeAction(1, { action: 'Point de repos', deb: '10' }),
+                makeAction(2, { action: 'Point de repos', deb: '30' })
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2], 90, emptyMatrix(1));
+            expect(result.simulatedCycleLength).toBe(110);
+            expect(result.restPoints).toHaveLength(2);
+            expect(result.restPoints[0].deb).toBe(10);
+            expect(result.restPoints[1].deb).toBe(40);
+            expect(result.simulatedGroups[0].simulatedOffset).toBe(80);
+        });
+
+        it('inhibé si à l\'intérieur d\'une zone Adaptatif vertical', () => {
+            const groups = [makeGroup(1, 0, 30)];
+            const actions = [
+                makeAction(1, { action: 'Point de repos', deb: '50' }),
+                makeAction(2, { action: 'Adaptatif vertical', deb: '40', fin: '60' })
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2], 90, emptyMatrix(1));
+            expect(result.restPoints).toHaveLength(0);
+        });
+
+        it('inhibé si à l\'intérieur d\'une zone Escamotage de phase', () => {
+            const groups = [makeGroup(1, 0, 30)];
+            const actions = [
+                makeAction(1, { action: 'Point de repos', deb: '70' }),
+                makeAction(2, { action: 'Escamotage de phase', deb: '60', fin: '80' })
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2], 90, emptyMatrix(1));
+            expect(result.restPoints).toHaveLength(0);
+        });
+
+        it('non inhibé si en dehors des zones AV/EP', () => {
+            const groups = [makeGroup(1, 0, 30)];
+            const actions = [
+                makeAction(1, { action: 'Point de repos', deb: '20' }),
+                makeAction(2, { action: 'Adaptatif vertical', deb: '50', fin: '60' })
+            ];
+            const result = calculateSimulatedDiagram(groups, actions, [1, 2], 90, emptyMatrix(1));
+            expect(result.restPoints).toHaveLength(1);
+            expect(result.restPoints[0].originalDeb).toBe(20);
+        });
+    });
 });

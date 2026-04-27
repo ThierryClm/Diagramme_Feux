@@ -227,6 +227,21 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             });
         }
 
+        // Apply Point de repos expansions: each rest point shifts everything past it
+        // by REST_DURATION (10s). originalDeb is in the original timeline, so we compare
+        // against the un-shifted (deb, fin) values to decide which side of the rest point
+        // each end falls on.
+        if (simulationResult?.restPoints?.length) {
+            simulationResult.restPoints.forEach(rp => {
+                if (deb >= rp.originalDeb) {
+                    adjustedDeb += rp.duration;
+                }
+                if (fin >= rp.originalDeb) {
+                    adjustedFin += rp.duration;
+                }
+            });
+        }
+
         // Check if action falls within any removed period (for Escamotage de phase)
         // NOTE: Use ORIGINAL deb/fin values (before timeShift adjustments) since removedPeriods
         // are in the original timeline coordinate system
@@ -1265,6 +1280,22 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                 </div>
                             ))}
                         </div>
+
+                        {/* Rest points (Point de repos) — frozen-cycle bands */}
+                        {simulationResult?.restPoints?.map((rp, idx) => (
+                            <div
+                                key={`rest-${idx}`}
+                                className="rest-point-band"
+                                style={{
+                                    left: `${rp.deb * pixelsPerSecond}px`,
+                                    width: `${rp.duration * pixelsPerSecond}px`,
+                                    height: `${RULER_HEIGHT + 1 + (groups.length * ROW_TOTAL_HEIGHT) + 30}px`
+                                }}
+                                title={`Point de repos — ${rp.duration}s à t=${rp.originalDeb}s`}
+                            >
+                                <span className="rest-point-label">Repos</span>
+                            </div>
+                        ))}
 
                         {/* Playhead - Simulation time cursor */}
                         {simulationCurrentTime !== null && (
