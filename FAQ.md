@@ -12,7 +12,7 @@ Aux **traficiens, ingénieurs trafic, bureaux d'études et techniciens de collec
 
 ### Que peut-on faire avec ?
 
-Définir des groupes de feux (VL, TC, Cycliste, Piéton), construire la matrice d'intergreens, visualiser le diagramme temporel de chaque plan de feux, détecter automatiquement les conflits, simuler des actions (escamotage, ouverture anticipée, point de repos…), gérer plusieurs plans de feux par carrefour, calculer une onde verte, exporter en PDF/PNG/Excel.
+Définir des groupes de feux (VL, TC, Cycliste, Piéton), construire la matrice intervert, visualiser le diagramme temporel de chaque plan de feux, détecter automatiquement les conflits, simuler des actions (escamotage, ouverture anticipée, point de repos…), gérer plusieurs plans de feux par carrefour, calculer une onde verte, exporter en PDF/PNG/Excel.
 
 ### Quelles sont ses limites actuelles ?
 
@@ -63,7 +63,7 @@ Exportez le projet en `.json` et transmettez le fichier (mail, partage réseau, 
 
 ### Y a-t-il une limite au nombre de groupes ou de plans de feux ?
 
-Pas de limite stricte. L'application a été testée avec une vingtaine de groupes et plusieurs plans de feux par projet. Les performances restent fluides ; pour des intersections très complexes, surveillez l'usage du localStorage (un avertissement apparaît dans le rapport de diagnostic au-delà de 4 Mo).
+Pas de limite stricte. L'application a été testée avec une trentaine de groupes et plusieurs plans de feux par projet. Les performances restent fluides ; pour des intersections très complexes, surveillez l'usage du localStorage (un avertissement apparaît dans le rapport de diagnostic au-delà de 4 Mo).
 
 ### À quoi sert le mode simulation ?
 
