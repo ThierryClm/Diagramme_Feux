@@ -58,6 +58,10 @@ L'application embarque un système de comptes optionnel à 3 niveaux de permissi
 
 **Sécurité réelle des fichiers projet** : à assurer au niveau du système d'exploitation et du réseau local — droits NTFS / ACL sur le partage réseau, comptes Windows / Active Directory, permissions de dossier sur le serveur de fichiers. C'est ce niveau qui décide qui peut lire, écrire ou supprimer les `.json` exportés par l'application.
 
+## Questions fréquentes
+
+Une [FAQ](FAQ.md) répond aux questions courantes (confidentialité des données, formats d'import/export, licence, partage de projets, etc.).
+
 ## Contribuer
 
 Les contributions sont les bienvenues. Pour un bug ou une suggestion, ouvrez une [issue GitHub](https://github.com/ThierryClm/Diagramme_Feux/issues). Pour proposer un patch, forkez puis ouvrez une pull request.
