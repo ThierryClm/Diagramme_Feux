@@ -1,5 +1,7 @@
 # Diagramme de Feux
 
+![Aperçu de l'application : matrice des temps intervert à gauche, diagramme temporel d'un carrefour à 13 groupes au centre, conditions de micro-régulation en bas](docs/screenshots/diagramme-principal.png)
+
 Outil web de conception et d'optimisation de diagrammes de feux tricolores, destiné aux traficiens et ingénieurs de la circulation.
 
 Conçu pour être utilisé **localement**, sans serveur ni télémétrie : toutes les données restent dans le navigateur (localStorage) et sur votre poste.
