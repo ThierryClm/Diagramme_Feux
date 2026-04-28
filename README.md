@@ -7,7 +7,7 @@ Conçu pour être utilisé **localement**, sans serveur ni télémétrie : toute
 ## Fonctionnalités principales
 
 - Définition des groupes de feux (VL, TC, Cycliste, Piéton) avec durées vert/orange/rouge
-- Matrice d'intergreens avec détection automatique des conflits
+- Matrice d'intervert avec détection automatique des conflits
 - Diagramme temporel horizontal avec tête de lecture
 - Plans de feux multiples (PF) gérés par onglets
 - Table d'actions par plan
