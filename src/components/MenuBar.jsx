@@ -193,10 +193,32 @@ const MenuBar = ({
                     submenu: [
                         { label: 'Diagramme', action: 'exportPngDiagramme' },
                         { label: 'Matrice interverts', action: 'exportPngMatrice' },
-                        { label: 'Conditions de micro-régulation', action: 'exportPngMicroRegulation' },
-                        { label: 'Image du carrefour', action: 'exportPngImageCarrefour' },
-                        { label: 'Capacité utilisée', action: 'exportPngCapaciteUtilisee' },
-                        { label: 'Phasage bulle', action: 'exportPngPhasageBulle' }
+                        {
+                            label: 'Conditions de micro-régulation',
+                            action: 'exportPngMicroRegulation',
+                            disabled: !!layoutOptions.phasageBulleEnabled || !!layoutOptions.simulationEnabled || !layoutOptions.hasActionData,
+                            title: (!!layoutOptions.phasageBulleEnabled || !!layoutOptions.simulationEnabled)
+                                ? 'Désactivez le mode Phasage bulle ou Simulation pour exporter ce tableau'
+                                : (!layoutOptions.hasActionData ? 'Aucune action saisie dans le tableau' : '')
+                        },
+                        {
+                            label: 'Image du carrefour',
+                            action: 'exportPngImageCarrefour',
+                            disabled: !layoutOptions.hasIntersectionImage,
+                            title: !layoutOptions.hasIntersectionImage ? 'Aucune image de carrefour chargée' : ''
+                        },
+                        {
+                            label: 'Capacité utilisée',
+                            action: 'exportPngCapaciteUtilisee',
+                            disabled: layoutOptions.activeTab !== 'traffic',
+                            title: layoutOptions.activeTab !== 'traffic' ? 'Activez l\'onglet Trafic pour exporter cette vue' : ''
+                        },
+                        {
+                            label: 'Phasage bulle',
+                            action: 'exportPngPhasageBulle',
+                            disabled: !layoutOptions.phasageBulleEnabled,
+                            title: !layoutOptions.phasageBulleEnabled ? 'Activez le mode Phasage bulle pour exporter cette vue' : ''
+                        }
                     ]
                 },
                 { type: 'separator' },
@@ -388,8 +410,10 @@ const MenuBar = ({
         return (
             <button
                 key={subIdx}
-                className={`menu-item ${subItem.checked ? 'checked' : ''}`}
-                onClick={() => handleItemClick(subItem.action, subItem.keepSubmenuOpen)}
+                className={`menu-item ${subItem.checked ? 'checked' : ''} ${subItem.disabled ? 'disabled' : ''}`}
+                onClick={() => !subItem.disabled && handleItemClick(subItem.action, subItem.keepSubmenuOpen)}
+                disabled={subItem.disabled}
+                title={subItem.title}
             >
                 {subItem.checked !== undefined && subItem.checked && <span className="checkmark" style={{ color: '#2ecc71' }}>✓</span>}
                 {subItem.label}
