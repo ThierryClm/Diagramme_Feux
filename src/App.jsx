@@ -685,9 +685,10 @@ function App() {
     // Options :
     //   - cleanDiagram : retire commentaires/remarques sur le diagramme exporté
     //
-    // Le rendu force toujours le thème sombre (blanc sur noir) — pour des
-    // questions d'environnement (économie d'encre / écran), indépendamment
-    // du thème actif dans l'app au moment de l'export. Les modifications sont
+    // Le rendu force toujours le thème CLAIR (noir sur fond blanc),
+    // indépendamment du thème actif dans l'app au moment de l'export.
+    // Justification : éviter les aplats noirs lors de l'impression
+    // (économie d'encre, lisibilité sur papier). Les modifications sont
     // appliquées sur le DOM cloné (via html2canvas onclone), donc invisibles
     // à l'écran de l'utilisateur.
     const exportSectionAsPng = async (selector, suffix, errorLabel, opts = {}) => {
@@ -703,17 +704,20 @@ function App() {
             const { exportElementAsPNG } = await import('./utils/exportHelpers');
 
             const onclone = (clonedDoc) => {
-                // Force thème sombre dans le clone (peu importe le thème actif)
-                const themeClasses = ['light-mode', 'high-contrast-mode', 'amber-mode',
+                // Force thème CLAIR dans le clone : retire toutes les classes
+                // de thème, puis ajoute light-mode pour basculer noir sur blanc.
+                const themeClasses = ['high-contrast-mode', 'amber-mode',
                                        'daltonian-mode', 'sepia-mode', 'blue-night-mode'];
                 themeClasses.forEach(c => clonedDoc.body.classList.remove(c));
+                clonedDoc.body.classList.add('light-mode');
                 // Option : retirer commentaires/remarques sur le diagramme
                 if (opts.cleanDiagram) {
                     clonedDoc.body.classList.add('png-export-clean');
                 }
             };
 
-            await exportElementAsPNG(el, filename, { onclone });
+            // Fond blanc pour le canvas (zones transparentes de la capture)
+            await exportElementAsPNG(el, filename, { onclone, backgroundColor: '#ffffff' });
             toast.success(`PNG exporté : ${filename}.png`);
         } catch (e) {
             console.error('Erreur export PNG:', e);
