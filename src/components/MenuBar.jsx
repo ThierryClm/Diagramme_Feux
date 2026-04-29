@@ -276,10 +276,10 @@ const MenuBar = ({
         miseEnPage: {
             label: 'Mise en page',
             items: [
-                { label: 'Affichage des paramètres', action: 'toggleParameters', toggle: true, checked: layoutOptions.showParameters },
-                { label: 'Commentaires du diagramme', action: 'toggleComments', toggle: true, checked: layoutOptions.showComments },
-                { label: 'Remarques du diagramme', action: 'toggleRemarks', toggle: true, checked: layoutOptions.showRemarks },
-                { label: 'Description des conditions micro', action: 'toggleActionDescription', toggle: true, checked: layoutOptions.showActionDescription },
+                { label: 'Affichage des paramètres', action: 'toggleParameters', toggle: true, checked: layoutOptions.showParameters, keepSubmenuOpen: true },
+                { label: 'Commentaires du diagramme', action: 'toggleComments', toggle: true, checked: layoutOptions.showComments, keepSubmenuOpen: true },
+                { label: 'Remarques du diagramme', action: 'toggleRemarks', toggle: true, checked: layoutOptions.showRemarks, keepSubmenuOpen: true },
+                { label: 'Description des conditions micro', action: 'toggleActionDescription', toggle: true, checked: layoutOptions.showActionDescription, keepSubmenuOpen: true },
                 { type: 'separator' },
                 {
                     label: 'Nom des groupes de feu dans...',
@@ -516,7 +516,7 @@ const MenuBar = ({
                 <button
                     key={idx}
                     className={`menu-item ${item.checked ? 'checked' : ''} ${item.disabled ? 'disabled' : ''}`}
-                    onClick={() => !item.disabled && handleItemClick(item.action)}
+                    onClick={() => !item.disabled && handleItemClick(item.action, item.keepSubmenuOpen)}
                     onMouseEnter={() => setOpenSubmenu(null)}
                     disabled={item.disabled}
                 >
