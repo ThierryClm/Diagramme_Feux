@@ -26,24 +26,45 @@ const renderToCanvas = async (element, extraOptions = {}) => {
 };
 
 /**
- * Export a DOM element as a PNG file (downloaded).
+ * Export a DOM element as a PNG file (downloaded) AND copy it to the clipboard.
  *
  * @param {Element} element - DOM element to capture
  * @param {string} filename - filename without extension
  * @param {Object} [options] - extra html2canvas options (e.g. onclone)
+ * @returns {Promise<{clipboardSuccess: boolean}>} indicates if the clipboard
+ *   copy succeeded ; the file download is always attempted.
  */
 export const exportElementAsPNG = async (element, filename, options = {}) => {
     if (!element) throw new Error('Élément introuvable');
     const canvas = await renderToCanvas(element, options);
-    canvas.toBlob((blob) => {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${filename}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-    }, 'image/png');
+
+    // toBlob is callback-based; promisify for sequential await
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('Génération du PNG échouée');
+
+    // 1. Download to disk
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // 2. Copy to clipboard (best-effort — silently fails on browsers without
+    // ClipboardItem support, on HTTP contexts, or if user denies permission).
+    let clipboardSuccess = false;
+    try {
+        if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            clipboardSuccess = true;
+        }
+    } catch (e) {
+        console.warn('Copie dans le presse-papiers échouée :', e);
+    }
+
+    return { clipboardSuccess };
 };
 
 /**
