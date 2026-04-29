@@ -793,19 +793,9 @@ function App() {
             case 'exportPngImageCarrefour':
                 exportSectionAsPng('.intersection-image-container', 'Carrefour', 'Image du carrefour');
                 break;
-            case 'exportPngCapaciteUtilisee': {
-                // L'onglet Trafic n'a pas besoin d'être actif : on bascule
-                // temporairement le temps de la capture, puis on revient à
-                // l'onglet d'origine.
-                const savedTab = activeTab;
-                exportSectionAsPng('.traffic-table-container', 'Capacite', 'Tableau de capacité utilisée', {
-                    beforeCapture: () => {
-                        if (savedTab !== 'traffic') setActiveTab('traffic');
-                        return () => { if (savedTab !== 'traffic') setActiveTab(savedTab); };
-                    }
-                });
+            case 'exportPngCapaciteUtilisee':
+                exportSectionAsPng('.traffic-table-container', 'Capacite', 'Tableau de capacité utilisée');
                 break;
-            }
             case 'exportPngPhasageBulle':
                 exportSectionAsPng('.phasage-bulle-container', 'PhasageBulle', 'Phasage bulle');
                 break;
@@ -1647,7 +1637,7 @@ draw();
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, hasActionData: actionData.some(a => a && a.action && a.action.trim() !== ''), hasPhasageBulleData: phasageBulleCount > 0, hasTrafficData: groups.some(g => (g.trafficVol || 0) > 0) }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
