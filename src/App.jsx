@@ -682,16 +682,16 @@ function App() {
     // toast si l'élément n'est pas dans le DOM (typiquement parce que la vue
     // correspondante n'est pas active à l'écran).
     //
-    // Options :
-    //   - cleanDiagram : retire commentaires/remarques sur le diagramme exporté
-    //
-    // Le rendu force toujours le thème CLAIR (noir sur fond blanc),
-    // indépendamment du thème actif dans l'app au moment de l'export.
-    // Justification : éviter les aplats noirs lors de l'impression
-    // (économie d'encre, lisibilité sur papier). Les modifications sont
-    // appliquées sur le DOM cloné (via html2canvas onclone), donc invisibles
-    // à l'écran de l'utilisateur.
-    const exportSectionAsPng = async (selector, suffix, errorLabel, opts = {}) => {
+    // Le rendu force toujours :
+    //   - le thème CLAIR (noir sur fond blanc), pour économiser l'encre à
+    //     l'impression et homogénéiser les exports indépendamment du thème
+    //     actif dans l'app
+    //   - la classe png-export-clean qui retire les overflows scroll
+    //     (matrice, action-table) et masque les fenêtres latérales du
+    //     diagramme (commentaires, remarques) — voir TimelineDiagram.css
+    // Les modifications sont appliquées sur le DOM cloné (via html2canvas
+    // onclone), donc invisibles à l'écran de l'utilisateur.
+    const exportSectionAsPng = async (selector, suffix, errorLabel) => {
         const el = document.querySelector(selector);
         if (!el) {
             toast.error(`${errorLabel} introuvable — vérifiez que la vue correspondante est affichée`);
@@ -704,19 +704,13 @@ function App() {
             const { exportElementAsPNG } = await import('./utils/exportHelpers');
 
             const onclone = (clonedDoc) => {
-                // Force thème CLAIR dans le clone : retire toutes les classes
-                // de thème, puis ajoute light-mode pour basculer noir sur blanc.
                 const themeClasses = ['high-contrast-mode', 'amber-mode',
                                        'daltonian-mode', 'sepia-mode', 'blue-night-mode'];
                 themeClasses.forEach(c => clonedDoc.body.classList.remove(c));
                 clonedDoc.body.classList.add('light-mode');
-                // Option : retirer commentaires/remarques sur le diagramme
-                if (opts.cleanDiagram) {
-                    clonedDoc.body.classList.add('png-export-clean');
-                }
+                clonedDoc.body.classList.add('png-export-clean');
             };
 
-            // Fond blanc pour le canvas (zones transparentes de la capture)
             await exportElementAsPNG(el, filename, { onclone, backgroundColor: '#ffffff' });
             toast.success(`PNG exporté : ${filename}.png`);
         } catch (e) {
@@ -763,14 +757,12 @@ function App() {
                 })();
                 break;
             case 'exportPngDiagramme':
-                exportSectionAsPng('.timeline-container', 'Diagramme', 'Diagramme', { cleanDiagram: true });
+                exportSectionAsPng('.timeline-container', 'Diagramme', 'Diagramme');
                 break;
             case 'exportPngMatrice':
                 exportSectionAsPng('.matrix-container-inline', 'Matrice', 'Matrice interverts');
                 break;
             case 'exportPngMicroRegulation':
-                // Capture la table elle-même (pas le wrapper scrollable, qui
-                // peut tronquer les lignes hors viewport)
                 exportSectionAsPng('.action-table', 'MicroRegulation', 'Tableau des conditions de micro-régulation');
                 break;
             case 'exportPngImageCarrefour':
@@ -1620,7 +1612,7 @@ draw();
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, hasActionData: actionData.some(a => a && a.action && a.action.trim() !== '') }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, hasActionData: actionData.some(a => a && a.action && a.action.trim() !== ''), hasPhasageBulleData: phasageBulleCount > 0, hasTrafficData: groups.some(g => (g.trafficVol || 0) > 0) }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}

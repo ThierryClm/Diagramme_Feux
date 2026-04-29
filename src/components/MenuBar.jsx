@@ -196,28 +196,26 @@ const MenuBar = ({
                         {
                             label: 'Conditions de micro-régulation',
                             action: 'exportPngMicroRegulation',
-                            disabled: !!layoutOptions.phasageBulleEnabled || !!layoutOptions.simulationEnabled || !layoutOptions.hasActionData,
-                            title: (!!layoutOptions.phasageBulleEnabled || !!layoutOptions.simulationEnabled)
-                                ? 'Désactivez le mode Phasage bulle ou Simulation pour exporter ce tableau'
-                                : (!layoutOptions.hasActionData ? 'Aucune action saisie dans le tableau' : '')
+                            disabled: !layoutOptions.hasActionData,
+                            title: !layoutOptions.hasActionData ? 'Aucune action saisie dans le tableau' : 'La vue doit être affichée (mode édition normale, hors Phasage bulle / Simulation)'
                         },
                         {
                             label: 'Image du carrefour',
                             action: 'exportPngImageCarrefour',
                             disabled: !layoutOptions.hasIntersectionImage,
-                            title: !layoutOptions.hasIntersectionImage ? 'Aucune image de carrefour chargée' : ''
+                            title: !layoutOptions.hasIntersectionImage ? 'Aucune image de carrefour chargée' : 'Activez le mode Simulation pour afficher l\'image avant l\'export'
                         },
                         {
                             label: 'Capacité utilisée',
                             action: 'exportPngCapaciteUtilisee',
-                            disabled: layoutOptions.activeTab !== 'traffic',
-                            title: layoutOptions.activeTab !== 'traffic' ? 'Activez l\'onglet Trafic pour exporter cette vue' : ''
+                            disabled: !layoutOptions.hasTrafficData,
+                            title: !layoutOptions.hasTrafficData ? 'Aucune donnée de trafic saisie' : 'Activez l\'onglet Trafic pour afficher la vue avant l\'export'
                         },
                         {
                             label: 'Phasage bulle',
                             action: 'exportPngPhasageBulle',
-                            disabled: !layoutOptions.phasageBulleEnabled,
-                            title: !layoutOptions.phasageBulleEnabled ? 'Activez le mode Phasage bulle pour exporter cette vue' : ''
+                            disabled: !layoutOptions.hasPhasageBulleData,
+                            title: !layoutOptions.hasPhasageBulleData ? 'Aucune bulle de phasage configurée' : 'Activez le mode Phasage bulle pour afficher la vue avant l\'export'
                         }
                     ]
                 },
