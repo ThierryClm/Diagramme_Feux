@@ -414,7 +414,8 @@ function App() {
         showRemarks, setShowRemarks,
         showGroupNamesForm, setShowGroupNamesForm,
         showGroupNamesMatrix, setShowGroupNamesMatrix,
-        showGroupNamesDiagram, setShowGroupNamesDiagram
+        showGroupNamesDiagram, setShowGroupNamesDiagram,
+        showActionDescription, setShowActionDescription
     } = useDarkMode();
     const { recentFiles, setRecentFiles, addToRecentFiles, getRecentDirectories, getRecentDirectoriesForMenu } = useRecentFiles();
     const [selectedProject, setSelectedProject] = useState(null);
@@ -1035,6 +1036,9 @@ function App() {
                 break;
             case 'toggleGroupNamesDiagram':
                 setShowGroupNamesDiagram(v => !v);
+                break;
+            case 'toggleActionDescription':
+                setShowActionDescription(v => !v);
                 break;
             case 'toggleFloatingImage':
                 setShowFloatingImage(v => !v);
@@ -1678,7 +1682,7 @@ draw();
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -2387,6 +2391,7 @@ draw();
                                 showFloatingVariables={showFloatingVariables}
                                 setShowFloatingVariables={setShowFloatingVariables}
                                 showWrapFlash={showWrapFlash}
+                                showDescription={showActionDescription}
                             />
                         </div>
                     </div>

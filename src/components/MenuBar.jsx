@@ -279,6 +279,7 @@ const MenuBar = ({
                 { label: 'Affichage des paramètres', action: 'toggleParameters', toggle: true, checked: layoutOptions.showParameters },
                 { label: 'Commentaires du diagramme', action: 'toggleComments', toggle: true, checked: layoutOptions.showComments },
                 { label: 'Remarques du diagramme', action: 'toggleRemarks', toggle: true, checked: layoutOptions.showRemarks },
+                { label: 'Description des conditions micro', action: 'toggleActionDescription', toggle: true, checked: layoutOptions.showActionDescription },
                 { type: 'separator' },
                 {
                     label: 'Nom des groupes de feu dans...',
