@@ -29,7 +29,7 @@ Plusieurs options apparaissent grisées dans le menu Fichier — elles correspon
 - **Lire une boîte noire (.bn)** — exploitation des enregistrements bruts de contrôleurs (durées de vert, états système, détections ITTN) pour analyser un comportement réel sur une heure d'exploitation. Le décodage du format binaire reste à finaliser.
 - **Import des programmations contrôleur** Traffy, Swarco, Fareco, SEA — chaque constructeur utilise un format propriétaire qui demanderait un parseur dédié.
 - **Import Maestro (.cmpx)** est partiellement disponible (cliquable) mais reste en cours de développement.
-- **Import Excel** dépend du modèle de contrôleur (mises en page variables) — non généralisé dans cette version, l'export Excel reste opérationnel.
+- **Import Excel** dépend du modèle de fichier Excel (mises en page variables d'un éditeur à l'autre, structures de feuilles différentes selon les agences) — non généralisé dans cette version. L'export Excel reste opérationnel.
 
 Ces fonctionnalités seront travaillées si le besoin est confirmé par plusieurs utilisateurs.
 
