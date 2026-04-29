@@ -280,9 +280,16 @@ const MenuBar = ({
                 { label: 'Commentaires du diagramme', action: 'toggleComments', toggle: true, checked: layoutOptions.showComments },
                 { label: 'Remarques du diagramme', action: 'toggleRemarks', toggle: true, checked: layoutOptions.showRemarks },
                 { type: 'separator' },
-                { label: 'Noms GF dans le formulaire', action: 'toggleGroupNamesForm', toggle: true, checked: layoutOptions.showGroupNamesForm },
-                { label: 'Noms GF dans la matrice', action: 'toggleGroupNamesMatrix', toggle: true, checked: layoutOptions.showGroupNamesMatrix },
-                { label: 'Noms GF dans les diagrammes', action: 'toggleGroupNamesDiagram', toggle: true, checked: layoutOptions.showGroupNamesDiagram },
+                {
+                    label: 'Nom des groupes de feu dans...',
+                    type: 'submenu',
+                    submenuId: 'nomGF',
+                    submenu: [
+                        { label: 'le formulaire', action: 'toggleGroupNamesForm', checked: layoutOptions.showGroupNamesForm, keepSubmenuOpen: true },
+                        { label: 'la matrice', action: 'toggleGroupNamesMatrix', checked: layoutOptions.showGroupNamesMatrix, keepSubmenuOpen: true },
+                        { label: 'le diagramme', action: 'toggleGroupNamesDiagram', checked: layoutOptions.showGroupNamesDiagram, keepSubmenuOpen: true }
+                    ]
+                },
                 {
                     label: 'Détachement...',
                     type: 'submenu',
