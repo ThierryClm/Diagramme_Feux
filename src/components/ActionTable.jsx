@@ -77,7 +77,7 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel, showFloatingConditions, setShowFloatingConditions, showFloatingVariables, setShowFloatingVariables, showWrapFlash = true }) => {
+const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel, showFloatingConditions, setShowFloatingConditions, showFloatingVariables, setShowFloatingVariables, showWrapFlash = true, showDescription = true }) => {
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
 
@@ -344,7 +344,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                 <tr className="header-group">
                     <th rowSpan="2" title="Groupe Fonctionnel - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('gf', 'asc')}>GF ↕</th>
                     <th rowSpan="2" title="Action - Cliquer pour trier (alphabétique)" className="sortable" onClick={() => handleSort('action', 'asc')}>Action ↕</th>
-                    <th rowSpan="2" title="Description (30 car.)">Description</th>
+                    {showDescription && <th rowSpan="2" title="Description (30 car.)">Description</th>}
                     <th rowSpan="2" title="Début - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('deb', 'asc')}>Déb ↕</th>
                     <th rowSpan="2">Fin</th>
                     <th rowSpan="2">Abrv</th>
@@ -361,7 +361,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                     <tr key={row.id} className={hoveredActionId === row.id ? 'row-highlighted' : ''} onMouseEnter={() => isRowFilled(row) && setHoveredActionId(row.id)} onMouseLeave={() => setHoveredActionId(null)}>
                         <td><input type="number" min="0" max={maxGroup} className="input-gf" value={row.gf} onChange={(e) => handleGroupFieldChange(row.id, 'gf', e.target.value)} /></td>
                         <td><select className="input-action" value={row.action} onChange={(e) => handleActionChange(row.id, e.target.value, row)}>{ACTION_OPTIONS.map((opt) => (<option key={opt} value={opt}>{opt || '—'}</option>))}</select></td>
-                        <td><input type="text" maxLength="30" className="input-desc" value={row.description} onChange={(e) => updateActionRow(row.id, 'description', e.target.value)} /></td>
+                        {showDescription && <td><input type="text" maxLength="30" className="input-desc" value={row.description} onChange={(e) => updateActionRow(row.id, 'description', e.target.value)} /></td>}
                         <td><NumericInput className="input-time-xs" value={row.deb} onCommit={(val) => updateActionRow(row.id, 'deb', val)} wrapAt={cycleLength} showWrapFlash={showWrapFlash} /></td>
                         <td><NumericInput className={`input-time-xs ${FIN_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.fin} onCommit={(val) => updateActionRow(row.id, 'fin', val)} disabled={FIN_DISABLED_ACTIONS.includes(row.action)} wrapAt={cycleLength} showWrapFlash={showWrapFlash} /></td>
                         <td><input type="text" maxLength="10" className="input-abrv" value={row.abrv || ''} onChange={(e) => updateActionRow(row.id, 'abrv', e.target.value)} /></td>

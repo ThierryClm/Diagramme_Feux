@@ -25,6 +25,7 @@ const useDarkMode = () => {
     const [showGroupNamesForm, setShowGroupNamesForm] = useState(true);
     const [showGroupNamesMatrix, setShowGroupNamesMatrix] = useState(true);
     const [showGroupNamesDiagram, setShowGroupNamesDiagram] = useState(true);
+    const [showActionDescription, setShowActionDescription] = useState(true);
 
     useEffect(() => {
         localStorage.setItem('colorTheme', colorTheme);
@@ -54,7 +55,8 @@ const useDarkMode = () => {
         showRemarks, setShowRemarks,
         showGroupNamesForm, setShowGroupNamesForm,
         showGroupNamesMatrix, setShowGroupNamesMatrix,
-        showGroupNamesDiagram, setShowGroupNamesDiagram
+        showGroupNamesDiagram, setShowGroupNamesDiagram,
+        showActionDescription, setShowActionDescription
     };
 };
 
