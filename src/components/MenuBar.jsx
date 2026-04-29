@@ -182,7 +182,7 @@ const MenuBar = ({
                     submenu: recentImportDirsSubmenu,
                     disabled: !hasPermission('canImportExcel')
                 }] : [{ label: 'Importer Excel...', action: 'import', disabled: !hasPermission('canImportExcel') }]),
-                { label: 'Lire une boîte noire (.bn)...', action: 'openBlackBox', disabled: true, title: 'Fonctionnalité en cours de développement — non opérationnelle dans cette version' },
+                { label: 'Lire une boîte noire (.bn)...', action: 'openBlackBox', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' },
                 { label: 'Liens externes...', action: 'externalLinks' },
                 { type: 'separator' },
                 { label: 'Imprimer le projet...', action: 'printDossier' },
