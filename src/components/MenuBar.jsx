@@ -190,34 +190,47 @@ const MenuBar = ({
                     label: 'Exporter en PNG...',
                     type: 'submenu',
                     submenuId: 'exportPng',
-                    submenu: [
-                        { label: 'Diagramme', action: 'exportPngDiagramme' },
-                        { label: 'Matrice interverts', action: 'exportPngMatrice' },
-                        {
-                            label: 'Conditions de micro-régulation',
-                            action: 'exportPngMicroRegulation',
-                            disabled: !layoutOptions.hasActionData,
-                            title: !layoutOptions.hasActionData ? 'Aucune action saisie dans le tableau' : 'La vue doit être affichée (mode édition normale, hors Phasage bulle / Simulation)'
-                        },
-                        {
-                            label: 'Image du carrefour',
-                            action: 'exportPngImageCarrefour',
-                            disabled: !layoutOptions.hasIntersectionImage,
-                            title: !layoutOptions.hasIntersectionImage ? 'Aucune image de carrefour chargée' : 'Activez le mode Simulation pour afficher l\'image avant l\'export'
-                        },
-                        {
-                            label: 'Capacité utilisée',
-                            action: 'exportPngCapaciteUtilisee',
-                            disabled: !layoutOptions.hasTrafficData,
-                            title: !layoutOptions.hasTrafficData ? 'Aucune donnée de trafic saisie' : 'Bascule automatiquement sur l\'onglet Trafic le temps de l\'export'
-                        },
-                        {
-                            label: 'Phasage bulle',
-                            action: 'exportPngPhasageBulle',
-                            disabled: !layoutOptions.phasageBulleEnabled,
-                            title: !layoutOptions.phasageBulleEnabled ? 'Activez le mode Phasage bulle pour rendre cet export disponible' : ''
-                        }
-                    ]
+                    submenu: (() => {
+                        const inEditMode = !layoutOptions.phasageBulleEnabled && !layoutOptions.simulationEnabled;
+                        return [
+                            {
+                                label: 'Diagramme',
+                                action: 'exportPngDiagramme',
+                                disabled: !inEditMode,
+                                title: !inEditMode ? 'Désactivez le mode Phasage bulle / Simulation pour afficher le diagramme' : ''
+                            },
+                            {
+                                label: 'Matrice interverts',
+                                action: 'exportPngMatrice',
+                                disabled: layoutOptions.activeTab !== 'matrix',
+                                title: layoutOptions.activeTab !== 'matrix' ? 'Activez l\'onglet Matrice pour rendre cet export disponible' : ''
+                            },
+                            {
+                                label: 'Conditions de micro-régulation',
+                                action: 'exportPngMicroRegulation',
+                                disabled: !inEditMode,
+                                title: !inEditMode ? 'Désactivez le mode Phasage bulle / Simulation pour afficher la table' : ''
+                            },
+                            {
+                                label: 'Image du carrefour',
+                                action: 'exportPngImageCarrefour',
+                                disabled: !layoutOptions.simulationEnabled,
+                                title: !layoutOptions.simulationEnabled ? 'Activez le mode Simulation pour afficher l\'image' : ''
+                            },
+                            {
+                                label: 'Capacité utilisée',
+                                action: 'exportPngCapaciteUtilisee',
+                                disabled: layoutOptions.activeTab !== 'traffic',
+                                title: layoutOptions.activeTab !== 'traffic' ? 'Activez l\'onglet Trafic pour rendre cet export disponible' : ''
+                            },
+                            {
+                                label: 'Phasage bulle',
+                                action: 'exportPngPhasageBulle',
+                                disabled: !layoutOptions.phasageBulleEnabled,
+                                title: !layoutOptions.phasageBulleEnabled ? 'Activez le mode Phasage bulle pour rendre cet export disponible' : ''
+                            }
+                        ];
+                    })()
                 },
                 { type: 'separator' },
                 { label: 'Fermer', action: 'close' }
