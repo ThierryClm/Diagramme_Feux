@@ -186,7 +186,19 @@ const MenuBar = ({
                 { label: 'Liens externes...', action: 'externalLinks' },
                 { type: 'separator' },
                 { label: 'Imprimer le projet...', action: 'printDossier' },
-                { label: 'Exporter le diagramme en PNG', action: 'exportDiagramPNG' },
+                {
+                    label: 'Exporter en PNG...',
+                    type: 'submenu',
+                    submenuId: 'exportPng',
+                    submenu: [
+                        { label: 'Diagramme', action: 'exportPngDiagramme' },
+                        { label: 'Matrice interverts', action: 'exportPngMatrice' },
+                        { label: 'Conditions de micro-régulation', action: 'exportPngMicroRegulation' },
+                        { label: 'Image du carrefour', action: 'exportPngImageCarrefour' },
+                        { label: 'Capacité utilisée', action: 'exportPngCapaciteUtilisee' },
+                        { label: 'Phasage bulle', action: 'exportPngPhasageBulle' }
+                    ]
+                },
                 { type: 'separator' },
                 { label: 'Fermer', action: 'close' }
             ]

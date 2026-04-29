@@ -677,6 +677,29 @@ function App() {
         }, 500);
     };
 
+    // Capture la première occurrence du sélecteur en PNG. Le suffixe sert à
+    // construire un nom de fichier explicite ; errorLabel s'affiche dans le
+    // toast si l'élément n'est pas dans le DOM (typiquement parce que la vue
+    // correspondante n'est pas active à l'écran).
+    const exportSectionAsPng = async (selector, suffix, errorLabel) => {
+        const el = document.querySelector(selector);
+        if (!el) {
+            toast.error(`${errorLabel} introuvable — vérifiez que la vue correspondante est affichée`);
+            return;
+        }
+        try {
+            const pfName = pfTabs.find(pf => pf.id === activePFId)?.name || '';
+            const filename = buildExportFilename(intersectionName, `${pfName}_${suffix}`);
+            toast.info('Export PNG en cours...');
+            const { exportElementAsPNG } = await import('./utils/exportHelpers');
+            await exportElementAsPNG(el, filename);
+            toast.success(`PNG exporté : ${filename}.png`);
+        } catch (e) {
+            console.error('Erreur export PNG:', e);
+            toast.error('Échec de l\'export PNG : ' + e.message);
+        }
+    };
+
     // Menu action handler
     const handleMenuAction = (action) => {
         switch (action) {
@@ -714,22 +737,23 @@ function App() {
                     finally { setIsSaving(false); }
                 })();
                 break;
-            case 'exportDiagramPNG':
-                (async () => {
-                    const el = document.querySelector('.timeline-container');
-                    if (!el) { toast.error('Diagramme introuvable'); return; }
-                    try {
-                        const pfName = pfTabs.find(pf => pf.id === activePFId)?.name || '';
-                        const filename = buildExportFilename(intersectionName, `${pfName}_Diagramme`);
-                        toast.info('Export PNG en cours...');
-                        const { exportElementAsPNG } = await import('./utils/exportHelpers');
-                        await exportElementAsPNG(el, filename);
-                        toast.success(`PNG exporté : ${filename}.png`);
-                    } catch (e) {
-                        console.error('Erreur export PNG:', e);
-                        toast.error('Échec de l\'export PNG : ' + e.message);
-                    }
-                })();
+            case 'exportPngDiagramme':
+                exportSectionAsPng('.timeline-container', 'Diagramme', 'Diagramme');
+                break;
+            case 'exportPngMatrice':
+                exportSectionAsPng('.matrix-container-inline', 'Matrice', 'Matrice interverts');
+                break;
+            case 'exportPngMicroRegulation':
+                exportSectionAsPng('.action-table-scroll', 'MicroRegulation', 'Tableau des conditions de micro-régulation');
+                break;
+            case 'exportPngImageCarrefour':
+                exportSectionAsPng('.intersection-image-container', 'Carrefour', 'Image du carrefour');
+                break;
+            case 'exportPngCapaciteUtilisee':
+                exportSectionAsPng('.traffic-table-container', 'Capacite', 'Tableau de capacité utilisée');
+                break;
+            case 'exportPngPhasageBulle':
+                exportSectionAsPng('.phasage-bulle-container', 'PhasageBulle', 'Phasage bulle');
                 break;
             case 'printDossier':
                 // Ouvrir le dialog de sélection des sections
