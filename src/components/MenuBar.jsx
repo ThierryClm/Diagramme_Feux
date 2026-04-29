@@ -23,6 +23,20 @@ const MenuBar = ({
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const menuRef = useRef(null);
 
+    // Drapeau « import Excel » : la fonctionnalité dépend du modèle de
+    // contrôleur et n'est pas généralisée dans cette version. Désactivée par
+    // défaut pour tous les utilisateurs ; un développeur peut la réactiver
+    // localement en exécutant dans la console du navigateur :
+    //   localStorage.setItem('excelImportEnabled', 'true');
+    // (à refaire pour chaque navigateur / chaque effacement de données de site).
+    const excelImportEnabled = (() => {
+        try {
+            return localStorage.getItem('excelImportEnabled') === 'true';
+        } catch {
+            return false;
+        }
+    })();
+
     // Available arrow styles
     const arrowStyles = [
         { id: 'solid', label: 'Trait plein' },
@@ -180,8 +194,14 @@ const MenuBar = ({
                     type: 'submenu',
                     submenuId: 'importRecent',
                     submenu: recentImportDirsSubmenu,
-                    disabled: !hasPermission('canImportExcel')
-                }] : [{ label: 'Importer Excel...', action: 'import', disabled: !hasPermission('canImportExcel') }]),
+                    disabled: !hasPermission('canImportExcel') || !excelImportEnabled,
+                    title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : ''
+                }] : [{
+                    label: 'Importer Excel...',
+                    action: 'import',
+                    disabled: !hasPermission('canImportExcel') || !excelImportEnabled,
+                    title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : ''
+                }]),
                 { label: 'Lire une boîte noire (.bn)...', action: 'openBlackBox', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' },
                 { label: 'Liens externes...', action: 'externalLinks' },
                 { type: 'separator' },
