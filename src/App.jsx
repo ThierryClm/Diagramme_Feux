@@ -798,27 +798,29 @@ function App() {
                 exportSectionAsPng('.intersection-image-area', 'Carrefour', 'Image du carrefour');
                 break;
             case 'exportPngCapaciteUtilisee': {
-                // Construit le titre dynamique au moment du clic, à partir
-                // du PF actif et du jeu de trafic (« Associé à »). Si le jeu
-                // de trafic n'a pas de nom, on omet la mention « avec le
-                // trafic » (premier point demandé par l'utilisateur).
+                // Titre principal sur la première ligne ; mention du trafic
+                // sur une seconde ligne en plus petit. Si le jeu de trafic
+                // n'a pas de nom (« Associé à » vide), seule la première
+                // ligne est affichée.
                 const pfName = pfTabs.find(pf => pf.id === activePFId)?.name || '';
                 const datasetName = (trafficDatasetNames && trafficDatasetNames[activeTrafficDataset]) || '';
-                const titleText = datasetName
-                    ? `Capacité utilisée par groupe de feu — Diagramme ${pfName} — avec le trafic ${datasetName}`
-                    : `Capacité utilisée par groupe de feu — Diagramme ${pfName}`;
+                const titleLine1 = `Capacité utilisée par groupe de feu — Diagramme ${pfName}`;
+                const titleLine2 = datasetName ? `avec le trafic ${datasetName}` : '';
                 exportSectionAsPng('.traffic-table-container', 'Capacite', 'Tableau de capacité utilisée', {
                     onCloneExtra: (clonedDoc) => {
-                        // Remplace entièrement le header de la table Trafic
-                        // (qui contient checkbox « Tous les groupes », sélecteur
-                        // « Associé à », etc.) par le titre formaté.
                         const header = clonedDoc.querySelector('.traffic-header');
                         if (header) {
                             header.innerHTML = '';
                             const title = clonedDoc.createElement('h3');
-                            title.textContent = titleText;
-                            title.style.cssText = 'margin: 0 0 12px 0; font-size: 1.1em; font-weight: bold; color: #000;';
+                            title.textContent = titleLine1;
+                            title.style.cssText = 'margin: 0; font-size: 1.1em; font-weight: bold; color: #000;';
                             header.appendChild(title);
+                            if (titleLine2) {
+                                const subtitle = clonedDoc.createElement('div');
+                                subtitle.textContent = titleLine2;
+                                subtitle.style.cssText = 'margin: 4px 0 12px 0; font-size: 0.9em; color: #333;';
+                                header.appendChild(subtitle);
+                            }
                         }
                     }
                 });
