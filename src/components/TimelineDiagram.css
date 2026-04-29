@@ -1309,6 +1309,15 @@ body.light-mode .action-hover-tooltip-micro .micro-keyword {
     transition-delay: 20s;
 }
 
+/* Lors d'un export PNG « clean » (Diagramme), on masque les colonnes
+   commentaires/remarques pour ne capturer que le diagramme et ses bandes vertes. */
+body.png-export-clean .input-comment,
+body.png-export-clean .input-remarques,
+body.png-export-clean .col-label.col-comment,
+body.png-export-clean .col-label.col-remarques {
+    display: none !important;
+}
+
 /* Point de repos — bande grise semi-transparente couvrant la hauteur des groupes */
 .rest-point-band {
     position: absolute;

@@ -10,24 +10,31 @@ export { buildExportFilename } from './exportFilename';
 
 /**
  * Render the given element onto a canvas with high resolution.
+ * Extra options are passed through to html2canvas (e.g. onclone for DOM
+ * tweaks on the cloned document used for rendering).
  */
-const renderToCanvas = async (element) => {
+const renderToCanvas = async (element, extraOptions = {}) => {
     return html2canvas(element, {
         backgroundColor: '#1e1e1e',
         scale: 2,              // retina quality
         useCORS: true,
         logging: false,
         windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight
+        windowHeight: element.scrollHeight,
+        ...extraOptions
     });
 };
 
 /**
  * Export a DOM element as a PNG file (downloaded).
+ *
+ * @param {Element} element - DOM element to capture
+ * @param {string} filename - filename without extension
+ * @param {Object} [options] - extra html2canvas options (e.g. onclone)
  */
-export const exportElementAsPNG = async (element, filename) => {
+export const exportElementAsPNG = async (element, filename, options = {}) => {
     if (!element) throw new Error('Élément introuvable');
-    const canvas = await renderToCanvas(element);
+    const canvas = await renderToCanvas(element, options);
     canvas.toBlob((blob) => {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
