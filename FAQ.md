@@ -18,6 +18,10 @@ Définir des groupes de feux (VL, TC, Cycliste, Piéton), construire la matrice 
 
 L'application est conçue pour la **conception et l'optimisation** de plans de feux, pas pour piloter des installations réelles. Elle ne fait pas de simulation microscopique de trafic (type AIMSUN, VISSIM), ne se connecte pas à des contrôleurs sur le terrain, et ne gère qu'une coordination simple (onde verte) — pas de réseau multi-carrefours complet.
 
+### Proposez-vous un accompagnement pour les carrefours complexes ?
+
+Oui. Pour les carrefours complexes, l'auteur peut assurer un accompagnement à la conception du diagramme, en tirant parti des capacités combinées de gestion par phase et par groupe de feux qu'offre l'outil. Moyennant une contribution adaptée à la complexité du sujet, deux modes de prestation sont possibles : **assistance technique à la carte** ou **prise en charge complète du projet** à partir des données fournies par l'utilisateur. Voir la section [Services & accompagnement](README.md#services--accompagnement) du README.
+
 ### Quelles fonctionnalités sont envisageables à terme ?
 
 Plusieurs options apparaissent grisées dans le menu Fichier — elles correspondent à des pistes d'évolution non encore opérationnelles :
