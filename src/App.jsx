@@ -811,6 +811,10 @@ function App() {
                         const header = clonedDoc.querySelector('.traffic-header');
                         if (header) {
                             header.innerHTML = '';
+                            // .traffic-header est un flex en ligne : on force
+                            // l'empilement vertical pour que le sous-titre
+                            // apparaisse SOUS le titre, pas à côté.
+                            header.style.cssText = 'display: flex; flex-direction: column; align-items: flex-start; padding: 8px 0;';
                             const title = clonedDoc.createElement('h3');
                             title.textContent = titleLine1;
                             title.style.cssText = 'margin: 0; font-size: 1.1em; font-weight: bold; color: #000;';
@@ -818,7 +822,7 @@ function App() {
                             if (titleLine2) {
                                 const subtitle = clonedDoc.createElement('div');
                                 subtitle.textContent = titleLine2;
-                                subtitle.style.cssText = 'margin: 4px 0 12px 0; font-size: 0.9em; color: #333;';
+                                subtitle.style.cssText = 'margin: 4px 0 8px 0; font-size: 0.9em; color: #333;';
                                 header.appendChild(subtitle);
                             }
                         }
