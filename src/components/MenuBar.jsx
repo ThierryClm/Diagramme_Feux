@@ -209,13 +209,13 @@ const MenuBar = ({
                             label: 'Capacité utilisée',
                             action: 'exportPngCapaciteUtilisee',
                             disabled: !layoutOptions.hasTrafficData,
-                            title: !layoutOptions.hasTrafficData ? 'Aucune donnée de trafic saisie' : 'Activez l\'onglet Trafic pour afficher la vue avant l\'export'
+                            title: !layoutOptions.hasTrafficData ? 'Aucune donnée de trafic saisie' : 'Bascule automatiquement sur l\'onglet Trafic le temps de l\'export'
                         },
                         {
                             label: 'Phasage bulle',
                             action: 'exportPngPhasageBulle',
-                            disabled: !layoutOptions.hasPhasageBulleData,
-                            title: !layoutOptions.hasPhasageBulleData ? 'Aucune bulle de phasage configurée' : 'Activez le mode Phasage bulle pour afficher la vue avant l\'export'
+                            disabled: !layoutOptions.phasageBulleEnabled,
+                            title: !layoutOptions.phasageBulleEnabled ? 'Activez le mode Phasage bulle pour rendre cet export disponible' : ''
                         }
                     ]
                 },

@@ -691,13 +691,36 @@ function App() {
     //     diagramme (commentaires, remarques) — voir TimelineDiagram.css
     // Les modifications sont appliquées sur le DOM cloné (via html2canvas
     // onclone), donc invisibles à l'écran de l'utilisateur.
-    const exportSectionAsPng = async (selector, suffix, errorLabel) => {
-        const el = document.querySelector(selector);
-        if (!el) {
-            toast.error(`${errorLabel} introuvable — vérifiez que la vue correspondante est affichée`);
-            return;
+    // Helper : attend qu'un élément existe dans le DOM (utile après setState
+    // qui change la vue rendue). Poll toutes les 50ms jusqu'à timeout.
+    const waitForElement = async (selector, timeoutMs = 1000) => {
+        const start = Date.now();
+        while (Date.now() - start < timeoutMs) {
+            const el = document.querySelector(selector);
+            if (el) return el;
+            await new Promise(r => setTimeout(r, 50));
         }
+        return null;
+    };
+
+    // opts.beforeCapture : callback synchrone qui prépare la vue (par exemple
+    // setActiveTab('traffic')) et retourne une fonction de restauration appelée
+    // après la capture. On attend que le sélecteur cible soit présent dans le
+    // DOM avant de capturer.
+    const exportSectionAsPng = async (selector, suffix, errorLabel, opts = {}) => {
+        let restore = null;
+        if (opts.beforeCapture) {
+            restore = opts.beforeCapture();
+        }
+
         try {
+            const el = opts.beforeCapture
+                ? await waitForElement(selector, 1500)
+                : document.querySelector(selector);
+            if (!el) {
+                toast.error(`${errorLabel} introuvable — vérifiez que la vue correspondante est affichée`);
+                return;
+            }
             const pfName = pfTabs.find(pf => pf.id === activePFId)?.name || '';
             const filename = buildExportFilename(intersectionName, `${pfName}_${suffix}`);
             toast.info('Export PNG en cours...');
@@ -716,6 +739,8 @@ function App() {
         } catch (e) {
             console.error('Erreur export PNG:', e);
             toast.error('Échec de l\'export PNG : ' + e.message);
+        } finally {
+            if (restore) restore();
         }
     };
 
@@ -768,9 +793,19 @@ function App() {
             case 'exportPngImageCarrefour':
                 exportSectionAsPng('.intersection-image-container', 'Carrefour', 'Image du carrefour');
                 break;
-            case 'exportPngCapaciteUtilisee':
-                exportSectionAsPng('.traffic-table-container', 'Capacite', 'Tableau de capacité utilisée (l\'onglet Trafic doit être actif)');
+            case 'exportPngCapaciteUtilisee': {
+                // L'onglet Trafic n'a pas besoin d'être actif : on bascule
+                // temporairement le temps de la capture, puis on revient à
+                // l'onglet d'origine.
+                const savedTab = activeTab;
+                exportSectionAsPng('.traffic-table-container', 'Capacite', 'Tableau de capacité utilisée', {
+                    beforeCapture: () => {
+                        if (savedTab !== 'traffic') setActiveTab('traffic');
+                        return () => { if (savedTab !== 'traffic') setActiveTab(savedTab); };
+                    }
+                });
                 break;
+            }
             case 'exportPngPhasageBulle':
                 exportSectionAsPng('.phasage-bulle-container', 'PhasageBulle', 'Phasage bulle');
                 break;
