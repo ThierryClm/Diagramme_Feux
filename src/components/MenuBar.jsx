@@ -225,6 +225,12 @@ const MenuBar = ({
                         const inEditMode = !layoutOptions.phasageBulleEnabled && !layoutOptions.simulationEnabled;
                         return [
                             {
+                                label: 'Formulaire',
+                                action: 'exportPngFormulaire',
+                                disabled: layoutOptions.activeTab !== 'config',
+                                title: layoutOptions.activeTab !== 'config' ? 'Activez l\'onglet Configuration pour rendre cet export disponible' : ''
+                            },
+                            {
                                 label: 'Diagramme',
                                 action: 'exportPngDiagramme',
                                 disabled: !inEditMode,
