@@ -24,12 +24,23 @@ const MenuBar = ({
     const menuRef = useRef(null);
 
     // Drapeau « import Excel » : la fonctionnalité dépend du modèle de
-    // contrôleur et n'est pas généralisée dans cette version. Désactivée par
-    // défaut pour tous les utilisateurs ; un développeur peut la réactiver
-    // localement en exécutant dans la console du navigateur :
+    // fichier Excel (mises en page variables d'un éditeur à l'autre) et n'est
+    // pas généralisée. Désactivée par défaut pour tous les utilisateurs.
+    //
+    // Débloquée automatiquement quand l'utilisateur connecté est « Colmonclm »
+    // (compte de l'auteur, qui en a un usage actif sur ses propres projets).
+    //
+    // Secours : drapeau localStorage pour les besoins de développement /
+    // test sans authentification :
     //   localStorage.setItem('excelImportEnabled', 'true');
-    // (à refaire pour chaque navigateur / chaque effacement de données de site).
+    //
+    // Note : le code étant publié sous AGPL v3, le nom de compte ci-dessous
+    // est visible publiquement. C'est une convention de visibilité, pas une
+    // sécurité — quiconque créerait un compte « Colmonclm » sur son
+    // installation locale pourrait débloquer la fonctionnalité (cas d'usage
+    // attendu pour un développeur qui contribue à améliorer l'import).
     const excelImportEnabled = (() => {
+        if (currentUser?.username === 'Colmonclm') return true;
         try {
             return localStorage.getItem('excelImportEnabled') === 'true';
         } catch {
