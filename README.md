@@ -64,6 +64,14 @@ L'application embarque un système de comptes optionnel à 3 niveaux de permissi
 
 Une [FAQ](FAQ.md) répond aux questions courantes (confidentialité des données, formats d'import/export, licence, partage de projets, etc.).
 
+## Services & accompagnement
+
+Pour les carrefours complexes, l'auteur peut assurer un accompagnement à la conception du diagramme, en tirant parti des capacités combinées de gestion par phase et par groupe de feux qu'offre l'outil.
+
+Moyennant une contribution adaptée à la complexité du sujet, deux modes de prestation sont possibles : **assistance technique à la carte** ou **prise en charge complète du projet** à partir des données fournies par l'utilisateur.
+
+*(Coordonnées de contact à venir.)*
+
 ## Contribuer
 
 Les contributions sont les bienvenues. Pour un bug ou une suggestion, ouvrez une [issue GitHub](https://github.com/ThierryClm/Diagramme_Feux/issues). Pour proposer un patch, forkez puis ouvrez une pull request.
