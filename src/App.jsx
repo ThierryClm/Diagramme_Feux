@@ -788,6 +788,9 @@ function App() {
                     finally { setIsSaving(false); }
                 })();
                 break;
+            case 'exportPngFormulaire':
+                exportSectionAsPng('.group-table-container', 'Formulaire', 'Formulaire des groupes');
+                break;
             case 'exportPngDiagramme':
                 exportSectionAsPng('.timeline-container', 'Diagramme', 'Diagramme');
                 break;
@@ -3160,8 +3163,9 @@ draw();
 
                     <section className="help-section">
                         <h4>Export en PNG</h4>
-                        <p>Le menu Fichier → <strong>Exporter en PNG...</strong> propose un sous-menu permettant de capturer indépendamment six vues de l'application :</p>
+                        <p>Le menu Fichier → <strong>Exporter en PNG...</strong> propose un sous-menu permettant de capturer indépendamment sept vues de l'application :</p>
                         <ul>
+                            <li><strong>Formulaire :</strong> le tableau des groupes (nom, type, courant, durées, vert minimum) tel qu'affiché dans l'onglet Configuration</li>
                             <li><strong>Diagramme :</strong> le diagramme temporel du plan de feu actif (sans les fenêtres latérales commentaires/remarques, qui sont masquées dans le PNG)</li>
                             <li><strong>Matrice interverts :</strong> la matrice des temps de dégagement, dans son intégralité (l'export ne dépend pas de la zone visible à l'écran si la matrice est plus large que la fenêtre)</li>
                             <li><strong>Conditions de micro-régulation :</strong> le tableau des actions du plan de feu actif</li>
