@@ -1309,13 +1309,38 @@ body.light-mode .action-hover-tooltip-micro .micro-keyword {
     transition-delay: 20s;
 }
 
-/* Lors d'un export PNG « clean » (Diagramme), on masque les colonnes
-   commentaires/remarques pour ne capturer que le diagramme et ses bandes vertes. */
-body.png-export-clean .input-comment,
-body.png-export-clean .input-remarques,
-body.png-export-clean .col-label.col-comment,
-body.png-export-clean .col-label.col-remarques {
+/* Lors d'un export PNG « clean » :
+   - Diagramme : masque les colonnes commentaires/remarques
+   - Matrice : retire les overflows pour capturer toute la grille
+   - Micro-régulation : autorise le retour à la ligne dans les cellules
+*/
+body.png-export-clean .timeline-comments,
+body.png-export-clean .timeline-remarques {
     display: none !important;
+}
+
+body.png-export-clean .matrix-scroll,
+body.png-export-clean .matrix-container-inline {
+    overflow: visible !important;
+    max-width: none !important;
+    width: auto !important;
+}
+
+body.png-export-clean .action-table-scroll {
+    overflow: visible !important;
+    max-width: none !important;
+    width: auto !important;
+}
+
+body.png-export-clean .action-table input,
+body.png-export-clean .action-table select,
+body.png-export-clean .action-table textarea,
+body.png-export-clean .action-table td,
+body.png-export-clean .action-table th {
+    white-space: normal !important;
+    text-overflow: clip !important;
+    overflow: visible !important;
+    max-width: none !important;
 }
 
 /* Point de repos — bande grise semi-transparente couvrant la hauteur des groupes */
