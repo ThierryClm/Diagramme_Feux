@@ -737,8 +737,12 @@ function App() {
                 if (opts.onCloneExtra) opts.onCloneExtra(clonedDoc);
             };
 
-            await exportElementAsPNG(el, filename, { onclone, backgroundColor: '#ffffff' });
-            toast.success(`PNG exporté : ${filename}.png`);
+            const result = await exportElementAsPNG(el, filename, { onclone, backgroundColor: '#ffffff' });
+            if (result?.clipboardSuccess) {
+                toast.success(`PNG exporté et copié dans le presse-papiers : ${filename}.png`);
+            } else {
+                toast.success(`PNG exporté : ${filename}.png (presse-papiers non disponible)`);
+            }
         } catch (e) {
             console.error('Erreur export PNG:', e);
             toast.error('Échec de l\'export PNG : ' + e.message);
