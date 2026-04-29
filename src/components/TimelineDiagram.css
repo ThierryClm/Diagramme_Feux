@@ -1312,7 +1312,8 @@ body.light-mode .action-hover-tooltip-micro .micro-keyword {
 /* Lors d'un export PNG « clean » :
    - Diagramme : masque les colonnes commentaires/remarques
    - Matrice : retire les overflows pour capturer toute la grille
-   - Micro-régulation : autorise le retour à la ligne dans les cellules
+   - Micro-régulation : font plus petite, largeur auto, texte non tronqué
+   - Phasage bulle : fond blanc (le conteneur a un background sombre en dur)
 */
 body.png-export-clean .timeline-comments,
 body.png-export-clean .timeline-remarques {
@@ -1332,15 +1333,54 @@ body.png-export-clean .action-table-scroll {
     width: auto !important;
 }
 
-body.png-export-clean .action-table input,
-body.png-export-clean .action-table select,
-body.png-export-clean .action-table textarea,
+body.png-export-clean .action-table {
+    table-layout: auto !important;
+    width: auto !important;
+}
+
 body.png-export-clean .action-table td,
 body.png-export-clean .action-table th {
     white-space: normal !important;
-    text-overflow: clip !important;
     overflow: visible !important;
     max-width: none !important;
+    word-wrap: break-word !important;
+}
+
+body.png-export-clean .action-table input:not([type="checkbox"]),
+body.png-export-clean .action-table select {
+    font-size: 0.9em !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+body.png-export-clean .action-table textarea {
+    font-size: 0.9em !important;
+    width: auto !important;
+    min-width: 200px !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 1.5em !important;
+    overflow: visible !important;
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+}
+
+body.png-export-clean .input-action,
+body.png-export-clean .input-desc,
+body.png-export-clean .input-micro,
+body.png-export-clean .input-time-xs,
+body.png-export-clean .input-abrv,
+body.png-export-clean .input-gf {
+    width: auto !important;
+    max-width: none !important;
+    font-size: 0.9em !important;
+}
+
+body.png-export-clean .phasage-bulle-container {
+    background: #ffffff !important;
 }
 
 /* Point de repos — bande grise semi-transparente couvrant la hauteur des groupes */
