@@ -1333,50 +1333,45 @@ body.png-export-clean .action-table-scroll {
     width: auto !important;
 }
 
-body.png-export-clean .action-table {
-    table-layout: auto !important;
-    width: auto !important;
-}
-
-body.png-export-clean .action-table td,
-body.png-export-clean .action-table th {
-    white-space: normal !important;
-    overflow: visible !important;
-    max-width: none !important;
-    word-wrap: break-word !important;
+/* Conserve les largeurs proportionnelles d'origine (220px / 160px / etc.)
+   mais réduit le font pour que le texte tienne, force texte noir et fond
+   blanc (les classes claires #fff/#eee/#ddd ne sont pas écrasées par
+   light-mode global). */
+body.png-export-clean .action-table th,
+body.png-export-clean .action-table td {
+    color: #000 !important;
+    background: #ffffff !important;
 }
 
 body.png-export-clean .action-table input:not([type="checkbox"]),
-body.png-export-clean .action-table select {
-    font-size: 0.9em !important;
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: none !important;
+body.png-export-clean .action-table select,
+body.png-export-clean .action-table textarea {
+    color: #000 !important;
+    background: #ffffff !important;
+    font-size: 0.85em !important;
     overflow: visible !important;
     text-overflow: clip !important;
 }
 
 body.png-export-clean .action-table textarea {
-    font-size: 0.9em !important;
-    width: auto !important;
-    min-width: 200px !important;
-    max-width: none !important;
     height: auto !important;
     min-height: 1.5em !important;
-    overflow: visible !important;
     white-space: pre-wrap !important;
     word-wrap: break-word !important;
 }
 
 body.png-export-clean .input-action,
 body.png-export-clean .input-desc,
-body.png-export-clean .input-micro,
-body.png-export-clean .input-time-xs,
-body.png-export-clean .input-abrv,
-body.png-export-clean .input-gf {
-    width: auto !important;
-    max-width: none !important;
-    font-size: 0.9em !important;
+body.png-export-clean .input-micro {
+    font-size: 0.85em !important;
+}
+
+/* En-têtes de la table conservent leurs proportions, juste lisibles */
+body.png-export-clean .action-table thead th,
+body.png-export-clean .action-table-title {
+    color: #000 !important;
+    background: #f0f0f0 !important;
+    font-size: 0.85em !important;
 }
 
 body.png-export-clean .phasage-bulle-container {
