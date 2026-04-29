@@ -18,6 +18,10 @@ Définir des groupes de feux (VL, TC, Cycliste, Piéton), construire la matrice 
 
 L'application est conçue pour la **conception et l'optimisation** de plans de feux, pas pour piloter des installations réelles. Elle ne fait pas de simulation microscopique de trafic (type AIMSUN, VISSIM), ne se connecte pas à des contrôleurs sur le terrain, et ne gère qu'une coordination simple (onde verte) — pas de réseau multi-carrefours complet.
 
+### Quelles fonctionnalités sont prévues mais pas encore opérationnelles ?
+
+Une option **« Lire une boîte noire (.bn) »** apparaît grisée dans le menu Fichier. Elle vise à exploiter les enregistrements bruts de contrôleurs de carrefour (durées de vert, états système, détections ITTN) pour aider à analyser un comportement réel sur une heure d'exploitation. Le décodage du format binaire reste à finaliser — c'est une piste d'évolution si le besoin est confirmé par plusieurs utilisateurs.
+
 ### Est-ce vraiment gratuit ?
 
 Oui, totalement. Le code est publié sous licence libre [GNU AGPL v3](LICENSE) — vous pouvez l'utiliser, le modifier et le redistribuer sans frais ni condition d'usage personnel ou professionnel.
