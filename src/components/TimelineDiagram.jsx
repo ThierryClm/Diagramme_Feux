@@ -1096,7 +1096,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                 )}
             </h3>
             <div className="timeline-layout">
-                <div className="timeline-sidebar">
+                <div className="timeline-sidebar" style={!showGroupNames ? { width: '165px' } : undefined}>
                     {/* Header Label for Sidebar */}
                     <div className="sidebar-header-row">
                         <span className="col-label col-grp">GF</span>
