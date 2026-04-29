@@ -29,6 +29,7 @@ desktop.ini
 /Car *.json
 /RSI_*[redacted]
 /samples/
+/bn/
 
 # Dev-only temporary artifacts
 /package_new.json
