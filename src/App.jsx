@@ -791,7 +791,8 @@ function App() {
                 exportSectionAsPng('.action-table', 'MicroRegulation', 'Tableau des conditions de micro-régulation');
                 break;
             case 'exportPngImageCarrefour':
-                exportSectionAsPng('.intersection-image-container', 'Carrefour', 'Image du carrefour');
+                // Cible la zone d'image elle-même (sans le header avec titre/boutons)
+                exportSectionAsPng('.intersection-image-area', 'Carrefour', 'Image du carrefour');
                 break;
             case 'exportPngCapaciteUtilisee':
                 exportSectionAsPng('.traffic-table-container', 'Capacite', 'Tableau de capacité utilisée');
