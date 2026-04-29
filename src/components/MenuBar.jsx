@@ -296,12 +296,12 @@ const MenuBar = ({
                     type: 'submenu',
                     submenuId: 'detachement',
                     submenu: [
-                        { label: 'Formulaire', action: 'toggleFloatingForm', checked: layoutOptions.showFloatingForm },
-                        { label: 'Matrice interverts', action: 'toggleFloatingMatrix', checked: layoutOptions.showFloatingMatrix },
-                        { label: 'Données trafic', action: 'toggleFloatingTraffic', checked: layoutOptions.showFloatingTraffic },
-                        { label: 'Conditions de micro-régulation', action: 'toggleFloatingConditions', checked: layoutOptions.showFloatingConditions },
-                        { label: 'Variables micro', action: 'toggleFloatingVariables', checked: layoutOptions.showFloatingVariables },
-                        { label: 'Image du carrefour', action: 'toggleFloatingImage', checked: layoutOptions.showFloatingImage, disabled: !layoutOptions.hasIntersectionImage }
+                        { label: 'Formulaire', action: 'toggleFloatingForm', checked: layoutOptions.showFloatingForm, keepSubmenuOpen: true },
+                        { label: 'Matrice interverts', action: 'toggleFloatingMatrix', checked: layoutOptions.showFloatingMatrix, keepSubmenuOpen: true },
+                        { label: 'Données trafic', action: 'toggleFloatingTraffic', checked: layoutOptions.showFloatingTraffic, keepSubmenuOpen: true },
+                        { label: 'Conditions de micro-régulation', action: 'toggleFloatingConditions', checked: layoutOptions.showFloatingConditions, keepSubmenuOpen: true },
+                        { label: 'Variables micro', action: 'toggleFloatingVariables', checked: layoutOptions.showFloatingVariables, keepSubmenuOpen: true },
+                        { label: 'Image du carrefour', action: 'toggleFloatingImage', checked: layoutOptions.showFloatingImage, disabled: !layoutOptions.hasIntersectionImage, keepSubmenuOpen: true }
                     ]
                 },
                 { type: 'separator' },
