@@ -168,11 +168,11 @@ const MenuBar = ({
                     type: 'submenu',
                     submenuId: 'importController',
                     submenu: [
-                        { label: '[redacted] ([redacted])...', action: 'import[redacted]' },
-                        { label: 'Traffy', disabled: true },
-                        { label: 'Swarco', disabled: true },
-                        { label: 'Fareco', disabled: true },
-                        { label: 'SEA', disabled: true }
+                        { label: '[redacted] ([redacted])...', action: 'import[redacted]', title: 'Import partiel — fonctionnalité en cours de développement' },
+                        { label: 'Traffy', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' },
+                        { label: 'Swarco', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' },
+                        { label: 'Fareco', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' },
+                        { label: 'SEA', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' }
                     ]
                 },
                 ...(recentImportDirs.length > 0 ? [{
