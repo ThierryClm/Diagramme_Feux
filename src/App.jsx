@@ -2980,7 +2980,7 @@ draw();
                             <li><strong>Actions cochables :</strong> Chaque action définie dans les conditions de micro-régulation peut être cochée individuellement. Le diagramme se met à jour en temps réel pour visualiser l'effet combiné des actions sélectionnées.</li>
                             <li><strong>Ordre de traitement :</strong> Les actions sont traitées dans l'ordre suivant : Ouverture anticipée → Fermeture anticipée → Escamotage (groupe) → Adaptatif vertical → Escamotage de phase. Chaque action s'applique sur le diagramme virtuel résultant des actions précédentes.</li>
                             <li><strong>Contractions cumulatives :</strong> L'Adaptatif vertical et l'Escamotage de phase contractent le diagramme. Les contractions s'ajustent aux contractions précédentes pour éviter les doubles déductions.</li>
-                            <li><strong>Fermeture anticipée et Action GF :</strong> Lorsqu'une fermeture anticipée pointe sur la fin du vert d'un groupe cible (Action GF), la fin de ce vert est réduite. Si elle pointe sur le début, le début est avancé. La durée effective tient compte du chevauchement avec les zones AV/EP.</li>
+                            <li><strong>Fermeture anticipée et Action GF (ou glissements) :</strong> Lorsqu'une fermeture anticipée pointe sur la fin du vert d'un groupe cible (Action GF), la fin de ce vert est réduite. Si elle pointe sur le début, le début est avancé — on parle alors de <em>glissement</em>. La durée effective tient compte du chevauchement avec les zones AV/EP.</li>
                             <li><strong>Actions grisées :</strong> Les actions dont la plage [Déb, Fin] tombe entièrement dans une zone supprimée (AV ou EP) sont affichées en grisé dans la liste.</li>
                             <li><strong>Conflits simulés :</strong> Le tableau des conflits se met à jour selon les temps de vert simulés. Les groupes réduits à un vert nul sont exclus des conflits. Le survol d'un conflit affiche une flèche rouge pointillée dans le diagramme depuis les positions simulées.</li>
                             <li><strong>Données trafic :</strong> Les données V.Utile, Cap.U, Retard et File d'attente sont toujours affichées. Les valeurs inhibées par les actions cochées apparaissent en grisé.</li>
@@ -3261,7 +3261,7 @@ draw();
                             <dd>Action de micro-régulation qui supprime (contracte) une tranche temporelle du cycle sur tous les groupes, raccourcissant temporairement le cycle global.</dd>
 
                             <dt><strong>Fermeture anticipée</strong></dt>
-                            <dd>Action qui raccourcit la durée de vert d'un groupe de feux en anticipant sa fin. Représentée par une accolade sur la fin du vert.</dd>
+                            <dd>Action qui raccourcit la durée de vert d'un groupe de feux en anticipant sa fin. Représentée par une accolade sur la fin du vert. Lorsqu'elle est associée à une action sur un autre groupe de feu (champ <em>Action GF</em>), on parle également de <em>glissement</em>.</dd>
 
                             <dt><strong>Flèche d'anticipation</strong></dt>
                             <dd>Indication visuelle matérialisée par une barre intermittente jaune, représentant un dispositif visuel pour le conducteur (signal d'approche) en amont du groupe de feux.</dd>
@@ -3271,6 +3271,9 @@ draw();
 
                             <dt><strong>Gestion par phase</strong></dt>
                             <dd>Mode de régulation où les groupes compatibles sont regroupés en phases, pilotées de façon synchrone. Simplifie la configuration au prix d'une souplesse moindre qu'une gestion par groupe.</dd>
+
+                            <dt><strong>Glissement</strong></dt>
+                            <dd>Effet d'une fermeture anticipée associée à une action sur un autre groupe de feu (via le champ <em>Action GF</em>) : le début ou la fin du vert du groupe cible est décalé en cohérence avec le groupe source. Permet de propager une régulation entre groupes liés sans recopier la consigne.</dd>
 
                             <dt><strong>Groupe de feux (GF)</strong></dt>
                             <dd>Ensemble de feux tricolores d'un même mouvement, pilotés simultanément. Également appelé <em>ligne de feu</em> dans certains contextes métier. Chaque GF est caractérisé par un type (VL, TC, Piéton, Cycliste), un courant, une durée de vert minimal et des durées de phase.</dd>
