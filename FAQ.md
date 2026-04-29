@@ -20,7 +20,13 @@ L'application est conçue pour la **conception et l'optimisation** de plans de f
 
 ### Quelles fonctionnalités sont envisageables à terme ?
 
-Une option **« Lire une boîte noire (.bn) »** apparaît grisée dans le menu Fichier. Elle vise à exploiter les enregistrements bruts de contrôleurs de carrefour (durées de vert, états système, détections ITTN) pour aider à analyser un comportement réel sur une heure d'exploitation. Le décodage du format binaire reste à finaliser — fonctionnalité envisageable si le besoin est confirmé par plusieurs utilisateurs.
+Plusieurs options apparaissent grisées dans le menu Fichier — elles correspondent à des pistes d'évolution non encore opérationnelles :
+
+- **Lire une boîte noire (.bn)** — exploitation des enregistrements bruts de contrôleurs (durées de vert, états système, détections ITTN) pour analyser un comportement réel sur une heure d'exploitation. Le décodage du format binaire reste à finaliser.
+- **Import des programmations contrôleur** Traffy, Swarco, Fareco, SEA — chaque constructeur utilise un format propriétaire qui demanderait un parseur dédié.
+- **Import Maestro (.cmpx)** est partiellement disponible (cliquable) mais reste en cours de développement.
+
+Ces fonctionnalités seront travaillées si le besoin est confirmé par plusieurs utilisateurs.
 
 ### Est-ce vraiment gratuit ?
 
