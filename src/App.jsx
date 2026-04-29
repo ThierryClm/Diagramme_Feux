@@ -739,9 +739,9 @@ function App() {
 
             const result = await exportElementAsPNG(el, filename, { onclone, backgroundColor: '#ffffff' });
             if (result?.clipboardSuccess) {
-                toast.success(`PNG exporté et copié dans le presse-papiers : ${filename}.png`);
+                toast.success(`📥 Téléchargé : ${filename}.png  •  📋 Copié dans le presse-papiers (Ctrl+V)`);
             } else {
-                toast.success(`PNG exporté : ${filename}.png (presse-papiers non disponible)`);
+                toast.success(`📥 Téléchargé : ${filename}.png  •  Presse-papiers non disponible`);
             }
         } catch (e) {
             console.error('Erreur export PNG:', e);
@@ -2718,14 +2718,17 @@ draw();
 
                     <section className="help-section">
                         <h4>Options de contraste</h4>
-                        <p>Le menu Affichage → Options de contraste permet de choisir parmi 4 thèmes de couleurs pour l'interface :</p>
+                        <p>Le menu Préférences → Options de contraste permet de choisir parmi 7 thèmes de couleurs pour l'interface :</p>
                         <ul>
                             <li><strong>Blanc sur fond noir :</strong> Thème par défaut, texte clair sur fond sombre. Adapté au travail prolongé en environnement peu éclairé.</li>
                             <li><strong>Noir sur fond blanc :</strong> Thème clair, texte noir sur fond blanc. Proche du rendu à l'impression.</li>
                             <li><strong>Haut contraste :</strong> Fond bleu marine, titres jaunes, noms cyan. Conçu pour une lisibilité maximale, notamment en conditions de forte luminosité.</li>
                             <li><strong>Ambre :</strong> Fond anthracite, titres et accents ambrés/dorés. Thème chaleureux qui réduit la fatigue visuelle.</li>
+                            <li><strong>Daltonien :</strong> Palette adaptée aux daltonismes courants (deutéranopie, protanopie). Privilégie les couleurs bleu/orange/cyan plutôt que vert/rouge — particulièrement utile dans une application traitant intensivement de feux tricolores.</li>
+                            <li><strong>Sépia :</strong> Tons chauds beige et brun, inspirés des liseuses. Anti-fatigue pour les longues sessions de paramétrage.</li>
+                            <li><strong>Bleu nuit :</strong> Palette Solarized Dark, alternative douce au thème sombre par défaut. Bleu-vert profond avec accents pastel.</li>
                         </ul>
-                        <p>Le choix du thème est sauvegardé automatiquement dans le navigateur et propagé aux fenêtres détachées (matrice, formulaire, données trafic, conditions micro, variables micro, image du carrefour).</p>
+                        <p>Le choix du thème est sauvegardé automatiquement dans le navigateur et propagé aux fenêtres détachées (matrice, formulaire, données trafic, conditions micro, variables micro, image du carrefour). Le sous-menu reste ouvert après sélection pour faciliter la comparaison entre thèmes.</p>
                     </section>
 
                     <section id="help-config-groupes" className="help-section">
@@ -3015,9 +3018,11 @@ draw();
                         <p>L'onglet Simulation permet de tester l'effet des actions de micro-régulation sur le diagramme.</p>
                         <ul>
                             <li><strong>Actions cochables :</strong> Chaque action définie dans les conditions de micro-régulation peut être cochée individuellement. Le diagramme se met à jour en temps réel pour visualiser l'effet combiné des actions sélectionnées.</li>
-                            <li><strong>Ordre de traitement :</strong> Les actions sont traitées dans l'ordre suivant : Ouverture anticipée → Fermeture anticipée → Escamotage (groupe) → Adaptatif vertical → Escamotage de phase. Chaque action s'applique sur le diagramme virtuel résultant des actions précédentes.</li>
+                            <li><strong>Ordre de traitement :</strong> Les actions sont traitées dans l'ordre suivant : Point de repos → Ouverture anticipée → Fermeture anticipée → Escamotage (groupe) → Adaptatif vertical → Escamotage de phase. Chaque action s'applique sur le diagramme virtuel résultant des actions précédentes.</li>
                             <li><strong>Contractions cumulatives :</strong> L'Adaptatif vertical et l'Escamotage de phase contractent le diagramme. Les contractions s'ajustent aux contractions précédentes pour éviter les doubles déductions.</li>
+                            <li><strong>Point de repos :</strong> Cocher un Point de repos à l'instant <em>t</em> fige le cycle pendant 10 secondes : la durée du cycle s'allonge de 10 s, les groupes dont le vert traverse <em>t</em> sont étirés (ils restent verts pendant le freeze), les actions et groupes situés après <em>t</em> sont décalés vers la droite. Plusieurs Points de repos sont cumulables. Un Point de repos est automatiquement <em>inhibé</em> s'il tombe à l'intérieur d'une zone Adaptatif vertical ou Escamotage de phase sélectionnée. Visuellement, une bande grise hachurée libellée « Repos » signale l'emplacement de chaque Point de repos sur la timeline.</li>
                             <li><strong>Fermeture anticipée et Action GF (ou glissements) :</strong> Lorsqu'une fermeture anticipée pointe sur la fin du vert d'un groupe cible (Action GF), la fin de ce vert est réduite. Si elle pointe sur le début, le début est avancé — on parle alors de <em>glissement</em>. La durée effective tient compte du chevauchement avec les zones AV/EP.</li>
+                            <li><strong>Champs DA, Déb, Fin verrouillés :</strong> Lors d'une simulation active, les champs DA, Déb et Fin de la sidebar du diagramme sont désactivés (grisés, non cliquables). Les valeurs affichées sont calculées par la simulation et ne reflètent plus une saisie utilisateur — les modifier n'aurait pas de sens. La désactivation est levée dès qu'aucune action n'est cochée dans le panneau Simulation.</li>
                             <li><strong>Actions grisées :</strong> Les actions dont la plage [Déb, Fin] tombe entièrement dans une zone supprimée (AV ou EP) sont affichées en grisé dans la liste.</li>
                             <li><strong>Conflits simulés :</strong> Le tableau des conflits se met à jour selon les temps de vert simulés. Les groupes réduits à un vert nul sont exclus des conflits. Le survol d'un conflit affiche une flèche rouge pointillée dans le diagramme depuis les positions simulées.</li>
                             <li><strong>Données trafic :</strong> Les données V.Utile, Cap.U, Retard et File d'attente sont toujours affichées. Les valeurs inhibées par les actions cochées apparaissent en grisé.</li>
@@ -3151,6 +3156,30 @@ draw();
                             <li><strong>Marges :</strong> Sélectionnez "Minimum" ou "Aucune" pour maximiser l'espace</li>
                             <li><strong>Graphiques d'arrière-plan :</strong> Activez cette option pour imprimer les couleurs des barres de phase et le quadrillage</li>
                         </ul>
+                    </section>
+
+                    <section className="help-section">
+                        <h4>Export en PNG</h4>
+                        <p>Le menu Fichier → <strong>Exporter en PNG...</strong> propose un sous-menu permettant de capturer indépendamment six vues de l'application :</p>
+                        <ul>
+                            <li><strong>Diagramme :</strong> le diagramme temporel du plan de feu actif (sans les fenêtres latérales commentaires/remarques, qui sont masquées dans le PNG)</li>
+                            <li><strong>Matrice interverts :</strong> la matrice des temps de dégagement, dans son intégralité (l'export ne dépend pas de la zone visible à l'écran si la matrice est plus large que la fenêtre)</li>
+                            <li><strong>Conditions de micro-régulation :</strong> le tableau des actions du plan de feu actif</li>
+                            <li><strong>Image du carrefour :</strong> la zone d'image seule, sans le bandeau de titre et sans les contrôles d'édition</li>
+                            <li><strong>Capacité utilisée :</strong> le tableau de capacité avec un titre formaté « Capacité utilisée par groupe de feu — Diagramme &lt;PF&gt; / avec le trafic &lt;jeu actif&gt; » (en lieu et place du header d'édition normalement affiché)</li>
+                            <li><strong>Phasage bulle :</strong> la représentation circulaire des phases du PF actif</li>
+                        </ul>
+                        <h5 style={{ marginTop: '12px', marginBottom: '8px', color: '#aaa' }}>Conditions d'activation</h5>
+                        <p>Chaque entrée du sous-menu est <strong>cliquable uniquement si la vue correspondante est actuellement affichée à l'écran</strong>. Sinon elle est grisée et un tooltip explique quoi activer. Par exemple, « Capacité utilisée » n'est cliquable qu'en étant sur l'onglet Trafic ; « Phasage bulle » n'est cliquable qu'en mode Phasage bulle ; etc.</p>
+                        <h5 style={{ marginTop: '12px', marginBottom: '8px', color: '#aaa' }}>Rendu du PNG</h5>
+                        <p>Quel que soit le thème actif dans l'application (Sombre, Sépia, Bleu nuit, etc.), <strong>le PNG est toujours généré en thème clair (noir sur fond blanc)</strong>. Justification : éviter les aplats de noir lors de l'impression sur papier (économie d'encre, lisibilité). La taille des polices est ajustée pour que le contenu rentre dans les colonnes proportionnelles d'origine.</p>
+                        <h5 style={{ marginTop: '12px', marginBottom: '8px', color: '#aaa' }}>Téléchargement et presse-papiers</h5>
+                        <p>Au clic, le PNG est <strong>simultanément</strong> :</p>
+                        <ul>
+                            <li>📥 <strong>Téléchargé</strong> dans votre dossier Téléchargements (nom : <code>{`{Projet}_{PF}_{Vue}_{date}.png`}</code>)</li>
+                            <li>📋 <strong>Copié dans le presse-papiers</strong> — un simple <kbd>Ctrl+V</kbd> dans Word, PowerPoint, un mail ou tout outil graphique colle directement l'image sans passer par le fichier</li>
+                        </ul>
+                        <p>Un toast de confirmation indique le nom du fichier et le statut du presse-papiers. Si la copie dans le presse-papiers échoue (Safari, contexte HTTP non sécurisé, autorisation refusée), le téléchargement reste opérationnel et le toast le signale.</p>
                     </section>
 
                     <section className="help-section">
