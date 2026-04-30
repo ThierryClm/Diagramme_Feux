@@ -2758,6 +2758,13 @@ draw();
                             <li><strong>Sous-menus persistants :</strong> Les sous-menus <em>Mise en page</em> et <em>Détachements</em> restent ouverts après chaque clic sur une option, ce qui facilite le réglage de plusieurs cases à la suite.</li>
                             <li><strong>Fenêtres détachées au premier plan :</strong> Lorsque vous cliquez dans la fenêtre principale, les fenêtres détachées passent momentanément derrière. Elles remontent automatiquement au premier plan après environ une seconde d'inactivité, sans voler le focus pendant la frappe.</li>
                             <li><strong>Fenêtre détachée hors écran :</strong> Après un changement de poste ou la déconnexion d'un écran secondaire, décochez puis recochez la fenêtre concernée dans le menu <strong>Mise en page → Détachements</strong> : elle réapparaîtra centrée sur l'écran principal.</li>
+                            <li><strong>Popups bloquées par le navigateur :</strong> Les navigateurs n'autorisent qu'une seule fenêtre détachée à la fois lors de l'ouverture d'un projet contenant plusieurs détachements. Pour les autoriser toutes en une fois, ajoutez le site à la liste des popups autorisés :
+                                <ul>
+                                    <li><strong>Chrome / Edge :</strong> cliquez sur l'icône <em>popup bloqué</em> qui apparaît dans la barre d'adresse, puis choisissez « Toujours autoriser les popups depuis ce site ». Alternative : <code>chrome://settings/content/popups</code> → ajouter l'URL du site dans <em>« Sites autorisés à envoyer des popups »</em>.</li>
+                                    <li><strong>Firefox :</strong> Paramètres → Vie privée et sécurité → Permissions → Bloquer les fenêtres popups → <em>Exceptions</em> → ajouter le site.</li>
+                                </ul>
+                                Une fois autorisées, plus aucun message de blocage n'apparaîtra et toutes les fenêtres détachées s'ouvriront simultanément à l'ouverture d'un projet.
+                            </li>
                             <li><strong>Largeur dynamique de la sidebar :</strong> Lorsque le nom des groupes de feux est masqué, la sidebar libère 160 px supplémentaires pour le diagramme.</li>
                             <li><strong>Confirmation à la fermeture :</strong> Si le projet a été modifié sans être sauvegardé, le navigateur affiche une confirmation avant de fermer l'onglet ou la fenêtre.</li>
                         </ul>
