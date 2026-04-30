@@ -138,26 +138,16 @@ const useFileOperations = ({
                 if (typeof lo.showRemarks === 'boolean') setShowRemarks(lo.showRemarks);
                 if (typeof lo.showActionDescription === 'boolean') setShowActionDescription(lo.showActionDescription);
 
-                // Détachements de fenêtres : on FERME tout d'abord pour
-                // libérer les popups à l'ancienne dimension, puis on rouvre
-                // après que React ait propagé le nouveau groupCount, pour
-                // que les popups recréées prennent les nouvelles dimensions.
-                // Évite l'effet stroboscopique « popup à mauvaise taille ».
-                setShowFloatingForm(false);
-                setShowFloatingMatrix(false);
-                setShowFloatingTraffic(false);
-                setShowFloatingImage(false);
-                setShowFloatingConditions(false);
-                setShowFloatingVariables(false);
-
-                setTimeout(() => {
-                    if (typeof lo.showFloatingForm === 'boolean') setShowFloatingForm(lo.showFloatingForm);
-                    if (typeof lo.showFloatingMatrix === 'boolean') setShowFloatingMatrix(lo.showFloatingMatrix);
-                    if (typeof lo.showFloatingTraffic === 'boolean') setShowFloatingTraffic(lo.showFloatingTraffic);
-                    if (typeof lo.showFloatingImage === 'boolean') setShowFloatingImage(lo.showFloatingImage);
-                    if (typeof lo.showFloatingConditions === 'boolean') setShowFloatingConditions(lo.showFloatingConditions);
-                    if (typeof lo.showFloatingVariables === 'boolean') setShowFloatingVariables(lo.showFloatingVariables);
-                }, 150);
+                // Détachements de fenêtres : on applique directement les
+                // valeurs du projet. Pas de close-then-reopen : le setTimeout
+                // casserait la chaîne « geste utilisateur » du clic d'origine
+                // et déclencherait le bloqueur de popups du navigateur.
+                if (typeof lo.showFloatingForm === 'boolean') setShowFloatingForm(lo.showFloatingForm);
+                if (typeof lo.showFloatingMatrix === 'boolean') setShowFloatingMatrix(lo.showFloatingMatrix);
+                if (typeof lo.showFloatingTraffic === 'boolean') setShowFloatingTraffic(lo.showFloatingTraffic);
+                if (typeof lo.showFloatingImage === 'boolean') setShowFloatingImage(lo.showFloatingImage);
+                if (typeof lo.showFloatingConditions === 'boolean') setShowFloatingConditions(lo.showFloatingConditions);
+                if (typeof lo.showFloatingVariables === 'boolean') setShowFloatingVariables(lo.showFloatingVariables);
             } else {
                 const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
                 setShowComments(!!hasComments);
@@ -185,9 +175,7 @@ const useFileOperations = ({
             // d'un projet, le focus est revenu sur la fenêtre principale et
             // les popups peuvent passer derrière. Sans ça, l'utilisateur doit
             // cliquer sur la fenêtre principale pour les voir réapparaître.
-            // 250 ms : laisse le temps aux popups de fermer (set false) puis
-            // de se rouvrir (set true à 150 ms) avant de les ramener au premier plan.
-            setTimeout(() => bringAllPopupsToFront(null), 250);
+            setTimeout(() => bringAllPopupsToFront(null), 100);
 
             toast.success(`Projet ouvert : ${projName}`);
 
@@ -305,26 +293,16 @@ const useFileOperations = ({
                 if (typeof lo.showRemarks === 'boolean') setShowRemarks(lo.showRemarks);
                 if (typeof lo.showActionDescription === 'boolean') setShowActionDescription(lo.showActionDescription);
 
-                // Détachements de fenêtres : on FERME tout d'abord pour
-                // libérer les popups à l'ancienne dimension, puis on rouvre
-                // après que React ait propagé le nouveau groupCount, pour
-                // que les popups recréées prennent les nouvelles dimensions.
-                // Évite l'effet stroboscopique « popup à mauvaise taille ».
-                setShowFloatingForm(false);
-                setShowFloatingMatrix(false);
-                setShowFloatingTraffic(false);
-                setShowFloatingImage(false);
-                setShowFloatingConditions(false);
-                setShowFloatingVariables(false);
-
-                setTimeout(() => {
-                    if (typeof lo.showFloatingForm === 'boolean') setShowFloatingForm(lo.showFloatingForm);
-                    if (typeof lo.showFloatingMatrix === 'boolean') setShowFloatingMatrix(lo.showFloatingMatrix);
-                    if (typeof lo.showFloatingTraffic === 'boolean') setShowFloatingTraffic(lo.showFloatingTraffic);
-                    if (typeof lo.showFloatingImage === 'boolean') setShowFloatingImage(lo.showFloatingImage);
-                    if (typeof lo.showFloatingConditions === 'boolean') setShowFloatingConditions(lo.showFloatingConditions);
-                    if (typeof lo.showFloatingVariables === 'boolean') setShowFloatingVariables(lo.showFloatingVariables);
-                }, 150);
+                // Détachements de fenêtres : on applique directement les
+                // valeurs du projet. Pas de close-then-reopen : le setTimeout
+                // casserait la chaîne « geste utilisateur » du clic d'origine
+                // et déclencherait le bloqueur de popups du navigateur.
+                if (typeof lo.showFloatingForm === 'boolean') setShowFloatingForm(lo.showFloatingForm);
+                if (typeof lo.showFloatingMatrix === 'boolean') setShowFloatingMatrix(lo.showFloatingMatrix);
+                if (typeof lo.showFloatingTraffic === 'boolean') setShowFloatingTraffic(lo.showFloatingTraffic);
+                if (typeof lo.showFloatingImage === 'boolean') setShowFloatingImage(lo.showFloatingImage);
+                if (typeof lo.showFloatingConditions === 'boolean') setShowFloatingConditions(lo.showFloatingConditions);
+                if (typeof lo.showFloatingVariables === 'boolean') setShowFloatingVariables(lo.showFloatingVariables);
             } else {
                 const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
                 setShowComments(!!hasComments);
@@ -352,9 +330,7 @@ const useFileOperations = ({
             // d'un projet, le focus est revenu sur la fenêtre principale et
             // les popups peuvent passer derrière. Sans ça, l'utilisateur doit
             // cliquer sur la fenêtre principale pour les voir réapparaître.
-            // 250 ms : laisse le temps aux popups de fermer (set false) puis
-            // de se rouvrir (set true à 150 ms) avant de les ramener au premier plan.
-            setTimeout(() => bringAllPopupsToFront(null), 250);
+            setTimeout(() => bringAllPopupsToFront(null), 100);
 
             toast.success(`Projet ouvert : ${projName}`);
 
