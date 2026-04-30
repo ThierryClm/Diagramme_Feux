@@ -788,6 +788,15 @@ function App() {
                     setCurrentProjectPath('');
                     setProjectModified(false);
                     projectModifiedSkip.current = true;
+                    // Décoche tous les détachements (un nouveau projet repart
+                    // d'un espace de travail propre — l'utilisateur détache à
+                    // la demande selon ses besoins).
+                    setShowFloatingForm(false);
+                    setShowFloatingMatrix(false);
+                    setShowFloatingTraffic(false);
+                    setShowFloatingImage(false);
+                    setShowFloatingConditions(false);
+                    setShowFloatingVariables(false);
                     toast.success('Nouveau projet créé');
                     // Place focus on project name input after render
                     setTimeout(() => {
