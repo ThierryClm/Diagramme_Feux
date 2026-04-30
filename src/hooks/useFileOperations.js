@@ -164,6 +164,16 @@ const useFileOperations = ({
                 const pfList = data.pfTabs || [];
                 const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
                 setShowRemarks(!!hasRemarks);
+
+                // Projet ancien sans layoutOptions : on décoche tous les
+                // détachements pour repartir d'un espace de travail propre.
+                // L'utilisateur détachera ce dont il a besoin pour ce projet.
+                setShowFloatingForm(false);
+                setShowFloatingMatrix(false);
+                setShowFloatingTraffic(false);
+                setShowFloatingImage(false);
+                setShowFloatingConditions(false);
+                setShowFloatingVariables(false);
             }
 
             // Restaurer les options du dossier d'impression
@@ -321,6 +331,16 @@ const useFileOperations = ({
                 const pfList = data.pfTabs || [];
                 const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
                 setShowRemarks(!!hasRemarks);
+
+                // Projet ancien sans layoutOptions : on décoche tous les
+                // détachements pour repartir d'un espace de travail propre.
+                // L'utilisateur détachera ce dont il a besoin pour ce projet.
+                setShowFloatingForm(false);
+                setShowFloatingMatrix(false);
+                setShowFloatingTraffic(false);
+                setShowFloatingImage(false);
+                setShowFloatingConditions(false);
+                setShowFloatingVariables(false);
             }
 
             // Restaurer les options du dossier d'impression
