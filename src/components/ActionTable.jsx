@@ -121,9 +121,9 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         isOpen: showFloatingConditions,
         onClose: () => setShowFloatingConditions(false),
         title: 'Conditions de micro-régulation',
-        // 1200 px quand la colonne Description est affichée, 950 sinon —
+        // 1220 px quand la colonne Description est affichée, 970 sinon —
         // la colonne Description fait ~250 px à elle seule.
-        width: showDescription ? 1200 : 950,
+        width: showDescription ? 1220 : 970,
         height: 420
     });
 
