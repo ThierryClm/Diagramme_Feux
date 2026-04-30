@@ -37,7 +37,7 @@ function installMainListener() {
             bringPopupsTimer = null;
             if (isFilePickerActive()) return;
             bringAllPopupsToFront(null);
-        }, 2000);
+        }, 1000);
     };
 
     // When main window regains focus from outside (alt-tab, taskbar)
