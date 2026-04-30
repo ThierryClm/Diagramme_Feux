@@ -22,10 +22,31 @@ const useDarkMode = () => {
 
     const [showComments, setShowComments] = useState(true);
     const [showRemarks, setShowRemarks] = useState(true);
-    const [showGroupNamesForm, setShowGroupNamesForm] = useState(true);
-    const [showGroupNamesMatrix, setShowGroupNamesMatrix] = useState(true);
-    const [showGroupNamesDiagram, setShowGroupNamesDiagram] = useState(true);
+    // Les noms de GF sont persistés au niveau application (localStorage) :
+    // c'est une préférence de lecture qui voyage entre projets, pas une
+    // configuration spécifique à un projet précis.
+    const readBoolLS = (key, fallback) => {
+        try {
+            const v = localStorage.getItem(key);
+            return v === null ? fallback : v === 'true';
+        } catch {
+            return fallback;
+        }
+    };
+    const [showGroupNamesForm, setShowGroupNamesForm] = useState(() => readBoolLS('showGroupNamesForm', true));
+    const [showGroupNamesMatrix, setShowGroupNamesMatrix] = useState(() => readBoolLS('showGroupNamesMatrix', true));
+    const [showGroupNamesDiagram, setShowGroupNamesDiagram] = useState(() => readBoolLS('showGroupNamesDiagram', true));
     const [showActionDescription, setShowActionDescription] = useState(true);
+
+    useEffect(() => {
+        try { localStorage.setItem('showGroupNamesForm', String(showGroupNamesForm)); } catch {}
+    }, [showGroupNamesForm]);
+    useEffect(() => {
+        try { localStorage.setItem('showGroupNamesMatrix', String(showGroupNamesMatrix)); } catch {}
+    }, [showGroupNamesMatrix]);
+    useEffect(() => {
+        try { localStorage.setItem('showGroupNamesDiagram', String(showGroupNamesDiagram)); } catch {}
+    }, [showGroupNamesDiagram]);
 
     useEffect(() => {
         localStorage.setItem('colorTheme', colorTheme);

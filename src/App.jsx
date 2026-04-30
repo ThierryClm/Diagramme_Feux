@@ -336,8 +336,20 @@ function App() {
     } = useFloatingLegend();
 
     // Floating conditions & variables states (lifted from ActionTable for menu control)
-    const [showFloatingConditions, setShowFloatingConditions] = useState(false);
-    const [showFloatingVariables, setShowFloatingVariables] = useState(false);
+    // Persistés au niveau application (localStorage) — préférence d'espace de
+    // travail qui ne voyage pas avec le projet.
+    const [showFloatingConditions, setShowFloatingConditions] = useState(() => {
+        try { return localStorage.getItem('floating_conditions_visible') === 'true'; } catch { return false; }
+    });
+    const [showFloatingVariables, setShowFloatingVariables] = useState(() => {
+        try { return localStorage.getItem('floating_variables_visible') === 'true'; } catch { return false; }
+    });
+    useEffect(() => {
+        try { localStorage.setItem('floating_conditions_visible', String(showFloatingConditions)); } catch {}
+    }, [showFloatingConditions]);
+    useEffect(() => {
+        try { localStorage.setItem('floating_variables_visible', String(showFloatingVariables)); } catch {}
+    }, [showFloatingVariables]);
 
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
@@ -529,6 +541,9 @@ function App() {
         projectModifiedSkip, hasUnsavedChanges, setHasUnsavedChanges,
         setDiagramHeight, setFloatingCrop, setFloatingZoom,
         setShowComments, setShowRemarks, setIntersectionName,
+        // Layout options sauvegardées au niveau projet
+        showComments, showRemarks, showActionDescription, sidebarVisible,
+        setShowActionDescription, setSidebarVisible,
         loadFullState, getFullState, saveProject,
         dossierSections, setDossierSections,
         lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
