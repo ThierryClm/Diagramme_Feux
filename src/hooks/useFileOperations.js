@@ -13,6 +13,9 @@ const useFileOperations = ({
     projectModifiedSkip, hasUnsavedChanges, setHasUnsavedChanges,
     setDiagramHeight, setFloatingCrop, setFloatingZoom,
     setShowComments, setShowRemarks, setIntersectionName,
+    // Options de mise en page sauvegardées dans le projet
+    showComments, showRemarks, showActionDescription, sidebarVisible,
+    setShowActionDescription, setSidebarVisible,
     loadFullState, getFullState, saveProject,
     dossierSections, setDossierSections,
     lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
@@ -116,12 +119,22 @@ const useFileOperations = ({
                 setFloatingZoom(data.floatingZoom);
             }
 
-            // Décocher commentaires/remarques s'il n'y en a pas dans le projet
-            const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
-            setShowComments(!!hasComments);
-            const pfList = data.pfTabs || [];
-            const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
-            setShowRemarks(!!hasRemarks);
+            // Restaurer les options de mise en page sauvegardées dans le projet :
+            // - Format moderne : data.layoutOptions = { showParameters, showComments, showRemarks, showActionDescription }
+            // - Format ancien (rétrocompatibilité) : auto-détection des coches
+            //   commentaires/remarques selon la présence de contenu
+            if (data.layoutOptions && typeof data.layoutOptions === 'object') {
+                if (typeof data.layoutOptions.showParameters === 'boolean') setSidebarVisible(data.layoutOptions.showParameters);
+                if (typeof data.layoutOptions.showComments === 'boolean') setShowComments(data.layoutOptions.showComments);
+                if (typeof data.layoutOptions.showRemarks === 'boolean') setShowRemarks(data.layoutOptions.showRemarks);
+                if (typeof data.layoutOptions.showActionDescription === 'boolean') setShowActionDescription(data.layoutOptions.showActionDescription);
+            } else {
+                const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
+                setShowComments(!!hasComments);
+                const pfList = data.pfTabs || [];
+                const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
+                setShowRemarks(!!hasRemarks);
+            }
 
             // Restaurer les options du dossier d'impression
             if (data.dossierSections && Object.keys(data.dossierSections).length > 0) {
@@ -233,12 +246,22 @@ const useFileOperations = ({
                 setFloatingZoom(data.floatingZoom);
             }
 
-            // Décocher commentaires/remarques s'il n'y en a pas dans le projet
-            const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
-            setShowComments(!!hasComments);
-            const pfList = data.pfTabs || [];
-            const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
-            setShowRemarks(!!hasRemarks);
+            // Restaurer les options de mise en page sauvegardées dans le projet :
+            // - Format moderne : data.layoutOptions = { showParameters, showComments, showRemarks, showActionDescription }
+            // - Format ancien (rétrocompatibilité) : auto-détection des coches
+            //   commentaires/remarques selon la présence de contenu
+            if (data.layoutOptions && typeof data.layoutOptions === 'object') {
+                if (typeof data.layoutOptions.showParameters === 'boolean') setSidebarVisible(data.layoutOptions.showParameters);
+                if (typeof data.layoutOptions.showComments === 'boolean') setShowComments(data.layoutOptions.showComments);
+                if (typeof data.layoutOptions.showRemarks === 'boolean') setShowRemarks(data.layoutOptions.showRemarks);
+                if (typeof data.layoutOptions.showActionDescription === 'boolean') setShowActionDescription(data.layoutOptions.showActionDescription);
+            } else {
+                const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
+                setShowComments(!!hasComments);
+                const pfList = data.pfTabs || [];
+                const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
+                setShowRemarks(!!hasRemarks);
+            }
 
             // Restaurer les options du dossier d'impression
             if (data.dossierSections && Object.keys(data.dossierSections).length > 0) {
@@ -290,6 +313,13 @@ const useFileOperations = ({
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
                 dossierSections: dossierSections,
+                // Options de mise en page sauvegardées avec le projet
+                layoutOptions: {
+                    showParameters: sidebarVisible,
+                    showComments,
+                    showRemarks,
+                    showActionDescription
+                },
                 // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
                     open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
@@ -390,6 +420,13 @@ const useFileOperations = ({
                 floatingCrop: floatingCrop,
                 floatingZoom: floatingZoom,
                 dossierSections: dossierSections,
+                // Options de mise en page sauvegardées avec le projet
+                layoutOptions: {
+                    showParameters: sidebarVisible,
+                    showComments,
+                    showRemarks,
+                    showActionDescription
+                },
                 // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
                     open: lastOpenDirectoryRef.current?.name || recentOpenDirs[0]?.name || null,
