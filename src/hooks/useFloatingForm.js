@@ -17,8 +17,8 @@ const useFloatingForm = (groupCount) => {
         isOpen: showFloatingForm,
         onClose: () => setShowFloatingForm(false),
         title: 'Formulaire',
-        width: Math.min(700, 200 + groupCount * 40),
-        height: Math.min(600, 120 + groupCount * 35)
+        width: Math.min(640, 200 + groupCount * 35),
+        height: Math.min(520, 110 + groupCount * 32)
     });
 
     return {
