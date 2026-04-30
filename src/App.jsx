@@ -42,6 +42,8 @@ import useDirectoryHandles from './hooks/useDirectoryHandles';
 import useFloatingImageRenderer from './hooks/useFloatingImageRenderer';
 import useFloatingForm from './hooks/useFloatingForm';
 import useFloatingTraffic from './hooks/useFloatingTraffic';
+import useFloatingRemarks from './hooks/useFloatingRemarks';
+import RemarquesEditor from './components/RemarquesEditor';
 import useFileOperations from './hooks/useFileOperations';
 import useImportOperations from './hooks/useImportOperations';
 import renderFloatingArrowSVG from './utils/renderArrowSVG';
@@ -326,6 +328,13 @@ function App() {
         trafficPopup
     } = useFloatingTraffic(groups.length);
 
+    // Floating remarques state (notes du PF actif, projection sur 2e écran)
+    const {
+        showFloatingRemarks,
+        setShowFloatingRemarks,
+        remarquesPopup
+    } = useFloatingRemarks();
+
     // Floating legend state
     const {
         showFloatingLegend,
@@ -552,6 +561,7 @@ function App() {
         showFloatingImage, setShowFloatingImage,
         showFloatingConditions, setShowFloatingConditions,
         showFloatingVariables, setShowFloatingVariables,
+        showFloatingRemarks, setShowFloatingRemarks,
         loadFullState, getFullState, saveProject,
         dossierSections, setDossierSections,
         lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
@@ -797,6 +807,7 @@ function App() {
                     setShowFloatingImage(false);
                     setShowFloatingConditions(false);
                     setShowFloatingVariables(false);
+                    setShowFloatingRemarks(false);
                     toast.success('Nouveau projet créé');
                     // Place focus on project name input after render
                     setTimeout(() => {
@@ -1089,6 +1100,9 @@ function App() {
                 break;
             case 'toggleFloatingTraffic':
                 setShowFloatingTraffic(v => !v);
+                break;
+            case 'toggleFloatingRemarks':
+                setShowFloatingRemarks(v => !v);
                 break;
             case 'externalLinks':
                 setShowExternalLinksModal(true);
@@ -1658,6 +1672,19 @@ draw();
         );
     }, [showFloatingForm, groups, cycleLength, showGroupNamesForm, hoveredArrowGroupId, startDrag, endDrag, formPopup.renderToPopup, updateGroupParams]);
 
+    // Render remarques (notes du PF actif) into popup window
+    useEffect(() => {
+        if (!showFloatingRemarks) return;
+        remarquesPopup.renderToPopup(
+            <RemarquesEditor
+                remarques={currentRemarques}
+                updateRemarques={updatePFRemarques}
+                groupCount={groups.length}
+                popupMode={true}
+            />
+        );
+    }, [showFloatingRemarks, currentRemarques, updatePFRemarques, groups.length, remarquesPopup.renderToPopup]);
+
     // Render traffic table into popup window
     useEffect(() => {
         if (!showFloatingTraffic) return;
@@ -1714,7 +1741,7 @@ draw();
                     hasPermission={hasPermission}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -2269,6 +2296,7 @@ draw();
                                 setCycleLength={setCycleLength}
                                 showComments={simulationEnabled ? false : showComments}
                                 showRemarks={simulationEnabled ? false : showRemarks}
+                                remarquesDetached={showFloatingRemarks}
                                 showGroupNames={showGroupNamesDiagram}
                                 showMicroOnHover={showMicroOnHover}
                                 showWrapFlash={showWrapFlash}
@@ -2766,6 +2794,7 @@ draw();
                                 Une fois autorisées, plus aucun message de blocage n'apparaîtra et toutes les fenêtres détachées s'ouvriront simultanément à l'ouverture d'un projet.
                             </li>
                             <li><strong>Largeur dynamique de la sidebar :</strong> Lorsque le nom des groupes de feux est masqué, la sidebar libère 160 px supplémentaires pour le diagramme.</li>
+                            <li><strong>Remarques du diagramme :</strong> Le menu <strong>Mise en page → Détachements</strong> permet d'ouvrir le champ Remarques du plan de feu actif dans une fenêtre séparée, déplaçable sur un second écran. Pratique lors d'une projection : le diagramme reste visible sur l'écran principal pendant que vous gardez vos notes sur un écran annexe pour commenter la présentation. L'option est grisée tant que la case <em>Remarques du diagramme</em> n'est pas cochée dans le menu Mise en page (impossible de détacher un champ masqué).</li>
                             <li><strong>Confirmation à la fermeture :</strong> Si le projet a été modifié sans être sauvegardé, le navigateur affiche une confirmation avant de fermer l'onglet ou la fenêtre.</li>
                         </ul>
                     </section>

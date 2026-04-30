@@ -3,13 +3,11 @@ import LocalInput from './LocalInput';
 import NumericInput from './NumericInput';
 import CustomTooltip from './CustomTooltip';
 import EmptyState from './EmptyState';
+import RemarquesEditor from './RemarquesEditor';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, showWrapFlash = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, showWrapFlash = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts, remarquesDetached = false }) => {
     const containerRef = useRef(null);
-
-    // Saved selection range for remarques font-size buttons
-    const remarquesSelectionRef = useRef(null);
     // Whether the mouse is currently over the diagram container (not the action table)
     // Used to suppress the action tooltip when hovering actions via the ActionTable rows
     const [isMouseInDiagram, setIsMouseInDiagram] = useState(false);
@@ -4497,157 +4495,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     ))}
                 </div>}
 
-                {/* Remarques column - not printable */}
-                {showRemarks && (() => {
-                    // Calculate max characters based on available height
-                    // Each group row is 30px, font line is ~17px, ~35 chars per line
-                    const linesAvailable = Math.max(1, Math.floor((groups.length * 30 - 16) / 17));
-                    const charsPerLine = 35;
-                    const calculatedMaxLength = linesAvailable * charsPerLine;
-                    return (
-                        <div className="timeline-remarques no-print">
-                            <div className="remarques-header">
-                                <span>Remarques</span>
-                                <CustomTooltip text="Couleur verte (+)"><span className="comment-color-btn comment-color-plus" role="button" aria-label="Colorer le texte sélectionné en vert">+</span></CustomTooltip>
-                                <CustomTooltip text="Couleur rouge (-)"><span className="comment-color-btn comment-color-minus" role="button" aria-label="Colorer le texte sélectionné en rouge">−</span></CustomTooltip>
-                                <CustomTooltip text="Agrandir le texte sélectionné"><span
-                                    className="comment-size-btn"
-                                    role="button"
-                                    aria-label="Agrandir la taille du texte sélectionné"
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        const range = remarquesSelectionRef.current;
-                                        if (!range || range.collapsed) return;
-                                        const container = range.commonAncestorContainer;
-                                        const editable = container.nodeType === 1 ? container.closest('.input-remarques') : container.parentElement?.closest('.input-remarques');
-                                        if (!editable) return;
-                                        const parentEl = container.nodeType === 1 ? container : container.parentElement;
-                                        const current = parentEl ? parseFloat(window.getComputedStyle(parentEl).fontSize) : 14;
-                                        const span = document.createElement('span');
-                                        span.style.fontSize = (current + 2) + 'px';
-                                        try {
-                                            const contents = range.extractContents();
-                                            span.appendChild(contents);
-                                            range.insertNode(span);
-                                        } catch { return; }
-                                        // Restore and save selection on the new span
-                                        // Don't call updateRemarques here: it would trigger a React re-render
-                                        // that replaces the DOM via dangerouslySetInnerHTML, destroying the selection.
-                                        // The onBlur handler will save the state when the user leaves the field.
-                                        const newRange = document.createRange();
-                                        newRange.selectNodeContents(span);
-                                        const sel = window.getSelection();
-                                        sel.removeAllRanges();
-                                        sel.addRange(newRange);
-                                        remarquesSelectionRef.current = newRange.cloneRange();
-                                        editable.focus();
-                                    }}
-                                >▲</span></CustomTooltip>
-                                <CustomTooltip text="Réduire le texte sélectionné"><span
-                                    className="comment-size-btn"
-                                    role="button"
-                                    aria-label="Réduire la taille du texte sélectionné"
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        const range = remarquesSelectionRef.current;
-                                        if (!range || range.collapsed) return;
-                                        const container = range.commonAncestorContainer;
-                                        const editable = container.nodeType === 1 ? container.closest('.input-remarques') : container.parentElement?.closest('.input-remarques');
-                                        if (!editable) return;
-                                        const parentEl = container.nodeType === 1 ? container : container.parentElement;
-                                        const current = parentEl ? parseFloat(window.getComputedStyle(parentEl).fontSize) : 14;
-                                        const newSize = Math.max(8, current - 2);
-                                        const span = document.createElement('span');
-                                        span.style.fontSize = newSize + 'px';
-                                        try {
-                                            const contents = range.extractContents();
-                                            span.appendChild(contents);
-                                            range.insertNode(span);
-                                        } catch { return; }
-                                        // Restore and save selection on the new span
-                                        // Don't call updateRemarques here: it would trigger a React re-render
-                                        // that replaces the DOM via dangerouslySetInnerHTML, destroying the selection.
-                                        // The onBlur handler will save the state when the user leaves the field.
-                                        const newRange = document.createRange();
-                                        newRange.selectNodeContents(span);
-                                        const sel = window.getSelection();
-                                        sel.removeAllRanges();
-                                        sel.addRange(newRange);
-                                        remarquesSelectionRef.current = newRange.cloneRange();
-                                        editable.focus();
-                                    }}
-                                >▼</span></CustomTooltip>
-                            </div>
-                            <div
-                                className="input-remarques"
-                                contentEditable
-                                suppressContentEditableWarning
-                                dangerouslySetInnerHTML={{ __html: remarques || '' }}
-                                onMouseUp={() => {
-                                    const sel = window.getSelection();
-                                    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-                                        remarquesSelectionRef.current = sel.getRangeAt(0).cloneRange();
-                                    }
-                                }}
-                                onKeyUp={() => {
-                                    const sel = window.getSelection();
-                                    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-                                        remarquesSelectionRef.current = sel.getRangeAt(0).cloneRange();
-                                    }
-                                }}
-                                onSelect={() => {
-                                    const sel = window.getSelection();
-                                    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-                                        remarquesSelectionRef.current = sel.getRangeAt(0).cloneRange();
-                                    }
-                                }}
-                                onBlur={(e) => {
-                                    const html = e.currentTarget.innerHTML;
-                                    const text = e.currentTarget.textContent || '';
-                                    if (text.length <= calculatedMaxLength) {
-                                        updateRemarques && updateRemarques(html);
-                                    } else {
-                                        // Truncate text but keep HTML
-                                        e.currentTarget.textContent = text.slice(0, calculatedMaxLength);
-                                        updateRemarques && updateRemarques(e.currentTarget.innerHTML);
-                                    }
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === '+' || e.key === '-') {
-                                        const selection = window.getSelection();
-                                        // Only color if there is a selection
-                                        if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
-                                            e.preventDefault();
-                                            const color = e.key === '+' ? '#4CAF50' : '#F44336';
-                                            const range = selection.getRangeAt(0);
-                                            const selectedText = range.toString();
-                                            if (selectedText) {
-                                                // Check if selection is inside a colored span
-                                                const parentSpan = range.commonAncestorContainer.parentElement;
-                                                const isColored = parentSpan && parentSpan.tagName === 'SPAN' && parentSpan.style.color;
-
-                                                if (isColored) {
-                                                    // Toggle back to white
-                                                    const span = document.createElement('span');
-                                                    span.style.color = 'white';
-                                                    range.surroundContents(span);
-                                                } else {
-                                                    // Apply color
-                                                    const span = document.createElement('span');
-                                                    span.style.color = color;
-                                                    range.surroundContents(span);
-                                                }
-                                                updateRemarques && updateRemarques(e.currentTarget.innerHTML);
-                                            }
-                                        }
-                                        // If no selection, let the character be typed normally
-                                    }
-                                }}
-                                data-tooltip={`Remarques générales (${charsPerLine} car. x ${linesAvailable} lignes max) - Sélectionnez du texte puis + pour vert, - pour rouge`}
-                            />
-                        </div>
-                    );
-                })()}
+                {/* Remarques column - not printable, hidden when detached into a popup */}
+                {showRemarks && !remarquesDetached && (
+                    <RemarquesEditor
+                        remarques={remarques}
+                        updateRemarques={updateRemarques}
+                        groupCount={groups.length}
+                    />
+                )}
             </div>
         </div>
         {dragState && dragState.deltaSeconds !== undefined && dragState.mouseX !== undefined && dragState.groupId !== undefined && (() => {

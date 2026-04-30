@@ -301,6 +301,7 @@ const MenuBar = ({
                         { label: 'Données trafic', action: 'toggleFloatingTraffic', checked: layoutOptions.showFloatingTraffic, keepSubmenuOpen: true },
                         { label: 'Conditions de micro-régulation', action: 'toggleFloatingConditions', checked: layoutOptions.showFloatingConditions, keepSubmenuOpen: true },
                         { label: 'Variables micro', action: 'toggleFloatingVariables', checked: layoutOptions.showFloatingVariables, keepSubmenuOpen: true },
+                        { label: 'Remarques du diagramme', action: 'toggleFloatingRemarks', checked: layoutOptions.showFloatingRemarks, disabled: !layoutOptions.showRemarks, keepSubmenuOpen: true },
                         { label: 'Image du carrefour', action: 'toggleFloatingImage', checked: layoutOptions.showFloatingImage, disabled: !layoutOptions.hasIntersectionImage, keepSubmenuOpen: true }
                     ]
                 },

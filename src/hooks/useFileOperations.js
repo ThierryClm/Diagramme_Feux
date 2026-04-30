@@ -24,6 +24,7 @@ const useFileOperations = ({
     showFloatingImage, setShowFloatingImage,
     showFloatingConditions, setShowFloatingConditions,
     showFloatingVariables, setShowFloatingVariables,
+    showFloatingRemarks, setShowFloatingRemarks,
     loadFullState, getFullState, saveProject,
     dossierSections, setDossierSections,
     lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
@@ -148,6 +149,7 @@ const useFileOperations = ({
                 if (typeof lo.showFloatingImage === 'boolean') setShowFloatingImage(lo.showFloatingImage);
                 if (typeof lo.showFloatingConditions === 'boolean') setShowFloatingConditions(lo.showFloatingConditions);
                 if (typeof lo.showFloatingVariables === 'boolean') setShowFloatingVariables(lo.showFloatingVariables);
+                if (typeof lo.showFloatingRemarks === 'boolean') setShowFloatingRemarks(lo.showFloatingRemarks);
             } else {
                 const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
                 setShowComments(!!hasComments);
@@ -164,6 +166,7 @@ const useFileOperations = ({
                 setShowFloatingImage(false);
                 setShowFloatingConditions(false);
                 setShowFloatingVariables(false);
+                setShowFloatingRemarks(false);
             }
 
             // Restaurer les options du dossier d'impression
@@ -303,6 +306,7 @@ const useFileOperations = ({
                 if (typeof lo.showFloatingImage === 'boolean') setShowFloatingImage(lo.showFloatingImage);
                 if (typeof lo.showFloatingConditions === 'boolean') setShowFloatingConditions(lo.showFloatingConditions);
                 if (typeof lo.showFloatingVariables === 'boolean') setShowFloatingVariables(lo.showFloatingVariables);
+                if (typeof lo.showFloatingRemarks === 'boolean') setShowFloatingRemarks(lo.showFloatingRemarks);
             } else {
                 const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
                 setShowComments(!!hasComments);
@@ -319,6 +323,7 @@ const useFileOperations = ({
                 setShowFloatingImage(false);
                 setShowFloatingConditions(false);
                 setShowFloatingVariables(false);
+                setShowFloatingRemarks(false);
             }
 
             // Restaurer les options du dossier d'impression
@@ -390,7 +395,8 @@ const useFileOperations = ({
                     showFloatingTraffic,
                     showFloatingImage,
                     showFloatingConditions,
-                    showFloatingVariables
+                    showFloatingVariables,
+                    showFloatingRemarks
                 },
                 // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
@@ -460,7 +466,7 @@ const useFileOperations = ({
         // callback memoisé garde les valeurs périmées du premier rendu.
         sidebarVisible, showComments, showRemarks, showActionDescription,
         showFloatingForm, showFloatingMatrix, showFloatingTraffic, showFloatingImage,
-        showFloatingConditions, showFloatingVariables]); // eslint-disable-line react-hooks/exhaustive-deps
+        showFloatingConditions, showFloatingVariables, showFloatingRemarks]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Enregistrer un fichier dans un répertoire récent
     const handleSaveFileToRecentDir = useCallback(async (dirIndex) => {
@@ -510,7 +516,8 @@ const useFileOperations = ({
                     showFloatingTraffic,
                     showFloatingImage,
                     showFloatingConditions,
-                    showFloatingVariables
+                    showFloatingVariables,
+                    showFloatingRemarks
                 },
                 // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
@@ -577,7 +584,7 @@ const useFileOperations = ({
     }, [recentSaveDirs, projectName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject, recentOpenDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs,
         sidebarVisible, showComments, showRemarks, showActionDescription,
         showFloatingForm, showFloatingMatrix, showFloatingTraffic, showFloatingImage,
-        showFloatingConditions, showFloatingVariables]); // eslint-disable-line react-hooks/exhaustive-deps
+        showFloatingConditions, showFloatingVariables, showFloatingRemarks]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return {
         handleOpenFileWithPicker,
