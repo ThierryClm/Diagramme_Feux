@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { safeShowOpenFilePicker, safeShowSaveFilePicker } from '../utils/filePicker';
 import { toast } from '../utils/toast';
 import { validateProject } from '../utils/projectValidator';
+import { bringAllPopupsToFront } from './usePopupWindow';
 
 /**
  * Gère les opérations d'ouverture et de sauvegarde de fichiers projet
@@ -141,6 +142,12 @@ const useFileOperations = ({
                 setDossierSections(data.dossierSections);
             }
 
+            // Ramène les popups détachées au premier plan : après l'ouverture
+            // d'un projet, le focus est revenu sur la fenêtre principale et
+            // les popups peuvent passer derrière. Sans ça, l'utilisateur doit
+            // cliquer sur la fenêtre principale pour les voir réapparaître.
+            setTimeout(() => bringAllPopupsToFront(null), 100);
+
             toast.success(`Projet ouvert : ${projName}`);
 
         } catch (e) {
@@ -267,6 +274,12 @@ const useFileOperations = ({
             if (data.dossierSections && Object.keys(data.dossierSections).length > 0) {
                 setDossierSections(data.dossierSections);
             }
+
+            // Ramène les popups détachées au premier plan : après l'ouverture
+            // d'un projet, le focus est revenu sur la fenêtre principale et
+            // les popups peuvent passer derrière. Sans ça, l'utilisateur doit
+            // cliquer sur la fenêtre principale pour les voir réapparaître.
+            setTimeout(() => bringAllPopupsToFront(null), 100);
 
             toast.success(`Projet ouvert : ${projName}`);
 
