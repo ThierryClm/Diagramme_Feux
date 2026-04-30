@@ -17,6 +17,13 @@ const useFileOperations = ({
     // Options de mise en page sauvegardées dans le projet
     showComments, showRemarks, showActionDescription, sidebarVisible,
     setShowActionDescription, setSidebarVisible,
+    // Flags de détachement de fenêtres (niveau projet)
+    showFloatingForm, setShowFloatingForm,
+    showFloatingMatrix, setShowFloatingMatrix,
+    showFloatingTraffic, setShowFloatingTraffic,
+    showFloatingImage, setShowFloatingImage,
+    showFloatingConditions, setShowFloatingConditions,
+    showFloatingVariables, setShowFloatingVariables,
     loadFullState, getFullState, saveProject,
     dossierSections, setDossierSections,
     lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
@@ -121,14 +128,36 @@ const useFileOperations = ({
             }
 
             // Restaurer les options de mise en page sauvegardées dans le projet :
-            // - Format moderne : data.layoutOptions = { showParameters, showComments, showRemarks, showActionDescription }
+            // - Format moderne : data.layoutOptions = { showParameters, showComments, showRemarks, showActionDescription, showFloating* }
             // - Format ancien (rétrocompatibilité) : auto-détection des coches
             //   commentaires/remarques selon la présence de contenu
             if (data.layoutOptions && typeof data.layoutOptions === 'object') {
-                if (typeof data.layoutOptions.showParameters === 'boolean') setSidebarVisible(data.layoutOptions.showParameters);
-                if (typeof data.layoutOptions.showComments === 'boolean') setShowComments(data.layoutOptions.showComments);
-                if (typeof data.layoutOptions.showRemarks === 'boolean') setShowRemarks(data.layoutOptions.showRemarks);
-                if (typeof data.layoutOptions.showActionDescription === 'boolean') setShowActionDescription(data.layoutOptions.showActionDescription);
+                const lo = data.layoutOptions;
+                if (typeof lo.showParameters === 'boolean') setSidebarVisible(lo.showParameters);
+                if (typeof lo.showComments === 'boolean') setShowComments(lo.showComments);
+                if (typeof lo.showRemarks === 'boolean') setShowRemarks(lo.showRemarks);
+                if (typeof lo.showActionDescription === 'boolean') setShowActionDescription(lo.showActionDescription);
+
+                // Détachements de fenêtres : on FERME tout d'abord pour
+                // libérer les popups à l'ancienne dimension, puis on rouvre
+                // après que React ait propagé le nouveau groupCount, pour
+                // que les popups recréées prennent les nouvelles dimensions.
+                // Évite l'effet stroboscopique « popup à mauvaise taille ».
+                setShowFloatingForm(false);
+                setShowFloatingMatrix(false);
+                setShowFloatingTraffic(false);
+                setShowFloatingImage(false);
+                setShowFloatingConditions(false);
+                setShowFloatingVariables(false);
+
+                setTimeout(() => {
+                    if (typeof lo.showFloatingForm === 'boolean') setShowFloatingForm(lo.showFloatingForm);
+                    if (typeof lo.showFloatingMatrix === 'boolean') setShowFloatingMatrix(lo.showFloatingMatrix);
+                    if (typeof lo.showFloatingTraffic === 'boolean') setShowFloatingTraffic(lo.showFloatingTraffic);
+                    if (typeof lo.showFloatingImage === 'boolean') setShowFloatingImage(lo.showFloatingImage);
+                    if (typeof lo.showFloatingConditions === 'boolean') setShowFloatingConditions(lo.showFloatingConditions);
+                    if (typeof lo.showFloatingVariables === 'boolean') setShowFloatingVariables(lo.showFloatingVariables);
+                }, 150);
             } else {
                 const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
                 setShowComments(!!hasComments);
@@ -146,7 +175,9 @@ const useFileOperations = ({
             // d'un projet, le focus est revenu sur la fenêtre principale et
             // les popups peuvent passer derrière. Sans ça, l'utilisateur doit
             // cliquer sur la fenêtre principale pour les voir réapparaître.
-            setTimeout(() => bringAllPopupsToFront(null), 100);
+            // 250 ms : laisse le temps aux popups de fermer (set false) puis
+            // de se rouvrir (set true à 150 ms) avant de les ramener au premier plan.
+            setTimeout(() => bringAllPopupsToFront(null), 250);
 
             toast.success(`Projet ouvert : ${projName}`);
 
@@ -254,14 +285,36 @@ const useFileOperations = ({
             }
 
             // Restaurer les options de mise en page sauvegardées dans le projet :
-            // - Format moderne : data.layoutOptions = { showParameters, showComments, showRemarks, showActionDescription }
+            // - Format moderne : data.layoutOptions = { showParameters, showComments, showRemarks, showActionDescription, showFloating* }
             // - Format ancien (rétrocompatibilité) : auto-détection des coches
             //   commentaires/remarques selon la présence de contenu
             if (data.layoutOptions && typeof data.layoutOptions === 'object') {
-                if (typeof data.layoutOptions.showParameters === 'boolean') setSidebarVisible(data.layoutOptions.showParameters);
-                if (typeof data.layoutOptions.showComments === 'boolean') setShowComments(data.layoutOptions.showComments);
-                if (typeof data.layoutOptions.showRemarks === 'boolean') setShowRemarks(data.layoutOptions.showRemarks);
-                if (typeof data.layoutOptions.showActionDescription === 'boolean') setShowActionDescription(data.layoutOptions.showActionDescription);
+                const lo = data.layoutOptions;
+                if (typeof lo.showParameters === 'boolean') setSidebarVisible(lo.showParameters);
+                if (typeof lo.showComments === 'boolean') setShowComments(lo.showComments);
+                if (typeof lo.showRemarks === 'boolean') setShowRemarks(lo.showRemarks);
+                if (typeof lo.showActionDescription === 'boolean') setShowActionDescription(lo.showActionDescription);
+
+                // Détachements de fenêtres : on FERME tout d'abord pour
+                // libérer les popups à l'ancienne dimension, puis on rouvre
+                // après que React ait propagé le nouveau groupCount, pour
+                // que les popups recréées prennent les nouvelles dimensions.
+                // Évite l'effet stroboscopique « popup à mauvaise taille ».
+                setShowFloatingForm(false);
+                setShowFloatingMatrix(false);
+                setShowFloatingTraffic(false);
+                setShowFloatingImage(false);
+                setShowFloatingConditions(false);
+                setShowFloatingVariables(false);
+
+                setTimeout(() => {
+                    if (typeof lo.showFloatingForm === 'boolean') setShowFloatingForm(lo.showFloatingForm);
+                    if (typeof lo.showFloatingMatrix === 'boolean') setShowFloatingMatrix(lo.showFloatingMatrix);
+                    if (typeof lo.showFloatingTraffic === 'boolean') setShowFloatingTraffic(lo.showFloatingTraffic);
+                    if (typeof lo.showFloatingImage === 'boolean') setShowFloatingImage(lo.showFloatingImage);
+                    if (typeof lo.showFloatingConditions === 'boolean') setShowFloatingConditions(lo.showFloatingConditions);
+                    if (typeof lo.showFloatingVariables === 'boolean') setShowFloatingVariables(lo.showFloatingVariables);
+                }, 150);
             } else {
                 const hasComments = data.groups?.some(g => g.comment && g.comment.trim() !== '') || (data.pfTabs || []).some(pf => pf.diagram?.some(d => d.comment && d.comment.trim() !== ''));
                 setShowComments(!!hasComments);
@@ -279,7 +332,9 @@ const useFileOperations = ({
             // d'un projet, le focus est revenu sur la fenêtre principale et
             // les popups peuvent passer derrière. Sans ça, l'utilisateur doit
             // cliquer sur la fenêtre principale pour les voir réapparaître.
-            setTimeout(() => bringAllPopupsToFront(null), 100);
+            // 250 ms : laisse le temps aux popups de fermer (set false) puis
+            // de se rouvrir (set true à 150 ms) avant de les ramener au premier plan.
+            setTimeout(() => bringAllPopupsToFront(null), 250);
 
             toast.success(`Projet ouvert : ${projName}`);
 
@@ -331,7 +386,15 @@ const useFileOperations = ({
                     showParameters: sidebarVisible,
                     showComments,
                     showRemarks,
-                    showActionDescription
+                    showActionDescription,
+                    // Flags de détachement (les dimensions des popups
+                    // dépendent du nombre de groupes du projet)
+                    showFloatingForm,
+                    showFloatingMatrix,
+                    showFloatingTraffic,
+                    showFloatingImage,
+                    showFloatingConditions,
+                    showFloatingVariables
                 },
                 // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
@@ -438,7 +501,15 @@ const useFileOperations = ({
                     showParameters: sidebarVisible,
                     showComments,
                     showRemarks,
-                    showActionDescription
+                    showActionDescription,
+                    // Flags de détachement (les dimensions des popups
+                    // dépendent du nombre de groupes du projet)
+                    showFloatingForm,
+                    showFloatingMatrix,
+                    showFloatingTraffic,
+                    showFloatingImage,
+                    showFloatingConditions,
+                    showFloatingVariables
                 },
                 // Noms des répertoires utilisés (avec fallback sur les récents)
                 directoryNames: {
