@@ -544,6 +544,14 @@ function App() {
         // Layout options sauvegardées au niveau projet
         showComments, showRemarks, showActionDescription, sidebarVisible,
         setShowActionDescription, setSidebarVisible,
+        // Flags de détachement (niveau projet : dimensions des popups
+        // dépendent du nombre de groupes, donc liées au projet)
+        showFloatingForm, setShowFloatingForm,
+        showFloatingMatrix, setShowFloatingMatrix,
+        showFloatingTraffic, setShowFloatingTraffic,
+        showFloatingImage, setShowFloatingImage,
+        showFloatingConditions, setShowFloatingConditions,
+        showFloatingVariables, setShowFloatingVariables,
         loadFullState, getFullState, saveProject,
         dossierSections, setDossierSections,
         lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
