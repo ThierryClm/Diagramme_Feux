@@ -17,7 +17,7 @@ const useFloatingTraffic = (groupCount) => {
         isOpen: showFloatingTraffic,
         onClose: () => setShowFloatingTraffic(false),
         title: 'Données trafic',
-        width: Math.min(820, 230 + groupCount * 42),
+        width: 440,
         height: Math.min(580, 180 + groupCount * 32)
     });
 
