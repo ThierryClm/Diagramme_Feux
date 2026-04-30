@@ -479,7 +479,12 @@ const useFileOperations = ({
                 toast.error('Échec de la sauvegarde : ' + e.message);
             }
         }
-    }, [projectName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle, addRecentDirectory, recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [projectName, getFullState, setIntersectionName, saveProject, saveDirectoryHandle, addRecentDirectory, recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs,
+        // Layout options sauvegardées dans le projet — sans ces deps, le
+        // callback memoisé garde les valeurs périmées du premier rendu.
+        sidebarVisible, showComments, showRemarks, showActionDescription,
+        showFloatingForm, showFloatingMatrix, showFloatingTraffic, showFloatingImage,
+        showFloatingConditions, showFloatingVariables]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Enregistrer un fichier dans un répertoire récent
     const handleSaveFileToRecentDir = useCallback(async (dirIndex) => {
@@ -593,7 +598,10 @@ const useFileOperations = ({
                 toast.error('Échec de la sauvegarde : ' + e.message);
             }
         }
-    }, [recentSaveDirs, projectName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject, recentOpenDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [recentSaveDirs, projectName, loadDirectoryHandle, saveDirectoryHandle, addRecentDirectory, getFullState, setIntersectionName, saveProject, recentOpenDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs,
+        sidebarVisible, showComments, showRemarks, showActionDescription,
+        showFloatingForm, showFloatingMatrix, showFloatingTraffic, showFloatingImage,
+        showFloatingConditions, showFloatingVariables]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return {
         handleOpenFileWithPicker,
