@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { isFilePickerActive } from '../utils/filePicker';
+import { toast } from '../utils/toast';
 
 /**
  * Shared registry of all open popup windows.
@@ -9,6 +10,12 @@ import { isFilePickerActive } from '../utils/filePicker';
 const openPopups = new Set();
 let isBringingToFront = false;
 let lastBringTime = 0;
+
+// Toast « popups bloquées » : on n'avertit qu'une fois par session.
+// Quand un projet rouvre 3 fenêtres détachées, le navigateur n'autorise
+// qu'un seul window.open() par geste utilisateur — sans dédoublonnage,
+// l'utilisateur recevrait 2 alertes consécutives pour le même problème.
+let popupBlockedNotified = false;
 
 export function bringAllPopupsToFront(except) {
     if (isBringingToFront || openPopups.size === 0 || isFilePickerActive()) return;
@@ -78,7 +85,10 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
             );
 
             if (!popup) {
-                alert('Le popup a été bloqué par le navigateur. Veuillez autoriser les popups pour cette page.');
+                if (!popupBlockedNotified) {
+                    popupBlockedNotified = true;
+                    toast.error("Fenêtre détachée bloquée par le navigateur. Cliquez sur l'icône popup bloqué dans la barre d'adresse et choisissez « Toujours autoriser » pour ce site (voir l'aide F1).");
+                }
                 onClose();
                 return;
             }
