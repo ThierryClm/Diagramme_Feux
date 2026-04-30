@@ -10,7 +10,7 @@ const openPopups = new Set();
 let isBringingToFront = false;
 let lastBringTime = 0;
 
-function bringAllPopupsToFront(except) {
+export function bringAllPopupsToFront(except) {
     if (isBringingToFront || openPopups.size === 0 || isFilePickerActive()) return;
     const now = Date.now();
     if (now - lastBringTime < 200) return;
