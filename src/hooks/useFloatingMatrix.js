@@ -17,8 +17,8 @@ const useFloatingMatrix = (groupCount) => {
         isOpen: showFloatingMatrix,
         onClose: () => setShowFloatingMatrix(false),
         title: 'Matrice',
-        width: Math.min(740, 110 + groupCount * 42),
-        height: Math.min(640, 110 + groupCount * 42)
+        width: Math.min(640, 10 + groupCount * 42),
+        height: Math.min(540, 10 + groupCount * 42)
     });
 
     return {
