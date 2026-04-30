@@ -1620,7 +1620,7 @@ draw();
     useEffect(() => {
         if (!showFloatingMatrix) return;
         matrixPopup.renderToPopup(
-            <div style={{ padding: '12px', height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+            <div style={{ padding: '12px', height: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
                 <IntergreenMatrix
                     conflictMatrix={conflictMatrix}
                     setMatrixValue={setMatrixValue}
