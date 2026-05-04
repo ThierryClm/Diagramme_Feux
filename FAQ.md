@@ -52,14 +52,14 @@ L'application est conçue pour la **conception et l'optimisation** de plans de f
 
 ### Proposez-vous un accompagnement pour les carrefours complexes ?
 
-Oui. Pour les carrefours complexes, l'auteur peut assurer un accompagnement à la conception du diagramme, en tirant parti des capacités combinées de gestion par phase et par groupe de feux qu'offre l'outil. Moyennant une contribution adaptée à la complexité du sujet, deux modes de prestation sont possibles : **assistance technique à la carte** ou **prise en charge complète du projet** à partir des données fournies par l'utilisateur. Voir la section [Services & accompagnement](README.md#services--accompagnement) du README.
+Oui, c'est possible selon certaines conditions. Pour les carrefours complexes, l'auteur peut assurer un accompagnement à la conception du diagramme, en tirant parti des capacités combinées de gestion par phase et par groupe de feux qu'offre l'outil. Moyennant une contribution adaptée à la complexité du sujet, deux modes de prestation sont possibles : **assistance technique à la carte** ou **prise en charge complète du projet** à partir des données fournies par l'utilisateur. Voir la section [Services & accompagnement](README.md#services--accompagnement) du README.
 
 ### Quelles fonctionnalités sont envisageables à terme ?
 
 Plusieurs options apparaissent grisées dans le menu Fichier — elles correspondent à des pistes d'évolution non encore opérationnelles :
 
 - **Lire une boîte noire (.bn)** — exploitation des enregistrements bruts de contrôleurs (durées de vert, états système, détections ITTN) pour analyser un comportement réel sur une heure d'exploitation. Le décodage du format binaire reste à finaliser.
-- **Import des programmations contrôleur** Traffy, Swarco, Fareco, SEA — chaque constructeur utilise un format propriétaire qui demanderait un parseur dédié.
+- **Import des programmations contrôleur** Traffy, Swarco, Fareco, SEA... — chaque constructeur utilise un format propriétaire qui demanderait un parseur dédié.
 - **Import [redacted] ([redacted])** est partiellement disponible (cliquable) mais reste en cours de développement.
 - **Import Excel** dépend du modèle de fichier Excel (mises en page variables d'un éditeur à l'autre, structures de feuilles différentes selon les agences) — non généralisé dans cette version. L'export Excel reste opérationnel.
 
