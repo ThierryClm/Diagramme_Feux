@@ -6,6 +6,27 @@ Cette FAQ répond aux questions courantes sur **Diagramme de Feux**. Si la répo
 
 ## À propos du projet
 
+### Je voudrais améliorer le fonctionnement des carrefours à feu sur mon territoire, mais le sujet m'est totalement étranger. Cette application va-t-elle m'aider à traiter mon problème ?
+
+Cette application est un **facilitateur de conception**, pas une boîte à outils clé en main. Elle rend visibles les interactions entre les contraintes de sécurité, la réglementation et le phasage d'un carrefour à feux, mais elle suppose une lecture initiée du sujet (cycles, temps interverts, types d'usagers, conflits).
+
+Si ces notions vous sont étrangères, le chemin le plus pratique passe par votre bureau d'études ou votre traficien : invitez-le à utiliser l'outil. Il pourra concevoir vos plans de feux et vous restituer des diagrammes lisibles (exportables en PDF), supports clairs pour vos comités, vos décisions d'investissement ou vos échanges avec un exploitant.
+
+Dans tous les cas, l'application donne à voir ce qui se passe « sous le capot » d'un carrefour à feux et facilite la compréhension des choix de réglage avec votre interlocuteur technique.
+
+### Comment optimiser la collaboration avec mes partenaires autour de l'outil ?
+
+Le principal levier est l'**interopérabilité**. Encouragez l'ensemble de vos partenaires — bureau d'études, exploitant, équipementier, services techniques d'autres collectivités — à adopter l'application. Vous disposerez alors d'un **format d'échange unique** (`.json`) et d'un **langage visuel partagé** (le diagramme), indépendants des outils propriétaires de chacun.
+
+Concrètement, cette interopérabilité permet de :
+
+- **échanger des projets** `.json` plutôt que des livrables figés — chaque partenaire les ouvre, les modifie ou les commente depuis son poste, sans dépendre d'une suite logicielle particulière ;
+- **itérer rapidement** sur les variantes de phasage ou de cycle, en vérifiant en direct l'absence de conflits ;
+- **préparer les arbitrages** avant les comités techniques : les diagrammes deviennent des supports de décision plutôt que des livrables intermédiaires ;
+- **garantir la continuité** de l'information entre acteurs et tout au long de la vie du projet (conception, validation, exploitation, mise à jour).
+
+L'application étant gratuite et libre, son adoption par vos partenaires n'a aucune barrière économique ou contractuelle.
+
 ### À qui s'adresse cet outil ?
 
 Aux **traficiens, ingénieurs trafic, bureaux d'études et techniciens de collectivité** qui conçoivent ou analysent des plans de feux tricolores. Aussi utile aux étudiants en génie urbain ou exploitation routière qui apprennent à dimensionner des cycles.
