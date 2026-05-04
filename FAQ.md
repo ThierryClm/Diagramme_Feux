@@ -27,6 +27,17 @@ Concrètement, cette interopérabilité permet de :
 
 L'application étant gratuite et libre, son adoption par vos partenaires n'a aucune barrière économique ou contractuelle.
 
+### J'utilise déjà un autre outil qui ne me satisfait pas pleinement, mais je ne souhaite pas ressaisir l'intégralité de mes plans de feux. Comment migrer mes données existantes ?
+
+L'import natif est aujourd'hui limité (Excel partiel, HTM, JSON pour le format propre à l'application). Les imports des formats propriétaires ([redacted], Traffy, Swarco, Fareco, SEA, lecture de boîtes noires) sont identifiés comme pistes d'évolution mais ne sont pas encore opérationnels — voir [Quelles fonctionnalités sont envisageables à terme ?](#quelles-fonctionnalités-sont-envisageables-à-terme-).
+
+L'application étant **libre et open source**, l'ajout d'un parseur pour un format donné reste tout à fait envisageable :
+
+- **Faites remonter le besoin :** ouvrez une [issue GitHub](https://github.com/ThierryClm/Diagramme_Feux/issues) en précisant l'outil source, le format de sortie et un exemple de fichier (anonymisé si nécessaire). Plus le besoin est partagé, plus l'effort de développement peut être priorisé.
+- **Contribuez ou faites contribuer :** un développeur tiers peut proposer un parseur via une *pull request*. Le format `.json` natif sert de structure cible.
+
+**En pratique, en attendant qu'un parseur existe :** l'approche pragmatique consiste à démarrer par **un ou deux carrefours pilotes** que vous ressaisissez intégralement. Cela vous permet de valider concrètement l'apport de l'outil sur votre activité avant d'engager une migration plus large. Une fois la valeur ajoutée confirmée, vous pouvez soit demander le développement d'un parseur (issue GitHub avec un échantillon de votre format), soit organiser la ressaisie progressive du parc.
+
 ### À qui s'adresse cet outil ?
 
 Aux **traficiens, ingénieurs trafic, bureaux d'études et techniciens de collectivité** qui conçoivent ou analysent des plans de feux tricolores. Aussi utile aux étudiants en génie urbain ou exploitation routière qui apprennent à dimensionner des cycles.
