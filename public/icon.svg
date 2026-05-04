@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fond carré arrondi sombre -->
+  <rect x="0" y="0" width="512" height="512" rx="80" fill="#1e1e1e"/>
+  <!-- Boîtier du feu tricolore -->
+  <rect x="156" y="64" width="200" height="384" rx="32" fill="#2a2a2a" stroke="#4a4a4a" stroke-width="6"/>
+  <!-- Visières -->
+  <rect x="146" y="128" width="220" height="14" rx="3" fill="#1a1a1a"/>
+  <rect x="146" y="248" width="220" height="14" rx="3" fill="#1a1a1a"/>
+  <rect x="146" y="368" width="220" height="14" rx="3" fill="#1a1a1a"/>
+  <!-- Feu rouge -->
+  <circle cx="256" cy="160" r="50" fill="#e53935"/>
+  <circle cx="256" cy="160" r="50" fill="url(#redGlow)"/>
+  <!-- Feu orange -->
+  <circle cx="256" cy="280" r="50" fill="#fb8c00"/>
+  <circle cx="256" cy="280" r="50" fill="url(#orangeGlow)"/>
+  <!-- Feu vert -->
+  <circle cx="256" cy="400" r="50" fill="#43a047"/>
+  <circle cx="256" cy="400" r="50" fill="url(#greenGlow)"/>
+  <defs>
+    <radialGradient id="redGlow" cx="0.4" cy="0.4" r="0.6">
+      <stop offset="0%" stop-color="#ff6e6e" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#e53935" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orangeGlow" cx="0.4" cy="0.4" r="0.6">
+      <stop offset="0%" stop-color="#ffc266" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#fb8c00" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="greenGlow" cx="0.4" cy="0.4" r="0.6">
+      <stop offset="0%" stop-color="#80e288" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#43a047" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>
