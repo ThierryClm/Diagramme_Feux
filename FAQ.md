@@ -97,6 +97,18 @@ Exportez le projet en `.json` et transmettez le fichier (mail, partage réseau, 
 
 **Chrome, Firefox, Edge, Safari** dans une version récente (2 ans max). L'application étant une page web, elle fonctionne sur **Windows, macOS et Linux** indifféremment, ainsi qu'en environnement Citrix ou bureau distant.
 
+### Comment l'application se met-elle à jour ?
+
+Aucune action n'est requise de votre part. L'application est conçue comme une **PWA** (Progressive Web App) : elle se met à jour automatiquement à la prochaine ouverture après chaque nouvelle publication.
+
+Concrètement :
+
+- Une nouvelle version est détectée en arrière-plan, sans interruption ni notification.
+- Elle est téléchargée pendant que vous continuez à travailler.
+- À la prochaine ouverture (ou au prochain rafraîchissement), la nouvelle version est activée silencieusement.
+
+Vous n'avez **ni à réinstaller**, **ni à vider de cache**, **ni à cliquer sur un bouton « Mettre à jour »**. C'est l'un des avantages du format PWA par rapport à un logiciel classique : la maintenance est entièrement transparente.
+
 ### Quels formats d'import/export sont supportés ?
 
 | Format | Import | Export |
