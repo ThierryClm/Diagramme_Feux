@@ -421,6 +421,16 @@ body.light-mode .input-remarques {
     border-color: #999;
 }
 
+/* Indicateurs « a » / « e » (aiguillage / escamotage) en haut à droite
+   du nom des groupes : blanc par défaut, illisibles sur fond clair. */
+body.light-mode .phase-flag-indicator {
+    color: #c62828;
+}
+
+body.sepia-mode .phase-flag-indicator {
+    color: #8b3a1f;
+}
+
 /* PropertiesPanel: logo boxes fond blanc */
 body.light-mode .logo-box {
     background: #fff;
