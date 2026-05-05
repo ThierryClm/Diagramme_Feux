@@ -4262,16 +4262,11 @@ draw();
                                     // Référence : 100s = pleine largeur timeline
                                     // Cycles <= 100s : même PPS (1 seconde = même largeur)
                                     // Cycles > 100s : PPS réduit pour tenir dans la page
-                                    // La marge 0,95 absorbe les arrondis CSS (bordures,
-                                    // padding, scale du préview) qui sinon poussent le
-                                    // bord droit du cycle hors zone imprimable et coupent
-                                    // les dernières secondes du diagramme.
                                     const referenceCycle = 100;
-                                    const safetyMargin = 0.95;
-                                    const referencePPS = (printTimelineWidth / referenceCycle) * safetyMargin;
+                                    const referencePPS = (printTimelineWidth / referenceCycle) * 0.95;
                                     const optimalPPS = cycleLength <= referenceCycle
                                         ? referencePPS
-                                        : (printTimelineWidth / cycleLength) * safetyMargin;
+                                        : printTimelineWidth / cycleLength;
 
                                     // Scale de sécurité si le diagramme dépasse la page
                                     const estimatedWidth = printSidebarWidth + (cycleLength * optimalPPS);
