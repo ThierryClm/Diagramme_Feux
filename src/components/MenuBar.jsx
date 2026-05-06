@@ -17,9 +17,10 @@ const MenuBar = ({
     layoutOptions = {},
     pixelsPerSecond = 10,
     onPixelsPerSecondChange,
-    showMicroOnHover = true
+    showMicroOnHover = true,
+    initialOpenMenu = null
 }) => {
-    const [openMenu, setOpenMenu] = useState(null);
+    const [openMenu, setOpenMenu] = useState(initialOpenMenu);
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const menuRef = useRef(null);
 
