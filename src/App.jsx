@@ -266,6 +266,10 @@ function App() {
         const saved = localStorage.getItem('showSaveReminder');
         return saved === null ? true : saved === 'true';
     });
+    // Au lancement, l'app est « vide » : pas de projet chargé, l'interface
+    // principale est masquée et seul le menu reste accessible. Devient true
+    // dès que l'utilisateur déclenche « Nouveau projet » ou ouvre un projet.
+    const [hasActiveProject, setHasActiveProject] = useState(false);
     const projectNameInputRef = useRef(null);
     const helpContentRef = useRef(null);
     const [helpToc, setHelpToc] = useState([]);
@@ -562,6 +566,7 @@ function App() {
         showFloatingConditions, setShowFloatingConditions,
         showFloatingVariables, setShowFloatingVariables,
         showFloatingRemarks, setShowFloatingRemarks,
+        setHasActiveProject,
         loadFullState, getFullState, saveProject,
         dossierSections, setDossierSections,
         lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
@@ -808,6 +813,8 @@ function App() {
                     setShowFloatingConditions(false);
                     setShowFloatingVariables(false);
                     setShowFloatingRemarks(false);
+                    // Active l'interface principale : on quitte l'écran d'accueil.
+                    setHasActiveProject(true);
                     toast.success('Nouveau projet créé');
                     // Place focus on project name input after render
                     setTimeout(() => {
@@ -1367,6 +1374,7 @@ function App() {
                 const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
                 setShowRemarks(!!hasRemarks);
             }
+            setHasActiveProject(true);
         }
     };
 
@@ -1745,7 +1753,16 @@ draw();
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
+                    initialOpenMenu={!hasActiveProject ? 'fichier' : null}
                 />
+            {!hasActiveProject && (
+                <div className="welcome-screen">
+                    <p className="welcome-hint">
+                        Commencez par <strong>Fichier → Nouveau projet</strong> ou <strong>Ouvrir un projet</strong>.
+                    </p>
+                </div>
+            )}
+            {hasActiveProject && (<>
             <header className="app-header" onMouseEnter={() => { helpZoneRef.current = 'interface'; }}>
                 <div className="header-inputs">
                     <input
@@ -2457,6 +2474,7 @@ draw();
                     </div>
                 </section>
             </main>
+            </>)}
 
             {/* Modal Ouvrir */}
             <Modal isOpen={openModal} onClose={() => setOpenModal(false)} title="Ouvrir un projet" overlayClassName="modal-menu-overlay">
@@ -2494,6 +2512,7 @@ draw();
                                                     const hasRemarks = pfList.some(pf => pf.remarques && pf.remarques.trim() !== '');
                                                     setShowRemarks(!!hasRemarks);
                                                 }
+                                                setHasActiveProject(true);
                                             }}
                                         >
                                             <span className="project-icon"></span>

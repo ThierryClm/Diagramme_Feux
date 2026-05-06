@@ -25,6 +25,7 @@ const useFileOperations = ({
     showFloatingConditions, setShowFloatingConditions,
     showFloatingVariables, setShowFloatingVariables,
     showFloatingRemarks, setShowFloatingRemarks,
+    setHasActiveProject,
     loadFullState, getFullState, saveProject,
     dossierSections, setDossierSections,
     lastOpenDirectoryRef, lastSaveDirectoryRef, lastImportDirectoryRef,
@@ -106,6 +107,9 @@ const useFileOperations = ({
                 projectName: projName,
                 ...data
             });
+
+            // Active l'interface principale (sortie de l'écran d'accueil).
+            setHasActiveProject?.(true);
 
             // Mémoriser le chemin du projet
             setCurrentProjectPath(file.name);

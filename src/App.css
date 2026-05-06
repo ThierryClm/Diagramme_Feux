@@ -4,6 +4,34 @@
     flex-direction: column;
 }
 
+/* Écran d'accueil affiché quand aucun projet n'est ouvert.
+   Le menu Fichier s'ouvre automatiquement par-dessus ; ce hint
+   reste visible au cas où l'utilisateur referme le menu. */
+.welcome-screen {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #1a1a1a;
+}
+
+.welcome-screen .welcome-hint {
+    margin: 0;
+    color: #777;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.welcome-screen .welcome-hint strong {
+    color: #aaa;
+    font-weight: normal;
+}
+
+body.light-mode .welcome-screen { background: #f5f5f5; }
+body.light-mode .welcome-screen .welcome-hint { color: #888; }
+body.light-mode .welcome-screen .welcome-hint strong { color: #555; }
+
 .app-header {
     height: 60px;
     padding: 0 1rem;
