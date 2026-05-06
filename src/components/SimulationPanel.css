@@ -390,8 +390,9 @@
 }
 
 .simulation-traffic-table .capacity-black {
-    color: #000;
-    background-color: #ff6b6b;
+    color: #000 !important;
+    background-color: #ff6b6b !important;
+    font-weight: bold;
 }
 
 /* Inhibited row when group has selected simulation action */
