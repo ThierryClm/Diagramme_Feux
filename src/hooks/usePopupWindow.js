@@ -108,7 +108,7 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
             });
 
             // Sync theme class on popup body
-            ['light-mode', 'high-contrast-mode', 'amber-mode'].forEach(cls => {
+            ['light-mode', 'high-contrast-mode', 'amber-mode', 'daltonian-mode', 'sepia-mode', 'blue-night-mode'].forEach(cls => {
                 if (document.body.classList.contains(cls)) {
                     popup.document.body.classList.add(cls);
                 }
@@ -131,6 +131,15 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
                 }
                 body.amber-mode {
                     background: #1a1a1a;
+                }
+                body.daltonian-mode {
+                    background: #0d1b2a;
+                }
+                body.sepia-mode {
+                    background: #f4ecd8;
+                }
+                body.blue-night-mode {
+                    background: #002b36;
                 }
                 #popup-root {
                     height: 100vh;
@@ -204,7 +213,7 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
     useEffect(() => {
         if (!popupRef.current || popupRef.current.closed) return;
         const popup = popupRef.current;
-        const themeClasses = ['light-mode', 'high-contrast-mode', 'amber-mode'];
+        const themeClasses = ['light-mode', 'high-contrast-mode', 'amber-mode', 'daltonian-mode', 'sepia-mode', 'blue-night-mode'];
 
         const syncTheme = () => {
             if (popup.closed) return;
