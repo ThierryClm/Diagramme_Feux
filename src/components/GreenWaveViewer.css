@@ -296,6 +296,36 @@
     color: #fff;
 }
 
+/* Bouton Détacher du tableau des données saisies */
+.btn-detach-datatable {
+    margin-left: 12px;
+    padding: 3px 12px;
+    border: 1px solid #4CAF50;
+    background: transparent;
+    color: #4CAF50;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75em;
+    font-weight: bold;
+}
+
+.btn-detach-datatable:hover {
+    background: #4CAF50;
+    color: #fff;
+}
+
+body.light-mode .btn-detach-datatable,
+body.sepia-mode .btn-detach-datatable {
+    border-color: #2a8a85;
+    color: #2a8a85;
+}
+
+body.light-mode .btn-detach-datatable:hover,
+body.sepia-mode .btn-detach-datatable:hover {
+    background: #2a8a85;
+    color: #fff;
+}
+
 .green-wave-params-panel h3::before {
     content: '';
     display: inline-block;
@@ -461,6 +491,7 @@
     border-radius: 3px;
     text-align: center;
     font-size: 0.9em;
+    font-weight: bold;
 }
 
 .green-wave-data-table input:focus {
@@ -476,6 +507,7 @@
     padding: 2px 4px;
     border-radius: 3px;
     font-size: 0.9em;
+    font-weight: bold;
     cursor: pointer;
 }
 
@@ -636,5 +668,296 @@
         padding: 8px !important;
         overflow: hidden !important;
     }
+}
+
+/* Fond du diagramme SVG (bandeau qui encadre les bandes passantes) :
+   géré par CSS pour suivre le thème, au lieu d'un fill inline en dur. */
+.green-wave-svg-bg {
+    fill: #1a1a1a;
+}
+
+/* Axes (X temps, Y distance) et marques de graduation. */
+.green-wave-axis {
+    stroke: #888;
+}
+
+/* Quadrillage du diagramme — pointillés appliqués via strokeDasharray
+   inline dans le JSX. Couleurs gérées ici pour suivre le thème. */
+.green-wave-grid {
+    stroke: #333;
+    stroke-width: 0.5;
+}
+
+.green-wave-grid-cycle {
+    stroke: #555;
+    stroke-width: 1;
+}
+
+/* Étiquettes numériques des graduations (5, 10, 15... pour les secondes ;
+   distances pour la verticale). */
+.green-wave-axis-tick {
+    fill: #888;
+}
+
+/* Libellés des axes : « Temps (s) » et « Distance (m) ». */
+.green-wave-axis-label {
+    fill: #aaa;
+}
+
+/* En-têtes du tableau de données pour les colonnes Montant / Descendant.
+   Vert pour Montant, orange pour Descendant — cohérence avec les couleurs
+   des lignes directrices du diagramme (vert montant / orange descendant). */
+.green-wave-data-table .gf-montant-header {
+    background: #3d4a2d;
+}
+
+.green-wave-data-table .gf-descendant-header {
+    background: #5a3d1a;
+}
+
+/* ============================================================
+   Mode clair — synchronise l'Onde verte avec les thèmes clairs
+   de l'application principale (« Noir sur fond blanc » et
+   « Sépia »). Les autres thèmes alternatifs (haut contraste,
+   ambre, daltonien, bleu nuit) gardent le rendu sombre par
+   défaut, qui leur convient visuellement.
+   ============================================================ */
+body.light-mode .green-wave-page,
+body.sepia-mode .green-wave-page {
+    background: #fafafa;
+    color: #222;
+}
+
+body.light-mode .green-wave-page-header,
+body.sepia-mode .green-wave-page-header,
+body.light-mode .green-wave-header,
+body.sepia-mode .green-wave-header {
+    background: #f0f0f0;
+    border-bottom-color: #ccc;
+}
+
+body.light-mode .green-wave-container,
+body.sepia-mode .green-wave-container {
+    background: #fff;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .green-wave-pf-select option,
+body.sepia-mode .green-wave-pf-select option {
+    background: #fff;
+    color: #222;
+}
+
+body.light-mode .green-wave-controls label,
+body.sepia-mode .green-wave-controls label {
+    color: #555;
+}
+
+body.light-mode .green-wave-controls input[type="number"],
+body.sepia-mode .green-wave-controls input[type="number"] {
+    background: #fff;
+    border-color: #ccc;
+    color: #222;
+}
+
+body.light-mode .green-wave-close,
+body.sepia-mode .green-wave-close {
+    color: #666;
+}
+
+body.light-mode .green-wave-close:hover,
+body.sepia-mode .green-wave-close:hover {
+    color: #222;
+}
+
+body.light-mode .green-wave-diagram-scroll,
+body.sepia-mode .green-wave-diagram-scroll {
+    background: #fafafa;
+}
+
+body.light-mode .green-wave-legend,
+body.sepia-mode .green-wave-legend {
+    background: #f0f0f0;
+    border-top-color: #ccc;
+}
+
+body.light-mode .legend-item,
+body.light-mode .legend-item span,
+body.sepia-mode .legend-item,
+body.sepia-mode .legend-item span {
+    color: #000 !important;
+}
+
+body.light-mode .green-wave-params-panel,
+body.sepia-mode .green-wave-params-panel {
+    background: #f5f5f5;
+}
+
+body.light-mode .btn-add-intersection,
+body.sepia-mode .btn-add-intersection {
+    background: #fff;
+}
+
+body.light-mode .params-header,
+body.sepia-mode .params-header {
+    border-bottom-color: #ccc;
+    color: #666;
+}
+
+body.light-mode .param-col-name,
+body.sepia-mode .param-col-name {
+    color: #444;
+}
+
+body.light-mode .params-row input,
+body.sepia-mode .params-row input {
+    background: #fff;
+    border-color: #ccc;
+    color: #222;
+}
+
+body.light-mode .params-row input:focus,
+body.sepia-mode .params-row input:focus {
+    background: #fff;
+}
+
+body.light-mode .green-wave-data-table th,
+body.sepia-mode .green-wave-data-table th,
+body.light-mode .green-wave-data-table td,
+body.sepia-mode .green-wave-data-table td {
+    border-color: #ccc;
+}
+
+body.light-mode .green-wave-data-table thead th,
+body.sepia-mode .green-wave-data-table thead th {
+    background: #f0f0f0;
+    color: #444;
+}
+
+body.light-mode .green-wave-data-table thead .sub-header th,
+body.sepia-mode .green-wave-data-table thead .sub-header th {
+    background: #e8e8e8;
+}
+
+body.light-mode .green-wave-data-table tbody tr,
+body.sepia-mode .green-wave-data-table tbody tr {
+    background: #fff;
+}
+
+body.light-mode .green-wave-data-table tbody tr:hover,
+body.sepia-mode .green-wave-data-table tbody tr:hover {
+    background: #f5f5f5;
+}
+
+body.light-mode .green-wave-data-table tbody tr:nth-child(even),
+body.sepia-mode .green-wave-data-table tbody tr:nth-child(even) {
+    background: #f8f8f8;
+}
+
+body.light-mode .green-wave-data-table .col-index,
+body.sepia-mode .green-wave-data-table .col-index,
+body.light-mode .green-wave-data-table .col-cycle,
+body.sepia-mode .green-wave-data-table .col-cycle {
+    color: #666;
+}
+
+body.light-mode .green-wave-data-table .col-name,
+body.sepia-mode .green-wave-data-table .col-name {
+    color: #222;
+}
+
+body.light-mode .green-wave-data-table input,
+body.sepia-mode .green-wave-data-table input,
+body.light-mode .green-wave-data-table select,
+body.sepia-mode .green-wave-data-table select {
+    background: #fff;
+    border-color: #999;
+    color: #000;
+}
+
+body.light-mode .green-wave-svg-bg {
+    fill: #ffffff;
+}
+
+body.light-mode .green-wave-axis {
+    stroke: #333;
+}
+
+body.light-mode .green-wave-grid {
+    stroke: #bbb;
+}
+
+body.light-mode .green-wave-grid-cycle {
+    stroke: #888;
+}
+
+body.light-mode .green-wave-axis-tick,
+body.light-mode .green-wave-axis-label {
+    fill: #000;
+}
+
+body.light-mode .green-wave-data-table .gf-montant-header,
+body.light-mode .green-wave-data-table .gf-descendant-header {
+    color: #222;
+}
+
+body.light-mode .green-wave-data-table .gf-montant-header {
+    background: #d4e8b8;
+}
+
+body.light-mode .green-wave-data-table .gf-descendant-header {
+    background: #ffd9b3;
+}
+
+/* Variante Sépia : teinte beige sur les fonds principaux pour
+   garder l'identité du thème, sinon hérite des règles light-mode. */
+body.sepia-mode .green-wave-page,
+body.sepia-mode .green-wave-diagram-scroll {
+    background: #f4ecd8;
+}
+
+body.sepia-mode .green-wave-page-header,
+body.sepia-mode .green-wave-header,
+body.sepia-mode .green-wave-legend {
+    background: #e8dcc0;
+    border-color: #c9b88e;
+}
+
+body.sepia-mode .green-wave-params-panel {
+    background: #efe5cc;
+}
+
+body.sepia-mode .green-wave-svg-bg {
+    fill: #f4ecd8;
+}
+
+body.sepia-mode .green-wave-axis {
+    stroke: #5b4636;
+}
+
+body.sepia-mode .green-wave-grid {
+    stroke: #c9b88e;
+}
+
+body.sepia-mode .green-wave-grid-cycle {
+    stroke: #a89b6e;
+}
+
+body.sepia-mode .green-wave-axis-tick,
+body.sepia-mode .green-wave-axis-label {
+    fill: #4b3a26;
+}
+
+body.sepia-mode .green-wave-data-table .gf-montant-header,
+body.sepia-mode .green-wave-data-table .gf-descendant-header {
+    color: #4b3a26;
+}
+
+body.sepia-mode .green-wave-data-table .gf-montant-header {
+    background: #c8d4a0;
+}
+
+body.sepia-mode .green-wave-data-table .gf-descendant-header {
+    background: #e8c89a;
 }
 
