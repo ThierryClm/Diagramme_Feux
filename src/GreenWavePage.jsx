@@ -1713,8 +1713,14 @@ const GreenWavePage = () => {
 
                         const bars = [];
 
-                        // Render bars for multiple cycles
-                        for (let cycle = 0; cycle < 2; cycle++) {
+                        // Render bars for multiple cycles. Cycle -1 dessine la
+                        // queue du cycle précédent qui rentre dans le 1er cycle
+                        // visible (cas des verts qui wrap autour du cycle).
+                        // Le clipping SVG (bars-clip) coupe ensuite ce qui
+                        // dépasse à gauche (avant t=0) ou à droite (après le
+                        // dernier cycle visible). On utilise displayCycles
+                        // pour suivre le choix utilisateur (2 ou 3 cycles).
+                        for (let cycle = -1; cycle < displayCycles; cycle++) {
                             const cycleOffset = cycle * intersection.cycleLength;
 
                             // Group 1 bar (Descendant - Orange) at distance
@@ -1936,7 +1942,9 @@ const GreenWavePage = () => {
                                     opacity={0.3}
                                 />
 
-                                {bars}
+                                <g clipPath="url(#bars-clip)">
+                                    {bars}
+                                </g>
                             </g>
                         );
                     })}
@@ -1945,6 +1953,14 @@ const GreenWavePage = () => {
                     <defs>
                         <clipPath id="bandwidth-clip">
                             <rect x={PADDING_LEFT} y={0} width={diagramWidth - PADDING_LEFT} height={diagramHeight} />
+                        </clipPath>
+                        {/* Clip path pour les barres de vert : coupe à gauche
+                            (t=0) ET à droite (fin du dernier cycle visible).
+                            Les portions qui wrap au-delà sont masquées. */}
+                        <clipPath id="bars-clip">
+                            <rect x={PADDING_LEFT} y={0}
+                                  width={diagramWidth - PADDING_LEFT - PADDING_RIGHT}
+                                  height={diagramHeight} />
                         </clipPath>
                     </defs>
 
@@ -1963,7 +1979,7 @@ const GreenWavePage = () => {
                         segments.forEach((segment, segIdx) => {
                             const { startIdx, endIdx, width, start, refDistance } = segment;
 
-                            for (let cycle = -1; cycle < 2; cycle++) {
+                            for (let cycle = -1; cycle < displayCycles; cycle++) {
                                 const cycleOffset = cycle * cycleLength;
                                 const bandStartAtRef = start + cycleOffset + speedLineOffsetUp;
                                 const bandEndAtRef = bandStartAtRef + width;
@@ -2032,7 +2048,7 @@ const GreenWavePage = () => {
                         segments.forEach((segment, segIdx) => {
                             const { startIdx, endIdx, width, start, refDistance } = segment;
 
-                            for (let cycle = -1; cycle < 2; cycle++) {
+                            for (let cycle = -1; cycle < displayCycles; cycle++) {
                                 const cycleOffset = cycle * cycleLength;
                                 const bandStartAtRef = start + cycleOffset + speedLineOffsetDown;
                                 const bandEndAtRef = bandStartAtRef + width;
