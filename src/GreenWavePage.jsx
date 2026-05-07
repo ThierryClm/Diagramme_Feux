@@ -1,8 +1,40 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { safeShowSaveFilePicker } from './utils/filePicker';
+import usePopupWindow from './hooks/usePopupWindow';
 import './components/GreenWaveViewer.css';
 
+// Synchronisation du thème de couleur avec l'application principale.
+// Le thème est partagé via localStorage (clé 'colorTheme') ; on applique
+// la classe correspondante au body au montage, et on écoute l'événement
+// 'storage' pour suivre en direct les changements faits dans la fenêtre
+// principale pendant que l'onglet onde verte est ouvert.
+const THEME_CLASS_MAP = {
+    light: 'light-mode',
+    'high-contrast': 'high-contrast-mode',
+    amber: 'amber-mode',
+    daltonian: 'daltonian-mode',
+    sepia: 'sepia-mode',
+    'blue-night': 'blue-night-mode'
+};
+const ALL_THEME_CLASSES = Object.values(THEME_CLASS_MAP);
+
+const applyThemeFromStorage = () => {
+    const colorTheme = localStorage.getItem('colorTheme') || 'dark';
+    document.body.classList.remove(...ALL_THEME_CLASSES);
+    const cls = THEME_CLASS_MAP[colorTheme];
+    if (cls) document.body.classList.add(cls);
+};
+
 const GreenWavePage = () => {
+    useEffect(() => {
+        applyThemeFromStorage();
+        const onStorage = (e) => {
+            if (e.key === 'colorTheme') applyThemeFromStorage();
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, []);
+
     const [intersections, setIntersections] = useState(null);
     const [pixelsPerSecond, setPixelsPerSecond] = useState(8);
     const [pixelsPerMeter, setPixelsPerMeter] = useState(1);
@@ -16,6 +48,22 @@ const GreenWavePage = () => {
     const [showSpeedLines, setShowSpeedLines] = useState(true); // Affichage des lignes directrices
     // Parameters per PF (indexed by PF name): { pfName: { speedUp, speedDown, offsetUp, offsetDown } }
     const [pfParams, setPfParams] = useState({});
+
+    // Détachement du tableau des données saisies dans une fenêtre popup
+    // pour libérer l'espace écran sous le diagramme. Persisté en localStorage.
+    const [showFloatingDataTable, setShowFloatingDataTable] = useState(() => {
+        return localStorage.getItem('greenwave_floating_datatable') === 'true';
+    });
+    useEffect(() => {
+        localStorage.setItem('greenwave_floating_datatable', String(showFloatingDataTable));
+    }, [showFloatingDataTable]);
+    const dataTablePopup = usePopupWindow({
+        isOpen: showFloatingDataTable,
+        onClose: () => setShowFloatingDataTable(false),
+        title: 'Tableau des données saisies — Onde verte',
+        width: 1260,
+        height: 500
+    });
 
     // Référence pour le dernier répertoire utilisé
     const lastGreenWaveDirectoryRef = useRef(null);
@@ -1174,6 +1222,151 @@ const GreenWavePage = () => {
         setDragging(null);
     };
 
+    // Tableau des données saisies — JSX partagé entre le rendu inline
+    // (sous le diagramme) et la fenêtre popup détachée. Le bouton Détacher
+    // n'apparaît que dans le rendu inline (pas dans la popup déjà détachée).
+    // Le JSX utilise du chaînage optionnel sur intersections : il s'évalue
+    // proprement même quand les données ne sont pas encore chargées.
+    const dataPanelJSX = (
+        <div className="green-wave-params-panel">
+            <h3>
+                Tableau des données saisies
+                <button
+                    className="btn-add-intersection"
+                    onClick={addIntersection}
+                    title="Ajouter un carrefour"
+                >+</button>
+                {!showFloatingDataTable && (
+                    <button
+                        className="btn-detach-datatable"
+                        onClick={() => setShowFloatingDataTable(true)}
+                        title="Ouvrir le tableau dans une fenêtre séparée pour libérer l'espace"
+                    >Détacher</button>
+                )}
+            </h3>
+            <table className="green-wave-data-table">
+                <thead>
+                    <tr>
+                        <th rowSpan="2">Ordre</th>
+                        <th rowSpan="2">Carrefour</th>
+                        <th rowSpan="2">PF</th>
+                        <th rowSpan="2">Cycle</th>
+                        <th colSpan="2" className="gf-montant-header">GF Montant</th>
+                        <th colSpan="2" className="gf-descendant-header">GF Descendant</th>
+                    </tr>
+                    <tr className="sub-header">
+                        <th style={{ color: '#4CAF50' }}>Groupe</th>
+                        <th style={{ color: '#4CAF50' }}>Dist</th>
+                        <th style={{ color: '#FF9800' }}>Groupe</th>
+                        <th style={{ color: '#FF9800' }}>Dist</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {(() => {
+                        const cycleCounts = {};
+                        intersections?.forEach(i => {
+                            const c = i.cycleLength || 0;
+                            cycleCounts[c] = (cycleCounts[c] || 0) + 1;
+                        });
+                        const mostCommonCycle = Object.entries(cycleCounts)
+                            .sort((a, b) => b[1] - a[1])[0]?.[0];
+                        const referenceCycle = parseInt(mostCommonCycle) || 0;
+
+                        return intersections?.map((intersection, idx) => {
+                            const hasCycleConflict = intersection.cycleLength !== referenceCycle;
+
+                            return (
+                                <tr key={idx} className={hasCycleConflict ? 'row-cycle-conflict' : ''}>
+                                    <td className="col-order">
+                                        <div className="order-controls">
+                                            <button
+                                                className="btn-move"
+                                                onClick={() => moveIntersection(idx, 'up')}
+                                                disabled={idx === 0}
+                                                title="Monter"
+                                            >↑</button>
+                                            <span>{idx + 1}</span>
+                                            <button
+                                                className="btn-move"
+                                                onClick={() => moveIntersection(idx, 'down')}
+                                                disabled={idx === intersections.length - 1}
+                                                title="Descendre"
+                                            >↓</button>
+                                        </div>
+                                    </td>
+                                    <td className="col-name">{intersection.projectName}</td>
+                                    <td className="col-pf">
+                                        <select
+                                            value={intersection.selectedPfId || ''}
+                                            onChange={(e) => updateSelectedPf(idx, parseInt(e.target.value))}
+                                        >
+                                            {intersection.pfTabs?.map(pf => (
+                                                <option key={pf.id} value={pf.id}>
+                                                    {pf.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td className={`col-cycle ${hasCycleConflict ? 'cycle-conflict' : ''}`} title={hasCycleConflict ? `Cycle différent du cycle de référence (${referenceCycle}s)` : ''}>
+                                        {intersection.cycleLength}
+                                    </td>
+                                    <td className="col-group-select">
+                                        <select
+                                            value={intersection.selectedGroup2 || ''}
+                                            onChange={(e) => updateSelectedGroup2(idx, parseInt(e.target.value))}
+                                            style={{ color: '#4CAF50' }}
+                                        >
+                                            {intersection.groups.map(g => (
+                                                <option key={g.id} value={g.id}>
+                                                    G{g.id} - {g.name || 'Sans nom'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td className="col-distance">
+                                        <input
+                                            type="number"
+                                            value={intersection.distanceG2 ?? intersection.distance}
+                                            onChange={(e) => updateDistanceG2(idx, e.target.value)}
+                                        />
+                                    </td>
+                                    <td className="col-group-select">
+                                        <select
+                                            value={intersection.selectedGroup1 || ''}
+                                            onChange={(e) => updateSelectedGroup1(idx, parseInt(e.target.value))}
+                                            style={{ color: '#FF9800' }}
+                                        >
+                                            {intersection.groups.map(g => (
+                                                <option key={g.id} value={g.id}>
+                                                    G{g.id} - {g.name || 'Sans nom'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td className="col-distance">
+                                        <input
+                                            type="number"
+                                            value={intersection.distance}
+                                            onChange={(e) => updateDistance(idx, e.target.value)}
+                                        />
+                                    </td>
+                                </tr>
+                            );
+                        });
+                    })()}
+                </tbody>
+            </table>
+        </div>
+    );
+
+    // Synchronise la popup détachée avec le contenu du tableau : re-rendu
+    // à chaque update pour rester en phase avec l'inline.
+    useEffect(() => {
+        if (showFloatingDataTable) {
+            dataTablePopup.renderToPopup(dataPanelJSX);
+        }
+    });
+
     if (!intersections) {
         return (
             <div className="green-wave-page">
@@ -1289,15 +1482,16 @@ const GreenWavePage = () => {
 
                         // Clone SVG and adapt colors for print
                         const clone = svgEl.cloneNode(true);
-                        // Background: dark → white
-                        clone.querySelectorAll('rect[fill="#1a1a1a"]').forEach(el => el.setAttribute('fill', '#ffffff'));
-                        // Grid: dark → light gray
-                        clone.querySelectorAll('line[stroke="#333"]').forEach(el => el.setAttribute('stroke', '#ddd'));
-                        clone.querySelectorAll('line[stroke="#555"]').forEach(el => el.setAttribute('stroke', '#bbb'));
-                        // Axes: gray → dark
-                        clone.querySelectorAll('line[stroke="#888"]').forEach(el => el.setAttribute('stroke', '#333'));
-                        clone.querySelectorAll('text[fill="#888"]').forEach(el => el.setAttribute('fill', '#333'));
-                        clone.querySelectorAll('text[fill="#aaa"]').forEach(el => el.setAttribute('fill', '#333'));
+                        // Background: dark → white (le rect porte maintenant
+                        // une classe au lieu d'un fill inline ; on cible la classe)
+                        clone.querySelectorAll('rect.green-wave-svg-bg').forEach(el => el.setAttribute('fill', '#ffffff'));
+                        // Grid lines (quadrillage en pointillés) : couleur claire pour l'impression
+                        clone.querySelectorAll('line.green-wave-grid').forEach(el => el.setAttribute('stroke', '#ddd'));
+                        clone.querySelectorAll('line.green-wave-grid-cycle').forEach(el => el.setAttribute('stroke', '#bbb'));
+                        // Axes (X et Y, marques de graduation) : noir pour l'impression
+                        clone.querySelectorAll('line.green-wave-axis').forEach(el => el.setAttribute('stroke', '#333'));
+                        clone.querySelectorAll('text.green-wave-axis-tick').forEach(el => el.setAttribute('fill', '#333'));
+                        clone.querySelectorAll('text.green-wave-axis-label').forEach(el => el.setAttribute('fill', '#333'));
                         // White text → black
                         clone.querySelectorAll('text[fill="#fff"]').forEach(el => el.setAttribute('fill', '#000'));
                         // Remove invisible drag hit areas
@@ -1385,16 +1579,17 @@ const GreenWavePage = () => {
                     onMouseLeave={handleMouseUp}
                     style={{ cursor: dragging ? 'ew-resize' : 'default' }}
                 >
-                    {/* Background */}
+                    {/* Background — fill géré par CSS pour suivre le thème */}
                     <rect
                         x={PADDING_LEFT}
                         y={PADDING_TOP}
                         width={diagramWidth - PADDING_LEFT - PADDING_RIGHT}
                         height={diagramHeight - PADDING_TOP - PADDING_BOTTOM}
-                        fill="#1a1a1a"
+                        className="green-wave-svg-bg"
                     />
 
-                    {/* Grid lines - vertical (time) */}
+                    {/* Grid lines - vertical (time) — pointillés pour alléger.
+                        Limites de cycle plus marquées via une classe distincte. */}
                     {timeTicks.map(t => (
                         <line
                             key={`grid-t-${t}`}
@@ -1402,12 +1597,12 @@ const GreenWavePage = () => {
                             y1={PADDING_TOP}
                             x2={timeToX(t)}
                             y2={diagramHeight - PADDING_BOTTOM}
-                            stroke={t % cycleLength === 0 ? '#555' : '#333'}
-                            strokeWidth={t % cycleLength === 0 ? 1 : 0.5}
+                            className={t % cycleLength === 0 ? 'green-wave-grid-cycle' : 'green-wave-grid'}
+                            strokeDasharray="2,3"
                         />
                     ))}
 
-                    {/* Grid lines - horizontal (distance) */}
+                    {/* Grid lines - horizontal (distance) — pointillés pour alléger */}
                     {distanceTicks.map(d => (
                         <line
                             key={`grid-d-${d}`}
@@ -1415,8 +1610,8 @@ const GreenWavePage = () => {
                             y1={distanceToY(d)}
                             x2={diagramWidth - PADDING_RIGHT}
                             y2={distanceToY(d)}
-                            stroke="#333"
-                            strokeWidth={0.5}
+                            className="green-wave-grid"
+                            strokeDasharray="2,3"
                         />
                     ))}
 
@@ -1871,7 +2066,7 @@ const GreenWavePage = () => {
                         y1={diagramHeight - PADDING_BOTTOM}
                         x2={diagramWidth - PADDING_RIGHT}
                         y2={diagramHeight - PADDING_BOTTOM}
-                        stroke="#888"
+                        className="green-wave-axis"
                         strokeWidth={1}
                     />
 
@@ -1883,13 +2078,13 @@ const GreenWavePage = () => {
                                 y1={diagramHeight - PADDING_BOTTOM}
                                 x2={timeToX(t)}
                                 y2={diagramHeight - PADDING_BOTTOM + 5}
-                                stroke="#888"
+                                className="green-wave-axis"
                             />
                             <text
                                 x={timeToX(t)}
                                 y={diagramHeight - PADDING_BOTTOM + 18}
                                 textAnchor="middle"
-                                fill="#888"
+                                className="green-wave-axis-tick"
                                 fontSize="10"
                             >
                                 {t}
@@ -1902,7 +2097,7 @@ const GreenWavePage = () => {
                         x={diagramWidth / 2}
                         y={diagramHeight - 8}
                         textAnchor="middle"
-                        fill="#aaa"
+                        className="green-wave-axis-label"
                         fontSize="12"
                     >
                         Temps (s)
@@ -1914,7 +2109,7 @@ const GreenWavePage = () => {
                         y1={PADDING_TOP}
                         x2={PADDING_LEFT}
                         y2={diagramHeight - PADDING_BOTTOM}
-                        stroke="#888"
+                        className="green-wave-axis"
                         strokeWidth={1}
                     />
 
@@ -1926,13 +2121,13 @@ const GreenWavePage = () => {
                                 y1={distanceToY(d)}
                                 x2={PADDING_LEFT}
                                 y2={distanceToY(d)}
-                                stroke="#888"
+                                className="green-wave-axis"
                             />
                             <text
                                 x={PADDING_LEFT - 8}
                                 y={distanceToY(d) + 4}
                                 textAnchor="end"
-                                fill="#888"
+                                className="green-wave-axis-tick"
                                 fontSize="10"
                             >
                                 {d}
@@ -1945,7 +2140,7 @@ const GreenWavePage = () => {
                         x={15}
                         y={diagramHeight / 2}
                         textAnchor="middle"
-                        fill="#aaa"
+                        className="green-wave-axis-label"
                         fontSize="12"
                         transform={`rotate(-90, 15, ${diagramHeight / 2})`}
                     >
@@ -1996,132 +2191,8 @@ const GreenWavePage = () => {
                 </div>
             </div>
 
-            {/* Parameters panel */}
-            <div className="green-wave-params-panel">
-                <h3>
-                    Tableau des données saisies
-                    <button
-                        className="btn-add-intersection"
-                        onClick={addIntersection}
-                        title="Ajouter un carrefour"
-                    >+</button>
-                </h3>
-                <table className="green-wave-data-table">
-                    <thead>
-                        <tr>
-                            <th rowSpan="2">Ordre</th>
-                            <th rowSpan="2">Carrefour</th>
-                            <th rowSpan="2">PF</th>
-                            <th rowSpan="2">Cycle</th>
-                            <th colSpan="2" style={{ background: '#3d4a2d' }}>GF Montant</th>
-                            <th colSpan="2" style={{ background: '#2d4a2d' }}>GF Descendant</th>
-                        </tr>
-                        <tr className="sub-header">
-                            <th style={{ color: '#4CAF50' }}>Groupe</th>
-                            <th style={{ color: '#4CAF50' }}>Dist</th>
-                            <th style={{ color: '#FF9800' }}>Groupe</th>
-                            <th style={{ color: '#FF9800' }}>Dist</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {(() => {
-                            // Calculate most common cycle length to detect conflicts
-                            const cycleCounts = {};
-                            intersections?.forEach(i => {
-                                const c = i.cycleLength || 0;
-                                cycleCounts[c] = (cycleCounts[c] || 0) + 1;
-                            });
-                            const mostCommonCycle = Object.entries(cycleCounts)
-                                .sort((a, b) => b[1] - a[1])[0]?.[0];
-                            const referenceCycle = parseInt(mostCommonCycle) || 0;
-
-                            return intersections?.map((intersection, idx) => {
-                                const group1 = intersection.groups.find(g => g.id === intersection.selectedGroup1);
-                                const group2 = intersection.groups.find(g => g.id === intersection.selectedGroup2);
-                                const hasCycleConflict = intersection.cycleLength !== referenceCycle;
-
-                                return (
-                                    <tr key={idx} className={hasCycleConflict ? 'row-cycle-conflict' : ''}>
-                                        <td className="col-order">
-                                            <div className="order-controls">
-                                                <button
-                                                    className="btn-move"
-                                                    onClick={() => moveIntersection(idx, 'up')}
-                                                    disabled={idx === 0}
-                                                    title="Monter"
-                                                >↑</button>
-                                                <span>{idx + 1}</span>
-                                                <button
-                                                    className="btn-move"
-                                                    onClick={() => moveIntersection(idx, 'down')}
-                                                    disabled={idx === intersections.length - 1}
-                                                    title="Descendre"
-                                                >↓</button>
-                                            </div>
-                                        </td>
-                                        <td className="col-name">{intersection.projectName}</td>
-                                        <td className="col-pf">
-                                            <select
-                                                value={intersection.selectedPfId || ''}
-                                                onChange={(e) => updateSelectedPf(idx, parseInt(e.target.value))}
-                                            >
-                                                {intersection.pfTabs?.map(pf => (
-                                                    <option key={pf.id} value={pf.id}>
-                                                        {pf.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td className={`col-cycle ${hasCycleConflict ? 'cycle-conflict' : ''}`} title={hasCycleConflict ? `Cycle différent du cycle de référence (${referenceCycle}s)` : ''}>
-                                            {intersection.cycleLength}
-                                        </td>
-                                    <td className="col-group-select">
-                                        <select
-                                            value={intersection.selectedGroup2 || ''}
-                                            onChange={(e) => updateSelectedGroup2(idx, parseInt(e.target.value))}
-                                            style={{ color: '#4CAF50' }}
-                                        >
-                                            {intersection.groups.map(g => (
-                                                <option key={g.id} value={g.id}>
-                                                    G{g.id} - {g.name || 'Sans nom'}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td className="col-distance">
-                                        <input
-                                            type="number"
-                                            value={intersection.distanceG2 ?? intersection.distance}
-                                            onChange={(e) => updateDistanceG2(idx, e.target.value)}
-                                        />
-                                    </td>
-                                    <td className="col-group-select">
-                                        <select
-                                            value={intersection.selectedGroup1 || ''}
-                                            onChange={(e) => updateSelectedGroup1(idx, parseInt(e.target.value))}
-                                            style={{ color: '#FF9800' }}
-                                        >
-                                            {intersection.groups.map(g => (
-                                                <option key={g.id} value={g.id}>
-                                                    G{g.id} - {g.name || 'Sans nom'}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td className="col-distance">
-                                        <input
-                                            type="number"
-                                            value={intersection.distance}
-                                            onChange={(e) => updateDistance(idx, e.target.value)}
-                                        />
-                                    </td>
-                                    </tr>
-                                );
-                            });
-                        })()}
-                    </tbody>
-                </table>
-            </div>
+            {/* Parameters panel — rendu inline ou en popup détachée */}
+            {!showFloatingDataTable && dataPanelJSX}
         </div>
     );
 };
