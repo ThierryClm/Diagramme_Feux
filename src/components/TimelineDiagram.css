@@ -129,7 +129,10 @@
     font-size: 0.90em;
     font-weight: bold;
     line-height: 1;
-    pointer-events: none;
+    /* pointer-events: auto pour pouvoir afficher un tooltip au survol
+       (Aiguillage / Escamotage). L'indicateur reste discret et le clic
+       passe à travers vers le span parent .label-name. */
+    cursor: help;
 }
 
 .phase-flag-tooltip {

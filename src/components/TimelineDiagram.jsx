@@ -1154,7 +1154,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         >
                                             {g.name || '-'}
                                             {(g.phaseFlag || (!g.phaseFlag && escamotageGroupIds.has(g.id))) && (
-                                                <span className="phase-flag-indicator">{g.phaseFlag || 'e'}</span>
+                                                <CustomTooltip
+                                                    text={(g.phaseFlag || 'e') === 'a' ? 'Aiguillage' : 'Escamotage'}
+                                                    delay={100}
+                                                >
+                                                    <span className="phase-flag-indicator">{g.phaseFlag || 'e'}</span>
+                                                </CustomTooltip>
                                             )}
                                         </span>
                                         {phaseFlagTooltipId === g.id && (

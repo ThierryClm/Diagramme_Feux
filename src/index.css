@@ -116,9 +116,10 @@ body.light-mode .toggle-btn.active {
 }
 
 body.light-mode .validate-btn.validated {
-    background: rgba(46, 204, 113, 0.3);
-    border-color: #4CAF50;
-    color: #2e7d32;
+    background: #4CAF50;
+    border-color: #2e7d32;
+    color: #fff;
+    font-weight: bold;
 }
 
 body.light-mode .validate-btn.invalidated {
@@ -431,6 +432,35 @@ body.sepia-mode .phase-flag-indicator {
     color: #8b3a1f;
 }
 
+/* Abréviations sur les barres du diagramme (bar-label, escamotage-label,
+   adaptatif-label, etc.) : par défaut blanc avec halo noir, illisibles sur
+   barres claires en mode clair/sépia. On force le noir sans halo. */
+body.light-mode .bar-label,
+body.light-mode .escamotage-label,
+body.light-mode .adaptatif-label,
+body.light-mode .ouverture-anticipee-label,
+body.light-mode .point-repos-label,
+body.light-mode .signa-label,
+body.light-mode .controle-flot-label,
+body.light-mode .synchro-bts-label,
+body.light-mode .instant-co-label,
+body.light-mode .priorite-pietons-label,
+body.light-mode .fleche-anticipation-label,
+body.sepia-mode .bar-label,
+body.sepia-mode .escamotage-label,
+body.sepia-mode .adaptatif-label,
+body.sepia-mode .ouverture-anticipee-label,
+body.sepia-mode .point-repos-label,
+body.sepia-mode .signa-label,
+body.sepia-mode .controle-flot-label,
+body.sepia-mode .synchro-bts-label,
+body.sepia-mode .instant-co-label,
+body.sepia-mode .priorite-pietons-label,
+body.sepia-mode .fleche-anticipation-label {
+    color: #000 !important;
+    text-shadow: none !important;
+}
+
 /* PropertiesPanel: logo boxes fond blanc */
 body.light-mode .logo-box {
     background: #fff;
@@ -623,15 +653,17 @@ body.light-mode .pf-tab.active {
 }
 
 body.light-mode .pf-tab.pf-validated {
-    background: rgba(76, 175, 80, 0.2);
-    border-color: #4CAF50;
-    color: #2e7d32;
+    background: #4CAF50;
+    border-color: #2e7d32;
+    color: #fff;
+    font-weight: bold;
 }
 
 body.light-mode .pf-tab.pf-validated.active {
-    background: rgba(76, 175, 80, 0.3);
-    border-color: #4CAF50;
-    color: #1b5e20;
+    background: #2e7d32;
+    border-color: #1b5e20;
+    color: #fff;
+    font-weight: bold;
 }
 
 body.light-mode .pf-tab.pf-invalidated {
