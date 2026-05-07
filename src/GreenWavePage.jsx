@@ -48,6 +48,12 @@ const GreenWavePage = () => {
     const [showSpeedLines, setShowSpeedLines] = useState(true); // Affichage des lignes directrices
     // Parameters per PF (indexed by PF name): { pfName: { speedUp, speedDown, offsetUp, offsetDown } }
     const [pfParams, setPfParams] = useState({});
+    // Nom du fichier d'origine sur disque (sans .json) — propagé depuis
+    // l'app principale via sessionStorage, sert à pré-remplir la boîte de
+    // dialogue « Enregistrer dans le réseau » avec le bon nom de fichier
+    // (au cas où le greenWaveName interne diffère, ex. ancien fichier dont
+    // le champ JSON name n'incluait pas le préfixe « Onde verte »).
+    const [loadedFileName, setLoadedFileName] = useState('');
 
     // Détachement du tableau des données saisies dans une fenêtre popup
     // pour libérer l'espace écran sous le diagramme. Persisté en localStorage.
@@ -155,7 +161,10 @@ const GreenWavePage = () => {
     const handleSaveGreenWave = () => {
         if (!intersections) return;
 
-        const name = prompt('Nom de l\'onde verte:', greenWaveName || 'Onde verte');
+        // Défaut = nom courant si déjà saisi, sinon vide. On évite de suggérer
+        // « Onde verte » ce qui pousserait l'utilisateur à conserver ce préfixe
+        // dans le nom alors que l'app l'ajoute automatiquement à l'affichage.
+        const name = prompt('Nom de l\'onde verte (ex. : Avenue de Verdun) :', greenWaveName || '');
         if (!name) return;
 
         // Save current PF params before saving
@@ -235,8 +244,13 @@ const GreenWavePage = () => {
         };
 
         try {
+            // Priorité au nom du fichier d'origine pour préserver le
+            // préfixe « Onde verte - » qui peut différer du greenWaveName
+            // interne (cas des anciens fichiers où JSON.name était stocké
+            // sans le préfixe alors que le fichier sur disque le contenait).
+            const suggestedFileName = loadedFileName || greenWaveName || 'onde_verte';
             const options = {
-                suggestedName: `${greenWaveName || 'onde_verte'}.json`,
+                suggestedName: `${suggestedFileName}.json`,
                 types: [{
                     description: 'Fichier Onde Verte JSON',
                     accept: { 'application/json': ['.json'] }
@@ -285,6 +299,10 @@ const GreenWavePage = () => {
             if (!greenWaveName) {
                 setGreenWaveName(savedName);
             }
+            // Mémorise le nouveau nom de fichier (au cas où l'utilisateur
+            // l'a modifié dans la boîte de dialogue) pour que la prochaine
+            // sauvegarde le re-suggère.
+            setLoadedFileName(savedName);
 
             alert(`Onde verte enregistrée dans "${fileHandle.name}".`);
         } catch (e) {
@@ -376,7 +394,18 @@ const GreenWavePage = () => {
         if (settings.showSpeedLines !== undefined) setShowSpeedLines(settings.showSpeedLines);
         if (settings.pfParams) setPfParams(settings.pfParams);
         if (settings.displayCycles) setDisplayCycles(settings.displayCycles);
-        if (settings.name) document.title = `Onde Verte - ${settings.name}`;
+        if (settings.loadedFileName) setLoadedFileName(settings.loadedFileName);
+        if (settings.name) {
+            // Évite le double préfixe « Onde Verte » dans le titre de l'onglet :
+            // si le nom enregistré commence déjà par « onde verte » (insensible
+            // à la casse, espaces et tirets initiaux), on l'affiche tel quel ;
+            // sinon on ajoute le préfixe pour le contexte.
+            const nameLower = settings.name.toLowerCase().trimStart();
+            const startsWithPrefix = /^ondes?\s*vertes?\b/.test(nameLower);
+            document.title = startsWithPrefix
+                ? settings.name
+                : `Onde Verte - ${settings.name}`;
+        }
     }, []);
 
     // Load data on mount — sessionStorage par défaut, IndexedDB si &idb=1
@@ -1438,7 +1467,7 @@ const GreenWavePage = () => {
                         Zoom Y :
                         <input
                             type="range"
-                            min="0.5"
+                            min="0.2"
                             max="3"
                             step="0.1"
                             value={pixelsPerMeter}

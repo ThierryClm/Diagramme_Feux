@@ -1320,6 +1320,10 @@ function App() {
                     sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(greenWaveData.intersections));
                     sessionStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify({
                         name: greenWaveData.name || file.name.replace(/\.json$/i, ''),
+                        // Nom du fichier d'origine sur disque, conservé pour
+                        // que la sauvegarde re-suggère exactement le même nom
+                        // (préserve le préfixe « Onde verte - » s'il y était).
+                        loadedFileName: file.name.replace(/\.json$/i, ''),
                         speed: greenWaveData.speed,
                         speedUp: greenWaveData.speedUp,
                         speedDown: greenWaveData.speedDown,
@@ -1335,6 +1339,10 @@ function App() {
                     await saveGreenWaveToIDB(`greenwave_${greenWaveId}`, greenWaveData.intersections);
                     await saveGreenWaveToIDB(`greenwave_settings_${greenWaveId}`, {
                         name: greenWaveData.name || file.name.replace(/\.json$/i, ''),
+                        // Nom du fichier d'origine sur disque, conservé pour
+                        // que la sauvegarde re-suggère exactement le même nom
+                        // (préserve le préfixe « Onde verte - » s'il y était).
+                        loadedFileName: file.name.replace(/\.json$/i, ''),
                         speed: greenWaveData.speed,
                         speedUp: greenWaveData.speedUp,
                         speedDown: greenWaveData.speedDown,
