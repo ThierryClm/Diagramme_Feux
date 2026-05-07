@@ -2,21 +2,38 @@
 
 ![Aperçu de l'application : matrice des temps intervert à gauche, diagramme temporel d'un carrefour à 13 groupes au centre, conditions de micro-régulation en bas](docs/screenshots/diagramme-principal.png)
 
-Outil web de conception et d'optimisation de diagrammes de feux tricolores, destiné aux traficiens et ingénieurs de la circulation.
+Solution open source pour la conception et l'optimisation de plans de feux tricolores, destinée aux traficiens et ingénieurs de la circulation.
 
-Conçu pour être utilisé **localement**, sans serveur ni télémétrie : toutes les données restent dans le navigateur (localStorage) et sur votre poste.
+L'application s'organise en **deux modules complémentaires** :
+
+- **Diagramme de Feux** *(module principal)* — conception et analyse des plans de feux d'un carrefour : groupes, matrice intervert, diagramme temporel, micro-régulation, plans multiples.
+- **Onde verte** *(module complémentaire)* — coordination espace-temps de plusieurs carrefours sur un axe routier, avec visualisation des bandes passantes. S'appuie sur les projets de carrefours préalablement créés dans le module principal.
+
+Conçue pour être utilisée **localement**, sans serveur ni télémétrie : toutes les données restent dans le navigateur (localStorage) et sur votre poste.
 
 ## Fonctionnalités principales
+
+### Module Diagramme de Feux
 
 - Définition des groupes de feux (VL, TC, Cycliste, Piéton) avec durées vert/orange/rouge
 - Matrice d'intervert avec détection automatique des conflits
 - Diagramme temporel horizontal avec tête de lecture
 - Plans de feux multiples (PF) gérés par onglets
-- Table d'actions par plan
-- Onde verte sur page dédiée
+- Table d'actions de micro-régulation par plan (escamotage, ouverture/fermeture anticipée, etc.)
 - Import/export (JSON, CSV, Excel)
 - Export PDF et PNG du diagramme
-- Thèmes (sombre, clair, haut contraste, ambre)
+
+### Module Onde verte
+
+- Coordination de plusieurs carrefours sur un axe routier
+- Visualisation espace-temps avec bandes passantes (sens montant et descendant)
+- Réglage interactif des décalages, vitesses et plans de feux
+- Synchronisation bidirectionnelle avec les projets du module principal
+
+### Transverse
+
+- Thèmes (sombre, clair, haut contraste, ambre, daltonien, sépia, bleu nuit)
+- Détachement de fenêtres (matrice, formulaire, données trafic, etc.) sur un second écran
 - Rapport de diagnostic pour signalement de bug (local, sans envoi réseau)
 
 ## Installation

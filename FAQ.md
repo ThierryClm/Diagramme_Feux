@@ -42,6 +42,15 @@ L'application étant **libre et open source**, l'ajout d'un parseur pour un form
 
 Aux **traficiens, ingénieurs trafic, bureaux d'études et techniciens de collectivité** qui conçoivent ou analysent des plans de feux tricolores. Aussi utile aux étudiants en génie urbain ou exploitation routière qui apprennent à dimensionner des cycles.
 
+### De quels modules est composée l'application ?
+
+L'application est une **solution organisée en deux modules complémentaires** :
+
+- **Diagramme de Feux** *(module principal)* — fenêtre par défaut au lancement. Vous y concevez et analysez les plans de feux d'un carrefour : groupes, matrice intervert, diagramme temporel, micro-régulation, plans multiples, simulation, etc. Ce module fonctionne **en autonomie**.
+- **Onde verte** *(module complémentaire)* — fenêtre dédiée, accessible depuis le menu **Onde verte** du module principal. Permet de coordonner plusieurs carrefours sur un axe routier (visualisation espace-temps, bandes passantes, ondes vertes montante/descendante). Ce module **s'appuie obligatoirement** sur des projets de carrefours préalablement créés et sauvegardés dans le module principal — il ne peut pas être utilisé seul.
+
+Les deux modules partagent les mêmes données (stockage local, thèmes, paramètres) et bénéficient du même format `.json` portable. Vous pouvez ouvrir plusieurs fenêtres en parallèle (un module principal + plusieurs ondes vertes) pour comparer ou jongler entre projets.
+
 ### Que peut-on faire avec ?
 
 Définir des groupes de feux (VL, TC, Cycliste, Piéton), construire la matrice intervert, visualiser le diagramme temporel de chaque plan de feux, détecter automatiquement les conflits, simuler des actions (escamotage, ouverture anticipée, point de repos…), gérer plusieurs plans de feux par carrefour, calculer une onde verte, exporter en PDF/PNG/Excel.

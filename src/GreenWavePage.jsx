@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { safeShowSaveFilePicker } from './utils/filePicker';
+import { safeShowSaveFilePicker, safeShowOpenFilePicker } from './utils/filePicker';
 import usePopupWindow from './hooks/usePopupWindow';
+import GreenWaveMenuBar from './components/GreenWaveMenuBar';
+import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
+import HelpContent from './components/HelpContent';
+import Modal from './components/Modal';
+import { APP_NAME, APP_VERSION, APP_DESCRIPTION } from './version';
 import './components/GreenWaveViewer.css';
 
 // Synchronisation du thème de couleur avec l'application principale.
@@ -54,6 +59,15 @@ const GreenWavePage = () => {
     // (au cas où le greenWaveName interne diffère, ex. ancien fichier dont
     // le champ JSON name n'incluait pas le préfixe « Onde verte »).
     const [loadedFileName, setLoadedFileName] = useState('');
+    // Modale « À propos » de la fenêtre Onde verte (équivalent simplifié
+    // de la modale de l'app principale).
+    const [showAboutModal, setShowAboutModal] = useState(false);
+    // Modale de création d'une nouvelle onde verte directement dans la
+    // fenêtre courante (réutilise CreateGreenWaveDialog de l'app principale).
+    const [showCreateDialog, setShowCreateDialog] = useState(false);
+    // Modale d'aide F1 : on affiche le même composant HelpContent que l'app
+    // principale, focalisé sur le chapitre Onde verte. Pas de nouvel onglet.
+    const [showHelpModal, setShowHelpModal] = useState(false);
 
     // Détachement du tableau des données saisies dans une fenêtre popup
     // pour libérer l'espace écran sous le diagramme. Persisté en localStorage.
@@ -412,7 +426,13 @@ const GreenWavePage = () => {
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const greenWaveId = urlParams.get('id');
-        if (!greenWaveId) return;
+        if (!greenWaveId) {
+            // Lancement du module sans projet pré-chargé : titre minimal
+            // pour l'écran d'accueil. Sera remplacé par « Onde Verte - <nom> »
+            // dès qu'un projet est chargé via Fichier > Nouveau ou Ouvrir.
+            document.title = 'Onde verte';
+            return;
+        }
 
         const useIDB = urlParams.has('idb');
 
@@ -1396,18 +1416,328 @@ const GreenWavePage = () => {
         }
     });
 
+    // Impression de l'onde verte (PDF via window.print). Extrait de
+    // l'ancien onClick du bouton « Imprimer » pour pouvoir être déclenché
+    // depuis le menu Fichier → Imprimer.
+    const handlePrintGreenWave = () => {
+        const svgEl = document.querySelector('.green-wave-svg');
+        if (!svgEl) return;
+
+        const clone = svgEl.cloneNode(true);
+        clone.querySelectorAll('rect.green-wave-svg-bg').forEach(el => el.setAttribute('fill', '#ffffff'));
+        clone.querySelectorAll('line.green-wave-grid').forEach(el => el.setAttribute('stroke', '#ddd'));
+        clone.querySelectorAll('line.green-wave-grid-cycle').forEach(el => el.setAttribute('stroke', '#bbb'));
+        clone.querySelectorAll('line.green-wave-axis').forEach(el => el.setAttribute('stroke', '#333'));
+        clone.querySelectorAll('text.green-wave-axis-tick').forEach(el => el.setAttribute('fill', '#333'));
+        clone.querySelectorAll('text.green-wave-axis-label').forEach(el => el.setAttribute('fill', '#333'));
+        clone.querySelectorAll('text[fill="#fff"]').forEach(el => el.setAttribute('fill', '#000'));
+        clone.querySelectorAll('line[stroke="transparent"]').forEach(el => el.remove());
+        clone.querySelectorAll('line[stroke="#4CAF50"][stroke-dasharray="8,4"]').forEach(el => {
+            const g = el.parentElement;
+            if (g && g.tagName === 'g' && g.children.length <= 2) g.remove();
+            else el.remove();
+        });
+        clone.querySelectorAll('line[stroke="#FF9800"][stroke-dasharray="8,4"]').forEach(el => {
+            const g = el.parentElement;
+            if (g && g.tagName === 'g' && g.children.length <= 2) g.remove();
+            else el.remove();
+        });
+        clone.querySelectorAll('polygon[opacity]').forEach(el => el.setAttribute('opacity', '0.35'));
+        const clipEl = clone.querySelector('#bandwidth-clip');
+        if (clipEl) {
+            clipEl.setAttribute('id', 'bandwidth-clip-print');
+            const clipG = clone.querySelector('g[clip-path="url(#bandwidth-clip)"]');
+            if (clipG) clipG.setAttribute('clip-path', 'url(#bandwidth-clip-print)');
+        }
+
+        const pageW = 1048;
+        const headerH = 76;
+        const pageH = 756 - headerH;
+        const scaleX = pageW / diagramWidth;
+        const scaleY = pageH / diagramHeight;
+        const scale = Math.min(scaleX, scaleY, 1);
+        clone.setAttribute('width', Math.round(diagramWidth * scale));
+        clone.setAttribute('height', Math.round(diagramHeight * scale));
+
+        const legendItems = [];
+        const li = (iconHtml, text) => legendItems.push(`<span style="display:inline-flex;align-items:center;gap:4px;color:#000">${iconHtml} ${text}</span>`);
+        li('<span style="width:20px;border-top:2px dashed #4CAF50;display:inline-block"></span>', `V. montante : ${speedUp} km/h`);
+        li('<span style="width:20px;border-top:2px dashed #FF9800;display:inline-block"></span>', `V. descendante : ${speedDown} km/h`);
+        if (bandwidthData?.ascending) li('<span style="width:14px;height:9px;background:rgba(76,175,80,0.3);border:1px solid #4CAF50;border-radius:2px;display:inline-block"></span>', `BP montante : ${bandwidthData.ascending.width.toFixed(1)}s`);
+        if (bandwidthData?.descending) li('<span style="width:14px;height:9px;background:rgba(255,152,0,0.3);border:1px solid #FF9800;border-radius:2px;display:inline-block"></span>', `BP descendante : ${bandwidthData.descending.width.toFixed(1)}s`);
+        li('<span style="width:14px;height:9px;background:#2E7D32;border:1px solid #4CAF50;border-radius:2px;display:inline-block"></span>', '2nde lucarne');
+        li('<span style="width:14px;height:9px;background:repeating-linear-gradient(45deg,transparent,transparent 2px,#4CAF50 2px,#4CAF50 4px);border:1px solid #4CAF50;border-radius:2px;display:inline-block"></span>', 'Ouv. anticipée');
+
+        const printDiv = document.createElement('div');
+        printDiv.id = 'gw-print-area';
+        printDiv.innerHTML = `<h1 style="font-size:14pt;margin:0 0 4px 0;font-family:Arial,sans-serif;color:#000;">Onde Verte${greenWaveName ? ' - ' + greenWaveName : ''}</h1>` +
+            `<div style="display:flex;flex-wrap:nowrap;gap:12px;font-size:7.5pt;margin-bottom:6px;font-family:Arial,sans-serif;white-space:nowrap;">${legendItems.join('')}</div>`;
+        printDiv.appendChild(clone);
+        document.body.appendChild(printDiv);
+
+        const pageStyle = document.createElement('style');
+        pageStyle.textContent = '@page { size: A4 landscape; margin: 5mm 10mm; }';
+        document.head.appendChild(pageStyle);
+
+        document.body.classList.add('print-greenwave');
+        setTimeout(() => {
+            window.print();
+            document.body.classList.remove('print-greenwave');
+            document.head.removeChild(pageStyle);
+            document.body.removeChild(printDiv);
+        }, 500);
+    };
+
+    // Lecture locale des projets sauvegardés en localStorage (équivalent du
+    // getAllSaves de useTrafficLight). Permet de réutiliser CreateGreenWaveDialog
+    // sans dépendre de l'app principale.
+    const getAllSavesLocal = () => {
+        const saves = [];
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key) continue;
+                if (key.startsWith('traffic_project_') && !key.endsWith('_backup') && key !== 'traffic_project_order') {
+                    const name = key.replace('traffic_project_', '');
+                    if (!name) continue;
+                    const raw = localStorage.getItem(key);
+                    let savedAt = null;
+                    let size = 0;
+                    if (raw) {
+                        size = raw.length;
+                        try {
+                            const data = JSON.parse(raw);
+                            savedAt = data.savedAt || null;
+                        } catch {}
+                    }
+                    saves.push({ name, savedAt, size });
+                }
+            }
+        } catch {}
+        saves.sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+        return saves;
+    };
+
+    const getProjectDataLocal = (name) => {
+        try {
+            const raw = localStorage.getItem(`traffic_project_${name}`);
+            if (!raw) return null;
+            return JSON.parse(raw);
+        } catch {
+            return null;
+        }
+    };
+
+    // Création d'une nouvelle onde verte. Comportement adaptatif :
+    // - Si la fenêtre courante est vide (écran d'accueil, pas de projet
+    //   chargé) : on remplit cette fenêtre, pas de nouvel onglet.
+    // - Si un projet est déjà chargé : on ouvre la nouvelle onde verte dans
+    //   un nouvel onglet pour ne pas écraser le travail courant.
+    const handleCreateGreenWaveLocal = (newIntersections) => {
+        if (intersections === null) {
+            // Fenêtre vide : on remplit ici.
+            setIntersections(newIntersections);
+            setGreenWaveName('');
+            setLoadedFileName('');
+            setSpeedLineOffsetUp(0);
+            setSpeedLineOffsetDown(0);
+            setPfParams({});
+            setShowCreateDialog(false);
+            document.title = 'Onde Verte';
+            return;
+        }
+        // Projet déjà chargé : nouvel onglet pour préserver le courant.
+        const greenWaveId = Date.now().toString();
+        try {
+            sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(newIntersections));
+            window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
+        } catch (e) {
+            console.error('Stockage session insuffisant :', e);
+            alert('Le projet est trop volumineux pour être ouvert dans un nouvel onglet.');
+        }
+        setShowCreateDialog(false);
+    };
+
+    // Ouverture d'un fichier .json d'onde verte. Comportement adaptatif :
+    // - Si la fenêtre courante est vide : on charge ici (pas de nouvel
+    //   onglet superflu, l'utilisateur a explicitement demandé à ouvrir).
+    // - Si un projet est déjà chargé : on ouvre dans un nouvel onglet pour
+    //   préserver le travail en cours et permettre de jongler entre ondes.
+    const handleOpenGreenWaveFile = async () => {
+        if (!window.showOpenFilePicker) {
+            alert('Votre navigateur ne supporte pas l\'ouverture de fichiers. Utilisez l\'application principale.');
+            return;
+        }
+        try {
+            const [fileHandle] = await safeShowOpenFilePicker({
+                types: [{ description: 'Fichier Onde Verte JSON', accept: { 'application/json': ['.json'] } }],
+                multiple: false
+            });
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+            if (!content || !content.trim()) {
+                alert('Le fichier est vide.');
+                return;
+            }
+            const data = JSON.parse(content);
+            if (!data || !Array.isArray(data.intersections)) {
+                alert('Le fichier ne contient pas de données d\'onde verte valides.');
+                return;
+            }
+            const settings = {
+                name: data.name || file.name.replace(/\.json$/i, ''),
+                loadedFileName: file.name.replace(/\.json$/i, ''),
+                speedUp: data.speedUp,
+                speedDown: data.speedDown,
+                speedLineOffsetUp: data.speedLineOffsetUp,
+                speedLineOffsetDown: data.speedLineOffsetDown,
+                showSpeedLines: data.showSpeedLines,
+                pfParams: data.pfParams,
+                pixelsPerSecond: data.pixelsPerSecond,
+                pixelsPerMeter: data.pixelsPerMeter,
+                displayCycles: data.displayCycles
+            };
+            if (intersections === null) {
+                // Fenêtre vide : on charge dans la fenêtre courante.
+                setIntersections(data.intersections);
+                applySettings(settings);
+                return;
+            }
+            // Projet déjà chargé : nouvel onglet.
+            const greenWaveId = Date.now().toString();
+            try {
+                sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(data.intersections));
+                sessionStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify(settings));
+                window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
+            } catch (e) {
+                console.error('Stockage session insuffisant :', e);
+                alert('Le fichier est trop volumineux pour être ouvert dans un nouvel onglet. Utilisez l\'application principale.');
+            }
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur ouverture fichier onde verte:', e);
+                alert('Erreur lors de l\'ouverture du fichier : ' + e.message);
+            }
+        }
+    };
+
+    // Aiguillage des actions du menu : Nouveau et Ouvrir restent dans la
+    // fenêtre courante (création/ouverture sans nouvel onglet). Aide en ligne
+    // ouvre l'app principale avec un paramètre URL pour pointer sur le
+    // chapitre Onde verte.
+    const handleMenuAction = (action) => {
+        const mainAppUrl = `${window.location.origin}${window.location.pathname}`;
+        switch (action) {
+            case 'new':
+                setShowCreateDialog(true);
+                break;
+            case 'open':
+                handleOpenGreenWaveFile();
+                break;
+            case 'saveLocal':
+                handleSaveGreenWave();
+                break;
+            case 'saveFile':
+                handleSaveGreenWaveToFile();
+                break;
+            case 'print':
+                handlePrintGreenWave();
+                break;
+            case 'close':
+                window.close();
+                break;
+            case 'sync':
+                handleSyncGreenWave();
+                break;
+            case 'about':
+                setShowAboutModal(true);
+                break;
+            case 'help':
+                setShowHelpModal(true);
+                break;
+            default:
+                break;
+        }
+    };
+
     if (!intersections) {
+        // Distinction entre « chargement en cours » (URL contient ?id=...) et
+        // « aucune onde verte ouverte » (URL sans id). Dans le second cas,
+        // on affiche un écran d'accueil avec la barre de menu accessible
+        // pour que l'utilisateur déclenche Fichier > Nouveau ou Ouvrir.
+        const hasUrlId = new URLSearchParams(window.location.search).has('id');
+        if (hasUrlId) {
+            return (
+                <div className="green-wave-page">
+                    <div className="green-wave-loading">
+                        Chargement des données...
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className="green-wave-page">
-                <div className="green-wave-loading">
-                    Chargement des données...
+                <GreenWaveMenuBar
+                    onAction={handleMenuAction}
+                    pixelsPerSecond={pixelsPerSecond}
+                    onPixelsPerSecondChange={setPixelsPerSecond}
+                    pixelsPerMeter={pixelsPerMeter}
+                    onPixelsPerMeterChange={setPixelsPerMeter}
+                    displayCycles={displayCycles}
+                    onDisplayCyclesChange={setDisplayCycles}
+                    showSpeedLines={showSpeedLines}
+                    onShowSpeedLinesChange={setShowSpeedLines}
+                />
+                <div className="gw-welcome-screen">
+                    <p className="gw-welcome-hint">
+                        Aucune onde verte ouverte.<br/>
+                        Choisissez <strong>Fichier → Nouveau</strong> pour en créer une à partir de vos projets sauvegardés,
+                        ou <strong>Fichier → Ouvrir</strong> pour charger un fichier <code>.json</code> existant.
+                    </p>
                 </div>
+
+                {/* Modales nécessaires sur l'écran d'accueil pour pouvoir
+                    déclencher Nouveau / Aide en ligne / À propos. */}
+                <CreateGreenWaveDialog
+                    isOpen={showCreateDialog}
+                    onClose={() => setShowCreateDialog(false)}
+                    onConfirm={handleCreateGreenWaveLocal}
+                    getAllSaves={getAllSavesLocal}
+                    loadProjectData={getProjectDataLocal}
+                />
+                <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="Aide - Diagramme de Feux" className="modal-wide">
+                    <HelpContent initialAnchor="help-onde-verte" />
+                </Modal>
+                {showAboutModal && (
+                    <div className="gw-about-overlay" onClick={() => setShowAboutModal(false)}>
+                        <div className="gw-about-modal" onClick={(e) => e.stopPropagation()}>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#4ecdc4', marginBottom: '8px' }}>{APP_NAME}</div>
+                                <div style={{ fontSize: '1.1em', color: '#aaa', marginBottom: '4px' }}>Version {APP_VERSION}</div>
+                                <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '20px', maxWidth: '420px', margin: '0 auto 20px' }}>{APP_DESCRIPTION}</div>
+                                <div style={{ fontSize: '0.95em', marginBottom: '16px' }}>Module <strong>Onde verte</strong> — coordination espace-temps des axes à feux.</div>
+                                <button className="gw-about-close" onClick={() => setShowAboutModal(false)} style={{ marginTop: '12px' }}>Fermer</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
 
     return (
         <div className="green-wave-page">
+            <GreenWaveMenuBar
+                onAction={handleMenuAction}
+                pixelsPerSecond={pixelsPerSecond}
+                onPixelsPerSecondChange={setPixelsPerSecond}
+                pixelsPerMeter={pixelsPerMeter}
+                onPixelsPerMeterChange={setPixelsPerMeter}
+                displayCycles={displayCycles}
+                onDisplayCyclesChange={setDisplayCycles}
+                showSpeedLines={showSpeedLines}
+                onShowSpeedLinesChange={setShowSpeedLines}
+            />
             <div className="green-wave-page-header">
                 <h1>
                     Onde Verte
@@ -1452,148 +1782,6 @@ const GreenWavePage = () => {
                         />
                         km/h
                     </label>
-                    <label>
-                        Zoom X :
-                        <input
-                            type="range"
-                            min="3"
-                            max="20"
-                            value={pixelsPerSecond}
-                            onChange={(e) => setPixelsPerSecond(parseInt(e.target.value))}
-                        />
-                        {pixelsPerSecond}px/s
-                    </label>
-                    <label>
-                        Zoom Y :
-                        <input
-                            type="range"
-                            min="0.2"
-                            max="3"
-                            step="0.1"
-                            value={pixelsPerMeter}
-                            onChange={(e) => setPixelsPerMeter(parseFloat(e.target.value))}
-                        />
-                        {pixelsPerMeter.toFixed(1)}px/m
-                    </label>
-                    <label>
-                        Cycles :
-                        <select
-                            value={displayCycles}
-                            onChange={(e) => setDisplayCycles(parseInt(e.target.value))}
-                            style={{ marginLeft: '8px', padding: '4px 8px', background: '#444', border: '1px solid #555', borderRadius: '3px', color: '#fff' }}
-                        >
-                            <option value={2}>2</option>
-                            <option value={3}>3</option>
-                        </select>
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                        <input
-                            type="checkbox"
-                            checked={showSpeedLines}
-                            onChange={(e) => setShowSpeedLines(e.target.checked)}
-                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        />
-                        Lignes directrices
-                    </label>
-                    <button
-                        className="green-wave-sync-btn"
-                        onClick={handleSyncGreenWave}
-                        title="Actualise les données (offset, durée de vert, cycle) depuis les projets sauvegardés pour le plan de feu sélectionné de chaque carrefour"
-                    >
-                        Synchroniser
-                    </button>
-                    <button className="green-wave-save-btn" onClick={handleSaveGreenWaveToFile} title="Enregistrer dans un fichier">
-                        Enregistrer
-                    </button>
-                    <button className="green-wave-print-btn" onClick={() => {
-                        const svgEl = document.querySelector('.green-wave-svg');
-                        if (!svgEl) return;
-
-                        // Clone SVG and adapt colors for print
-                        const clone = svgEl.cloneNode(true);
-                        // Background: dark → white (le rect porte maintenant
-                        // une classe au lieu d'un fill inline ; on cible la classe)
-                        clone.querySelectorAll('rect.green-wave-svg-bg').forEach(el => el.setAttribute('fill', '#ffffff'));
-                        // Grid lines (quadrillage en pointillés) : couleur claire pour l'impression
-                        clone.querySelectorAll('line.green-wave-grid').forEach(el => el.setAttribute('stroke', '#ddd'));
-                        clone.querySelectorAll('line.green-wave-grid-cycle').forEach(el => el.setAttribute('stroke', '#bbb'));
-                        // Axes (X et Y, marques de graduation) : noir pour l'impression
-                        clone.querySelectorAll('line.green-wave-axis').forEach(el => el.setAttribute('stroke', '#333'));
-                        clone.querySelectorAll('text.green-wave-axis-tick').forEach(el => el.setAttribute('fill', '#333'));
-                        clone.querySelectorAll('text.green-wave-axis-label').forEach(el => el.setAttribute('fill', '#333'));
-                        // White text → black
-                        clone.querySelectorAll('text[fill="#fff"]').forEach(el => el.setAttribute('fill', '#000'));
-                        // Remove invisible drag hit areas
-                        clone.querySelectorAll('line[stroke="transparent"]').forEach(el => el.remove());
-                        // Remove speed guide lines (dashed diagonal lines with dasharray="8,4")
-                        // Must use exact dasharray value to avoid matching intersection horizontal guide lines (dasharray="2,2")
-                        clone.querySelectorAll('line[stroke="#4CAF50"][stroke-dasharray="8,4"]').forEach(el => {
-                            // Remove the parent <g> only if it's a speed-line group (contains transparent hit-area + dashed line)
-                            const g = el.parentElement;
-                            if (g && g.tagName === 'g' && g.children.length <= 2) g.remove();
-                            else el.remove();
-                        });
-                        clone.querySelectorAll('line[stroke="#FF9800"][stroke-dasharray="8,4"]').forEach(el => {
-                            const g = el.parentElement;
-                            if (g && g.tagName === 'g' && g.children.length <= 2) g.remove();
-                            else el.remove();
-                        });
-                        // Boost bandwidth polygon opacity for print
-                        clone.querySelectorAll('polygon[opacity]').forEach(el => el.setAttribute('opacity', '0.35'));
-                        // Fix clipPath ID collision: rename to unique ID in clone so url() references work
-                        const clipEl = clone.querySelector('#bandwidth-clip');
-                        if (clipEl) {
-                            clipEl.setAttribute('id', 'bandwidth-clip-print');
-                            const clipG = clone.querySelector('g[clip-path="url(#bandwidth-clip)"]');
-                            if (clipG) clipG.setAttribute('clip-path', 'url(#bandwidth-clip-print)');
-                        }
-
-                        // Compute SVG size to fit A4 landscape page
-                        // A4 landscape: 297×210mm, margins 5mm top/bottom 10mm left/right → usable 277×200mm ≈ 1048×756 px at 96dpi
-                        const pageW = 1048;
-                        // Reserve: title ~22px + legend ~18px + margins 10px + container padding 16px + safety 10px ≈ 76px
-                        const headerH = 76;
-                        const pageH = 756 - headerH;
-                        const scaleX = pageW / diagramWidth;
-                        const scaleY = pageH / diagramHeight;
-                        const scale = Math.min(scaleX, scaleY, 1); // never enlarge
-                        clone.setAttribute('width', Math.round(diagramWidth * scale));
-                        clone.setAttribute('height', Math.round(diagramHeight * scale));
-
-                        // Build legend HTML (black text, smaller font to fit on one line)
-                        const legendItems = [];
-                        const li = (iconHtml, text) => legendItems.push(`<span style="display:inline-flex;align-items:center;gap:4px;color:#000">${iconHtml} ${text}</span>`);
-                        li('<span style="width:20px;border-top:2px dashed #4CAF50;display:inline-block"></span>', `V. montante : ${speedUp} km/h`);
-                        li('<span style="width:20px;border-top:2px dashed #FF9800;display:inline-block"></span>', `V. descendante : ${speedDown} km/h`);
-                        if (bandwidthData?.ascending) li('<span style="width:14px;height:9px;background:rgba(76,175,80,0.3);border:1px solid #4CAF50;border-radius:2px;display:inline-block"></span>', `BP montante : ${bandwidthData.ascending.width.toFixed(1)}s`);
-                        if (bandwidthData?.descending) li('<span style="width:14px;height:9px;background:rgba(255,152,0,0.3);border:1px solid #FF9800;border-radius:2px;display:inline-block"></span>', `BP descendante : ${bandwidthData.descending.width.toFixed(1)}s`);
-                        li('<span style="width:14px;height:9px;background:#2E7D32;border:1px solid #4CAF50;border-radius:2px;display:inline-block"></span>', '2nde lucarne');
-                        li('<span style="width:14px;height:9px;background:repeating-linear-gradient(45deg,transparent,transparent 2px,#4CAF50 2px,#4CAF50 4px);border:1px solid #4CAF50;border-radius:2px;display:inline-block"></span>', 'Ouv. anticipée');
-
-                        // Create print container and append to body
-                        const printDiv = document.createElement('div');
-                        printDiv.id = 'gw-print-area';
-                        printDiv.innerHTML = `<h1 style="font-size:14pt;margin:0 0 4px 0;font-family:Arial,sans-serif;color:#000;">Onde Verte${greenWaveName ? ' - ' + greenWaveName : ''}</h1>` +
-                            `<div style="display:flex;flex-wrap:nowrap;gap:12px;font-size:7.5pt;margin-bottom:6px;font-family:Arial,sans-serif;white-space:nowrap;">${legendItems.join('')}</div>`;
-                        printDiv.appendChild(clone);
-                        document.body.appendChild(printDiv);
-
-                        // Inject @page rule at runtime to force landscape (bundled CSS not always reliable)
-                        const pageStyle = document.createElement('style');
-                        pageStyle.textContent = '@page { size: A4 landscape; margin: 5mm 10mm; }';
-                        document.head.appendChild(pageStyle);
-
-                        // Same pattern as dossier print: body class + setTimeout + window.print()
-                        document.body.classList.add('print-greenwave');
-                        setTimeout(() => {
-                            window.print();
-                            document.body.classList.remove('print-greenwave');
-                            document.head.removeChild(pageStyle);
-                            document.body.removeChild(printDiv);
-                        }, 500);
-                    }}>
-                        Imprimer
-                    </button>
                 </div>
             </div>
 
@@ -1713,8 +1901,14 @@ const GreenWavePage = () => {
 
                         const bars = [];
 
-                        // Render bars for multiple cycles
-                        for (let cycle = 0; cycle < 2; cycle++) {
+                        // Render bars for multiple cycles. Cycle -1 dessine la
+                        // queue du cycle précédent qui rentre dans le 1er cycle
+                        // visible (cas des verts qui wrap autour du cycle).
+                        // Le clipping SVG (bars-clip) coupe ensuite ce qui
+                        // dépasse à gauche (avant t=0) ou à droite (après le
+                        // dernier cycle visible). On utilise displayCycles
+                        // pour suivre le choix utilisateur (2 ou 3 cycles).
+                        for (let cycle = -1; cycle < displayCycles; cycle++) {
                             const cycleOffset = cycle * intersection.cycleLength;
 
                             // Group 1 bar (Descendant - Orange) at distance
@@ -1936,7 +2130,9 @@ const GreenWavePage = () => {
                                     opacity={0.3}
                                 />
 
-                                {bars}
+                                <g clipPath="url(#bars-clip)">
+                                    {bars}
+                                </g>
                             </g>
                         );
                     })}
@@ -1945,6 +2141,14 @@ const GreenWavePage = () => {
                     <defs>
                         <clipPath id="bandwidth-clip">
                             <rect x={PADDING_LEFT} y={0} width={diagramWidth - PADDING_LEFT} height={diagramHeight} />
+                        </clipPath>
+                        {/* Clip path pour les barres de vert : coupe à gauche
+                            (t=0) ET à droite (fin du dernier cycle visible).
+                            Les portions qui wrap au-delà sont masquées. */}
+                        <clipPath id="bars-clip">
+                            <rect x={PADDING_LEFT} y={0}
+                                  width={diagramWidth - PADDING_LEFT - PADDING_RIGHT}
+                                  height={diagramHeight} />
                         </clipPath>
                     </defs>
 
@@ -1963,7 +2167,7 @@ const GreenWavePage = () => {
                         segments.forEach((segment, segIdx) => {
                             const { startIdx, endIdx, width, start, refDistance } = segment;
 
-                            for (let cycle = -1; cycle < 2; cycle++) {
+                            for (let cycle = -1; cycle < displayCycles; cycle++) {
                                 const cycleOffset = cycle * cycleLength;
                                 const bandStartAtRef = start + cycleOffset + speedLineOffsetUp;
                                 const bandEndAtRef = bandStartAtRef + width;
@@ -2032,7 +2236,7 @@ const GreenWavePage = () => {
                         segments.forEach((segment, segIdx) => {
                             const { startIdx, endIdx, width, start, refDistance } = segment;
 
-                            for (let cycle = -1; cycle < 2; cycle++) {
+                            for (let cycle = -1; cycle < displayCycles; cycle++) {
                                 const cycleOffset = cycle * cycleLength;
                                 const bandStartAtRef = start + cycleOffset + speedLineOffsetDown;
                                 const bandEndAtRef = bandStartAtRef + width;
@@ -2222,6 +2426,81 @@ const GreenWavePage = () => {
 
             {/* Parameters panel — rendu inline ou en popup détachée */}
             {!showFloatingDataTable && dataPanelJSX}
+
+            {/* Modale « À propos » de la fenêtre Onde verte */}
+            {showAboutModal && (
+                <div
+                    className="gw-about-overlay"
+                    onClick={() => setShowAboutModal(false)}
+                >
+                    <div className="gw-about-modal" onClick={(e) => e.stopPropagation()}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#4ecdc4', marginBottom: '8px' }}>
+                                {APP_NAME}
+                            </div>
+                            <div style={{ fontSize: '1.1em', color: '#aaa', marginBottom: '4px' }}>
+                                Version {APP_VERSION}
+                            </div>
+                            <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '20px', maxWidth: '420px', margin: '0 auto 20px' }}>
+                                {APP_DESCRIPTION}
+                            </div>
+                            <div style={{ fontSize: '0.95em', marginBottom: '16px' }}>
+                                Module <strong>Onde verte</strong> — coordination espace-temps des axes à feux.
+                            </div>
+                            <hr style={{ border: 'none', borderTop: '1px solid #444', margin: '16px 0' }} />
+                            <div style={{ fontSize: '0.85em', color: '#888', lineHeight: '1.6' }}>
+                                <div>Développée avec <strong>React</strong> + <strong>Vite</strong></div>
+                                <div style={{ marginTop: '8px' }}>© 2026 Thierry Colmon</div>
+                                <div style={{ marginTop: '12px' }}>
+                                    Licence{' '}
+                                    <a
+                                        href="https://www.gnu.org/licenses/agpl-3.0.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: '#4ecdc4' }}
+                                    >
+                                        GNU AGPL v3
+                                    </a>
+                                </div>
+                                <div style={{ marginTop: '4px' }}>
+                                    Code source :{' '}
+                                    <a
+                                        href="https://github.com/ThierryClm/Diagramme_Feux"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: '#4ecdc4' }}
+                                    >
+                                        github.com/ThierryClm/Diagramme_Feux
+                                    </a>
+                                </div>
+                            </div>
+                            <button
+                                className="gw-about-close"
+                                onClick={() => setShowAboutModal(false)}
+                                style={{ marginTop: '20px' }}
+                            >
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Création d'une nouvelle onde verte dans la fenêtre courante */}
+            <CreateGreenWaveDialog
+                isOpen={showCreateDialog}
+                onClose={() => setShowCreateDialog(false)}
+                onConfirm={handleCreateGreenWaveLocal}
+                getAllSaves={getAllSavesLocal}
+                loadProjectData={getProjectDataLocal}
+            />
+
+            {/* Aide F1 : modale locale qui réutilise le composant HelpContent
+                partagé avec l'app principale, focalisée sur le chapitre Onde
+                verte au moment de l'ouverture. */}
+            <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="Aide - Diagramme de Feux" className="modal-wide">
+                <HelpContent initialAnchor="help-onde-verte" />
+            </Modal>
         </div>
     );
 };
