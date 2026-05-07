@@ -670,6 +670,59 @@ body.sepia-mode .btn-detach-datatable:hover {
     }
 }
 
+/* Écran d'accueil de la fenêtre Onde verte quand aucun projet n'est ouvert.
+   Le menu reste accessible au-dessus pour que l'utilisateur lance Nouveau
+   ou Ouvrir. Cohérent avec l'écran d'accueil de l'app principale. */
+.gw-welcome-screen {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #1a1a1a;
+    min-height: 60vh;
+}
+
+.gw-welcome-screen .gw-welcome-hint {
+    margin: 0;
+    color: #888;
+    font-size: 1rem;
+    text-align: center;
+    line-height: 1.7;
+}
+
+.gw-welcome-screen .gw-welcome-hint strong {
+    color: #ccc;
+    font-weight: normal;
+}
+
+.gw-welcome-screen .gw-welcome-hint code {
+    background: #333;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+body.light-mode .gw-welcome-screen,
+body.sepia-mode .gw-welcome-screen {
+    background: transparent;
+}
+
+body.light-mode .gw-welcome-screen .gw-welcome-hint,
+body.sepia-mode .gw-welcome-screen .gw-welcome-hint {
+    color: #555;
+}
+
+body.light-mode .gw-welcome-screen .gw-welcome-hint strong,
+body.sepia-mode .gw-welcome-screen .gw-welcome-hint strong {
+    color: #222;
+}
+
+body.light-mode .gw-welcome-screen .gw-welcome-hint code,
+body.sepia-mode .gw-welcome-screen .gw-welcome-hint code {
+    background: #eee;
+}
+
 /* Modale « À propos » de la fenêtre Onde verte */
 .gw-about-overlay {
     position: fixed;
