@@ -296,12 +296,21 @@ function App() {
     const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip, hasUnsavedChanges, isDirty, setHasUnsavedChanges } =
         useProjectModification([groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
 
-    // Update document title (browser tab) to reflect project name and unsaved status
+    // Update document title (browser tab) to reflect project name and unsaved status.
+    // Sur l'écran d'accueil (aucun projet ouvert), on affiche juste
+    // « Diagramme de Feux » sans le nom de carrefour par défaut. C'est
+    // hasActiveProject qui fait foi : intersectionName reste à
+    // « Nouveau Carrefour » par défaut, ce qui ne reflète pas l'absence
+    // de projet ouvert.
     useEffect(() => {
+        if (!hasActiveProject) {
+            document.title = 'Diagramme de Feux';
+            return;
+        }
         const prefix = isDirty ? '* ' : '';
-        const name = projectName || intersectionName || 'Nouveau projet';
+        const name = projectName || intersectionName;
         document.title = `${prefix}${name} — Diagramme de Feux`;
-    }, [projectName, intersectionName, isDirty]);
+    }, [hasActiveProject, projectName, intersectionName, isDirty]);
 
     // Deep link vers une section de l'aide F1 : si l'URL contient
     // ?openHelp=ondeVerte (ouvert depuis la fenêtre Onde verte), on ouvre
@@ -1107,15 +1116,11 @@ function App() {
                 setShowExternalLinksModal(true);
                 break;
             // Green wave actions
-            case 'createGreenWave':
-                setCreateGreenWaveModal(true);
-                break;
-            case 'openGreenWave':
-                handleOpenGreenWaveFromFile();
-                break;
-            case 'openGreenWaveFromLocalStorage':
-                setOpenGreenWaveModal(true);
-                setSelectedGreenWave(null);
+            // Lance le module Onde verte dans un nouvel onglet, sans projet
+            // chargé. La création / ouverture se fait depuis le menu Fichier
+            // de la fenêtre Onde verte qui prend le relais.
+            case 'launchGreenWave':
+                window.open(`${window.location.origin}${window.location.pathname}?greenwave`, '_blank');
                 break;
             case 'closeGreenWave':
                 setGreenWaveViewer(false);

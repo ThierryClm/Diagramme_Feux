@@ -379,10 +379,10 @@ const MenuBar = ({
         },
         ondeVerte: {
             label: 'Onde verte',
-            items: [
-                { label: 'Ouvrir une onde verte...', action: 'openGreenWave' },
-                { label: 'Créer une onde verte...', action: 'createGreenWave' }
-            ]
+            // Action directe (sans sous-menu) : un clic lance le module Onde
+            // verte dans un nouvel onglet, vide. La création/ouverture d'une
+            // onde verte se fait depuis le menu Fichier de cette nouvelle fenêtre.
+            action: 'launchGreenWave'
         },
         apropos: {
             label: 'A propos',
@@ -548,12 +548,12 @@ const MenuBar = ({
                 <div key={key} className="menu-container">
                     <button
                         className={`menu-button ${openMenu === key ? 'active' : ''}`}
-                        onClick={() => handleMenuClick(key)}
-                        onMouseEnter={() => openMenu && setOpenMenu(key)}
+                        onClick={() => menu.action ? handleItemClick(menu.action) : handleMenuClick(key)}
+                        onMouseEnter={() => openMenu && menu.items && setOpenMenu(key)}
                     >
                         {menu.label}
                     </button>
-                    {openMenu === key && (
+                    {openMenu === key && menu.items && (
                         <div className="menu-dropdown">
                             {menu.items.map((item, idx) => renderMenuItem(item, idx))}
                         </div>

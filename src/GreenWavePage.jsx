@@ -426,7 +426,13 @@ const GreenWavePage = () => {
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const greenWaveId = urlParams.get('id');
-        if (!greenWaveId) return;
+        if (!greenWaveId) {
+            // Lancement du module sans projet pré-chargé : titre minimal
+            // pour l'écran d'accueil. Sera remplacé par « Onde Verte - <nom> »
+            // dès qu'un projet est chargé via Fichier > Nouveau ou Ouvrir.
+            document.title = 'Onde verte';
+            return;
+        }
 
         const useIDB = urlParams.has('idb');
 
@@ -1522,23 +1528,41 @@ const GreenWavePage = () => {
         }
     };
 
-    // Création d'une nouvelle onde verte dans la fenêtre courante : remplace
-    // les intersections actuelles par celles issues des projets sélectionnés
-    // dans le dialogue, sans recharger la page.
+    // Création d'une nouvelle onde verte. Comportement adaptatif :
+    // - Si la fenêtre courante est vide (écran d'accueil, pas de projet
+    //   chargé) : on remplit cette fenêtre, pas de nouvel onglet.
+    // - Si un projet est déjà chargé : on ouvre la nouvelle onde verte dans
+    //   un nouvel onglet pour ne pas écraser le travail courant.
     const handleCreateGreenWaveLocal = (newIntersections) => {
-        setIntersections(newIntersections);
-        setGreenWaveName('');
-        setLoadedFileName('');
-        setSpeedLineOffsetUp(0);
-        setSpeedLineOffsetDown(0);
-        setPfParams({});
+        if (intersections === null) {
+            // Fenêtre vide : on remplit ici.
+            setIntersections(newIntersections);
+            setGreenWaveName('');
+            setLoadedFileName('');
+            setSpeedLineOffsetUp(0);
+            setSpeedLineOffsetDown(0);
+            setPfParams({});
+            setShowCreateDialog(false);
+            document.title = 'Onde Verte';
+            return;
+        }
+        // Projet déjà chargé : nouvel onglet pour préserver le courant.
+        const greenWaveId = Date.now().toString();
+        try {
+            sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(newIntersections));
+            window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
+        } catch (e) {
+            console.error('Stockage session insuffisant :', e);
+            alert('Le projet est trop volumineux pour être ouvert dans un nouvel onglet.');
+        }
         setShowCreateDialog(false);
-        document.title = 'Onde Verte';
     };
 
-    // Ouverture d'un fichier .json d'onde verte dans un NOUVEL onglet
-    // (comme l'app principale) — permet de jongler entre plusieurs ondes
-    // vertes ouvertes en parallèle. La fenêtre courante reste intacte.
+    // Ouverture d'un fichier .json d'onde verte. Comportement adaptatif :
+    // - Si la fenêtre courante est vide : on charge ici (pas de nouvel
+    //   onglet superflu, l'utilisateur a explicitement demandé à ouvrir).
+    // - Si un projet est déjà chargé : on ouvre dans un nouvel onglet pour
+    //   préserver le travail en cours et permettre de jongler entre ondes.
     const handleOpenGreenWaveFile = async () => {
         if (!window.showOpenFilePicker) {
             alert('Votre navigateur ne supporte pas l\'ouverture de fichiers. Utilisez l\'application principale.');
@@ -1560,7 +1584,6 @@ const GreenWavePage = () => {
                 alert('Le fichier ne contient pas de données d\'onde verte valides.');
                 return;
             }
-            const greenWaveId = Date.now().toString();
             const settings = {
                 name: data.name || file.name.replace(/\.json$/i, ''),
                 loadedFileName: file.name.replace(/\.json$/i, ''),
@@ -1574,14 +1597,19 @@ const GreenWavePage = () => {
                 pixelsPerMeter: data.pixelsPerMeter,
                 displayCycles: data.displayCycles
             };
+            if (intersections === null) {
+                // Fenêtre vide : on charge dans la fenêtre courante.
+                setIntersections(data.intersections);
+                applySettings(settings);
+                return;
+            }
+            // Projet déjà chargé : nouvel onglet.
+            const greenWaveId = Date.now().toString();
             try {
                 sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(data.intersections));
                 sessionStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify(settings));
                 window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
             } catch (e) {
-                // Si le quota sessionStorage est dépassé, on alerte plutôt
-                // que de fallback IndexedDB (pour rester simple ici — la
-                // version main app gère déjà ce cas).
                 console.error('Stockage session insuffisant :', e);
                 alert('Le fichier est trop volumineux pour être ouvert dans un nouvel onglet. Utilisez l\'application principale.');
             }
@@ -1633,11 +1661,66 @@ const GreenWavePage = () => {
     };
 
     if (!intersections) {
+        // Distinction entre « chargement en cours » (URL contient ?id=...) et
+        // « aucune onde verte ouverte » (URL sans id). Dans le second cas,
+        // on affiche un écran d'accueil avec la barre de menu accessible
+        // pour que l'utilisateur déclenche Fichier > Nouveau ou Ouvrir.
+        const hasUrlId = new URLSearchParams(window.location.search).has('id');
+        if (hasUrlId) {
+            return (
+                <div className="green-wave-page">
+                    <div className="green-wave-loading">
+                        Chargement des données...
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className="green-wave-page">
-                <div className="green-wave-loading">
-                    Chargement des données...
+                <GreenWaveMenuBar
+                    onAction={handleMenuAction}
+                    pixelsPerSecond={pixelsPerSecond}
+                    onPixelsPerSecondChange={setPixelsPerSecond}
+                    pixelsPerMeter={pixelsPerMeter}
+                    onPixelsPerMeterChange={setPixelsPerMeter}
+                    displayCycles={displayCycles}
+                    onDisplayCyclesChange={setDisplayCycles}
+                    showSpeedLines={showSpeedLines}
+                    onShowSpeedLinesChange={setShowSpeedLines}
+                />
+                <div className="gw-welcome-screen">
+                    <p className="gw-welcome-hint">
+                        Aucune onde verte ouverte.<br/>
+                        Choisissez <strong>Fichier → Nouveau</strong> pour en créer une à partir de vos projets sauvegardés,
+                        ou <strong>Fichier → Ouvrir</strong> pour charger un fichier <code>.json</code> existant.
+                    </p>
                 </div>
+
+                {/* Modales nécessaires sur l'écran d'accueil pour pouvoir
+                    déclencher Nouveau / Aide en ligne / À propos. */}
+                <CreateGreenWaveDialog
+                    isOpen={showCreateDialog}
+                    onClose={() => setShowCreateDialog(false)}
+                    onConfirm={handleCreateGreenWaveLocal}
+                    getAllSaves={getAllSavesLocal}
+                    loadProjectData={getProjectDataLocal}
+                />
+                <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="Aide - Diagramme de Feux" className="modal-wide">
+                    <HelpContent initialAnchor="help-onde-verte" />
+                </Modal>
+                {showAboutModal && (
+                    <div className="gw-about-overlay" onClick={() => setShowAboutModal(false)}>
+                        <div className="gw-about-modal" onClick={(e) => e.stopPropagation()}>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#4ecdc4', marginBottom: '8px' }}>{APP_NAME}</div>
+                                <div style={{ fontSize: '1.1em', color: '#aaa', marginBottom: '4px' }}>Version {APP_VERSION}</div>
+                                <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '20px', maxWidth: '420px', margin: '0 auto 20px' }}>{APP_DESCRIPTION}</div>
+                                <div style={{ fontSize: '0.95em', marginBottom: '16px' }}>Module <strong>Onde verte</strong> — coordination espace-temps des axes à feux.</div>
+                                <button className="gw-about-close" onClick={() => setShowAboutModal(false)} style={{ marginTop: '12px' }}>Fermer</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
