@@ -432,6 +432,73 @@ body.sepia-mode .phase-flag-indicator {
     color: #8b3a1f;
 }
 
+/* Aide F1 en mode clair / sépia : les règles par défaut utilisent du gris
+   pâle (#ccc, #bbb, #ddd) qui est illisible sur fond blanc. !important
+   est nécessaire car la sommaire (.help-toc) a un style inline en dur. */
+body.light-mode .help-section p,
+body.light-mode .help-section ul,
+body.light-mode .help-section dl dd,
+body.sepia-mode .help-section p,
+body.sepia-mode .help-section ul,
+body.sepia-mode .help-section dl dd {
+    color: #222;
+}
+
+body.light-mode .help-section li,
+body.sepia-mode .help-section li {
+    color: #222;
+}
+
+body.light-mode .help-section li strong,
+body.sepia-mode .help-section li strong {
+    color: #000;
+}
+
+body.light-mode .help-section h4,
+body.sepia-mode .help-section h4 {
+    color: #1976d2;
+}
+
+body.light-mode .help-section dl dt,
+body.sepia-mode .help-section dl dt {
+    color: #2a8a85;
+}
+
+body.light-mode .help-section,
+body.sepia-mode .help-section {
+    border-bottom-color: #ccc;
+}
+
+/* Sommaire de l'aide (style inline en dur dans le JSX, on l'écrase) */
+body.light-mode .help-toc,
+body.sepia-mode .help-toc {
+    background: #f5f5f5 !important;
+    border-color: #ccc !important;
+}
+
+body.light-mode .help-toc h3,
+body.sepia-mode .help-toc h3 {
+    color: #2a8a85 !important;
+}
+
+body.light-mode .help-toc a,
+body.sepia-mode .help-toc a {
+    color: #1976d2 !important;
+}
+
+body.light-mode .help-toc ul li a,
+body.sepia-mode .help-toc ul li a {
+    color: #444 !important;
+}
+
+/* Le titre de chapitre h3 en dehors du sommaire reste teal (style inline,
+   doit être surchargé) */
+body.light-mode .help-content > h3,
+body.sepia-mode .help-content > h3 {
+    color: #2a8a85 !important;
+    border-bottom-color: #2a8a85 !important;
+}
+
 /* Abréviations sur les barres du diagramme (bar-label, escamotage-label,
    adaptatif-label, etc.) : par défaut blanc avec halo noir, illisibles sur
    barres claires en mode clair/sépia. On force le noir sans halo. */
