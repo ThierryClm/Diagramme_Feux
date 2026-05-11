@@ -2,6 +2,10 @@
 
 ![Aperçu de l'application : matrice des temps intervert à gauche, diagramme temporel d'un carrefour à 13 groupes au centre, conditions de micro-régulation en bas](docs/screenshots/diagramme-principal.png)
 
+### Onde verte
+
+![Aperçu du module Onde verte : diagramme espace-temps de 5 carrefours coordonnés sur un axe, avec bandes passantes en sens montant et descendant et tableau des données saisies](docs/screenshots/Onde-verte.png)
+
 Solution open source pour la conception et l'optimisation de plans de feux tricolores, destinée aux traficiens et ingénieurs de la circulation.
 
 L'application s'organise en **deux modules complémentaires** :
