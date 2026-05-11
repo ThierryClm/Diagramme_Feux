@@ -68,6 +68,14 @@ const GreenWavePage = () => {
     // Modale d'aide F1 : on affiche le même composant HelpContent que l'app
     // principale, focalisé sur le chapitre Onde verte. Pas de nouvel onglet.
     const [showHelpModal, setShowHelpModal] = useState(false);
+    // Suivi des modifications non sauvegardées (équivalent isDirty de l'app
+    // principale). Devient true au premier changement utilisateur, repasse à
+    // false sur sauvegarde, ouverture, création. Sert à demander confirmation
+    // avant d'écraser le travail en cours.
+    const [gwIsDirty, setGwIsDirty] = useState(false);
+    // Garde-fou pour ignorer les changements de state pendant le chargement
+    // (qui ne sont pas des modifications utilisateur).
+    const isApplyingSettingsRef = useRef(false);
 
     // Détachement du tableau des données saisies dans une fenêtre popup
     // pour libérer l'espace écran sous le diagramme. Persisté en localStorage.
@@ -216,6 +224,7 @@ const GreenWavePage = () => {
         localStorage.setItem('savedGreenWaves', JSON.stringify(savedGreenWaves));
 
         setGreenWaveName(name);
+        setGwIsDirty(false);
         alert(`Onde verte "${name}" enregistrée avec succès.`);
     };
 
@@ -317,6 +326,7 @@ const GreenWavePage = () => {
             // l'a modifié dans la boîte de dialogue) pour que la prochaine
             // sauvegarde le re-suggère.
             setLoadedFileName(savedName);
+            setGwIsDirty(false);
 
             alert(`Onde verte enregistrée dans "${fileHandle.name}".`);
         } catch (e) {
@@ -393,9 +403,12 @@ const GreenWavePage = () => {
         }
     };
 
-    // Appliquer les settings chargés
+    // Appliquer les settings chargés. Pendant l'application, le flag
+    // isApplyingSettingsRef neutralise la détection de modifications pour
+    // éviter que le chargement ne fasse passer gwIsDirty à true.
     const applySettings = useCallback((settings) => {
         if (!settings) return;
+        isApplyingSettingsRef.current = true;
         if (settings.name) setGreenWaveName(settings.name);
         if (settings.speedUp) setSpeedUp(settings.speedUp);
         else if (settings.speed) setSpeedUp(settings.speed);
@@ -420,7 +433,25 @@ const GreenWavePage = () => {
                 ? settings.name
                 : `Onde Verte - ${settings.name}`;
         }
+        // À la fin de l'application des settings, relâche le garde-fou et
+        // marque le projet comme propre. setTimeout 0 pour laisser React
+        // batcher les setState et le useEffect dépendant s'exécuter avant.
+        setTimeout(() => {
+            isApplyingSettingsRef.current = false;
+            setGwIsDirty(false);
+        }, 0);
     }, []);
+
+    // Détection des modifications non sauvegardées : à chaque changement d'un
+    // état surveillé (et hors période de chargement applySettings), on bascule
+    // gwIsDirty à true. La remise à false se fait dans handleSaveGreenWave,
+    // handleSaveGreenWaveToFile, applySettings, handleCreateGreenWaveLocal.
+    useEffect(() => {
+        if (isApplyingSettingsRef.current) return;
+        if (intersections === null) return; // pas encore de projet chargé
+        setGwIsDirty(true);
+    }, [intersections, speedUp, speedDown, speedLineOffsetUp, speedLineOffsetDown,
+        pixelsPerSecond, pixelsPerMeter, displayCycles, showSpeedLines, pfParams]);
 
     // Load data on mount — sessionStorage par défaut, IndexedDB si &idb=1
     useEffect(() => {
@@ -1528,41 +1559,36 @@ const GreenWavePage = () => {
         }
     };
 
-    // Création d'une nouvelle onde verte. Comportement adaptatif :
-    // - Si la fenêtre courante est vide (écran d'accueil, pas de projet
-    //   chargé) : on remplit cette fenêtre, pas de nouvel onglet.
-    // - Si un projet est déjà chargé : on ouvre la nouvelle onde verte dans
-    //   un nouvel onglet pour ne pas écraser le travail courant.
+    // Création d'une nouvelle onde verte : remplace le contenu de la fenêtre
+    // courante (philosophie « une seule session Onde verte à la fois »,
+    // cohérente avec le module Diagramme). Si le projet courant a des
+    // modifications non sauvegardées, on demande confirmation avant
+    // d'écraser.
     const handleCreateGreenWaveLocal = (newIntersections) => {
-        if (intersections === null) {
-            // Fenêtre vide : on remplit ici.
-            setIntersections(newIntersections);
-            setGreenWaveName('');
-            setLoadedFileName('');
-            setSpeedLineOffsetUp(0);
-            setSpeedLineOffsetDown(0);
-            setPfParams({});
-            setShowCreateDialog(false);
-            document.title = 'Onde Verte';
+        if (gwIsDirty && !window.confirm("L'onde verte courante a des modifications non enregistrées qui seront perdues.\n\nContinuer et créer une nouvelle onde verte ?")) {
+            // L'utilisateur annule : ne ferme pas le dialogue, lui laisse
+            // l'opportunité d'annuler complètement la création.
             return;
         }
-        // Projet déjà chargé : nouvel onglet pour préserver le courant.
-        const greenWaveId = Date.now().toString();
-        try {
-            sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(newIntersections));
-            window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
-        } catch (e) {
-            console.error('Stockage session insuffisant :', e);
-            alert('Le projet est trop volumineux pour être ouvert dans un nouvel onglet.');
-        }
+        isApplyingSettingsRef.current = true;
+        setIntersections(newIntersections);
+        setGreenWaveName('');
+        setLoadedFileName('');
+        setSpeedLineOffsetUp(0);
+        setSpeedLineOffsetDown(0);
+        setPfParams({});
         setShowCreateDialog(false);
+        document.title = 'Onde Verte';
+        setTimeout(() => {
+            isApplyingSettingsRef.current = false;
+            setGwIsDirty(false);
+        }, 0);
     };
 
-    // Ouverture d'un fichier .json d'onde verte. Comportement adaptatif :
-    // - Si la fenêtre courante est vide : on charge ici (pas de nouvel
-    //   onglet superflu, l'utilisateur a explicitement demandé à ouvrir).
-    // - Si un projet est déjà chargé : on ouvre dans un nouvel onglet pour
-    //   préserver le travail en cours et permettre de jongler entre ondes.
+    // Ouverture d'un fichier .json d'onde verte : remplace le contenu de la
+    // fenêtre courante (philosophie « une seule session Onde verte à la
+    // fois »). Si le projet courant a des modifications non sauvegardées,
+    // on demande confirmation avant d'écraser.
     const handleOpenGreenWaveFile = async () => {
         if (!window.showOpenFilePicker) {
             alert('Votre navigateur ne supporte pas l\'ouverture de fichiers. Utilisez l\'application principale.');
@@ -1584,6 +1610,12 @@ const GreenWavePage = () => {
                 alert('Le fichier ne contient pas de données d\'onde verte valides.');
                 return;
             }
+            // Confirmation si la fenêtre courante a des modifs non sauvées.
+            // (Check fait après validation pour éviter une question inutile
+            // si le fichier choisi n'est pas exploitable.)
+            if (gwIsDirty && !window.confirm("L'onde verte courante a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le fichier sélectionné ?")) {
+                return;
+            }
             const settings = {
                 name: data.name || file.name.replace(/\.json$/i, ''),
                 loadedFileName: file.name.replace(/\.json$/i, ''),
@@ -1597,22 +1629,10 @@ const GreenWavePage = () => {
                 pixelsPerMeter: data.pixelsPerMeter,
                 displayCycles: data.displayCycles
             };
-            if (intersections === null) {
-                // Fenêtre vide : on charge dans la fenêtre courante.
-                setIntersections(data.intersections);
-                applySettings(settings);
-                return;
-            }
-            // Projet déjà chargé : nouvel onglet.
-            const greenWaveId = Date.now().toString();
-            try {
-                sessionStorage.setItem(`greenwave_${greenWaveId}`, JSON.stringify(data.intersections));
-                sessionStorage.setItem(`greenwave_settings_${greenWaveId}`, JSON.stringify(settings));
-                window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}`, '_blank');
-            } catch (e) {
-                console.error('Stockage session insuffisant :', e);
-                alert('Le fichier est trop volumineux pour être ouvert dans un nouvel onglet. Utilisez l\'application principale.');
-            }
+            // Toujours charger dans la fenêtre courante (une session à la fois).
+            isApplyingSettingsRef.current = true;
+            setIntersections(data.intersections);
+            applySettings(settings);
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier onde verte:', e);
