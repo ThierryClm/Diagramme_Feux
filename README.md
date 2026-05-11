@@ -11,6 +11,14 @@ L'application s'organise en **deux modules complémentaires** :
 
 Conçue pour être utilisée **localement**, sans serveur ni télémétrie : toutes les données restent dans le navigateur (localStorage) et sur votre poste.
 
+## Mode présentation
+
+L'application est conçue pour s'adapter aux contextes de **présentation devant un auditoire** — comités techniques, formations internes, validations devant un client ou échanges pédagogiques avec des élus.
+
+Détachez la fenêtre **Image du carrefour** sur un vidéoprojecteur ou un second écran pour montrer en grand l'animation du carrefour pendant la simulation : les flèches changent de couleur (vert / orange / rouge) seconde par seconde, en suivant le cycle et l'effet des actions de micro-régulation activées.
+
+L'auditoire ne voit que l'essentiel — le carrefour qui « vit » au rythme du cycle — pendant que vous gardez le contrôle complet sur votre écran de travail (diagramme, matrice, panneau de simulation, micro-régulation) et commentez en direct les actions que vous activez et leur effet sur la dynamique du carrefour.
+
 ## Fonctionnalités principales
 
 ### Module Diagramme de Feux

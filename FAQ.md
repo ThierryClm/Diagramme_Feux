@@ -118,6 +118,18 @@ Concrètement :
 
 Vous n'avez **ni à réinstaller**, **ni à vider de cache**, **ni à cliquer sur un bouton « Mettre à jour »**. C'est l'un des avantages du format PWA par rapport à un logiciel classique : la maintenance est entièrement transparente.
 
+### Puis-je utiliser l'application en présentation devant un auditoire ?
+
+Oui, l'application est conçue pour s'adapter à ce contexte. Détachez la fenêtre **Image du carrefour** depuis le menu **Mise en page → Détachements**, puis glissez la popup ainsi obtenue sur un second écran ou un vidéoprojecteur.
+
+Pendant la simulation, cette popup s'anime en synchronisation avec votre fenêtre de travail : les flèches changent de couleur (vert / orange / rouge) seconde par seconde, en suivant le cycle du plan de feu courant et l'effet des actions de micro-régulation activées.
+
+**Le résultat pour l'auditoire** : un visuel épuré et lisible, focalisé sur l'essentiel — le carrefour qui « vit » au rythme du cycle.
+
+**Pour vous, présentateur** : vous gardez sur votre écran de travail le contrôle complet (diagramme, matrice, panneau de simulation, tableau d'actions), ce qui vous permet de commenter en direct les actions de micro-régulation que vous activez (escamotage, ouverture anticipée, seconde lucarne, etc.) et d'observer immédiatement leur effet sur la dynamique du carrefour projetée à l'écran.
+
+C'est particulièrement adapté aux comités techniques, formations internes, validations devant un client ou aux échanges pédagogiques avec des élus.
+
 ### Quels formats d'import/export sont supportés ?
 
 | Format | Import | Export |
