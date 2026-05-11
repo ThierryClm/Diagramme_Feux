@@ -1,0 +1,42 @@
+# Auteurs
+
+Liste des auteurs et contributeurs du projet **Diagramme de Feux**.
+
+## Auteur principal et détenteur des droits
+
+**Thierry Colmon** — conception, développement, documentation.
+
+Le code source est publié sous licence GNU AGPL v3 (voir `LICENSE`).
+Le copyright du projet est détenu par l'auteur principal.
+
+## Assistance au développement
+
+Le développement de ce projet s'appuie ponctuellement sur l'assistant
+IA **Claude** (Anthropic), utilisé comme outil d'écriture sous la
+direction de l'auteur principal.
+
+Les contributions issues de cette assistance ne constituent pas une
+co-paternité au sens du droit d'auteur : l'état actuel de la
+jurisprudence en France, dans l'Union européenne et aux États-Unis
+ne reconnaît pas les systèmes d'IA comme auteurs au sens de la loi.
+Les choix de conception, la validation, l'intégration et la publication
+relèvent de l'auteur principal.
+
+Certains messages de commit Git portent une mention
+`Co-Authored-By: Claude Opus ... <noreply@anthropic.com>` à des fins de
+**traçabilité technique** dans l'historique du dépôt. Cette mention
+est une convention informelle de Git et ne constitue pas une
+reconnaissance juridique de co-paternité.
+
+## Contribuer au projet
+
+Les contributions externes (issues, pull requests) sont bienvenues —
+voir `CONTRIBUTING.md` pour les modalités.
+
+Toute contribution acceptée est intégrée sous la licence GNU AGPL v3 du
+projet. Les contributeurs conservent le copyright sur leurs ajouts ;
+ils sont listés ci-dessous au fur et à mesure.
+
+## Contributeurs
+
+_(Aucun pour le moment.)_
