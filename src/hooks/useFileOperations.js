@@ -12,6 +12,7 @@ const useFileOperations = ({
     projectName, diagramHeight, floatingCrop, floatingZoom,
     setSelectedProject, setOpenModal, setCurrentProjectPath, setProjectModified,
     projectModifiedSkip, hasUnsavedChanges, setHasUnsavedChanges,
+    isDirty,
     setDiagramHeight, setFloatingCrop, setFloatingZoom,
     setShowComments, setShowRemarks, setIntersectionName,
     // Options de mise en page sauvegardées dans le projet
@@ -86,6 +87,14 @@ const useFileOperations = ({
             if (validation.warnings.length > 0) {
                 console.warn('Avertissements validation projet :', validation.warnings);
                 toast.info(`Projet chargé avec ${validation.warnings.length} avertissement(s) — voir console`);
+            }
+
+            // Garde-fou : si le projet courant a des modifications non
+            // sauvegardées, demander confirmation avant de l'écraser.
+            // (Validation OK passée d'abord pour éviter une question inutile
+            // si le fichier choisi n'est pas exploitable.)
+            if (isDirty && !window.confirm('Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le nouveau projet ?')) {
+                return;
             }
 
             // Mémoriser le répertoire parent
@@ -248,6 +257,14 @@ const useFileOperations = ({
             if (validation.warnings.length > 0) {
                 console.warn('Avertissements validation projet :', validation.warnings);
                 toast.info(`Projet chargé avec ${validation.warnings.length} avertissement(s) — voir console`);
+            }
+
+            // Garde-fou : si le projet courant a des modifications non
+            // sauvegardées, demander confirmation avant de l'écraser.
+            // (Validation OK passée d'abord pour éviter une question inutile
+            // si le fichier choisi n'est pas exploitable.)
+            if (isDirty && !window.confirm('Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le nouveau projet ?')) {
+                return;
             }
 
             // Mémoriser le répertoire parent

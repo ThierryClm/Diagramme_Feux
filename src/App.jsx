@@ -553,6 +553,7 @@ function App() {
         projectName, diagramHeight, floatingCrop, floatingZoom,
         setSelectedProject, setOpenModal, setCurrentProjectPath, setProjectModified,
         projectModifiedSkip, hasUnsavedChanges, setHasUnsavedChanges,
+        isDirty,
         setDiagramHeight, setFloatingCrop, setFloatingZoom,
         setShowComments, setShowRemarks, setIntersectionName,
         // Layout options sauvegardées au niveau projet
@@ -1369,6 +1370,11 @@ function App() {
     // Handle project selection from open modal
     const handleOpenProject = () => {
         if (selectedProject) {
+            // Garde-fou : si le projet courant a des modifications non
+            // sauvegardées, demander confirmation avant de l'écraser.
+            if (isDirty && !window.confirm('Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le projet sélectionné ?')) {
+                return;
+            }
             const data = loadProject(selectedProject);
             setOpenModal(false);
             setSelectedProject(null);
@@ -2506,6 +2512,10 @@ draw();
                                             className={selectedProject === project.name ? 'selected' : ''}
                                             onClick={() => setSelectedProject(project.name)}
                                             onDoubleClick={() => {
+                                                // Garde-fou : modifications non sauvegardées
+                                                if (isDirty && !window.confirm('Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir « ' + project.name + ' » ?')) {
+                                                    return;
+                                                }
                                                 setSelectedProject(project.name);
                                                 const data = loadProject(project.name);
                                                 setOpenModal(false);
