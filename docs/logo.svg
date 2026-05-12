@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <!--
+    Logo TraCflux — version provisoire
+    Feu tricolore vu de profil : C-visière + T-poteau
+
+    Composition :
+    - Une visière en forme de C ouverte vers la droite porte les trois
+      lampes rouge / orange / verte alignées verticalement.
+    - Le poteau du T s'élève par l'intérieur de la visière (jusqu'aux
+      deux tiers), suggérant le mât qui supporte le feu.
+    - La base horizontale referme la lettre T. Les initiales TC de
+      l'auteur sont ainsi intégrées discrètement au pictogramme.
+
+    Ce logo est une première identité visuelle ; un raffinement par
+    un designer professionnel est prévu.
+  -->
+
+  <!-- Visière C, rayon 18, ouverture à droite. Centre (50, 35). -->
+  <path d="M 62.7 22.3
+           A 18 18 0 1 0 62.7 47.7"
+        fill="none"
+        stroke="#1E1E1E"
+        stroke-width="6"
+        stroke-linecap="round"/>
+
+  <!-- Trois lampes alignées, décalées vers l'ouverture du C -->
+  <circle cx="58" cy="24" r="5" fill="#E53935"/>
+  <circle cx="58" cy="35" r="5" fill="#FB8C00"/>
+  <circle cx="58" cy="46" r="5" fill="#43A047"/>
+
+  <!-- Poteau du T : monte aux ~2/3 du C, descend jusqu'à la base -->
+  <rect x="44" y="29" width="6" height="45" fill="#1E1E1E"/>
+
+  <!-- Base horizontale du T -->
+  <rect x="30" y="74" width="36" height="5" fill="#1E1E1E"/>
+</svg>

@@ -78,7 +78,7 @@ L'application s'ouvre à `http://localhost:3000`.
 
 ## Exemple
 
-Un projet d'exemple est fourni dans le dossier [`examples/`](examples/). Ouvrez l'application, puis utilisez **Fichier → Ouvrir un projet** et sélectionnez `examples/carrefour-exemple.json`.
+Un projet d'exemple est fourni dans le dossier [`examples/`](examples/). Ouvrez l'application, puis utilisez **Fichier → Ouvrir un projet** et sélectionnez `examples/Carrefour_exemple.json`.
 
 ## Architecture
 
