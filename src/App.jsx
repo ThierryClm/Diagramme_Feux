@@ -2746,7 +2746,20 @@ draw();
 
             {/* Modal À propos */}
             <Modal isOpen={aboutModal} onClose={() => setAboutModal(false)} title={`À propos — ${APP_NAME}`}>
-                <div style={{ padding: '10px 4px', textAlign: 'center' }}>
+                <div style={{ padding: '10px 4px', textAlign: 'center', position: 'relative' }}>
+                    <img
+                        src="./logo.svg"
+                        alt=""
+                        style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '8px',
+                            width: '80px',
+                            height: '80px',
+                            userSelect: 'none',
+                            pointerEvents: 'none'
+                        }}
+                    />
                     <div style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#4ecdc4', marginBottom: '8px' }}>
                         {APP_NAME}
                     </div>

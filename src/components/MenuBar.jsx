@@ -544,6 +544,15 @@ const MenuBar = ({
 
     return (
         <div className="menu-bar" ref={menuRef}>
+            <button
+                type="button"
+                className="menu-bar-logo-btn"
+                onClick={() => handleItemClick('credit')}
+                title="À propos de TraCflux"
+                aria-label="À propos"
+            >
+                <img src="./logo.svg" className="menu-bar-logo" alt="TraCflux" />
+            </button>
             {Object.entries(menus).map(([key, menu]) => (
                 <div key={key} className="menu-container">
                     <button

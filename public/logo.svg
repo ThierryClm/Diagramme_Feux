@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!--
+    Logo TraCflux — variante UI pour barre de menu sombre.
+    Traits du C/T en gris clair (#e0e0e0) pour rester visibles sur
+    le fond sombre ; lampes rouge/orange/verte conservées.
+    Version « marque » d'origine dans docs/logo.svg (traits #1E1E1E).
+  -->
+  <path d="M 62.7 22.3 A 18 18 0 1 0 62.7 47.7"
+        fill="none" stroke="#e0e0e0" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="58" cy="24" r="5" fill="#E53935"/>
+  <circle cx="58" cy="35" r="5" fill="#FB8C00"/>
+  <circle cx="58" cy="46" r="5" fill="#43A047"/>
+  <rect x="44" y="29" width="6" height="45" fill="#e0e0e0"/>
+  <rect x="30" y="74" width="36" height="5" fill="#e0e0e0"/>
+</svg>

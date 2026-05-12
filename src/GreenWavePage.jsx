@@ -1731,7 +1731,12 @@ const GreenWavePage = () => {
                 {showAboutModal && (
                     <div className="gw-about-overlay" onClick={() => setShowAboutModal(false)}>
                         <div className="gw-about-modal" onClick={(e) => e.stopPropagation()}>
-                            <div style={{ textAlign: 'center' }}>
+                            <div style={{ textAlign: 'center', position: 'relative' }}>
+                                <img
+                                    src="./logo.svg"
+                                    alt=""
+                                    style={{ position: 'absolute', top: '0', right: '0', width: '80px', height: '80px', userSelect: 'none', pointerEvents: 'none' }}
+                                />
                                 <div style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#4ecdc4', marginBottom: '8px' }}>{APP_NAME}</div>
                                 <div style={{ fontSize: '1.1em', color: '#aaa', marginBottom: '4px' }}>Version {APP_VERSION}</div>
                                 <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '20px', maxWidth: '420px', margin: '0 auto 20px' }}>{APP_DESCRIPTION}</div>
@@ -2454,7 +2459,12 @@ const GreenWavePage = () => {
                     onClick={() => setShowAboutModal(false)}
                 >
                     <div className="gw-about-modal" onClick={(e) => e.stopPropagation()}>
-                        <div style={{ textAlign: 'center' }}>
+                        <div style={{ textAlign: 'center', position: 'relative' }}>
+                            <img
+                                src="./logo.svg"
+                                alt=""
+                                style={{ position: 'absolute', top: '0', right: '0', width: '80px', height: '80px', userSelect: 'none', pointerEvents: 'none' }}
+                            />
                             <div style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#4ecdc4', marginBottom: '8px' }}>
                                 {APP_NAME}
                             </div>
