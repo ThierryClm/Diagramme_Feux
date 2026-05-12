@@ -364,7 +364,17 @@ const HelpContent = ({ initialAnchor = null }) => {
 
             <section className="help-section">
                 <h4>Image du carrefour</h4>
-                <p>L'image du carrefour affiche les flèches des groupes de feux avec un code couleur dynamique :</p>
+                <p><strong>Charger un fond de plan :</strong> Cliquez sur le bouton de chargement dans la zone Image du carrefour pour sélectionner un fichier. Les formats acceptés sont les principaux formats web reconnus par votre navigateur :</p>
+                <ul>
+                    <li><strong>JPEG</strong> (.jpg, .jpeg) — recommandé pour les <em>photos aériennes</em> (Géoportail, Google Maps, cadastre, IGN, drones…) et les captures d'écran de logiciels CAO</li>
+                    <li><strong>PNG</strong> (.png) — recommandé pour les <em>plans au trait, schémas, captures nettes</em> avec fond transparent ou blanc</li>
+                    <li><strong>SVG</strong> (.svg) — vectoriel, idéal pour les <em>schémas exportés depuis AutoCAD, Illustrator</em> ou autres outils vectoriels (reste net à tout zoom)</li>
+                    <li><strong>WebP, GIF, BMP, AVIF</strong> — également acceptés (formats web courants)</li>
+                </ul>
+                <p>Astuce : pour un fichier .json de projet portable et léger, préférez un fond de plan compressé (JPEG de qualité moyenne, ou PNG si le plan ne comporte que des aplats). L'image est embarquée en base64 dans le projet sauvegardé.</p>
+                <p>Note sur les formats non supportés : les fichiers <strong>TIFF / GeoTIFF</strong> (.tif), <strong>HEIC</strong> (photos iPhone) et autres formats spécialisés ne sont pas affichés par les navigateurs. Convertissez-les au préalable en JPEG ou PNG (la plupart des visionneuses d'images, ou un export depuis un SIG, savent le faire).</p>
+
+                <p>Une fois l'image chargée, elle affiche les flèches des groupes de feux avec un code couleur dynamique :</p>
                 <ul>
                     <li><strong>Survol du diagramme :</strong> En survolant le diagramme, les flèches changent de couleur selon la phase à l'instant survolé :
                         <ul>

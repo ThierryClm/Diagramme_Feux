@@ -141,6 +141,19 @@ C'est particulièrement adapté aux comités techniques, formations internes, va
 | PDF (impression dossier) | — | ✓ |
 | PNG (capture diagramme) | — | ✓ |
 
+### Quels formats d'image puis-je utiliser comme fond de plan ?
+
+Le fond de plan du carrefour (« Image du carrefour ») accepte tous les formats image courants que votre navigateur sait afficher :
+
+- **JPEG** (`.jpg`, `.jpeg`) — adapté aux **photos aériennes** issues de Géoportail, Google Maps, du cadastre, de l'IGN, de drones ou de captures de logiciels SIG/CAO.
+- **PNG** (`.png`) — adapté aux **plans au trait** et **schémas** avec aplats nets, fond blanc ou transparent.
+- **SVG** (`.svg`) — vectoriel, idéal pour des **schémas exportés depuis AutoCAD, Illustrator** ou tout outil produisant du vectoriel. Reste net à tout niveau de zoom.
+- **WebP, GIF, BMP, AVIF** — également acceptés.
+
+Les formats spécialisés **TIFF / GeoTIFF** (`.tif`), **HEIC** (photos iPhone) et formats propriétaires SIG ne sont pas pris en charge directement (les navigateurs ne les affichent pas nativement). Convertissez-les en JPEG ou PNG via votre visionneuse d'images, votre SIG ou un outil en ligne.
+
+L'image chargée est **embarquée en base64 dans le fichier `.json` du projet** : elle voyage avec le projet, mais alourdit le fichier. Pour un partage léger, compressez le fond de plan (JPEG qualité 70-85 %, ou PNG sur fond uni) avant import.
+
 ### Y a-t-il une limite au nombre de groupes ou de plans de feux ?
 
 Pas de limite stricte. L'application a été testée avec une trentaine de groupes et plusieurs plans de feux par projet. Les performances restent fluides ; pour des intersections très complexes, surveillez l'usage du localStorage (un avertissement apparaît dans le rapport de diagnostic au-delà de 4 Mo).

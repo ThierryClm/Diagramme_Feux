@@ -111,9 +111,9 @@ const IntersectionImage = ({
             try {
                 const options = {
                     types: [{
-                        description: 'Images',
+                        description: 'Images (photos aériennes, plans, schémas)',
                         accept: {
-                            'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp']
+                            'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.avif']
                         }
                     }],
                     multiple: false

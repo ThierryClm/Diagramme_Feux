@@ -38,6 +38,7 @@ L'auditoire ne voit que l'essentiel — le carrefour qui « vit » au rythme du 
 - Diagramme temporel horizontal avec tête de lecture
 - Plans de feux multiples (PF) gérés par onglets
 - Table d'actions de micro-régulation par plan (escamotage, ouverture/fermeture anticipée, etc.)
+- Fond de plan personnalisable (photo aérienne, plan CAO, schéma au trait) avec flèches d'animation des groupes
 - Import/export (JSON, CSV, Excel)
 - Export PDF et PNG du diagramme
 
