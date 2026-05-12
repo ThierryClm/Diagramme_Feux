@@ -1707,6 +1707,7 @@ const GreenWavePage = () => {
                     onDisplayCyclesChange={setDisplayCycles}
                     showSpeedLines={showSpeedLines}
                     onShowSpeedLinesChange={setShowSpeedLines}
+                    hasActiveProject={false}
                 />
                 <div className="gw-welcome-screen">
                     <p className="gw-welcome-hint">
@@ -1762,6 +1763,7 @@ const GreenWavePage = () => {
                 onDisplayCyclesChange={setDisplayCycles}
                 showSpeedLines={showSpeedLines}
                 onShowSpeedLinesChange={setShowSpeedLines}
+                hasActiveProject={!!intersections && intersections.length > 0}
             />
             <div className="green-wave-page-header">
                 <h1>

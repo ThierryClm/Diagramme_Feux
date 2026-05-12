@@ -14,7 +14,8 @@ const GreenWaveMenuBar = ({
     pixelsPerSecond, onPixelsPerSecondChange,
     pixelsPerMeter, onPixelsPerMeterChange,
     displayCycles, onDisplayCyclesChange,
-    showSpeedLines, onShowSpeedLinesChange
+    showSpeedLines, onShowSpeedLinesChange,
+    hasActiveProject = true
 }) => {
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -58,18 +59,21 @@ const GreenWaveMenuBar = ({
                     label: 'Enregistrer',
                     type: 'submenu',
                     submenuId: 'save',
+                    disabled: !hasActiveProject,
+                    title: !hasActiveProject ? 'Aucune onde verte ouverte' : '',
                     submenu: [
                         { label: 'Dans le cache navigateur...', action: 'saveLocal' },
                         { label: 'Dans le réseau (fichier .json)...', action: 'saveFile' }
                     ]
                 },
-                { label: 'Imprimer (PDF)', action: 'print' },
+                { label: 'Imprimer (PDF)', action: 'print', disabled: !hasActiveProject, title: !hasActiveProject ? 'Aucune onde verte ouverte' : '' },
                 { type: 'separator' },
                 { label: 'Fermer', action: 'close' }
             ]
         },
         miseEnPage: {
             label: 'Mise en page',
+            disabled: !hasActiveProject,
             items: [
                 {
                     label: 'Zoom X (temps)',
@@ -257,12 +261,14 @@ const GreenWaveMenuBar = ({
                 <div key={key} className="menu-container">
                     <button
                         className={`menu-button ${openMenu === key ? 'active' : ''}`}
-                        onClick={() => handleMenuClick(key)}
-                        onMouseEnter={() => openMenu && setOpenMenu(key)}
+                        onClick={() => !menu.disabled && handleMenuClick(key)}
+                        onMouseEnter={() => openMenu && !menu.disabled && setOpenMenu(key)}
+                        disabled={menu.disabled}
+                        title={menu.disabled && !hasActiveProject ? 'Aucune onde verte ouverte' : ''}
                     >
                         {menu.label}
                     </button>
-                    {openMenu === key && (
+                    {openMenu === key && !menu.disabled && (
                         <div className="menu-dropdown">
                             {menu.items.map((item, idx) => renderMenuItem(item, idx))}
                         </div>

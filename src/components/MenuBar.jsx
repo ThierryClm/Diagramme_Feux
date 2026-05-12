@@ -12,6 +12,7 @@ const MenuBar = ({
     recentSaveDirs = [],
     currentUser = null,
     hasPermission = () => true,
+    hasActiveProject = true,
     onManageUsers,
     biCarrefourSeparator = null,
     layoutOptions = {},
@@ -23,6 +24,8 @@ const MenuBar = ({
     const [openMenu, setOpenMenu] = useState(initialOpenMenu);
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const menuRef = useRef(null);
+    // Timer pour l'ouverture différée au survol (filtre les passages rapides)
+    const hoverTimerRef = useRef(null);
 
     // Drapeau « import Excel » : la fonctionnalité dépend du modèle de
     // fichier Excel (mises en page variables d'un éditeur à l'autre) et n'est
@@ -67,6 +70,13 @@ const MenuBar = ({
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Nettoyage du timer de survol au démontage
+    useEffect(() => {
+        return () => {
+            if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+        };
     }, []);
 
     const handleMenuClick = (menuName) => {
@@ -180,14 +190,20 @@ const MenuBar = ({
                     submenuId: 'openRecent',
                     submenu: recentOpenDirsSubmenu
                 }] : [{ label: 'Ouvrir un projet...', action: 'open' }]),
-                { label: 'Ouvrir depuis le local storage...', action: 'openLocalStorage' },
+                { label: 'Restaurer un projet récent...', action: 'openLocalStorage' },
                 ...(recentSaveDirs.length > 0 ? [{
                     label: 'Sauvegarder...',
                     type: 'submenu',
                     submenuId: 'saveRecent',
                     submenu: recentSaveDirsSubmenu,
-                    disabled: !hasPermission('canSave')
-                }] : [{ label: 'Sauvegarder', action: 'save', disabled: !hasPermission('canSave') }]),
+                    disabled: !hasPermission('canSave') || !hasActiveProject,
+                    title: !hasActiveProject ? 'Aucun projet ouvert' : ''
+                }] : [{
+                    label: 'Sauvegarder',
+                    action: 'save',
+                    disabled: !hasPermission('canSave') || !hasActiveProject,
+                    title: !hasActiveProject ? 'Aucun projet ouvert' : ''
+                }]),
                 { type: 'separator' },
                 {
                     label: 'Importer programmation contrôleur',
@@ -207,19 +223,21 @@ const MenuBar = ({
                     submenuId: 'importRecent',
                     submenu: recentImportDirsSubmenu,
                     disabled: !hasPermission('canImportExcel') || !excelImportEnabled,
-                    title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : ''
+                    title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : 'Importation sur mesure pour une collectivité.'
                 }] : [{
                     label: 'Importer Excel...',
                     action: 'import',
                     disabled: !hasPermission('canImportExcel') || !excelImportEnabled,
-                    title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : ''
+                    title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : 'Importation sur mesure pour une collectivité.'
                 }]),
                 { label: 'Lire une boîte noire (.bn)...', action: 'openBlackBox', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' },
-                { label: 'Liens externes...', action: 'externalLinks' },
+                { label: 'Liens externes...', action: 'externalLinks', disabled: !hasActiveProject, title: !hasActiveProject ? 'Aucun projet ouvert' : '' },
                 { type: 'separator' },
-                { label: 'Imprimer le projet...', action: 'printDossier' },
+                { label: 'Imprimer le projet...', action: 'printDossier', disabled: !hasActiveProject, title: !hasActiveProject ? 'Aucun projet ouvert' : '' },
                 {
                     label: 'Exporter en PNG...',
+                    disabled: !hasActiveProject,
+                    title: !hasActiveProject ? 'Aucun projet ouvert' : '',
                     type: 'submenu',
                     submenuId: 'exportPng',
                     submenu: (() => {
@@ -276,6 +294,7 @@ const MenuBar = ({
         },
         miseEnPage: {
             label: 'Mise en page',
+            disabled: !hasActiveProject,
             items: [
                 { label: 'Affichage des paramètres', action: 'toggleParameters', toggle: true, checked: layoutOptions.showParameters, keepSubmenuOpen: true },
                 { label: 'Commentaires du diagramme', action: 'toggleComments', toggle: true, checked: layoutOptions.showComments, keepSubmenuOpen: true },
@@ -346,6 +365,7 @@ const MenuBar = ({
         },
         diagramme: {
             label: 'Diagramme',
+            disabled: !hasActiveProject,
             items: [
                 { label: 'Dupliquer le diagramme actif', action: 'duplicate', disabled: !hasPermission('canDuplicate') },
                 { label: 'Supprimer le diagramme actif', action: 'deleteActiveDiagram', disabled: !hasPermission('canModifyDiagram') },
@@ -557,12 +577,47 @@ const MenuBar = ({
                 <div key={key} className="menu-container">
                     <button
                         className={`menu-button ${openMenu === key ? 'active' : ''}`}
-                        onClick={() => menu.action ? handleItemClick(menu.action) : handleMenuClick(key)}
-                        onMouseEnter={() => openMenu && menu.items && setOpenMenu(key)}
+                        onClick={() => {
+                            if (menu.disabled) return;
+                            if (menu.action) handleItemClick(menu.action);
+                            else handleMenuClick(key);
+                        }}
+                        onMouseEnter={() => {
+                            // Si un menu est déjà ouvert : bascule immédiate (pas de délai).
+                            if (openMenu) {
+                                if (menu.items && !menu.disabled) {
+                                    setOpenMenu(key);
+                                } else {
+                                    // Menu-action direct (ex. Onde verte) ou menu désactivé :
+                                    // rien à montrer, on ferme les dropdowns ouverts.
+                                    setOpenMenu(null);
+                                    setOpenSubmenu(null);
+                                }
+                                return;
+                            }
+                            // Aucun menu ouvert : ouverture différée (150 ms) sur les menus
+                            // avec dropdown disponible, pour filtrer les survols accidentels.
+                            if (menu.items && !menu.disabled) {
+                                if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+                                hoverTimerRef.current = setTimeout(() => {
+                                    setOpenMenu(key);
+                                    hoverTimerRef.current = null;
+                                }, 150);
+                            }
+                        }}
+                        onMouseLeave={() => {
+                            // Annule l'ouverture différée si on quitte avant la fin du délai.
+                            if (hoverTimerRef.current) {
+                                clearTimeout(hoverTimerRef.current);
+                                hoverTimerRef.current = null;
+                            }
+                        }}
+                        disabled={menu.disabled}
+                        title={menu.disabled && !hasActiveProject ? 'Aucun projet ouvert' : ''}
                     >
                         {menu.label}
                     </button>
-                    {openMenu === key && menu.items && (
+                    {openMenu === key && menu.items && !menu.disabled && (
                         <div className="menu-dropdown">
                             {menu.items.map((item, idx) => renderMenuItem(item, idx))}
                         </div>

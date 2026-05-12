@@ -1758,6 +1758,7 @@ draw();
                     recentSaveDirs={recentSaveDirs}
                     currentUser={currentUser}
                     hasPermission={hasPermission}
+                    hasActiveProject={hasActiveProject}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
                     layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab }}
