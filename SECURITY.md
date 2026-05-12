@@ -2,7 +2,7 @@
 
 ## Signaler une vulnérabilité
 
-Si vous identifiez une vulnérabilité de sécurité dans Diagramme de Feux, merci de **ne pas ouvrir d'issue publique**. Contactez-moi directement via :
+Si vous identifiez une vulnérabilité de sécurité dans TraCflux, merci de **ne pas ouvrir d'issue publique**. Contactez-moi directement via :
 
 - **GitHub Security Advisory** : [ouvrir un rapport privé](https://github.com/ThierryClm/Diagramme_Feux/security/advisories/new)
 
@@ -16,7 +16,7 @@ Je m'engage à accuser réception sous **7 jours** et à vous tenir informé de 
 
 ## Périmètre
 
-Diagramme de Feux est une application **100 % locale** : pas de serveur, pas de télémétrie, pas d'appel réseau sortant. Toutes les données utilisateur restent dans le navigateur (localStorage) ou sur le disque (fichiers .json exportés).
+TraCflux est une application **100 % locale** : pas de serveur, pas de télémétrie, pas d'appel réseau sortant. Toutes les données utilisateur restent dans le navigateur (localStorage) ou sur le disque (fichiers .json exportés).
 
 Les vecteurs d'attaque réalistes à considérer :
 - **Injection via fichiers .json importés** — valeurs malicieuses dans un projet chargé

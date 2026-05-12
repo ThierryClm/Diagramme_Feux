@@ -1,5 +1,5 @@
 {
-    "name": "traffic-light-diagram-app",
+    "name": "tracflux",
     "private": true,
     "version": "1.0.0",
     "description": "Outil de conception et d'optimisation de diagrammes de feux tricolores",

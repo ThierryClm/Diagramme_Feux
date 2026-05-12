@@ -69,7 +69,7 @@ const LoginModal = ({ onLogin, onCreateUser, hasUsers, isLoading }) => {
         <div className="login-overlay">
             <div className="login-modal">
                 <div className="login-header">
-                    <h2>Diagramme de Feux</h2>
+                    <h2>TraCflux</h2>
                     <p className="login-subtitle">
                         {mode === 'login' ? 'Connexion' : 'Création du compte administrateur'}
                     </p>

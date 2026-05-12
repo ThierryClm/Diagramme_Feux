@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg'],
       manifest: {
-        name: 'Diagramme de Feux',
-        short_name: 'Diagramme Feux',
+        name: 'TraCflux',
+        short_name: 'TraCflux',
         description: 'Outil de conception et d\'optimisation de diagrammes de feux tricolores',
         theme_color: '#1e1e1e',
         background_color: '#1e1e1e',

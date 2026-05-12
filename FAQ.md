@@ -1,6 +1,6 @@
 # Questions fréquentes
 
-Cette FAQ répond aux questions courantes sur **Diagramme de Feux**. Si la réponse à votre question ne s'y trouve pas, ouvrez une [issue GitHub](https://github.com/ThierryClm/Diagramme_Feux/issues).
+Cette FAQ répond aux questions courantes sur **TraCflux**. Si la réponse à votre question ne s'y trouve pas, ouvrez une [issue GitHub](https://github.com/ThierryClm/Diagramme_Feux/issues).
 
 ---
 
@@ -29,7 +29,7 @@ L'application étant gratuite et libre, son adoption par vos partenaires n'a auc
 
 ### J'utilise déjà un autre outil qui ne me satisfait pas pleinement, mais je ne souhaite pas ressaisir l'intégralité de mes plans de feux. Comment migrer mes données existantes ?
 
-L'import natif est aujourd'hui limité (Excel partiel, HTM, JSON pour le format propre à l'application). Les imports des formats propriétaires ([redacted], Traffy, Swarco, Fareco, SEA, lecture de boîtes noires) sont identifiés comme pistes d'évolution mais ne sont pas encore opérationnels — voir [Quelles fonctionnalités sont envisageables à terme ?](#quelles-fonctionnalités-sont-envisageables-à-terme-).
+L'import natif est aujourd'hui limité (Excel partiel, HTM, JSON pour le format propre à l'application). Les imports des formats propriétaires ([redacted], Traffy, Swarco, Fareco, SEA, lecture de boîtes noires...) sont identifiés comme pistes d'évolution mais ne sont pas encore opérationnels — voir [Quelles fonctionnalités sont envisageables à terme ?](#quelles-fonctionnalités-sont-envisageables-à-terme-).
 
 L'application étant **libre et open source**, l'ajout d'un parseur pour un format donné reste tout à fait envisageable :
 
@@ -40,7 +40,7 @@ L'application étant **libre et open source**, l'ajout d'un parseur pour un form
 
 ### À qui s'adresse cet outil ?
 
-Aux **traficiens, ingénieurs trafic, bureaux d'études et techniciens de collectivité** qui conçoivent ou analysent des plans de feux tricolores. Aussi utile aux étudiants en génie urbain ou exploitation routière qui apprennent à dimensionner des cycles.
+Aux **traficiens, ingénieurs trafic, bureaux d'études et techniciens de collectivité** qui conçoivent ou analysent des plans de feux tricolores. Aussi utile aux étudiants en génie urbain ou exploitation routière qui apprennent à dimensionner des diagrammes de feux.
 
 ### De quels modules est composée l'application ?
 
@@ -49,7 +49,7 @@ L'application est une **solution organisée en deux modules complémentaires** :
 - **Diagramme de Feux** *(module principal)* — fenêtre par défaut au lancement. Vous y concevez et analysez les plans de feux d'un carrefour : groupes, matrice intervert, diagramme temporel, micro-régulation, plans multiples, simulation, etc. Ce module fonctionne **en autonomie**.
 - **Onde verte** *(module complémentaire)* — fenêtre dédiée, accessible depuis le menu **Onde verte** du module principal. Permet de coordonner plusieurs carrefours sur un axe routier (visualisation espace-temps, bandes passantes, ondes vertes montante/descendante). Ce module **s'appuie obligatoirement** sur des projets de carrefours préalablement créés et sauvegardés dans le module principal — il ne peut pas être utilisé seul.
 
-Les deux modules partagent les mêmes données (stockage local, thèmes, paramètres) et bénéficient du même format `.json` portable. Vous pouvez ouvrir plusieurs fenêtres en parallèle (un module principal + plusieurs ondes vertes) pour comparer ou jongler entre projets.
+Les deux modules partagent les mêmes données (stockage local, thèmes, paramètres) et bénéficient du même format `.json` portable. Vous pouvez ouvrir plusieurs fenêtres en parallèle pour comparer ou jongler entre projets.
 
 ### Que peut-on faire avec ?
 

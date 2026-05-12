@@ -1725,7 +1725,7 @@ const GreenWavePage = () => {
                     getAllSaves={getAllSavesLocal}
                     loadProjectData={getProjectDataLocal}
                 />
-                <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="Aide - Diagramme de Feux" className="modal-wide">
+                <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="Aide - TraCflux" className="modal-wide">
                     <HelpContent initialAnchor="help-onde-verte" />
                 </Modal>
                 {showAboutModal && (
@@ -2518,7 +2518,7 @@ const GreenWavePage = () => {
             {/* Aide F1 : modale locale qui réutilise le composant HelpContent
                 partagé avec l'app principale, focalisée sur le chapitre Onde
                 verte au moment de l'ouverture. */}
-            <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="Aide - Diagramme de Feux" className="modal-wide">
+            <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="Aide - TraCflux" className="modal-wide">
                 <HelpContent initialAnchor="help-onde-verte" />
             </Modal>
         </div>

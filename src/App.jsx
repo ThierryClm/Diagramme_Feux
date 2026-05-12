@@ -2740,7 +2740,7 @@ draw();
             </Modal>
 
             {/* Modal Aide en ligne */}
-            <Modal isOpen={helpModal} onClose={() => setHelpModal(false)} title="Aide - Diagramme de Feux" className="modal-wide">
+            <Modal isOpen={helpModal} onClose={() => setHelpModal(false)} title="Aide - TraCflux" className="modal-wide">
                 <HelpContent initialAnchor={helpAnchor} />
             </Modal>
 

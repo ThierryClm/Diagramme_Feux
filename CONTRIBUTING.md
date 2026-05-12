@@ -1,4 +1,4 @@
-# Contribuer à Diagramme de Feux
+# Contribuer à TraCflux
 
 Merci de l'intérêt que vous portez au projet. Ce document décrit comment proposer une amélioration, signaler un bug, ou ouvrir une pull request.
 

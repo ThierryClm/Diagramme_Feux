@@ -1,14 +1,20 @@
-# Diagramme de Feux
+<p align="center">
+  <img src="docs/logo.svg" alt="Logo TraCflux" width="140" height="140">
+</p>
 
-![Aperçu de l'application : matrice des temps intervert à gauche, diagramme temporel d'un carrefour à 13 groupes au centre, conditions de micro-régulation en bas](docs/screenshots/diagramme-principal.png)
-
-### Onde verte
-
-![Aperçu du module Onde verte : diagramme espace-temps de 5 carrefours coordonnés sur un axe, avec bandes passantes en sens montant et descendant et tableau des données saisies](docs/screenshots/Onde-verte.png)
+# TraCflux
 
 Solution open source pour la conception et l'optimisation de plans de feux tricolores, destinée aux traficiens et ingénieurs de la circulation.
 
-L'application s'organise en **deux modules complémentaires** :
+### Module Diagramme de Feux
+
+![Aperçu de l'application : matrice des temps intervert à gauche, diagramme temporel d'un carrefour à 13 groupes au centre, conditions de micro-régulation en bas](docs/screenshots/diagramme-principal.png)
+
+### Module Onde verte
+
+![Aperçu du module Onde verte : diagramme espace-temps de 5 carrefours coordonnés sur un axe, avec bandes passantes en sens montant et descendant et tableau des données saisies](docs/screenshots/Onde-verte.png)
+
+TraCflux s'organise en **deux modules complémentaires** :
 
 - **Diagramme de Feux** *(module principal)* — conception et analyse des plans de feux d'un carrefour : groupes, matrice intervert, diagramme temporel, micro-régulation, plans multiples.
 - **Onde verte** *(module complémentaire)* — coordination espace-temps de plusieurs carrefours sur un axe routier, avec visualisation des bandes passantes. S'appuie sur les projets de carrefours préalablement créés dans le module principal.
