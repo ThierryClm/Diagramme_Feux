@@ -69,6 +69,11 @@ const GreenWavePage = () => {
     // Modale de création d'une nouvelle onde verte directement dans la
     // fenêtre courante (réutilise CreateGreenWaveDialog de l'app principale).
     const [showCreateDialog, setShowCreateDialog] = useState(false);
+    // Modale « Restaurer un projet récent... » : liste des ondes vertes
+    // présentes dans localStorage (alimenté par l'auto-save).
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+    const [restoreList, setRestoreList] = useState([]);
+    const [selectedRestoreName, setSelectedRestoreName] = useState(null);
     // Modale d'aide F1 : on affiche le même composant HelpContent que l'app
     // principale, focalisé sur le chapitre Onde verte. Pas de nouvel onglet.
     const [showHelpModal, setShowHelpModal] = useState(false);
@@ -183,53 +188,185 @@ const GreenWavePage = () => {
         }));
     }, [getCurrentPfName, speedUp, speedDown, speedLineOffsetUp, speedLineOffsetDown, showSpeedLines]);
 
-    // Save green wave data to localStorage
-    const handleSaveGreenWave = () => {
-        if (!intersections) return;
+    // Auto-save de l'onde verte dans localStorage (clé `savedGreenWaves[name]`).
+    // Comportement aligné sur l'auto-save du module Diagramme de Feux :
+    // - Ne déclenche pas tant qu'aucun nom n'est défini (pas de "Sans titre"
+    //   qui pollue la liste « Restaurer un projet récent »).
+    // - Skip si un chargement est en cours (isApplyingSettingsRef true).
+    // - Debounce de 1,5 s : on n'écrit pas en localStorage à chaque keystroke.
+    const autoSaveTimerRef = useRef(null);
+    useEffect(() => {
+        if (!intersections || intersections.length === 0) return;
+        if (!greenWaveName) return;
+        if (isApplyingSettingsRef.current) return;
 
-        // Défaut = nom courant si déjà saisi, sinon vide. On évite de suggérer
-        // « Onde verte » ce qui pousserait l'utilisateur à conserver ce préfixe
-        // dans le nom alors que l'app l'ajoute automatiquement à l'affichage.
-        const name = prompt('Nom de l\'onde verte (ex. : Avenue de Verdun) :', greenWaveName || '');
-        if (!name) return;
+        if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = setTimeout(() => {
+            try {
+                const greenWaveData = {
+                    name: greenWaveName,
+                    intersections,
+                    speedUp,
+                    speedDown,
+                    speedLineOffsetUp,
+                    speedLineOffsetDown,
+                    showSpeedLines,
+                    pfParams,
+                    pixelsPerSecond,
+                    pixelsPerMeter,
+                    displayCycles,
+                    savedAt: new Date().toISOString()
+                };
+                const savedGreenWaves = JSON.parse(localStorage.getItem('savedGreenWaves') || '{}');
+                savedGreenWaves[greenWaveName] = greenWaveData;
+                localStorage.setItem('savedGreenWaves', JSON.stringify(savedGreenWaves));
+            } catch (e) {
+                console.error('Auto-save onde verte a échoué', e);
+            }
+        }, 1500);
 
-        // Save current PF params before saving
-        const currentPfName = getCurrentPfName();
-        const updatedPfParams = {
-            ...pfParams,
-            [currentPfName]: {
-                speedUp,
-                speedDown,
-                offsetUp: speedLineOffsetUp,
-                offsetDown: speedLineOffsetDown,
-                showSpeedLines
+        return () => {
+            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        };
+    }, [intersections, greenWaveName, speedUp, speedDown, speedLineOffsetUp, speedLineOffsetDown, showSpeedLines, pfParams, pixelsPerSecond, pixelsPerMeter, displayCycles]);
+
+    // Ouverture de la modale « Restaurer un projet récent ». Lit les ondes
+    // vertes présentes dans `localStorage.savedGreenWaves`, filtre celles
+    // qui n'ont pas la signature attendue (champ intersections), trie par
+    // date de sauvegarde décroissante.
+    const openRestoreModal = () => {
+        try {
+            const raw = localStorage.getItem('savedGreenWaves');
+            const all = raw ? JSON.parse(raw) : {};
+            const validEntries = Object.entries(all)
+                .filter(([, data]) => data && Array.isArray(data.intersections))
+                .map(([name, data]) => ({ name, savedAt: data.savedAt, count: data.intersections.length }))
+                .sort((a, b) => {
+                    const dA = a.savedAt ? new Date(a.savedAt) : new Date(0);
+                    const dB = b.savedAt ? new Date(b.savedAt) : new Date(0);
+                    return dB - dA;
+                });
+            setRestoreList(validEntries);
+            setSelectedRestoreName(null);
+            setShowRestoreModal(true);
+        } catch (e) {
+            console.error('Failed to read savedGreenWaves', e);
+            showAlert({ title: 'Erreur', message: "Impossible de lire la liste des ondes vertes récentes." });
+        }
+    };
+
+    // Chargement d'une onde verte depuis la liste « Restaurer un projet récent ».
+    // Demande confirmation si la session courante a des modifications non
+    // sauvegardées, puis applique les settings et restaure les intersections.
+    const handleRestoreSelected = async (name) => {
+        try {
+            const raw = localStorage.getItem('savedGreenWaves');
+            const all = raw ? JSON.parse(raw) : {};
+            const data = all[name];
+            if (!data || !Array.isArray(data.intersections)) {
+                showAlert({ title: 'Entrée invalide', message: "Cet enregistrement n'est pas une onde verte exploitable." });
+                return;
+            }
+            if (gwIsDirty) {
+                const ok = await askConfirm({
+                    title: 'Modifications non enregistrées',
+                    message: "L'onde verte courante a des modifications non enregistrées qui seront perdues.\n\nContinuer et restaurer le projet sélectionné ?",
+                    confirmLabel: 'Continuer',
+                    danger: true,
+                });
+                if (!ok) return;
+            }
+            setShowRestoreModal(false);
+            isApplyingSettingsRef.current = true;
+            setIntersections(data.intersections);
+            applySettings(data);
+        } catch (e) {
+            console.error('Restore failed', e);
+            showAlert({ title: 'Erreur de restauration', message: `Erreur lors de la restauration : ${e.message}` });
+        }
+    };
+
+    // JSX de la modale « Restaurer un projet récent » (réutilisée dans
+    // l'écran d'accueil et la fenêtre principale Onde verte).
+    const renderRestoreModal = () => {
+        if (!showRestoreModal) return null;
+        const formatDate = (iso) => {
+            if (!iso) return '—';
+            try {
+                return new Date(iso).toLocaleDateString('fr-FR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            } catch {
+                return '—';
             }
         };
-        setPfParams(updatedPfParams);
-
-        const greenWaveData = {
-            name,
-            intersections,
-            speedUp,
-            speedDown,
-            speedLineOffsetUp,
-            speedLineOffsetDown,
-            showSpeedLines,
-            pfParams: updatedPfParams, // Save all PF params
-            pixelsPerSecond,
-            pixelsPerMeter,
-            displayCycles,
-            savedAt: new Date().toISOString()
-        };
-
-        // Get existing saved green waves
-        const savedGreenWaves = JSON.parse(localStorage.getItem('savedGreenWaves') || '{}');
-        savedGreenWaves[name] = greenWaveData;
-        localStorage.setItem('savedGreenWaves', JSON.stringify(savedGreenWaves));
-
-        setGreenWaveName(name);
-        setGwIsDirty(false);
-        toast.success(`Onde verte « ${name} » enregistrée`);
+        return (
+            <div className="gw-about-overlay" onClick={() => setShowRestoreModal(false)}>
+                <div className="gw-about-modal" onClick={(e) => e.stopPropagation()} style={{ minWidth: '500px', maxWidth: '700px' }}>
+                    <h3 style={{ margin: '0 0 12px 0', color: '#4ecdc4' }}>Restaurer un projet récent</h3>
+                    {restoreList.length === 0 ? (
+                        <div style={{ color: '#aaa', padding: '20px', textAlign: 'center' }}>
+                            Aucune onde verte sauvegardée dans le cache navigateur.
+                        </div>
+                    ) : (
+                        <div style={{ maxHeight: '50vh', overflowY: 'auto', border: '1px solid #555', borderRadius: '4px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9em' }}>
+                                <thead>
+                                    <tr style={{ background: '#444', color: '#eee' }}>
+                                        <th style={{ padding: '8px', textAlign: 'left' }}>Nom</th>
+                                        <th style={{ padding: '8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Carrefours</th>
+                                        <th style={{ padding: '8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Modifié le</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {restoreList.map((entry) => (
+                                        <tr
+                                            key={entry.name}
+                                            onClick={() => setSelectedRestoreName(entry.name)}
+                                            onDoubleClick={() => handleRestoreSelected(entry.name)}
+                                            style={{
+                                                background: selectedRestoreName === entry.name ? '#3a5d6a' : 'transparent',
+                                                color: '#e0e0e0',
+                                                cursor: 'pointer',
+                                                borderTop: '1px solid #444'
+                                            }}
+                                        >
+                                            <td style={{ padding: '6px 8px' }}>{entry.name}</td>
+                                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>{entry.count}</td>
+                                            <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap', color: '#aaa' }}>{formatDate(entry.savedAt)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+                        <button
+                            onClick={() => setShowRestoreModal(false)}
+                            style={{ background: '#555', color: '#fff', border: '1px solid #666', padding: '6px 16px', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                            Annuler
+                        </button>
+                        <button
+                            onClick={() => selectedRestoreName && handleRestoreSelected(selectedRestoreName)}
+                            disabled={!selectedRestoreName}
+                            style={{
+                                background: selectedRestoreName ? '#4ecdc4' : '#3a3a3a',
+                                color: selectedRestoreName ? '#1e1e1e' : '#666',
+                                border: '1px solid ' + (selectedRestoreName ? '#3aaca4' : '#444'),
+                                padding: '6px 16px',
+                                borderRadius: '4px',
+                                cursor: selectedRestoreName ? 'pointer' : 'not-allowed',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            Restaurer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     // Save green wave data to file system (network)
@@ -237,7 +374,7 @@ const GreenWavePage = () => {
         if (!intersections) return;
 
         if (!window.showSaveFilePicker) {
-            showAlert({ title: 'Navigateur non compatible', message: 'Votre navigateur ne supporte pas la sauvegarde de fichiers. Utilisez « Enregistrer » pour sauvegarder dans le cache navigateur.' });
+            showAlert({ title: 'Navigateur non compatible', message: 'Votre navigateur ne supporte pas la sauvegarde de fichiers (File System Access API). Le cache navigateur est mis à jour automatiquement, mais l\'export en fichier .json n\'est pas disponible sur ce navigateur.' });
             return;
         }
 
@@ -447,8 +584,8 @@ const GreenWavePage = () => {
 
     // Détection des modifications non sauvegardées : à chaque changement d'un
     // état surveillé (et hors période de chargement applySettings), on bascule
-    // gwIsDirty à true. La remise à false se fait dans handleSaveGreenWave,
-    // handleSaveGreenWaveToFile, applySettings, handleCreateGreenWaveLocal.
+    // gwIsDirty à true. La remise à false se fait dans handleSaveGreenWaveToFile,
+    // applySettings, handleCreateGreenWaveLocal.
     useEffect(() => {
         if (isApplyingSettingsRef.current) return;
         if (intersections === null) return; // pas encore de projet chargé
@@ -1615,8 +1752,22 @@ const GreenWavePage = () => {
                 return;
             }
             const data = JSON.parse(content);
-            if (!data || !Array.isArray(data.intersections)) {
-                showAlert({ title: 'Fichier invalide', message: "Le fichier ne contient pas de données d'onde verte valides." });
+            if (!data || typeof data !== 'object') {
+                showAlert({ title: 'Fichier invalide', message: 'Le fichier ne contient pas un objet JSON valide.' });
+                return;
+            }
+            // Détection croisée : un fichier projet de carrefour (champs
+            // groups / pfTabs / conflictMatrix) ne peut pas être ouvert ici.
+            const looksLikeCarrefour = Array.isArray(data.groups) || Array.isArray(data.pfTabs) || Array.isArray(data.conflictMatrix);
+            if (!Array.isArray(data.intersections)) {
+                if (looksLikeCarrefour) {
+                    showAlert({
+                        title: 'Fichier incompatible',
+                        message: "Ce fichier est un projet de carrefour, pas une onde verte. Pour l'ouvrir, utilisez le module Diagramme de Feux (fenêtre principale, Fichier → Ouvrir un projet)."
+                    });
+                } else {
+                    showAlert({ title: 'Fichier invalide', message: "Le fichier ne contient pas de données d'onde verte valides." });
+                }
                 return;
             }
             // Confirmation si la fenêtre courante a des modifs non sauvées.
@@ -1669,8 +1820,8 @@ const GreenWavePage = () => {
             case 'open':
                 handleOpenGreenWaveFile();
                 break;
-            case 'saveLocal':
-                handleSaveGreenWave();
+            case 'restoreRecent':
+                openRestoreModal();
                 break;
             case 'saveFile':
                 handleSaveGreenWaveToFile();
@@ -1762,6 +1913,7 @@ const GreenWavePage = () => {
                         </div>
                     </div>
                 )}
+                {renderRestoreModal()}
             </div>
         );
     }
@@ -2548,6 +2700,8 @@ const GreenWavePage = () => {
             <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="Aide - TraCflux" className="modal-wide">
                 <HelpContent initialAnchor="help-onde-verte" />
             </Modal>
+
+            {renderRestoreModal()}
         </div>
     );
 };

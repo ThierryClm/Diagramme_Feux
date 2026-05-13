@@ -28,11 +28,20 @@ export const validateProject = (data) => {
     const hasPfTabs = Array.isArray(data.pfTabs);
     const hasCycle = typeof data.cycleLength === 'number';
     const hasMatrix = Array.isArray(data.conflictMatrix);
+    // Signature spécifique de l'onde verte (module Onde verte de TraCflux)
+    const looksLikeGreenWave = Array.isArray(data.intersections);
 
     if (!hasGroups && !hasPfTabs && !hasCycle && !hasMatrix) {
+        if (looksLikeGreenWave) {
+            return {
+                ok: false,
+                error: "Ce fichier est une onde verte, pas un projet de carrefour. Pour l'ouvrir, utilisez le module Onde verte (menu Onde verte de la fenêtre principale, puis Fichier → Ouvrir).",
+                warnings
+            };
+        }
         return {
             ok: false,
-            error: 'Le fichier ne ressemble pas à un projet Diagramme de Feux (aucun des champs attendus : groups, pfTabs, cycleLength, conflictMatrix).',
+            error: 'Le fichier ne ressemble pas à un projet TraCflux (aucun des champs attendus : groups, pfTabs, cycleLength, conflictMatrix).',
             warnings
         };
     }

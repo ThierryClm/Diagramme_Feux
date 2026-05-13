@@ -55,16 +55,12 @@ const GreenWaveMenuBar = ({
             items: [
                 { label: 'Nouveau...', action: 'new' },
                 { label: 'Ouvrir...', action: 'open' },
+                { label: 'Restaurer un projet récent...', action: 'restoreRecent' },
                 {
-                    label: 'Enregistrer',
-                    type: 'submenu',
-                    submenuId: 'save',
+                    label: 'Enregistrer...',
+                    action: 'saveFile',
                     disabled: !hasActiveProject,
-                    title: !hasActiveProject ? 'Aucune onde verte ouverte' : '',
-                    submenu: [
-                        { label: 'Dans le cache navigateur...', action: 'saveLocal' },
-                        { label: 'Dans le réseau (fichier .json)...', action: 'saveFile' }
-                    ]
+                    title: !hasActiveProject ? 'Aucune onde verte ouverte' : 'Sauvegarder l\'onde verte dans un fichier (le cache navigateur est mis à jour automatiquement à chaque modification).'
                 },
                 { label: 'Imprimer (PDF)', action: 'print', disabled: !hasActiveProject, title: !hasActiveProject ? 'Aucune onde verte ouverte' : '' },
                 { type: 'separator' },

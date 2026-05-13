@@ -275,6 +275,36 @@ function App() {
     // dès que l'utilisateur déclenche « Nouveau projet » ou ouvre un projet.
     const [hasActiveProject, setHasActiveProject] = useState(false);
     const projectNameInputRef = useRef(null);
+    // Référence vers la fenêtre Onde verte ouverte (single instance).
+    // Permet de ré-utiliser la même fenêtre au lieu d'en ouvrir une nouvelle
+    // à chaque clic. Si la fenêtre est fermée par l'utilisateur, .closed
+    // passe à true et on ouvre une nouvelle.
+    const greenWaveWindowRef = useRef(null);
+
+    // Ouvre la fenêtre Onde verte à l'URL fournie, ou y bascule le focus si
+    // elle est déjà ouverte. Si l'URL diffère, navigue dedans (l'auto-save
+    // ayant déjà persisté l'état courant).
+    const openOrFocusGreenWave = (url) => {
+        try {
+            if (greenWaveWindowRef.current && !greenWaveWindowRef.current.closed) {
+                // Fenêtre déjà ouverte : focus + navigation si URL différente
+                try {
+                    if (greenWaveWindowRef.current.location.href !== url) {
+                        greenWaveWindowRef.current.location.href = url;
+                    }
+                } catch {
+                    // Cross-origin (improbable, même origine) : on tente la nav directe
+                    greenWaveWindowRef.current.location = url;
+                }
+                greenWaveWindowRef.current.focus();
+                return;
+            }
+        } catch {
+            // ref invalide, on rouvre
+        }
+        const w = window.open(url, 'tracflux-onde-verte');
+        if (w) greenWaveWindowRef.current = w;
+    };
     // Anchor à atteindre dans la modale d'aide (alimenté par l'URL ?openHelp=…).
     // Passé à <HelpContent /> via la prop initialAnchor.
     const [helpAnchor, setHelpAnchor] = useState(null);
@@ -1144,7 +1174,7 @@ function App() {
             // chargé. La création / ouverture se fait depuis le menu Fichier
             // de la fenêtre Onde verte qui prend le relais.
             case 'launchGreenWave':
-                window.open(`${window.location.origin}${window.location.pathname}?greenwave`, '_blank');
+                openOrFocusGreenWave(`${window.location.origin}${window.location.pathname}?greenwave`);
                 break;
             case 'closeGreenWave':
                 setGreenWaveViewer(false);
@@ -1240,7 +1270,7 @@ function App() {
             useIDB = true;
         }
 
-        window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}${useIDB ? '&idb=1' : ''}`, '_blank');
+        openOrFocusGreenWave(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}${useIDB ? '&idb=1' : ''}`);
         setCreateGreenWaveModal(false);
     };
 
@@ -1285,7 +1315,7 @@ function App() {
                         useIDB = true;
                     }
 
-                    window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}${useIDB ? '&idb=1' : ''}`, '_blank');
+                    openOrFocusGreenWave(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}${useIDB ? '&idb=1' : ''}`);
                     setOpenGreenWaveModal(false);
                     setSelectedGreenWave(null);
                 }
@@ -1379,7 +1409,7 @@ function App() {
                     useIDB = true;
                 }
 
-                window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}${useIDB ? '&idb=1' : ''}`, '_blank');
+                openOrFocusGreenWave(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}${useIDB ? '&idb=1' : ''}`);
             } else {
                 showAlert({ title: 'Fichier invalide', message: "Le fichier ne contient pas de données d'onde verte valides." });
             }

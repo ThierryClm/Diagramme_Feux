@@ -85,7 +85,7 @@ const useFileOperations = ({
 
             const validation = validateProject(data);
             if (!validation.ok) {
-                toast.error(validation.error);
+                alertFn({ title: 'Fichier incompatible', message: validation.error });
                 return;
             }
             if (validation.warnings.length > 0) {
@@ -262,7 +262,7 @@ const useFileOperations = ({
 
             const validation = validateProject(data);
             if (!validation.ok) {
-                toast.error(validation.error);
+                alertFn({ title: 'Fichier incompatible', message: validation.error });
                 return;
             }
             if (validation.warnings.length > 0) {
