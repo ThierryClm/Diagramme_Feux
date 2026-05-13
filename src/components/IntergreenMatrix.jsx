@@ -376,6 +376,14 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
         <div className="matrix-container-inline">
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 Matrice des temps interverts
+                {locked && (
+                    <span
+                        style={{ color: '#aaa', fontWeight: 'normal', fontSize: '0.85em' }}
+                        title="La matrice est en lecture seule. Décochez « Verrouiller les matrices » dans le menu Diagramme pour la modifier."
+                    >
+                        (Verrouillé)
+                    </span>
+                )}
                 {onDetach && (
                     <button
                         className="detach-btn"
