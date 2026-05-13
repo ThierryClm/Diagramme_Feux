@@ -122,7 +122,7 @@ Vous n'avez **ni à réinstaller**, **ni à vider de cache**, **ni à cliquer su
 
 Oui, l'application est conçue pour s'adapter à ce contexte. Détachez la fenêtre **Image du carrefour** depuis le menu **Mise en page → Détachements**, puis glissez la popup ainsi obtenue sur un second écran ou un vidéoprojecteur.
 
-Pendant la simulation, cette popup s'anime en synchronisation avec votre fenêtre de travail : les flèches changent de couleur (vert / orange / rouge) seconde par seconde, en suivant le cycle du plan de feu courant et l'effet des actions de micro-régulation activées.
+Pendant la simulation, cette popup s'anime en synchronisation avec votre fenêtre de travail : les flèches changent de couleur (vert / orange / rouge) seconde par seconde, en suivant le cycle du plan de feu courant et l'effet des actions de micro-régulation activées à la demande.
 
 **Le résultat pour l'auditoire** : un visuel épuré et lisible, focalisé sur l'essentiel — le carrefour qui « vit » au rythme du cycle.
 
