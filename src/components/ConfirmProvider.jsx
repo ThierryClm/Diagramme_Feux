@@ -2,27 +2,33 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import Modal from './Modal';
 
 /**
- * Système de confirmation unifié, en remplacement de window.confirm() qui
- * affiche un dialog natif marqué « localhost dit : » (ou la même chose avec
- * le nom de domaine en production). La modale React respecte les thèmes de
- * l'app et permet des libellés de boutons explicites.
+ * Système de dialogs unifié, en remplacement de window.confirm() et
+ * window.alert() qui affichent un dialog natif marqué « localhost dit : »
+ * (ou même chose avec le nom de domaine en production). Les modales React
+ * respectent les thèmes de l'app et permettent des libellés explicites.
  *
- * Usage :
+ * Usage confirm (deux boutons, choix utilisateur) :
  *   const confirm = useConfirm();
  *   if (await confirm({
  *       title: 'Supprimer',
  *       message: 'Confirmer la suppression ?',
  *       confirmLabel: 'Supprimer',
  *       danger: true,
- *   })) {
- *       // action confirmée
- *   }
+ *   })) { ... }
  *
- * Le hook retourne une fonction qui prend des options et retourne une
- * Promise<boolean>. L'appelant doit être async (ou utiliser .then).
+ * Usage alert (un seul bouton OK, information bloquante) :
+ *   const alert = useAlert();
+ *   await alert({
+ *       title: 'Erreur',
+ *       message: 'Le fichier est invalide.',
+ *   });
+ *
+ * Les deux hooks retournent une fonction qui prend des options et retourne
+ * une Promise. confirm résout vers boolean ; alert résout vers undefined
+ * mais permet d'attendre la fermeture si besoin.
  */
 
-const ConfirmContext = createContext(null);
+const DialogContext = createContext(null);
 
 export const ConfirmProvider = ({ children }) => {
     const [state, setState] = useState(null);
@@ -33,6 +39,7 @@ export const ConfirmProvider = ({ children }) => {
         return new Promise((resolve) => {
             resolverRef.current = resolve;
             setState({
+                kind: 'confirm',
                 title: options.title || 'Confirmation',
                 message: options.message || '',
                 confirmLabel: options.confirmLabel || 'Confirmer',
@@ -42,9 +49,23 @@ export const ConfirmProvider = ({ children }) => {
         });
     }, []);
 
+    const alert = useCallback((options) => {
+        return new Promise((resolve) => {
+            resolverRef.current = resolve;
+            setState({
+                kind: 'alert',
+                title: options.title || 'Information',
+                message: options.message || '',
+                confirmLabel: options.confirmLabel || 'OK',
+                danger: options.danger === true,
+            });
+        });
+    }, []);
+
     const handleConfirm = () => {
         if (resolverRef.current) {
-            resolverRef.current(true);
+            // confirm résout true, alert résout undefined
+            resolverRef.current(state?.kind === 'alert' ? undefined : true);
             resolverRef.current = null;
         }
         setState(null);
@@ -52,13 +73,14 @@ export const ConfirmProvider = ({ children }) => {
 
     const handleCancel = () => {
         if (resolverRef.current) {
-            resolverRef.current(false);
+            // confirm résout false, alert résout undefined (clic Échap ou X)
+            resolverRef.current(state?.kind === 'alert' ? undefined : false);
             resolverRef.current = null;
         }
         setState(null);
     };
 
-    // Touche Échap = Annuler, touche Entrée = Confirmer
+    // Touche Échap = Annuler/Fermer, touche Entrée = Confirmer/OK
     useEffect(() => {
         if (!state) return;
         const handleKey = (e) => {
@@ -74,8 +96,10 @@ export const ConfirmProvider = ({ children }) => {
         return () => window.removeEventListener('keydown', handleKey);
     }, [state]);
 
+    const isAlert = state?.kind === 'alert';
+
     return (
-        <ConfirmContext.Provider value={confirm}>
+        <DialogContext.Provider value={{ confirm, alert }}>
             {children}
             <Modal isOpen={!!state} onClose={handleCancel} title={state?.title || ''}>
                 <div style={{ padding: '4px 0' }}>
@@ -83,20 +107,22 @@ export const ConfirmProvider = ({ children }) => {
                         {state?.message}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <button
-                            onClick={handleCancel}
-                            style={{
-                                background: '#555',
-                                color: '#fff',
-                                border: '1px solid #666',
-                                padding: '6px 16px',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '0.9em',
-                            }}
-                        >
-                            {state?.cancelLabel}
-                        </button>
+                        {!isAlert && (
+                            <button
+                                onClick={handleCancel}
+                                style={{
+                                    background: '#555',
+                                    color: '#fff',
+                                    border: '1px solid #666',
+                                    padding: '6px 16px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9em',
+                                }}
+                            >
+                                {state?.cancelLabel}
+                            </button>
+                        )}
                         <button
                             onClick={handleConfirm}
                             autoFocus
@@ -116,19 +142,28 @@ export const ConfirmProvider = ({ children }) => {
                     </div>
                 </div>
             </Modal>
-        </ConfirmContext.Provider>
+        </DialogContext.Provider>
     );
 };
 
 export const useConfirm = () => {
-    const ctx = useContext(ConfirmContext);
+    const ctx = useContext(DialogContext);
     if (!ctx) {
         // Fallback : si le composant n'est pas dans un ConfirmProvider, on retombe
         // sur window.confirm() pour ne rien casser. Devrait jamais arriver en prod.
         console.warn('useConfirm called outside ConfirmProvider, falling back to window.confirm');
         return ({ message }) => Promise.resolve(window.confirm(message));
     }
-    return ctx;
+    return ctx.confirm;
+};
+
+export const useAlert = () => {
+    const ctx = useContext(DialogContext);
+    if (!ctx) {
+        console.warn('useAlert called outside ConfirmProvider, falling back to window.alert');
+        return ({ message }) => { window.alert(message); return Promise.resolve(); };
+    }
+    return ctx.alert;
 };
 
 export default ConfirmProvider;

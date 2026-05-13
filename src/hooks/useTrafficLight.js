@@ -119,7 +119,9 @@ const createEmptyTrafficData = () => ({
     trafficVol: 0
 });
 
-export const useTrafficLight = ({ askConfirm } = {}) => {
+export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
+    // Fallback : si showAlert n'est pas fourni, on retombe sur window.alert
+    const alertFn = showAlert || (({ message }) => { window.alert(message); return Promise.resolve(); });
     const [intersectionName, setIntersectionName] = useState("Nouveau Carrefour");
     const [cycleLength, setCycleLength] = useState(DEFAULT_CYCLE);
     const [dependencyGap, setDependencyGap] = useState(20);
@@ -1698,17 +1700,17 @@ export const useTrafficLight = ({ askConfirm } = {}) => {
         // Validate data before saving to prevent empty saves
         if (!groups || groups.length === 0) {
             console.error("Save aborted: groups is empty or undefined");
-            alert("Erreur: Impossible de sauvegarder - les groupes sont vides");
+            alertFn({ title: 'Sauvegarde impossible', message: 'Impossible de sauvegarder : les groupes sont vides.' });
             return false;
         }
         if (!pfTabs || pfTabs.length === 0) {
             console.error("Save aborted: pfTabs is empty or undefined");
-            alert("Erreur: Impossible de sauvegarder - les plans de feux sont vides");
+            alertFn({ title: 'Sauvegarde impossible', message: 'Impossible de sauvegarder : les plans de feux sont vides.' });
             return false;
         }
         if (!conflictMatrix || conflictMatrix.length === 0) {
             console.error("Save aborted: conflictMatrix is empty or undefined");
-            alert("Erreur: Impossible de sauvegarder - la matrice de conflits est vide");
+            alertFn({ title: 'Sauvegarde impossible', message: 'Impossible de sauvegarder : la matrice de conflits est vide.' });
             return false;
         }
 
@@ -1771,7 +1773,7 @@ export const useTrafficLight = ({ askConfirm } = {}) => {
         const jsonData = JSON.stringify(projectData);
         if (jsonData.length < 100) {
             console.error("Save aborted: data appears corrupted (too small)", jsonData.length);
-            alert("Erreur: Impossible de sauvegarder - les données semblent corrompues");
+            alertFn({ title: 'Sauvegarde impossible', message: 'Impossible de sauvegarder : les données semblent corrompues.' });
             return false;
         }
 
@@ -1830,9 +1832,9 @@ export const useTrafficLight = ({ askConfirm } = {}) => {
                 } catch (retryError) {
                     console.error("Retry save failed", retryError);
                 }
-                alert("Erreur: Espace de stockage insuffisant même après nettoyage.");
+                alertFn({ title: 'Stockage insuffisant', message: 'Espace de stockage insuffisant même après nettoyage.' });
             } else {
-                alert("Erreur lors de la sauvegarde: " + e.message);
+                alertFn({ title: 'Erreur de sauvegarde', message: 'Erreur lors de la sauvegarde : ' + e.message });
             }
             return false;
         }

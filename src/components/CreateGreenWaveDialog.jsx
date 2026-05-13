@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAlert } from './ConfirmProvider';
 import './CreateGreenWaveDialog.css';
 
 const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadProjectData }) => {
+    const showAlert = useAlert();
     const [intersections, setIntersections] = useState([]);
     const [availableProjects, setAvailableProjects] = useState([]);
     const [selectedProject, setSelectedProject] = useState('');
@@ -86,7 +88,7 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
 
     const handleConfirm = () => {
         if (intersections.length < 2) {
-            alert('Veuillez ajouter au moins 2 carrefours');
+            showAlert({ title: 'Carrefours insuffisants', message: 'Veuillez ajouter au moins 2 carrefours.' });
             return;
         }
         // Map and sort intersections by distance (descending)

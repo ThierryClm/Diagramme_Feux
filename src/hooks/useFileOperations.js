@@ -34,8 +34,10 @@ const useFileOperations = ({
     saveDirectoryHandle, loadDirectoryHandle,
     recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs,
     addRecentDirectory,
-    askConfirm
+    askConfirm, showAlert
 }) => {
+    // Fallback : si showAlert n'est pas fourni, on retombe sur window.alert
+    const alertFn = showAlert || (({ message }) => { window.alert(message); return Promise.resolve(); });
     // Ouvrir un fichier JSON avec File System Access API
     const handleOpenFileWithPicker = useCallback(async () => {
         if (!window.showOpenFilePicker) {
@@ -65,7 +67,7 @@ const useFileOperations = ({
 
             // Validation du contenu avant parsing
             if (!content || content.trim() === '') {
-                alert('Erreur: Le fichier est vide');
+                alertFn({ title: 'Fichier vide', message: 'Le fichier est vide.' });
                 return;
             }
 
@@ -74,9 +76,10 @@ const useFileOperations = ({
                 data = JSON.parse(content);
             } catch (parseError) {
                 console.error('Erreur parsing JSON:', parseError);
-                alert('Erreur: Le fichier JSON est invalide ou corrompu.\n\n' +
-                      'Détails: ' + parseError.message + '\n\n' +
-                      'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
+                alertFn({
+                    title: 'Fichier JSON invalide',
+                    message: 'Le fichier JSON est invalide ou corrompu.\n\nDétails : ' + parseError.message + '\n\nEssayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.'
+                });
                 return;
             }
 
@@ -213,7 +216,7 @@ const useFileOperations = ({
     // Ouvrir un fichier depuis un répertoire récent
     const handleOpenFileFromRecentDir = useCallback(async (dirIndex) => {
         if (!window.showOpenFilePicker) {
-            alert('API File System non supportée par ce navigateur');
+            alertFn({ title: 'Navigateur non compatible', message: 'API File System non supportée par ce navigateur.' });
             return;
         }
 
@@ -241,7 +244,7 @@ const useFileOperations = ({
 
             // Validation du contenu avant parsing
             if (!content || content.trim() === '') {
-                alert('Erreur: Le fichier est vide');
+                alertFn({ title: 'Fichier vide', message: 'Le fichier est vide.' });
                 return;
             }
 
@@ -250,9 +253,10 @@ const useFileOperations = ({
                 data = JSON.parse(content);
             } catch (parseError) {
                 console.error('Erreur parsing JSON:', parseError);
-                alert('Erreur: Le fichier JSON est invalide ou corrompu.\n\n' +
-                      'Détails: ' + parseError.message + '\n\n' +
-                      'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
+                alertFn({
+                    title: 'Fichier JSON invalide',
+                    message: 'Le fichier JSON est invalide ou corrompu.\n\nDétails : ' + parseError.message + '\n\nEssayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.'
+                });
                 return;
             }
 
@@ -453,8 +457,10 @@ const useFileOperations = ({
                 const savedFile = await fileHandle.getFile();
                 const savedContent = await savedFile.text();
                 if (!savedContent || savedContent.trim() === '') {
-                    alert('Attention: Le fichier semble vide après la sauvegarde.\n\n' +
-                          'Veuillez réessayer la sauvegarde ou utiliser "Enregistrer" pour sauvegarder dans le localStorage.');
+                    alertFn({
+                        title: 'Sauvegarde vide',
+                        message: 'Attention : le fichier semble vide après la sauvegarde.\n\nVeuillez réessayer ou utiliser « Enregistrer » pour sauvegarder dans le cache navigateur.'
+                    });
                     return;
                 }
             } catch (verifyError) {
@@ -505,7 +511,7 @@ const useFileOperations = ({
     // Enregistrer un fichier dans un répertoire récent
     const handleSaveFileToRecentDir = useCallback(async (dirIndex) => {
         if (!window.showSaveFilePicker) {
-            alert('API File System non supportée par ce navigateur');
+            alertFn({ title: 'Navigateur non compatible', message: 'API File System non supportée par ce navigateur.' });
             return;
         }
 
@@ -574,8 +580,10 @@ const useFileOperations = ({
                 const savedFile = await fileHandle.getFile();
                 const savedContent = await savedFile.text();
                 if (!savedContent || savedContent.trim() === '') {
-                    alert('Attention: Le fichier semble vide après la sauvegarde.\n\n' +
-                          'Veuillez réessayer la sauvegarde ou utiliser "Enregistrer" pour sauvegarder dans le localStorage.');
+                    alertFn({
+                        title: 'Sauvegarde vide',
+                        message: 'Attention : le fichier semble vide après la sauvegarde.\n\nVeuillez réessayer ou utiliser « Enregistrer » pour sauvegarder dans le cache navigateur.'
+                    });
                     return;
                 }
             } catch (verifyError) {

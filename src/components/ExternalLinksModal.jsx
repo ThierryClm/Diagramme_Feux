@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { safeShowOpenFilePicker } from '../utils/filePicker';
-import { useConfirm } from './ConfirmProvider';
+import { useConfirm, useAlert } from './ConfirmProvider';
 import './ExternalLinksModal.css';
 
 const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
     const askConfirm = useConfirm();
+    const showAlert = useAlert();
     const [localLinks, setLocalLinks] = useState([]);
     const [newLinkName, setNewLinkName] = useState('');
     const [newLinkPath, setNewLinkPath] = useState('');
@@ -28,7 +29,7 @@ const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
     // Add a new link
     const handleAddLink = () => {
         if (!newLinkName.trim() || !newLinkPath.trim()) {
-            alert('Veuillez remplir le nom et le chemin du lien.');
+            showAlert({ title: 'Champs manquants', message: 'Veuillez remplir le nom et le chemin du lien.' });
             return;
         }
 
@@ -66,7 +67,7 @@ const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
     // Save edited link
     const handleSaveEdit = () => {
         if (!newLinkName.trim() || !newLinkPath.trim()) {
-            alert('Veuillez remplir le nom et le chemin du lien.');
+            showAlert({ title: 'Champs manquants', message: 'Veuillez remplir le nom et le chemin du lien.' });
             return;
         }
 
@@ -106,14 +107,14 @@ const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
             }
         } catch (e) {
             console.error('Error opening link:', e);
-            alert(`Impossible d'ouvrir le lien: ${e.message}`);
+            showAlert({ title: "Erreur d'ouverture", message: `Impossible d'ouvrir le lien : ${e.message}` });
         }
     };
 
     // Browse for a file
     const handleBrowseFile = async () => {
         if (!window.showOpenFilePicker) {
-            alert('La sélection de fichiers n\'est pas supportée par ce navigateur.');
+            showAlert({ title: 'Navigateur non compatible', message: "La sélection de fichiers n'est pas supportée par ce navigateur." });
             return;
         }
 

@@ -11,7 +11,7 @@ import ActionTable from './components/ActionTable';
 import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
-import { useConfirm } from './components/ConfirmProvider';
+import { useConfirm, useAlert } from './components/ConfirmProvider';
 import { APP_VERSION, APP_NAME, APP_DESCRIPTION } from './version';
 import { buildExportFilename } from './utils/exportFilename';
 import { buildDiagnosticReport, downloadDiagnosticReport, buildErrorJournal, buildDiagnosticJSON, downloadDiagnosticJSON } from './utils/diagnostics';
@@ -56,6 +56,7 @@ import './App.css';
 
 function App() {
     const askConfirm = useConfirm();
+    const showAlert = useAlert();
     const {
         intersectionName,
         setIntersectionName,
@@ -149,7 +150,7 @@ function App() {
         appCommunes,
         appMoaLogos,
         appMoeLogos
-    } = useTrafficLight({ askConfirm });
+    } = useTrafficLight({ askConfirm, showAlert });
 
     // Update yellow/orange duration for VL and B groups when horsAgglomeration changes
     useEffect(() => {
@@ -578,7 +579,7 @@ function App() {
         saveDirectoryHandle, loadDirectoryHandle,
         recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs,
         addRecentDirectory,
-        askConfirm
+        askConfirm, showAlert
     });
 
     // Get all saved green waves (sorted by most recent first)
@@ -967,7 +968,7 @@ function App() {
                     setMoveGroupTouched(false);
                     setMoveGroupModal(true);
                 } else {
-                    alert('Il faut au moins 2 groupes pour effectuer un déplacement.');
+                    showAlert({ title: 'Action impossible', message: 'Il faut au moins 2 groupes pour effectuer un déplacement.' });
                 }
                 break;
             case 'biCarrefour':
@@ -976,7 +977,7 @@ function App() {
                     setBiCarrefourTouched(false);
                     setBiCarrefourModal(true);
                 } else {
-                    alert('Il faut au moins 2 groupes pour intégrer un bi-carrefour.');
+                    showAlert({ title: 'Action impossible', message: 'Il faut au moins 2 groupes pour intégrer un bi-carrefour.' });
                 }
                 break;
             case 'uniCarrefour':
@@ -1291,14 +1292,14 @@ function App() {
             }
         } catch (e) {
             console.error('Failed to open green wave', e);
-            alert('Erreur lors de l\'ouverture de l\'onde verte');
+            showAlert({ title: 'Erreur', message: "Erreur lors de l'ouverture de l'onde verte." });
         }
     };
 
     // Handle opening green wave from file system
     const handleOpenGreenWaveFromFile = async () => {
         if (!window.showOpenFilePicker) {
-            alert('Votre navigateur ne supporte pas l\'ouverture de fichiers. Utilisez "Ouvrir une onde verte..." pour charger depuis le local storage.');
+            showAlert({ title: 'Navigateur non compatible', message: 'Votre navigateur ne supporte pas l\'ouverture de fichiers. Utilisez « Ouvrir une onde verte... » pour charger depuis le cache navigateur.' });
             return;
         }
 
@@ -1317,7 +1318,7 @@ function App() {
 
             // Validation du contenu avant parsing
             if (!content || content.trim() === '') {
-                alert('Erreur: Le fichier est vide');
+                showAlert({ title: 'Fichier vide', message: 'Le fichier est vide.' });
                 return;
             }
 
@@ -1326,9 +1327,10 @@ function App() {
                 greenWaveData = JSON.parse(content);
             } catch (parseError) {
                 console.error('Erreur parsing JSON:', parseError);
-                alert('Erreur: Le fichier JSON est invalide ou corrompu.\n\n' +
-                      'Détails: ' + parseError.message + '\n\n' +
-                      'Essayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.');
+                showAlert({
+                    title: 'Fichier JSON invalide',
+                    message: 'Le fichier JSON est invalide ou corrompu.\n\nDétails : ' + parseError.message + '\n\nEssayez d\'ouvrir le fichier dans un éditeur de texte pour vérifier sa structure.'
+                });
                 return;
             }
 
@@ -1379,12 +1381,12 @@ function App() {
 
                 window.open(`${window.location.origin}${window.location.pathname}?greenwave&id=${greenWaveId}${useIDB ? '&idb=1' : ''}`, '_blank');
             } else {
-                alert('Le fichier ne contient pas de données d\'onde verte valides.');
+                showAlert({ title: 'Fichier invalide', message: "Le fichier ne contient pas de données d'onde verte valides." });
             }
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier onde verte:', e);
-                alert('Erreur lors de l\'ouverture du fichier: ' + e.message);
+                showAlert({ title: 'Erreur', message: "Erreur lors de l'ouverture du fichier : " + e.message });
             }
         }
     };
@@ -1522,11 +1524,11 @@ function App() {
             if (realWarnings.length > 0) {
                 message += `\n\n⚠️ Avertissements (${realWarnings.length}) :\n${realWarnings.join('\n')}`;
             }
-            alert(message);
+            showAlert({ title: 'Import [redacted]', message });
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur import [redacted]:', e);
-                alert('Erreur lors de l\'import [redacted]: ' + e.message);
+                showAlert({ title: 'Erreur [redacted]', message: "Erreur lors de l'import [redacted] : " + e.message });
             }
         }
     };
@@ -1551,7 +1553,7 @@ function App() {
 
             const buffer = await file.arrayBuffer();
             const data = new Uint8Array(buffer);
-            if (data.length < 0x5C + 100) { alert('Fichier trop petit'); return; }
+            if (data.length < 0x5C + 100) { showAlert({ title: 'Erreur', message: 'Fichier trop petit.' }); return; }
 
             const carrefour = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
             const year = data[4] | (data[5] << 8) | (data[6] << 16) | (data[7] << 24);
@@ -1595,7 +1597,7 @@ function App() {
 
             // Ouvrir dans une popup
             const popup = window.open('', '_blank', 'width=1200,height=800');
-            if (!popup) { alert('Popup bloquée par le navigateur'); return; }
+            if (!popup) { showAlert({ title: 'Popup bloquée', message: 'Le navigateur a bloqué l\'ouverture de la fenêtre. Autorisez les popups pour ce site puis réessayez.' }); return; }
 
             popup.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>BN${carrefour}</title>
 <style>*{box-sizing:border-box}body{background:#1a1a1a;color:#fff;font-family:monospace;margin:0;padding:10px;overflow:hidden;height:100vh;display:flex;flex-direction:column}h2{color:#4ecdc4;margin:5px 0;font-size:15px;flex-shrink:0}.info{color:#aaa;margin-bottom:5px;font-size:11px;flex-shrink:0}.controls{margin:4px 0;display:flex;gap:8px;align-items:center;font-size:11px;flex-shrink:0;flex-wrap:wrap}.legend{margin-left:8px}button,select{background:#333;color:#fff;border:1px solid #555;padding:3px 10px;border-radius:3px;cursor:pointer;font-size:11px}button:hover,select:hover{background:#555}.viewer{flex:1;position:relative;overflow:hidden;border:1px solid #444}.scrollbar-h{position:absolute;bottom:0;left:160px;right:14px;height:14px;background:#222}.scrollbar-h input{width:100%;height:14px;margin:0;padding:0}.scrollbar-v{position:absolute;top:28px;right:0;bottom:14px;width:14px;background:#222}.scrollbar-v input{width:100%;height:100%;margin:0;padding:0;writing-mode:bt-lr;-webkit-appearance:slider-vertical}input[type=range]{-webkit-appearance:auto;cursor:pointer;background:#333}canvas{position:absolute;top:0;left:0}</style></head><body>
@@ -1626,7 +1628,7 @@ draw();
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur boîte noire:', e);
-                alert('Erreur lors de la lecture : ' + e.message);
+                showAlert({ title: 'Erreur de lecture', message: 'Erreur lors de la lecture : ' + e.message });
             }
         }
     };
@@ -3043,7 +3045,10 @@ draw();
                                     onClick={() => {
                                         // Note: Due to browser security, we can't access the file directly
                                         // We can only show the filename as a hint to the user
-                                        alert(`Pour réimporter "${file.name}", veuillez le sélectionner à nouveau via le bouton ci-dessus.\n\nPour des raisons de sécurité, le navigateur ne permet pas d'accéder directement aux fichiers précédemment sélectionnés.`);
+                                        showAlert({
+                                            title: 'Re-sélection du fichier nécessaire',
+                                            message: `Pour réimporter « ${file.name} », veuillez le sélectionner à nouveau via le bouton ci-dessus.\n\nPour des raisons de sécurité, le navigateur ne permet pas d'accéder directement aux fichiers précédemment sélectionnés.`
+                                        });
                                     }}
                                     style={{
                                         padding: '8px 10px',

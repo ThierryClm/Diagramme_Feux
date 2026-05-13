@@ -5,7 +5,7 @@ import GreenWaveMenuBar from './components/GreenWaveMenuBar';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import HelpContent from './components/HelpContent';
 import Modal from './components/Modal';
-import { useConfirm } from './components/ConfirmProvider';
+import { useConfirm, useAlert } from './components/ConfirmProvider';
 import { APP_NAME, APP_VERSION, APP_DESCRIPTION } from './version';
 import './components/GreenWaveViewer.css';
 
@@ -33,6 +33,7 @@ const applyThemeFromStorage = () => {
 
 const GreenWavePage = () => {
     const askConfirm = useConfirm();
+    const showAlert = useAlert();
     useEffect(() => {
         applyThemeFromStorage();
         const onStorage = (e) => {
@@ -235,7 +236,7 @@ const GreenWavePage = () => {
         if (!intersections) return;
 
         if (!window.showSaveFilePicker) {
-            alert('Votre navigateur ne supporte pas la sauvegarde de fichiers. Utilisez "Enregistrer" pour sauvegarder dans le local storage.');
+            showAlert({ title: 'Navigateur non compatible', message: 'Votre navigateur ne supporte pas la sauvegarde de fichiers. Utilisez « Enregistrer » pour sauvegarder dans le cache navigateur.' });
             return;
         }
 
@@ -300,8 +301,7 @@ const GreenWavePage = () => {
                 const savedFile = await fileHandle.getFile();
                 const savedContent = await savedFile.text();
                 if (!savedContent || savedContent.trim() === '') {
-                    alert('Attention: Le fichier semble vide après la sauvegarde.\n\n' +
-                          'Veuillez réessayer la sauvegarde.');
+                    showAlert({ title: 'Sauvegarde vide', message: 'Attention : le fichier semble vide après la sauvegarde.\n\nVeuillez réessayer.' });
                     return;
                 }
             } catch (verifyError) {
@@ -334,7 +334,7 @@ const GreenWavePage = () => {
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur sauvegarde fichier:', e);
-                alert('Erreur lors de la sauvegarde du fichier: ' + e.message);
+                showAlert({ title: 'Erreur de sauvegarde', message: 'Erreur lors de la sauvegarde du fichier : ' + e.message });
             }
         }
     };
@@ -401,7 +401,7 @@ const GreenWavePage = () => {
         if (updatedCount > 0) {
             alert(`${updatedCount} carrefour(s) synchronisé(s) avec succès.`);
         } else {
-            alert('Aucun carrefour mis à jour. Vérifiez que les projets existent.');
+            showAlert({ title: 'Synchronisation', message: 'Aucun carrefour mis à jour. Vérifiez que les projets existent.' });
         }
     };
 
@@ -812,7 +812,7 @@ const GreenWavePage = () => {
         }
 
         if (availableProjects.length === 0) {
-            alert('Aucun projet sauvegardé disponible.');
+            showAlert({ title: 'Aucun projet', message: 'Aucun projet sauvegardé disponible.' });
             return;
         }
 
@@ -834,7 +834,7 @@ const GreenWavePage = () => {
         }
 
         if (!selectedProject) {
-            alert('Projet non trouvé.');
+            showAlert({ title: 'Projet introuvable', message: 'Projet non trouvé.' });
             return;
         }
 
@@ -842,7 +842,7 @@ const GreenWavePage = () => {
         const projectKey = `traffic_project_${selectedProject}`;
         const projectRaw = localStorage.getItem(projectKey);
         if (!projectRaw) {
-            alert(`Impossible de charger le projet "${selectedProject}".`);
+            showAlert({ title: 'Chargement impossible', message: `Impossible de charger le projet « ${selectedProject} ».` });
             return;
         }
 
@@ -895,7 +895,7 @@ const GreenWavePage = () => {
             setIntersections(prev => [...(prev || []), newIntersection]);
         } catch (e) {
             console.error('Failed to load project data', e);
-            alert(`Erreur lors du chargement du projet "${selectedProject}".`);
+            showAlert({ title: 'Erreur de chargement', message: `Erreur lors du chargement du projet « ${selectedProject} ».` });
         }
     };
 
@@ -1599,7 +1599,7 @@ const GreenWavePage = () => {
     // on demande confirmation avant d'écraser.
     const handleOpenGreenWaveFile = async () => {
         if (!window.showOpenFilePicker) {
-            alert('Votre navigateur ne supporte pas l\'ouverture de fichiers. Utilisez l\'application principale.');
+            showAlert({ title: 'Navigateur non compatible', message: "Votre navigateur ne supporte pas l'ouverture de fichiers. Utilisez l'application principale." });
             return;
         }
         try {
@@ -1610,12 +1610,12 @@ const GreenWavePage = () => {
             const file = await fileHandle.getFile();
             const content = await file.text();
             if (!content || !content.trim()) {
-                alert('Le fichier est vide.');
+                showAlert({ title: 'Fichier vide', message: 'Le fichier est vide.' });
                 return;
             }
             const data = JSON.parse(content);
             if (!data || !Array.isArray(data.intersections)) {
-                alert('Le fichier ne contient pas de données d\'onde verte valides.');
+                showAlert({ title: 'Fichier invalide', message: "Le fichier ne contient pas de données d'onde verte valides." });
                 return;
             }
             // Confirmation si la fenêtre courante a des modifs non sauvées.
@@ -1650,7 +1650,7 @@ const GreenWavePage = () => {
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur ouverture fichier onde verte:', e);
-                alert('Erreur lors de l\'ouverture du fichier : ' + e.message);
+                showAlert({ title: "Erreur d'ouverture", message: "Erreur lors de l'ouverture du fichier : " + e.message });
             }
         }
     };

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
 import EmptyState from './EmptyState';
+import { useAlert } from './ConfirmProvider';
 import './TrafficTable.css';
 
 const TrafficTable = ({
@@ -21,6 +22,7 @@ const TrafficTable = ({
     simulationSelectedActions = [],
     onDetach
 }) => {
+    const showAlert = useAlert();
     const [showPasteDropdown, setShowPasteDropdown] = useState(false);
     const [showAllGroups, setShowAllGroups] = useState(false);
     const [tooltipGroupId, setTooltipGroupId] = useState(null);
@@ -48,13 +50,13 @@ const TrafficTable = ({
         if (name && name.trim()) {
             const trimmed = name.trim().slice(0, 17);
             if (trafficDatasetNames.includes(trimmed)) {
-                alert('Ce nom de jeu de données existe déjà.');
+                showAlert({ title: 'Nom déjà utilisé', message: 'Ce nom de jeu de données existe déjà.' });
                 return;
             }
             addCustomTrafficDataset(trimmed);
             setActiveTrafficDataset(trimmed);
         }
-    }, [activeTrafficDataset, trafficDatasetNames, addCustomTrafficDataset, setActiveTrafficDataset]);
+    }, [activeTrafficDataset, trafficDatasetNames, addCustomTrafficDataset, setActiveTrafficDataset, showAlert]);
 
     const datasetHoveredRef = useRef(false);
 
