@@ -805,6 +805,7 @@ function App() {
                     setCurrentProjectPath('');
                     setProjectModified(false);
                     projectModifiedSkip.current = true;
+                    setHasUnsavedChanges(false); // nettoie l'astérisque + enclenche le bypass d'isLoading
                     // Décoche tous les détachements (un nouveau projet repart
                     // d'un espace de travail propre — l'utilisateur détache à
                     // la demande selon ses besoins).

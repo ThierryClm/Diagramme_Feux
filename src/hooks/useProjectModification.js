@@ -16,6 +16,11 @@ const useProjectModification = (deps) => {
     const hasUnsavedChanges = useRef(false);
     // Only track changes after all startup effects have settled
     const isReady = useRef(false);
+    // When true, ALL dep changes are absorbed (vs projectModifiedSkip which only
+    // absorbs one). Set automatically par setHasUnsavedChanges(false) pour couvrir
+    // les chargements / nouveaux projets où plusieurs setters successifs déclenchent
+    // plusieurs runs de l'effet deps.
+    const isLoading = useRef(false);
 
     useEffect(() => {
         const raf = requestAnimationFrame(() => {
@@ -25,6 +30,7 @@ const useProjectModification = (deps) => {
     }, []);
 
     useEffect(() => {
+        if (isLoading.current) return; // bypass complet pendant un chargement
         if (projectModifiedSkip.current) {
             projectModifiedSkip.current = false;
             return;
@@ -52,12 +58,23 @@ const useProjectModification = (deps) => {
         projectModifiedSkip.current = true;
         hasUnsavedChanges.current = false;
         setIsDirty(false);
+        // Bypass des changements de deps pendant le tick courant : couvre les
+        // cas où resetToNewProject() ou loadFullState() déclenchent plusieurs
+        // batches successifs.
+        isLoading.current = true;
+        setTimeout(() => { isLoading.current = false; }, 0);
     };
 
-    // Wrap the ref setter so external callers (loaders/savers) also clear isDirty
+    // Wrap the ref setter so external callers (loaders/savers) also clear isDirty.
+    // Quand on passe à false (chargement / sauvegarde réussie), on enclenche le
+    // bypass pour absorber les effets dérivés qui s'enchaînent.
     const setHasUnsavedChanges = (val) => {
         hasUnsavedChanges.current = val;
         setIsDirty(val);
+        if (!val) {
+            isLoading.current = true;
+            setTimeout(() => { isLoading.current = false; }, 0);
+        }
     };
 
     return { projectModified, setProjectModified, resetModified, projectModifiedSkip, hasUnsavedChanges, isDirty, setHasUnsavedChanges };
