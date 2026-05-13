@@ -11,6 +11,7 @@ import ActionTable from './components/ActionTable';
 import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
+import { useConfirm } from './components/ConfirmProvider';
 import { APP_VERSION, APP_NAME, APP_DESCRIPTION } from './version';
 import { buildExportFilename } from './utils/exportFilename';
 import { buildDiagnosticReport, downloadDiagnosticReport, buildErrorJournal, buildDiagnosticJSON, downloadDiagnosticJSON } from './utils/diagnostics';
@@ -54,6 +55,7 @@ import './components/IntergreenMatrix.css';
 import './App.css';
 
 function App() {
+    const askConfirm = useConfirm();
     const {
         intersectionName,
         setIntersectionName,
@@ -147,7 +149,7 @@ function App() {
         appCommunes,
         appMoaLogos,
         appMoeLogos
-    } = useTrafficLight();
+    } = useTrafficLight({ askConfirm });
 
     // Update yellow/orange duration for VL and B groups when horsAgglomeration changes
     useEffect(() => {
@@ -575,7 +577,8 @@ function App() {
         lastImageDirectoryRef, lastGreenWaveDirectoryRef,
         saveDirectoryHandle, loadDirectoryHandle,
         recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs,
-        addRecentDirectory
+        addRecentDirectory,
+        askConfirm
     });
 
     // Get all saved green waves (sorted by most recent first)
@@ -620,10 +623,14 @@ function App() {
     };
 
     // Delete a saved green wave
-    const deleteGreenWave = (name) => {
-        if (!window.confirm(`Êtes-vous sûr de vouloir supprimer l'onde verte "${name}" ?`)) {
-            return;
-        }
+    const deleteGreenWave = async (name) => {
+        const ok = await askConfirm({
+            title: 'Supprimer l\'onde verte',
+            message: `Êtes-vous sûr de vouloir supprimer l'onde verte « ${name} » ?`,
+            confirmLabel: 'Supprimer',
+            danger: true,
+        });
+        if (!ok) return;
         try {
             const saved = localStorage.getItem('savedGreenWaves');
             if (saved) {
@@ -793,10 +800,18 @@ function App() {
     };
 
     // Menu action handler
-    const handleMenuAction = (action) => {
+    const handleMenuAction = async (action) => {
         switch (action) {
-            case 'new':
-                if (confirm('Créer un nouveau projet ? Les modifications non enregistrées seront perdues.')) {
+            case 'new': {
+                // Confirmation uniquement s'il y a des modifications à perdre.
+                // Pas de confirmation sur écran d'accueil ou projet inchangé.
+                const okNew = !isDirty || await askConfirm({
+                    title: 'Nouveau projet',
+                    message: 'Créer un nouveau projet ? Les modifications non enregistrées seront perdues.',
+                    confirmLabel: 'Créer',
+                    danger: true,
+                });
+                if (okNew) {
                     resetToNewProject();
                     setActiveTab(openPropertiesOnNewProject ? 'properties' : 'config');
                     setDiagramHeight(null);
@@ -828,6 +843,7 @@ function App() {
                     }, 100);
                 }
                 break;
+            }
             case 'open':
                 handleOpenFileWithPicker();
                 break;
@@ -931,7 +947,12 @@ function App() {
                 if (pfTabs.length > 1) {
                     const activePF = pfTabs.find(pf => pf.id === activePFId);
                     const tabName = activePF?.name || `PF${activePFId}`;
-                    if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'onglet "${tabName}" ?\nCette action est irréversible.`)) {
+                    if (await askConfirm({
+                        title: 'Supprimer le plan de feu',
+                        message: `Êtes-vous sûr de vouloir supprimer l'onglet « ${tabName} » ?\n\nCette action est irréversible.`,
+                        confirmLabel: 'Supprimer',
+                        danger: true,
+                    })) {
                         deletePF(activePFId);
                         toast.success(`${tabName} supprimé`);
                     }
@@ -1369,12 +1390,18 @@ function App() {
     };
 
     // Handle project selection from open modal
-    const handleOpenProject = () => {
+    const handleOpenProject = async () => {
         if (selectedProject) {
             // Garde-fou : si le projet courant a des modifications non
             // sauvegardées, demander confirmation avant de l'écraser.
-            if (isDirty && !window.confirm('Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le projet sélectionné ?')) {
-                return;
+            if (isDirty) {
+                const ok = await askConfirm({
+                    title: 'Modifications non enregistrées',
+                    message: 'Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le projet sélectionné ?',
+                    confirmLabel: 'Continuer',
+                    danger: true,
+                });
+                if (!ok) return;
             }
             const data = loadProject(selectedProject);
             setOpenModal(false);
@@ -1806,13 +1833,19 @@ draw();
                                     e.target.blur();
                                 }
                             }}
-                            onBlur={() => {
+                            onBlur={async () => {
                                 const newCount = parseInt(groupCountInput);
                                 if (!isNaN(newCount) && newCount >= 1 && newCount <= 32 && newCount !== groups.length) {
-                                    const msg = newCount < groups.length
-                                        ? `Réduire de ${groups.length} à ${newCount} groupes de feu supprimera les paramètres des groupes supprimés sur l'ensemble des plans de feu.\n\nConfirmer ?`
-                                        : `L'ajout de groupes de feux s'appliquera pour l'ensemble des plans de feu.\n\nConfirmer ?`;
-                                    if (window.confirm(msg)) {
+                                    const isReduce = newCount < groups.length;
+                                    const ok = await askConfirm({
+                                        title: isReduce ? 'Réduire le nombre de groupes' : 'Ajouter des groupes',
+                                        message: isReduce
+                                            ? `Réduire de ${groups.length} à ${newCount} groupes de feu supprimera les paramètres des groupes supprimés sur l'ensemble des plans de feu.\n\nConfirmer ?`
+                                            : `L'ajout de groupes de feux s'appliquera pour l'ensemble des plans de feu.\n\nConfirmer ?`,
+                                        confirmLabel: 'Confirmer',
+                                        danger: isReduce,
+                                    });
+                                    if (ok) {
                                         setGroupCount(newCount);
                                     } else {
                                         setGroupCountInput(groups.length.toString());
@@ -2513,10 +2546,16 @@ draw();
                                             key={project.name}
                                             className={selectedProject === project.name ? 'selected' : ''}
                                             onClick={() => setSelectedProject(project.name)}
-                                            onDoubleClick={() => {
+                                            onDoubleClick={async () => {
                                                 // Garde-fou : modifications non sauvegardées
-                                                if (isDirty && !window.confirm('Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir « ' + project.name + ' » ?')) {
-                                                    return;
+                                                if (isDirty) {
+                                                    const ok = await askConfirm({
+                                                        title: 'Modifications non enregistrées',
+                                                        message: `Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir « ${project.name} » ?`,
+                                                        confirmLabel: 'Continuer',
+                                                        danger: true,
+                                                    });
+                                                    if (!ok) return;
                                                 }
                                                 setSelectedProject(project.name);
                                                 const data = loadProject(project.name);

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { safeShowOpenFilePicker } from '../utils/filePicker';
+import { useConfirm } from './ConfirmProvider';
 import './ExternalLinksModal.css';
 
 const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
+    const askConfirm = useConfirm();
     const [localLinks, setLocalLinks] = useState([]);
     const [newLinkName, setNewLinkName] = useState('');
     const [newLinkPath, setNewLinkPath] = useState('');
@@ -42,8 +44,14 @@ const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
     };
 
     // Delete a link
-    const handleDeleteLink = (id) => {
-        if (confirm('Supprimer ce lien ?')) {
+    const handleDeleteLink = async (id) => {
+        const ok = await askConfirm({
+            title: 'Supprimer le lien',
+            message: 'Supprimer ce lien ?',
+            confirmLabel: 'Supprimer',
+            danger: true,
+        });
+        if (ok) {
             saveLinks(localLinks.filter(l => l.id !== id));
         }
     };

@@ -33,7 +33,8 @@ const useFileOperations = ({
     lastImageDirectoryRef, lastGreenWaveDirectoryRef,
     saveDirectoryHandle, loadDirectoryHandle,
     recentOpenDirs, recentSaveDirs, recentImportDirs, recentImageDirs, recentGreenWaveDirs,
-    addRecentDirectory
+    addRecentDirectory,
+    askConfirm
 }) => {
     // Ouvrir un fichier JSON avec File System Access API
     const handleOpenFileWithPicker = useCallback(async () => {
@@ -93,8 +94,14 @@ const useFileOperations = ({
             // sauvegardées, demander confirmation avant de l'écraser.
             // (Validation OK passée d'abord pour éviter une question inutile
             // si le fichier choisi n'est pas exploitable.)
-            if (isDirty && !window.confirm('Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le nouveau projet ?')) {
-                return;
+            if (isDirty && askConfirm) {
+                const ok = await askConfirm({
+                    title: 'Modifications non enregistrées',
+                    message: 'Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le nouveau projet ?',
+                    confirmLabel: 'Continuer',
+                    danger: true,
+                });
+                if (!ok) return;
             }
 
             // Mémoriser le répertoire parent
@@ -263,8 +270,14 @@ const useFileOperations = ({
             // sauvegardées, demander confirmation avant de l'écraser.
             // (Validation OK passée d'abord pour éviter une question inutile
             // si le fichier choisi n'est pas exploitable.)
-            if (isDirty && !window.confirm('Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le nouveau projet ?')) {
-                return;
+            if (isDirty && askConfirm) {
+                const ok = await askConfirm({
+                    title: 'Modifications non enregistrées',
+                    message: 'Le projet courant a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le nouveau projet ?',
+                    confirmLabel: 'Continuer',
+                    danger: true,
+                });
+                if (!ok) return;
             }
 
             // Mémoriser le répertoire parent

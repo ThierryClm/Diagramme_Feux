@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useConfirm } from './ConfirmProvider';
 import './ProjectManager.css';
 
 const ProjectManager = ({
@@ -9,6 +10,7 @@ const ProjectManager = ({
     recentOpenDirs = [],
     recentSaveDirs = []
 }) => {
+    const askConfirm = useConfirm();
     const [savedProjects, setSavedProjects] = useState([]);
     const [message, setMessage] = useState('');
 
@@ -20,8 +22,14 @@ const ProjectManager = ({
         refreshList();
     }, []);
 
-    const handleLoad = (name) => {
-        if (confirm(`Charger "${name}" ? La configuration actuelle sera perdue.`)) {
+    const handleLoad = async (name) => {
+        const ok = await askConfirm({
+            title: 'Charger le projet',
+            message: `Charger « ${name} » ? La configuration actuelle sera perdue.`,
+            confirmLabel: 'Charger',
+            danger: true,
+        });
+        if (ok) {
             const success = loadProject(name);
             if (success) {
                 setMessage(`Chargé: ${name}`);
@@ -32,8 +40,14 @@ const ProjectManager = ({
         }
     };
 
-    const handleDelete = (name) => {
-        if (confirm(`Supprimer "${name}" du cache local ?`)) {
+    const handleDelete = async (name) => {
+        const ok = await askConfirm({
+            title: 'Supprimer du cache',
+            message: `Supprimer « ${name} » du cache local ?`,
+            confirmLabel: 'Supprimer',
+            danger: true,
+        });
+        if (ok) {
             deleteSave(name);
             refreshList();
         }

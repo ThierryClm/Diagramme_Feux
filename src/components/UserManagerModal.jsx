@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Modal from './Modal';
 import { PERMISSIONS } from '../hooks/useAuth';
+import { useConfirm } from './ConfirmProvider';
 import './UserManagerModal.css';
 
 const UserManagerModal = ({
@@ -15,6 +16,7 @@ const UserManagerModal = ({
     exportUsersToFile,
     importUsersFromFile
 }) => {
+    const askConfirm = useConfirm();
     const [newUsername, setNewUsername] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [newPermissions, setNewPermissions] = useState('lecture');
@@ -49,9 +51,13 @@ const UserManagerModal = ({
     };
 
     const handleDeleteUser = async (username) => {
-        if (!confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${username}" ?`)) {
-            return;
-        }
+        const ok = await askConfirm({
+            title: 'Supprimer l\'utilisateur',
+            message: `Êtes-vous sûr de vouloir supprimer l'utilisateur « ${username} » ?`,
+            confirmLabel: 'Supprimer',
+            danger: true,
+        });
+        if (!ok) return;
 
         const result = deleteUser(username);
         if (result.success) {

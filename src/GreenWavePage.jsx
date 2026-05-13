@@ -5,6 +5,7 @@ import GreenWaveMenuBar from './components/GreenWaveMenuBar';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import HelpContent from './components/HelpContent';
 import Modal from './components/Modal';
+import { useConfirm } from './components/ConfirmProvider';
 import { APP_NAME, APP_VERSION, APP_DESCRIPTION } from './version';
 import './components/GreenWaveViewer.css';
 
@@ -31,6 +32,7 @@ const applyThemeFromStorage = () => {
 };
 
 const GreenWavePage = () => {
+    const askConfirm = useConfirm();
     useEffect(() => {
         applyThemeFromStorage();
         const onStorage = (e) => {
@@ -1564,11 +1566,17 @@ const GreenWavePage = () => {
     // cohérente avec le module Diagramme). Si le projet courant a des
     // modifications non sauvegardées, on demande confirmation avant
     // d'écraser.
-    const handleCreateGreenWaveLocal = (newIntersections) => {
-        if (gwIsDirty && !window.confirm("L'onde verte courante a des modifications non enregistrées qui seront perdues.\n\nContinuer et créer une nouvelle onde verte ?")) {
+    const handleCreateGreenWaveLocal = async (newIntersections) => {
+        if (gwIsDirty) {
+            const ok = await askConfirm({
+                title: 'Modifications non enregistrées',
+                message: "L'onde verte courante a des modifications non enregistrées qui seront perdues.\n\nContinuer et créer une nouvelle onde verte ?",
+                confirmLabel: 'Continuer',
+                danger: true,
+            });
             // L'utilisateur annule : ne ferme pas le dialogue, lui laisse
             // l'opportunité d'annuler complètement la création.
-            return;
+            if (!ok) return;
         }
         isApplyingSettingsRef.current = true;
         setIntersections(newIntersections);
@@ -1613,8 +1621,14 @@ const GreenWavePage = () => {
             // Confirmation si la fenêtre courante a des modifs non sauvées.
             // (Check fait après validation pour éviter une question inutile
             // si le fichier choisi n'est pas exploitable.)
-            if (gwIsDirty && !window.confirm("L'onde verte courante a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le fichier sélectionné ?")) {
-                return;
+            if (gwIsDirty) {
+                const ok = await askConfirm({
+                    title: 'Modifications non enregistrées',
+                    message: "L'onde verte courante a des modifications non enregistrées qui seront perdues.\n\nContinuer et ouvrir le fichier sélectionné ?",
+                    confirmLabel: 'Continuer',
+                    danger: true,
+                });
+                if (!ok) return;
             }
             const settings = {
                 name: data.name || file.name.replace(/\.json$/i, ''),

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import usePopupWindow from '../hooks/usePopupWindow';
 import NumericInput from './NumericInput';
+import { useConfirm } from './ConfirmProvider';
 import './ActionTable.css';
 
 // Auto-resize textarea helper
@@ -78,6 +79,7 @@ const isRowFilled = (row) => {
 };
 
 const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel, showFloatingConditions, setShowFloatingConditions, showFloatingVariables, setShowFloatingVariables, showWrapFlash = true, showDescription = true }) => {
+    const askConfirm = useConfirm();
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
 
@@ -222,7 +224,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     }, [updateActionRow, maxGroup]);
 
     // Handle action change - clear disabled fields when action changes
-    const handleActionChange = useCallback((rowId, newAction, currentRow) => {
+    const handleActionChange = useCallback(async (rowId, newAction, currentRow) => {
         // Si l'action est supprimée et que la ligne contient des données, proposer de supprimer toute la ligne
         if (newAction === '' && currentRow?.action) {
             const hasData = currentRow.gf || currentRow.description || currentRow.deb ||
@@ -231,7 +233,12 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                            currentRow.actGf1Gf2 || currentRow.actGf1Gf3 || currentRow.actGf1Gf4;
 
             if (hasData) {
-                const confirmDelete = window.confirm('Voulez-vous supprimer toute la ligne ?');
+                const confirmDelete = await askConfirm({
+                    title: 'Supprimer la ligne',
+                    message: 'Voulez-vous supprimer toute la ligne ?',
+                    confirmLabel: 'Supprimer',
+                    danger: true,
+                });
                 if (confirmDelete) {
                     // Effacer tous les champs de la ligne
                     updateActionRow(rowId, 'action', '');
@@ -286,7 +293,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
             updateActionRow(rowId, 'actGf1Gf3', '');
             updateActionRow(rowId, 'actGf1Gf4', '');
         }
-    }, [updateActionRow]);
+    }, [updateActionRow, askConfirm]);
 
     // Handle sort - actually reorder the data permanently
     const handleSort = useCallback((field, direction = 'asc') => {

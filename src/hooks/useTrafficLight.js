@@ -119,7 +119,7 @@ const createEmptyTrafficData = () => ({
     trafficVol: 0
 });
 
-export const useTrafficLight = () => {
+export const useTrafficLight = ({ askConfirm } = {}) => {
     const [intersectionName, setIntersectionName] = useState("Nouveau Carrefour");
     const [cycleLength, setCycleLength] = useState(DEFAULT_CYCLE);
     const [dependencyGap, setDependencyGap] = useState(20);
@@ -1692,7 +1692,7 @@ export const useTrafficLight = () => {
     }, [actionData]);
 
     // Save project - defined after all state declarations to capture current values
-    const saveProject = useCallback((name) => {
+    const saveProject = useCallback(async (name) => {
         if (!name) return false;
 
         // Validate data before saving to prevent empty saves
@@ -1787,10 +1787,15 @@ export const useTrafficLight = () => {
                 const newSize = jsonData.length;
                 if (newSize < existingSize * 0.3) {
                     // New save is less than 30% of old save - likely data loss
-                    const confirm = window.confirm(
-                        `Attention: La nouvelle sauvegarde (${newSize} car.) est beaucoup plus petite que l'ancienne (${existingSize} car.).\n\nCela pourrait indiquer une perte de données.\n\nVoulez-vous quand même sauvegarder?`
-                    );
-                    if (!confirm) {
+                    const ok = askConfirm
+                        ? await askConfirm({
+                            title: 'Perte de données possible',
+                            message: `Attention : la nouvelle sauvegarde (${newSize} car.) est beaucoup plus petite que l'ancienne (${existingSize} car.).\n\nCela pourrait indiquer une perte de données.\n\nVoulez-vous quand même sauvegarder ?`,
+                            confirmLabel: 'Sauvegarder',
+                            danger: true,
+                        })
+                        : window.confirm(`Attention: La nouvelle sauvegarde (${newSize} car.) est beaucoup plus petite que l'ancienne (${existingSize} car.).\n\nCela pourrait indiquer une perte de données.\n\nVoulez-vous quand même sauvegarder?`);
+                    if (!ok) {
                         return false;
                     }
                 }
@@ -1831,7 +1836,7 @@ export const useTrafficLight = () => {
             }
             return false;
         }
-    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, externalLinks, projectProperties]);
+    }, [intersectionName, groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, externalLinks, projectProperties, askConfirm]);
 
     // Save pfTabs to localStorage
     useEffect(() => {
