@@ -6,6 +6,7 @@ import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import HelpContent from './components/HelpContent';
 import Modal from './components/Modal';
 import { useConfirm, useAlert } from './components/ConfirmProvider';
+import { toast } from './utils/toast';
 import { APP_NAME, APP_VERSION, APP_DESCRIPTION } from './version';
 import './components/GreenWaveViewer.css';
 
@@ -228,7 +229,7 @@ const GreenWavePage = () => {
 
         setGreenWaveName(name);
         setGwIsDirty(false);
-        alert(`Onde verte "${name}" enregistrée avec succès.`);
+        toast.success(`Onde verte « ${name} » enregistrée`);
     };
 
     // Save green wave data to file system (network)
@@ -330,7 +331,7 @@ const GreenWavePage = () => {
             setLoadedFileName(savedName);
             setGwIsDirty(false);
 
-            alert(`Onde verte enregistrée dans "${fileHandle.name}".`);
+            toast.success(`Onde verte enregistrée dans « ${fileHandle.name} »`);
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Erreur sauvegarde fichier:', e);
@@ -399,7 +400,7 @@ const GreenWavePage = () => {
         setIntersections(updatedIntersections);
 
         if (updatedCount > 0) {
-            alert(`${updatedCount} carrefour(s) synchronisé(s) avec succès.`);
+            toast.success(`${updatedCount} carrefour(s) synchronisé(s)`);
         } else {
             showAlert({ title: 'Synchronisation', message: 'Aucun carrefour mis à jour. Vérifiez que les projets existent.' });
         }

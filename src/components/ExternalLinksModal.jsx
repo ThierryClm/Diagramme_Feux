@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { safeShowOpenFilePicker } from '../utils/filePicker';
 import { useConfirm, useAlert } from './ConfirmProvider';
+import { toast } from '../utils/toast';
 import './ExternalLinksModal.css';
 
 const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
@@ -164,7 +165,7 @@ const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 navigator.clipboard.writeText(link.path);
-                                                alert('Chemin copié dans le presse-papiers');
+                                                toast.success('Chemin copié dans le presse-papiers');
                                             }}
                                             title="Copier le chemin"
                                         >
