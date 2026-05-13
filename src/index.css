@@ -1786,7 +1786,8 @@ body.high-contrast-mode .arrow-editor label {
 /* Menu bar */
 body.high-contrast-mode .menu-bar {
     background: #0f1440;
-    border-bottom: 2px solid #3355aa;
+    /* Bordure dans la couleur du texte du menu (jaune haute contraste). */
+    border-bottom: 2px solid #ffdd00;
 }
 
 body.high-contrast-mode .menu-button {
@@ -1800,7 +1801,9 @@ body.high-contrast-mode .menu-button:hover {
 
 body.high-contrast-mode .menu-dropdown {
     background: #1a2050;
-    border: 1px solid #3355aa;
+    /* Contour dans la couleur du texte haute contraste (jaune) */
+    border: 2px solid #ffdd00;
+    border-top: none;
 }
 
 body.high-contrast-mode .menu-item {
@@ -1825,7 +1828,8 @@ body.high-contrast-mode .menu-header {
 
 body.high-contrast-mode .submenu-dropdown {
     background: #1a2050;
-    border: 1px solid #3355aa;
+    /* Contour dans la couleur du texte haute contraste (jaune) */
+    border: 2px solid #ffdd00;
 }
 
 body.high-contrast-mode .menu-slider-label,
@@ -2652,8 +2656,10 @@ body.amber-mode .arrow-editor label {
 
 /* Menu bar */
 body.amber-mode .menu-bar {
-    background: #222222;
-    border-bottom: 2px solid #555;
+    /* Plus clair que le body amber (#1a1a1a) pour rester visible.
+       Bordure dans la couleur du texte ambre. */
+    background: #383838;
+    border-bottom: 2px solid #ffb300;
 }
 
 body.amber-mode .menu-button {
@@ -2667,7 +2673,9 @@ body.amber-mode .menu-button:hover {
 
 body.amber-mode .menu-dropdown {
     background: #303030;
-    border: 1px solid #555;
+    /* Contour dans la couleur du texte ambre */
+    border: 2px solid #ffb300;
+    border-top: none;
 }
 
 body.amber-mode .menu-item {
@@ -2692,7 +2700,8 @@ body.amber-mode .menu-header {
 
 body.amber-mode .submenu-dropdown {
     background: #303030;
-    border: 1px solid #555;
+    /* Contour dans la couleur du texte ambre */
+    border: 2px solid #ffb300;
 }
 
 body.amber-mode .menu-slider-label,

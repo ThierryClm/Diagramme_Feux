@@ -1,10 +1,18 @@
 .menu-bar {
     display: flex;
-    background: #2a2a2a;
-    border-bottom: 1px solid #444;
+    /* Plus clair que le body par défaut (#242424) pour rester visible
+       sur les thèmes sombres. Sur les thèmes clairs (light, sépia), le
+       gris foncé contraste toujours fortement avec le fond clair. */
+    background: #3a3a3a;
+    /* Bordure dans la couleur du texte du menu pour une séparation nette
+       et cohérente quel que soit le thème (les surcharges par thème
+       reprennent leur propre couleur de texte). */
+    border-bottom: 2px solid #ddd;
     padding: 0;
     height: 28px;
     align-items: stretch;
+    position: relative;
+    z-index: 100;
 }
 
 .menu-bar-logo-btn {
@@ -64,7 +72,9 @@
     top: 100%;
     left: 0;
     background: #3a3a3a;
-    border: 1px solid #555;
+    /* Contour épais dans la couleur du texte du menu pour bien
+       délimiter le dropdown du contenu derrière, peu importe le thème. */
+    border: 2px solid #ddd;
     border-top: none;
     min-width: 160px;
     z-index: 1000;
@@ -144,9 +154,11 @@
 .submenu-dropdown {
     position: absolute;
     left: 100%;
-    top: -1px;
+    top: -2px;
     background: #3a3a3a;
-    border: 1px solid #555;
+    /* Contour épais dans la couleur du texte du menu, cohérent avec
+       le dropdown parent (overrides par thème dans index.css). */
+    border: 2px solid #ddd;
     min-width: 150px;
     z-index: 1001;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -164,7 +176,7 @@
 
 .submenu-dropdown.nested {
     left: calc(100% - 2px);
-    top: -1px;
+    top: -2px;
 }
 
 .nested-submenu {
