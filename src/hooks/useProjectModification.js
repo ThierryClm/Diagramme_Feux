@@ -62,7 +62,10 @@ const useProjectModification = (deps) => {
         // cas où resetToNewProject() ou loadFullState() déclenchent plusieurs
         // batches successifs.
         isLoading.current = true;
-        setTimeout(() => { isLoading.current = false; }, 0);
+        // 300 ms : couvre la cascade de useEffects dérivés qui peuvent réécrire
+        // groups / cycleLength / conflictMatrix après le batch initial (notamment
+        // la reverse-sync PF qui se déclenche sur changement d'activePFId).
+        setTimeout(() => { isLoading.current = false; }, 300);
     };
 
     // Wrap the ref setter so external callers (loaders/savers) also clear isDirty.
@@ -73,7 +76,7 @@ const useProjectModification = (deps) => {
         setIsDirty(val);
         if (!val) {
             isLoading.current = true;
-            setTimeout(() => { isLoading.current = false; }, 0);
+            setTimeout(() => { isLoading.current = false; }, 300);
         }
     };
 
