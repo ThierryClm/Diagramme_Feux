@@ -61,7 +61,7 @@ L'application est conçue pour la **conception et l'optimisation** de plans de f
 
 ### Proposez-vous un accompagnement pour les carrefours complexes ?
 
-Oui, c'est possible selon certaines conditions. Pour les carrefours complexes, l'auteur peut assurer un accompagnement à la conception du diagramme, en tirant parti des capacités combinées de gestion par phase et par groupe de feux qu'offre l'outil. Moyennant une contribution adaptée à la complexité du sujet, deux modes de prestation sont possibles : **assistance technique à la carte** ou **prise en charge complète du projet** à partir des données fournies par l'utilisateur. Voir la section [Services & accompagnement](README.md#services--accompagnement) du README.
+Un service d'accompagnement est **envisagé pour une étape ultérieure** du projet, mais **n'est pas encore opérationnel**. L'idée : proposer, pour les carrefours complexes, une aide à la conception du diagramme tirant parti des capacités combinées de gestion par phase et par groupe de feux qu'offre l'outil. Deux modes de prestation sont pressentis — **assistance technique à la carte** ou **prise en charge complète du projet** à partir des données fournies par l'utilisateur — dont les modalités et le contact seront précisés lorsque le service sera disponible. Voir la section [Services & accompagnement](README.md#services--accompagnement) du README.
 
 ### Quelles fonctionnalités sont envisageables à terme ?
 

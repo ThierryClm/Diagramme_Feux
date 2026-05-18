@@ -102,11 +102,11 @@ Une [FAQ](FAQ.md) répond aux questions courantes (confidentialité des données
 
 ## Services & accompagnement
 
-Pour les carrefours complexes, l'auteur peut assurer un accompagnement à la conception du diagramme, en tirant parti des capacités combinées de gestion par phase et par groupe de feux qu'offre l'outil.
+Un service d'accompagnement à la conception de diagrammes de feux est **envisagé pour une étape ultérieure** du projet. L'idée : proposer, pour les carrefours complexes, une aide tirant parti des capacités combinées de gestion par phase et par groupe de feux qu'offre l'outil.
 
-Moyennant une contribution adaptée à la complexité du sujet, deux modes de prestation sont possibles : **assistance technique à la carte** ou **prise en charge complète du projet** à partir des données fournies par l'utilisateur.
+Deux modes de prestation sont pressentis — **assistance technique à la carte** ou **prise en charge complète du projet** à partir des données fournies par l'utilisateur — mais **cette offre n'est pas encore opérationnelle**.
 
-*(Coordonnées de contact à venir.)*
+*(Les modalités et coordonnées de contact seront précisées lorsque le service sera disponible.)*
 
 ## Contribuer
 
