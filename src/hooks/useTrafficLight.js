@@ -8,6 +8,7 @@ import {
     createEmptyPF,
     ensurePFIntegrity
 } from '../utils/pfHelpers';
+import { isExampleSession } from '../utils/exampleMode';
 const MAX_HISTORY_SIZE = 50;
 
 // Safe localStorage helper to prevent QuotaExceededError crashes
@@ -208,6 +209,9 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
     // Auto-save Effect
     useEffect(() => {
+        // Projet exemple : aucune persistance localStorage (ne doit pas
+        // écraser le document de travail réel ni polluer les projets stockés).
+        if (isExampleSession()) return;
         safeLocalStorage.setItem('trafficGroups', JSON.stringify(groups));
         safeLocalStorage.setItem('trafficMatrix', JSON.stringify(conflictMatrix));
         safeLocalStorage.setItem('trafficName', intersectionName);
@@ -1696,6 +1700,9 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     // Save project - defined after all state declarations to capture current values
     const saveProject = useCallback(async (name) => {
         if (!name) return false;
+        // Projet exemple : non persistable (filet de sécurité — l'entrée
+        // de menu Sauvegarder est déjà grisée).
+        if (isExampleSession()) return false;
 
         // Validate data before saving to prevent empty saves
         if (!groups || groups.length === 0) {

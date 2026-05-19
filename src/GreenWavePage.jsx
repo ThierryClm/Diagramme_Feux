@@ -8,6 +8,7 @@ import Modal from './components/Modal';
 import { useConfirm, useAlert } from './components/ConfirmProvider';
 import { toast } from './utils/toast';
 import { isInviteVisible, noteWelcomeView, noteProjectSeen } from './utils/welcomeInvite';
+import { isExampleSession, exitExampleSession } from './utils/exampleMode';
 import { APP_NAME, APP_VERSION, APP_DESCRIPTION } from './version';
 import './components/GreenWaveViewer.css';
 
@@ -49,6 +50,11 @@ const GreenWavePage = () => {
     // Invitation « onde verte exemple » (cf. utils/welcomeInvite) — figée
     // au montage. Compteurs propres au module Onde verte.
     const [showExampleInvite] = useState(() => isInviteVisible('greenwave'));
+    // Onde verte exemple : modifiable mais non enregistrable.
+    const [gwIsExample, setGwIsExample] = useState(() => isExampleSession());
+    const gwLeaveExample = useCallback(() => {
+        if (isExampleSession()) { exitExampleSession(); setGwIsExample(false); }
+    }, []);
     const gwWelcomeViewNoted = useRef(false);
     const gwProjectSeenNoted = useRef(false);
     const [pixelsPerSecond, setPixelsPerSecond] = useState(8);
@@ -205,6 +211,8 @@ const GreenWavePage = () => {
         if (!intersections || intersections.length === 0) return;
         if (!greenWaveName) return;
         if (isApplyingSettingsRef.current) return;
+        // Onde verte exemple : aucune persistance localStorage.
+        if (isExampleSession()) return;
 
         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         autoSaveTimerRef.current = setTimeout(() => {
@@ -283,6 +291,7 @@ const GreenWavePage = () => {
                 if (!ok) return;
             }
             setShowRestoreModal(false);
+            gwLeaveExample(); // restaurer un projet : on quitte l'exemple
             isApplyingSettingsRef.current = true;
             setIntersections(data.intersections);
             applySettings(data);
@@ -378,6 +387,12 @@ const GreenWavePage = () => {
     // Save green wave data to file system (network)
     const handleSaveGreenWaveToFile = async () => {
         if (!intersections) return;
+        // Onde verte exemple : non enregistrable (l'entrée de menu est
+        // déjà grisée — filet de sécurité pour les autres déclencheurs).
+        if (isExampleSession()) {
+            toast.info('Onde verte exemple : non enregistrable. Faites « Fichier → Nouveau » pour démarrer la vôtre.');
+            return;
+        }
 
         if (!window.showSaveFilePicker) {
             showAlert({ title: 'Navigateur non compatible', message: 'Votre navigateur ne supporte pas la sauvegarde de fichiers (File System Access API). Le cache navigateur est mis à jour automatiquement, mais l\'export en fichier .json n\'est pas disponible sur ce navigateur.' });
@@ -1711,6 +1726,7 @@ const GreenWavePage = () => {
     // modifications non sauvegardées, on demande confirmation avant
     // d'écraser.
     const handleCreateGreenWaveLocal = async (newIntersections) => {
+        gwLeaveExample(); // créer une onde verte : on quitte l'exemple
         if (gwIsDirty) {
             const ok = await askConfirm({
                 title: 'Modifications non enregistrées',
@@ -1763,6 +1779,7 @@ const GreenWavePage = () => {
                     pixelsPerMeter: data.pixelsPerMeter,
                     displayCycles: data.displayCycles
                 };
+                gwLeaveExample(); // ouvrir un fichier : on quitte l'exemple
                 isApplyingSettingsRef.current = true;
                 setIntersections(data.intersections);
                 applySettings(settings);
@@ -2010,7 +2027,13 @@ const GreenWavePage = () => {
                 showSpeedLines={showSpeedLines}
                 onShowSpeedLinesChange={setShowSpeedLines}
                 hasActiveProject={!!intersections && intersections.length > 0}
+                isExampleProject={gwIsExample}
             />
+            {gwIsExample && (
+                <div className="example-banner" role="status">
+                    🧪 Onde verte exemple — librement modifiable, mais <strong>non enregistrable</strong> (sauvegarde et stockage désactivés). Faites <strong>Fichier → Nouveau</strong> pour démarrer la vôtre.
+                </div>
+            )}
             <div className="green-wave-page-header">
                 <h1>
                     Onde Verte

@@ -15,7 +15,8 @@ const GreenWaveMenuBar = ({
     pixelsPerMeter, onPixelsPerMeterChange,
     displayCycles, onDisplayCyclesChange,
     showSpeedLines, onShowSpeedLinesChange,
-    hasActiveProject = true
+    hasActiveProject = true,
+    isExampleProject = false
 }) => {
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -59,8 +60,8 @@ const GreenWaveMenuBar = ({
                 {
                     label: 'Enregistrer...',
                     action: 'saveFile',
-                    disabled: !hasActiveProject,
-                    title: !hasActiveProject ? 'Aucune onde verte ouverte' : 'Sauvegarder l\'onde verte dans un fichier (le cache navigateur est mis à jour automatiquement à chaque modification).'
+                    disabled: !hasActiveProject || isExampleProject,
+                    title: isExampleProject ? 'Onde verte exemple : non enregistrable' : (!hasActiveProject ? 'Aucune onde verte ouverte' : 'Sauvegarder l\'onde verte dans un fichier (le cache navigateur est mis à jour automatiquement à chaque modification).')
                 },
                 { label: 'Imprimer (PDF)', action: 'print', disabled: !hasActiveProject, title: !hasActiveProject ? 'Aucune onde verte ouverte' : '' },
                 { type: 'separator' },

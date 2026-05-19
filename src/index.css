@@ -3078,3 +3078,24 @@ body.blue-night-mode .validate-btn.invalidated {
 .welcome-example-link:hover {
     color: #6fe3da;
 }
+
+/* Bandeau « projet exemple » (Diagramme & Onde verte) : projet
+   modifiable mais non enregistrable. Discret, sous la barre de menu. */
+.example-banner {
+    background: #2d2a1e;
+    border-bottom: 1px solid #6b5d2f;
+    color: #d8c98a;
+    font-size: 0.85em;
+    line-height: 1.4;
+    padding: 7px 16px;
+    text-align: center;
+}
+.example-banner strong { color: #f0e3a8; }
+body.high-contrast-mode .example-banner,
+body.amber-mode .example-banner {
+    background: #1a1f3a;
+    border-bottom-color: #f5d000;
+    color: #f5d000;
+}
+body.high-contrast-mode .example-banner strong,
+body.amber-mode .example-banner strong { color: #fff; }

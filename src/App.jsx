@@ -22,6 +22,7 @@ import SimulationPanel from './components/SimulationPanel';
 import PhasageBulle from './components/PhasageBulle';
 import { safeShowOpenFilePicker } from './utils/filePicker';
 import { isInviteVisible, noteWelcomeView, noteProjectSeen } from './utils/welcomeInvite';
+import { isExampleSession, exitExampleSession } from './utils/exampleMode';
 import LoginModal from './components/LoginModal';
 import UserManagerModal from './components/UserManagerModal';
 import ExternalLinksModal from './components/ExternalLinksModal';
@@ -78,7 +79,7 @@ function App() {
         getProjectData,
         deleteSave,
         getFullState,
-        loadFullState,
+        loadFullState: loadFullStateRaw,
         resetToNewProject,
         actionData,
         updateActionRow,
@@ -279,6 +280,19 @@ function App() {
     // l'utilisateur est un nouvel arrivant (cf. utils/welcomeInvite).
     // Figée au montage pour que la décision ne change pas en cours de rendu.
     const [showExampleInvite] = useState(() => isInviteVisible('diagram'));
+    // Projet exemple : modifiable mais non enregistrable (cf. utils/exampleMode).
+    const [isExample, setIsExample] = useState(() => isExampleSession());
+    const leaveExampleMode = useCallback(() => {
+        if (isExampleSession()) { exitExampleSession(); setIsExample(false); }
+    }, []);
+    // Tout chargement de VRAI projet (Ouvrir, Restaurer, Dupliquer, import…)
+    // passe par ce wrapper et quitte le mode exemple. Seul l'effet de
+    // chargement de l'exemple appelle loadFullStateRaw et reste en mode
+    // exemple.
+    const loadFullState = useCallback((...args) => {
+        leaveExampleMode();
+        return loadFullStateRaw(...args);
+    }, [loadFullStateRaw, leaveExampleMode]);
     const welcomeViewNoted = useRef(false);
     const projectSeenNoted = useRef(false);
     const projectNameInputRef = useRef(null);
@@ -718,14 +732,16 @@ function App() {
                 const res = await fetch('./Carrefour_Exemple.json');
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
-                loadFullState({
+                // loadFullStateRaw (et non le wrapper) : on RESTE en mode
+                // exemple — la sauvegarde et le localStorage restent inhibés.
+                loadFullStateRaw({
                     projectName: data.projectName || data.intersectionName || 'Carrefour exemple',
                     ...data
                 });
                 setHasActiveProject?.(true);
                 // Retire le paramètre de l'URL (rafraîchir ne recharge pas l'exemple).
                 window.history.replaceState({}, '', window.location.pathname);
-                toast.info('Projet exemple chargé — explorez librement, rien n\'est enregistré tant que vous ne sauvegardez pas.');
+                toast.info('Projet exemple chargé — modifiable pour explorer, mais non enregistrable.');
             } catch (e) {
                 console.error('Échec du chargement du projet exemple', e);
                 toast.error('Impossible de charger le projet exemple.');
@@ -896,6 +912,7 @@ function App() {
                     danger: true,
                 });
                 if (okNew) {
+                    leaveExampleMode(); // un nouveau projet n'est plus l'exemple
                     resetToNewProject();
                     setActiveTab(openPropertiesOnNewProject ? 'properties' : 'config');
                     setDiagramHeight(null);
@@ -936,6 +953,12 @@ function App() {
                 setOpenModal(true);
                 break;
             case 'save':
+                // Filet de sécurité pour le raccourci clavier (l'entrée de
+                // menu est déjà grisée en mode exemple).
+                if (isExampleSession()) {
+                    toast.info('Projet exemple : non enregistrable. Faites « Nouveau projet » pour démarrer le vôtre.');
+                    break;
+                }
                 (async () => {
                     setIsSaving(true);
                     try { await handleSaveFileWithPicker(); }
@@ -1874,7 +1897,7 @@ draw();
                     hasActiveProject={hasActiveProject}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -1901,6 +1924,11 @@ draw();
                 </div>
             )}
             {hasActiveProject && (<>
+            {isExample && (
+                <div className="example-banner" role="status">
+                    🧪 Projet exemple — librement modifiable, mais <strong>non enregistrable</strong> (sauvegarde et stockage désactivés). Faites <strong>Fichier → Nouveau projet</strong> pour démarrer le vôtre.
+                </div>
+            )}
             <header className="app-header" onMouseEnter={() => { helpZoneRef.current = 'interface'; }}>
                 <div className="header-inputs">
                     <input

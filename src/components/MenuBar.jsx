@@ -199,13 +199,13 @@ const MenuBar = ({
                     type: 'submenu',
                     submenuId: 'saveRecent',
                     submenu: recentSaveDirsSubmenu,
-                    disabled: !hasPermission('canSave') || !hasActiveProject,
-                    title: !hasActiveProject ? 'Aucun projet ouvert' : ''
+                    disabled: !hasPermission('canSave') || !hasActiveProject || layoutOptions.isExampleProject,
+                    title: layoutOptions.isExampleProject ? 'Projet exemple : non enregistrable' : (!hasActiveProject ? 'Aucun projet ouvert' : '')
                 }] : [{
                     label: 'Sauvegarder',
                     action: 'save',
-                    disabled: !hasPermission('canSave') || !hasActiveProject,
-                    title: !hasActiveProject ? 'Aucun projet ouvert' : ''
+                    disabled: !hasPermission('canSave') || !hasActiveProject || layoutOptions.isExampleProject,
+                    title: layoutOptions.isExampleProject ? 'Projet exemple : non enregistrable' : (!hasActiveProject ? 'Aucun projet ouvert' : '')
                 }]),
                 { type: 'separator' },
                 {
