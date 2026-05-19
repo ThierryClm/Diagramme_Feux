@@ -21,6 +21,7 @@ import GreenWaveViewer from './components/GreenWaveViewer';
 import SimulationPanel from './components/SimulationPanel';
 import PhasageBulle from './components/PhasageBulle';
 import { safeShowOpenFilePicker } from './utils/filePicker';
+import { isInviteVisible, noteWelcomeView, noteProjectSeen } from './utils/welcomeInvite';
 import LoginModal from './components/LoginModal';
 import UserManagerModal from './components/UserManagerModal';
 import ExternalLinksModal from './components/ExternalLinksModal';
@@ -274,6 +275,12 @@ function App() {
     // principale est masquée et seul le menu reste accessible. Devient true
     // dès que l'utilisateur déclenche « Nouveau projet » ou ouvre un projet.
     const [hasActiveProject, setHasActiveProject] = useState(false);
+    // Invitation « projet exemple » sur l'écran d'accueil : visible tant que
+    // l'utilisateur est un nouvel arrivant (cf. utils/welcomeInvite).
+    // Figée au montage pour que la décision ne change pas en cours de rendu.
+    const [showExampleInvite] = useState(() => isInviteVisible('diagram'));
+    const welcomeViewNoted = useRef(false);
+    const projectSeenNoted = useRef(false);
     const projectNameInputRef = useRef(null);
     // Référence vers la fenêtre Onde verte ouverte (single instance).
     // Permet de ré-utiliser la même fenêtre au lieu d'en ouvrir une nouvelle
@@ -725,6 +732,26 @@ function App() {
             }
         })();
     }, []);
+
+    // Comptage pour l'auto-effacement de l'invitation « projet exemple ».
+    // Vue d'accueil : seulement si aucun projet n'est auto-chargé (ni
+    // ?example, ni ?duplicate) — sinon ce n'est pas une vraie visite d'accueil.
+    useEffect(() => {
+        if (welcomeViewNoted.current) return;
+        const p = new URLSearchParams(window.location.search);
+        if (p.has('example') || p.has('duplicate')) return;
+        welcomeViewNoted.current = true;
+        noteWelcomeView('diagram');
+    }, []);
+
+    // Projet vu : à la première activation d'un projet dans ce montage
+    // (ouvrir, nouveau, restaurer, exemple…). L'exemple compte volontairement.
+    useEffect(() => {
+        if (hasActiveProject && !projectSeenNoted.current) {
+            projectSeenNoted.current = true;
+            noteProjectSeen('diagram');
+        }
+    }, [hasActiveProject]);
 
     // Inject dynamic @page margin box content for dossier footer
     const injectDossierFooterStyle = () => {
@@ -1858,6 +1885,7 @@ draw();
                     <p className="welcome-hint">
                         Commencez par <strong>Fichier → Nouveau projet</strong> ou <strong>Ouvrir un projet</strong>.
                     </p>
+                    {showExampleInvite && (
                     <p className="welcome-hint">
                         Première visite ?{' '}
                         <button
@@ -1869,6 +1897,7 @@ draw();
                         </button>
                         {' '}(s'ouvre dans une nouvelle fenêtre).
                     </p>
+                    )}
                 </div>
             )}
             {hasActiveProject && (<>

@@ -7,6 +7,7 @@ import HelpContent from './components/HelpContent';
 import Modal from './components/Modal';
 import { useConfirm, useAlert } from './components/ConfirmProvider';
 import { toast } from './utils/toast';
+import { isInviteVisible, noteWelcomeView, noteProjectSeen } from './utils/welcomeInvite';
 import { APP_NAME, APP_VERSION, APP_DESCRIPTION } from './version';
 import './components/GreenWaveViewer.css';
 
@@ -45,6 +46,11 @@ const GreenWavePage = () => {
     }, []);
 
     const [intersections, setIntersections] = useState(null);
+    // Invitation « onde verte exemple » (cf. utils/welcomeInvite) — figée
+    // au montage. Compteurs propres au module Onde verte.
+    const [showExampleInvite] = useState(() => isInviteVisible('greenwave'));
+    const gwWelcomeViewNoted = useRef(false);
+    const gwProjectSeenNoted = useRef(false);
     const [pixelsPerSecond, setPixelsPerSecond] = useState(8);
     const [pixelsPerMeter, setPixelsPerMeter] = useState(1);
     const [speedUp, setSpeedUp] = useState(50); // km/h - vitesse montante
@@ -1770,6 +1776,26 @@ const GreenWavePage = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Auto-effacement de l'invitation « onde verte exemple ».
+    // Vue d'accueil : seulement si rien n'est auto-chargé (ni ?id ni
+    // ?example=ondeverte).
+    useEffect(() => {
+        if (gwWelcomeViewNoted.current) return;
+        const p = new URLSearchParams(window.location.search);
+        if (p.has('id') || p.get('example') === 'ondeverte') return;
+        gwWelcomeViewNoted.current = true;
+        noteWelcomeView('greenwave');
+    }, []);
+
+    // Onde verte vue : à la première fois où des intersections sont chargées
+    // dans ce montage (Nouveau, Ouvrir, exemple…). L'exemple compte.
+    useEffect(() => {
+        if (intersections && !gwProjectSeenNoted.current) {
+            gwProjectSeenNoted.current = true;
+            noteProjectSeen('greenwave');
+        }
+    }, [intersections]);
+
     // Ouverture d'un fichier .json d'onde verte : remplace le contenu de la
     // fenêtre courante (philosophie « une seule session Onde verte à la
     // fois »). Si le projet courant a des modifications non sauvegardées,
@@ -1921,6 +1947,7 @@ const GreenWavePage = () => {
                         Choisissez <strong>Fichier → Nouveau</strong> pour en créer une à partir de vos projets sauvegardés,
                         ou <strong>Fichier → Ouvrir</strong> pour charger un fichier <code>.json</code> existant.
                     </p>
+                    {showExampleInvite && (
                     <p className="gw-welcome-hint">
                         Première visite ?{' '}
                         <button
@@ -1932,6 +1959,7 @@ const GreenWavePage = () => {
                         </button>
                         {' '}(s'ouvre dans une nouvelle fenêtre).
                     </p>
+                    )}
                 </div>
 
                 {/* Modales nécessaires sur l'écran d'accueil pour pouvoir
