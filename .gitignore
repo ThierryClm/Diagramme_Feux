@@ -36,3 +36,5 @@ desktop.ini
 /bn_viewer.html
 /tmpclaude-*
 /.tmp-anonymisation/
+# Données de travail (originaux clients non anonymisés, dumps web)
+/examples/
