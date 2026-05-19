@@ -32,6 +32,27 @@
     0% { content: ''; } 25% { content: '.'; }
     50% { content: '..'; } 75% { content: '...'; }
   }
+  /* Bloc « Nouveautés de ce build » injecté au lancement par
+     Lancer-preview.vbs (placeholder CHANGELOG ci-dessous). Absent si
+     git est indisponible : le bloc n'est tout simplement pas rendu. */
+  .changelog {
+    margin-top: 28px; max-width: 520px; text-align: left;
+    border-top: 1px solid #2e2e44; padding-top: 16px;
+  }
+  .changelog-title {
+    color: #4ecdc4; font-size: 0.8em; text-transform: uppercase;
+    letter-spacing: 0.6px; margin-bottom: 8px;
+  }
+  .changelog ul { list-style: none; }
+  .changelog li {
+    color: #aaa; font-size: 0.85em; line-height: 1.5;
+    padding-left: 14px; position: relative;
+  }
+  .changelog li::before {
+    content: '•'; color: #4ecdc4; position: absolute; left: 0;
+  }
+  .changelog li.more { color: #666; }
+  .changelog li.more::before { content: ''; }
 </style>
 </head>
 <body>
@@ -46,6 +67,7 @@
   <h1>TraCflux</h1>
   <div class="spinner"></div>
   <p>Compilation et démarrage (preview)<span class="dots"></span></p>
+  <!--CHANGELOG-->
 <script>
   // Le build peut prendre 30-60 s. On poll le serveur preview (port 4173)
   // jusqu'à ce qu'il réponde, puis on redirige.

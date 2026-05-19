@@ -38,3 +38,7 @@ desktop.ini
 /.tmp-anonymisation/
 # Données de travail (originaux clients non anonymisés, dumps web)
 /examples/
+# Page d'attente preview générée + temporaires git du lanceur
+/.loading-preview.gen.html
+/.gitlog.tmp
+/.gitcount.tmp
