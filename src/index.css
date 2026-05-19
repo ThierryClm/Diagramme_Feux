@@ -1799,6 +1799,13 @@ body.high-contrast-mode .menu-button:hover {
     background: #253080;
 }
 
+/* Sans cette surcharge, body.high-contrast-mode .menu-button (jaune) gagne
+   sur .menu-button:disabled générique : les menus désactivés resteraient
+   jaunes comme les actifs. Aligné sur .menu-item.disabled du même thème. */
+body.high-contrast-mode .menu-button:disabled {
+    color: #556688;
+}
+
 body.high-contrast-mode .menu-dropdown {
     background: #1a2050;
     /* Contour dans la couleur du texte haute contraste (jaune) */
@@ -2669,6 +2676,12 @@ body.amber-mode .menu-button {
 body.amber-mode .menu-button.active,
 body.amber-mode .menu-button:hover {
     background: #404040;
+}
+
+/* Idem : sans ça, le jaune ambre l'emporte sur .menu-button:disabled
+   générique. Aligné sur .menu-item.disabled du même thème (#666). */
+body.amber-mode .menu-button:disabled {
+    color: #666;
 }
 
 body.amber-mode .menu-dropdown {
