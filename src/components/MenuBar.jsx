@@ -183,7 +183,10 @@ const MenuBar = ({
         fichier: {
             label: 'Fichier',
             items: [
-                { label: 'Nouveau projet', action: 'new', disabled: !layoutOptions.projectModified },
+                // Grisé seulement si un projet est ouvert et non modifié.
+                // Sur l'écran d'accueil (aucun projet), l'entrée reste active
+                // pour permettre de démarrer un projet.
+                { label: 'Nouveau projet', action: 'new', disabled: hasActiveProject && !layoutOptions.projectModified },
                 ...(recentOpenDirs.length > 0 ? [{
                     label: 'Ouvrir un projet...',
                     type: 'submenu',
