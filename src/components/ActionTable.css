@@ -317,8 +317,9 @@
     caret-color: #eee;
 }
 
+/* Champs Plage 1/2 et Action GF 1-4 (uniquement) : 22 -> 17 px (-5). */
 .input-small {
-    width: 22px !important;
+    width: 17px !important;
 }
 
 /* Dragging state */
