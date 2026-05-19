@@ -78,8 +78,58 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel, showFloatingConditions, setShowFloatingConditions, showFloatingVariables, setShowFloatingVariables, showWrapFlash = true, showDescription = true }) => {
+const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel, showFloatingConditions, setShowFloatingConditions, showFloatingVariables, setShowFloatingVariables, showWrapFlash = true, showDescription = true, actionColWidths = { description: 160, micro: 420 }, setActionColWidths = () => {} }) => {
     const askConfirm = useConfirm();
+
+    // Colonnes Description / Action_Micro redimensionnables (poignee a
+    // droite de l'en-tete). Bornes : Desc 60-460 (def 160), Micro 120-920
+    // (def 420). Largeur memorisee dans le projet (cf. useTrafficLight).
+    const COL_SPEC = {
+        description: { def: 160, min: 60, max: 460, cssVar: '--col-desc-w' },
+        micro:       { def: 420, min: 120, max: 920, cssVar: '--col-micro-w' }
+    };
+    const colWidth = (k) => {
+        const n = Number(actionColWidths?.[k]);
+        return isFinite(n) ? n : COL_SPEC[k].def;
+    };
+    const [liveResize, setLiveResize] = useState(null); // { col, w } pendant le drag
+    const resizeRef = useRef(null);
+    const onResizeMove = useCallback((e) => {
+        const d = resizeRef.current;
+        if (!d) return;
+        const s = COL_SPEC[d.col];
+        const w = Math.min(s.max, Math.max(s.min, Math.round(d.startW + (e.clientX - d.startX))));
+        setLiveResize({ col: d.col, w });
+    }, []);
+    const onResizeEnd = useCallback(() => {
+        window.removeEventListener('mousemove', onResizeMove);
+        window.removeEventListener('mouseup', onResizeEnd);
+        const d = resizeRef.current;
+        resizeRef.current = null;
+        setLiveResize(prev => {
+            if (d && prev && prev.col === d.col) {
+                setActionColWidths(cur => ({ ...cur, [d.col]: prev.w }));
+            }
+            return null;
+        });
+    }, [onResizeMove, setActionColWidths]);
+    const startResize = (col) => (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resizeRef.current = { col, startX: e.clientX, startW: colWidth(col) };
+        window.addEventListener('mousemove', onResizeMove);
+        window.addEventListener('mouseup', onResizeEnd);
+    };
+    const resetCol = (col) => (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setActionColWidths(cur => ({ ...cur, [col]: COL_SPEC[col].def }));
+    };
+    const dispWidth = (k) => (liveResize && liveResize.col === k) ? liveResize.w : colWidth(k);
+    useEffect(() => () => {
+        window.removeEventListener('mousemove', onResizeMove);
+        window.removeEventListener('mouseup', onResizeEnd);
+    }, [onResizeMove, onResizeEnd]);
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
 
@@ -348,16 +398,16 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     // Shared table JSX builder (used in main view and portal)
     const renderTableContent = () => (
         <div className="action-table-scroll">
-        <table className="action-table">
+        <table className="action-table" style={{ '--col-desc-w': dispWidth('description') + 'px', '--col-micro-w': dispWidth('micro') + 'px' }}>
             <thead>
                 <tr className="header-group">
-                    <th rowSpan="2" title="Groupe Fonctionnel - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('gf', 'asc')}>GF ↕</th>
+                    <th rowSpan="2" title="Groupe de feu / ligne de feu - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('gf', 'asc')}>GF ↕</th>
                     <th rowSpan="2" title="Action - Cliquer pour trier (alphabétique)" className="sortable" onClick={() => handleSort('action', 'asc')}>Action ↕</th>
-                    {showDescription && <th rowSpan="2" title="Description (30 car.)">Description</th>}
+                    {showDescription && <th rowSpan="2" className="col-resizable">Description<span className="col-resize-handle" title="Glisser pour ajuster · double-clic : largeur par défaut" onMouseDown={startResize('description')} onDoubleClick={resetCol('description')} /></th>}
                     <th rowSpan="2" title="Début - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('deb', 'asc')}>Déb ↕</th>
                     <th rowSpan="2">Fin</th>
                     <th rowSpan="2">Abrv</th>
-                    <th rowSpan="2" title="Action Micro (60 car.)">Action_Micro</th>
+                    <th rowSpan="2" className="col-resizable">Action_Micro<span className="col-resize-handle" title="Glisser pour ajuster · double-clic : largeur par défaut" onMouseDown={startResize('micro')} onDoubleClick={resetCol('micro')} /></th>
                     <th colSpan="2" className="header-grouped">Plage</th>
                     <th colSpan="4" className="header-grouped">Action GF</th>
                 </tr>

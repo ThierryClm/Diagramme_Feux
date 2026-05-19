@@ -143,6 +143,8 @@ function App() {
         setBiCarrefourSeparator,
         matricesLocked,
         setMatricesLocked,
+        actionColWidths,
+        setActionColWidths,
         externalLinks,
         setExternalLinks,
         projectProperties,
@@ -2641,6 +2643,8 @@ draw();
                                 setShowFloatingVariables={setShowFloatingVariables}
                                 showWrapFlash={showWrapFlash}
                                 showDescription={showActionDescription}
+                                actionColWidths={actionColWidths}
+                                setActionColWidths={setActionColWidths}
                             />
                         </div>
                     </div>

@@ -257,7 +257,7 @@
 }
 
 .input-desc {
-    width: 160px !important;
+    width: var(--col-desc-w, 160px) !important;
     font-size: 1.5em;
 }
 
@@ -271,7 +271,7 @@
 }
 
 .input-micro {
-    width: 420px !important;
+    width: var(--col-micro-w, 420px) !important;
     min-height: 16px;
     resize: none;
     overflow: hidden;
@@ -283,7 +283,7 @@
 .micro-highlight-container {
     position: relative;
     display: inline-block;
-    width: 420px !important;
+    width: var(--col-micro-w, 420px) !important;
 }
 
 .micro-highlight-backdrop {
@@ -477,4 +477,39 @@
 
 .popup-content-wrapper .custom-fields-list {
     padding: 4px;
+}
+/* Colonnes Description / Action_Micro redimensionnables : poignee a
+   droite de l'en-tete (glisser = ajuster, double-clic = defaut). */
+/* Pas de position:relative ici : .action-table th est deja position:sticky
+   (donc positionne), ce qui sert de reference a la poignee absolue. Mettre
+   relative casserait l'en-tete collant de ces 2 colonnes. */
+.action-table th.col-resizable {
+    padding-right: 14px;
+}
+.action-table th.col-resizable .col-resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+}
+.action-table th.col-resizable .col-resize-handle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 3px;
+    width: 0;
+    height: 0;
+    transform: translateY(-50%);
+    /* petit chevron double evoquant le redimensionnement */
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-left: 4px solid currentColor;
+    border-right: 4px solid currentColor;
+    opacity: 0.45;
+}
+.action-table th.col-resizable .col-resize-handle:hover::before {
+    opacity: 1;
 }

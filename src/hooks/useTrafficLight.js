@@ -128,6 +128,10 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     const [dependencyGap, setDependencyGap] = useState(20);
     const [biCarrefourSeparator, setBiCarrefourSeparator] = useState(null);
     const [matricesLocked, setMatricesLocked] = useState(false);
+    // Largeurs (px) ajustables des colonnes Description et Action_Micro du
+    // tableau de micro-régulation. Reglage unique par projet, sauvegarde.
+    // Bornes appliquees a la restauration : Desc 60-460, Micro 120-920.
+    const [actionColWidths, setActionColWidths] = useState({ description: 160, micro: 420 });
     const [externalLinks, setExternalLinks] = useState([]);
     const [projectProperties, setProjectProperties] = useState(() => {
         try {
@@ -1133,6 +1137,21 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
             // Load matrices locked state (reset to false if not present)
             setMatricesLocked(state.matricesLocked === true);
 
+            // Largeurs colonnes micro-régulation : valeurs bornées, defaut
+            // si absent/invalide.
+            {
+                const acw = state.actionColWidths || {};
+                const clamp = (v, lo, hi, def) => {
+                    const n = Number(v);
+                    if (!isFinite(n)) return def;
+                    return Math.min(hi, Math.max(lo, Math.round(n)));
+                };
+                setActionColWidths({
+                    description: clamp(acw.description, 60, 460, 160),
+                    micro: clamp(acw.micro, 120, 920, 420)
+                });
+            }
+
             // Reset PF sync refs so forward/reverse sync start fresh
             resetPfSyncRefs(state.activePFId || 1);
 
@@ -1186,6 +1205,9 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         // Reset bi-carrefour
         setBiCarrefourSeparator(null);
 
+        // Reset largeurs colonnes micro-régulation aux valeurs par défaut
+        setActionColWidths({ description: 160, micro: 420 });
+
         // Reset external links
         setExternalLinks([]);
 
@@ -1221,6 +1243,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         dependencyGap,
         biCarrefourSeparator,
         matricesLocked,
+        actionColWidths,
         externalLinks,
         projectProperties
         // Note: simulation state is NOT included (per user request)
@@ -2652,6 +2675,8 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         setBiCarrefourSeparator,
         matricesLocked,
         setMatricesLocked,
+        actionColWidths,
+        setActionColWidths,
         externalLinks,
         setExternalLinks,
         conflictMatrix,
