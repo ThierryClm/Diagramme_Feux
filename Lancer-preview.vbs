@@ -71,8 +71,11 @@ End If
 loadingUri = "file:///" & Replace(Replace(genFile, "\", "/"), " ", "%20")
 
 If fso.FileExists(edge) Then
-  ' Fenetre Edge en mode application : pas de barre d'adresse, pas d'onglets
-  shell.Run """" & edge & """ --app=""" & loadingUri & """", 1, False
+  ' Fenetre Edge en mode application : pas de barre d'adresse, pas d'onglets.
+  ' --start-maximized : la fenetre occupe tout l'ecran (barre de titre
+  ' conservee). Chromium ignorant le flag de style WScript.Shell.Run, on
+  ' passe par cette option de ligne de commande.
+  shell.Run """" & edge & """ --app=""" & loadingUri & """ --start-maximized", 1, False
 Else
   ' Repli si Edge introuvable : navigateur par defaut (onglet classique)
   shell.Run """" & genFile & """", 1, False
