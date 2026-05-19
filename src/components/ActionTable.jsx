@@ -82,12 +82,12 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     const askConfirm = useConfirm();
 
     // Colonnes redimensionnables (poignee a droite de l'en-tete). Bornes :
-    // Desc 100-350 (def 160), Action_Micro 300-700 (def 420), Abrv 38-88
+    // Desc 100-350 (def 160), Action_Micro 300-700 (def 420), Abrv 38-75
     // (def 38, non reductible). Largeur memorisee dans le projet.
     const COL_SPEC = {
         description: { def: 160, min: 100, max: 350, cssVar: '--col-desc-w' },
         micro:       { def: 420, min: 300, max: 700, cssVar: '--col-micro-w' },
-        abrv:        { def: 38,  min: 38,  max: 88,  cssVar: '--col-abrv-w' }
+        abrv:        { def: 38,  min: 38,  max: 75,  cssVar: '--col-abrv-w' }
     };
     const colWidth = (k) => {
         const n = Number(actionColWidths?.[k]);
