@@ -81,12 +81,13 @@ const isRowFilled = (row) => {
 const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel, showFloatingConditions, setShowFloatingConditions, showFloatingVariables, setShowFloatingVariables, showWrapFlash = true, showDescription = true, actionColWidths = { description: 160, micro: 420 }, setActionColWidths = () => {} }) => {
     const askConfirm = useConfirm();
 
-    // Colonnes Description / Action_Micro redimensionnables (poignee a
-    // droite de l'en-tete). Bornes : Desc 100-350 (def 160), Micro 300-700
-    // (def 420). Largeur memorisee dans le projet (cf. useTrafficLight).
+    // Colonnes redimensionnables (poignee a droite de l'en-tete). Bornes :
+    // Desc 100-350 (def 160), Action_Micro 300-700 (def 420), Abrv 38-88
+    // (def 38, non reductible). Largeur memorisee dans le projet.
     const COL_SPEC = {
         description: { def: 160, min: 100, max: 350, cssVar: '--col-desc-w' },
-        micro:       { def: 420, min: 300, max: 700, cssVar: '--col-micro-w' }
+        micro:       { def: 420, min: 300, max: 700, cssVar: '--col-micro-w' },
+        abrv:        { def: 38,  min: 38,  max: 88,  cssVar: '--col-abrv-w' }
     };
     const colWidth = (k) => {
         const n = Number(actionColWidths?.[k]);
@@ -398,7 +399,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     // Shared table JSX builder (used in main view and portal)
     const renderTableContent = () => (
         <div className="action-table-scroll">
-        <table className="action-table" style={{ '--col-desc-w': dispWidth('description') + 'px', '--col-micro-w': dispWidth('micro') + 'px' }}>
+        <table className="action-table" style={{ '--col-desc-w': dispWidth('description') + 'px', '--col-micro-w': dispWidth('micro') + 'px', '--col-abrv-w': dispWidth('abrv') + 'px' }}>
             <thead>
                 <tr className="header-group">
                     <th rowSpan="2" title="Groupe de feu / ligne de feu - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('gf', 'asc')}>GF ↕</th>
@@ -406,7 +407,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                     {showDescription && <th rowSpan="2" className="col-resizable">Description<span className="col-resize-handle" title="Glisser pour ajuster · double-clic : largeur par défaut" onMouseDown={startResize('description')} onDoubleClick={resetCol('description')} /></th>}
                     <th rowSpan="2" title="Début - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('deb', 'asc')}>Déb ↕</th>
                     <th rowSpan="2">Fin</th>
-                    <th rowSpan="2">Abrv</th>
+                    <th rowSpan="2" className="col-resizable">Abrv<span className="col-resize-handle" title="Glisser pour ajuster · double-clic : largeur par défaut" onMouseDown={startResize('abrv')} onDoubleClick={resetCol('abrv')} /></th>
                     <th rowSpan="2" className="col-resizable">Action_Micro<span className="col-resize-handle" title="Glisser pour ajuster · double-clic : largeur par défaut" onMouseDown={startResize('micro')} onDoubleClick={resetCol('micro')} /></th>
                     <th colSpan="2" className="header-grouped">Plage</th>
                     <th colSpan="4" className="header-grouped">Action GF</th>

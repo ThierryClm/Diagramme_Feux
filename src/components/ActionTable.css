@@ -267,7 +267,7 @@
 }
 
 .input-abrv {
-    width: 38px !important;
+    width: var(--col-abrv-w, 38px) !important;
 }
 
 .input-micro {
