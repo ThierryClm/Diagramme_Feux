@@ -102,14 +102,40 @@ Sub WriteLock(path)
   On Error GoTo 0
 End Sub
 
-' Ouvre l'URL dans Edge en mode app maximise ; repli navigateur par defaut.
+' Ouvre l'URL dans Edge en mode app, fenetre dimensionnee a l'ecran
+' (barre de titre conservee) ; repli navigateur par defaut.
+' Chromium IGNORE --start-maximized pour les fenetres --app ; on force
+' donc la position et la taille en pixels ecran (--start-maximized garde
+' quand meme, inoffensif si une version future le respecte).
 Sub OpenWindow(targetUri)
+  Dim sz
   If fso.FileExists(edge) Then
-    shell.Run """" & edge & """ --app=""" & targetUri & """ --start-maximized", 1, False
+    sz = ScreenSize()
+    shell.Run """" & edge & """ --app=""" & targetUri & """" & _
+              " --window-position=0,0 --window-size=" & sz & _
+              " --start-maximized", 1, False
   Else
     shell.Run """" & targetUri & """", 1, False
   End If
 End Sub
+
+' "largeur,hauteur" de l'ecran principal via WMI ; repli 1920,1080.
+Function ScreenSize()
+  Dim wmi, items, o, w, h
+  w = 0 : h = 0
+  On Error Resume Next
+  Set wmi = GetObject("winmgmts:\\.\root\cimv2")
+  Set items = wmi.ExecQuery("SELECT CurrentHorizontalResolution,CurrentVerticalResolution FROM Win32_VideoController")
+  For Each o In items
+    If Not IsNull(o.CurrentHorizontalResolution) And w = 0 Then
+      w = o.CurrentHorizontalResolution
+      h = o.CurrentVerticalResolution
+    End If
+  Next
+  On Error GoTo 0
+  If w = 0 Or h = 0 Then w = 1920 : h = 1080
+  ScreenSize = w & "," & h
+End Function
 
 ' Genere .loading-preview.gen.html a partir du gabarit, avec les 3
 ' derniers sujets de commit injectes (bloc vide si git indisponible).
