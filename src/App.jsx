@@ -700,6 +700,32 @@ function App() {
         }
     }, []);
 
+    // Chargement du projet exemple fourni (?example=carrefour). Ouvert dans
+    // une fenêtre neuve (depuis l'écran d'accueil ou la FAQ) : pas de projet
+    // courant à écraser, donc pas de garde-fou « modifications non sauvées ».
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('example') !== 'carrefour') return;
+        (async () => {
+            try {
+                const res = await fetch('./Carrefour_Exemple.json');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                loadFullState({
+                    projectName: data.projectName || data.intersectionName || 'Carrefour exemple',
+                    ...data
+                });
+                setHasActiveProject?.(true);
+                // Retire le paramètre de l'URL (rafraîchir ne recharge pas l'exemple).
+                window.history.replaceState({}, '', window.location.pathname);
+                toast.info('Projet exemple chargé — explorez librement, rien n\'est enregistré tant que vous ne sauvegardez pas.');
+            } catch (e) {
+                console.error('Échec du chargement du projet exemple', e);
+                toast.error('Impossible de charger le projet exemple.');
+            }
+        })();
+    }, []);
+
     // Inject dynamic @page margin box content for dossier footer
     const injectDossierFooterStyle = () => {
         // Remove previous if exists
@@ -1831,6 +1857,17 @@ draw();
                 <div className="welcome-screen">
                     <p className="welcome-hint">
                         Commencez par <strong>Fichier → Nouveau projet</strong> ou <strong>Ouvrir un projet</strong>.
+                    </p>
+                    <p className="welcome-hint">
+                        Première visite ?{' '}
+                        <button
+                            type="button"
+                            className="welcome-example-link"
+                            onClick={() => window.open(`${window.location.pathname}?example=carrefour`, '_blank')}
+                        >
+                            Découvrir avec un projet exemple
+                        </button>
+                        {' '}(s'ouvre dans une nouvelle fenêtre).
                     </p>
                 </div>
             )}

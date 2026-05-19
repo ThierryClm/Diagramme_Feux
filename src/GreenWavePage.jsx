@@ -1731,6 +1731,45 @@ const GreenWavePage = () => {
         }, 0);
     };
 
+    // Chargement de l'onde verte exemple fournie (?example=ondeverte).
+    // Fenêtre neuve (écran d'accueil ou FAQ) : aucune session à écraser.
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('example') !== 'ondeverte') return;
+        (async () => {
+            try {
+                const res = await fetch('./Onde%20verte_Exemple.json');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (!data || !Array.isArray(data.intersections)) {
+                    throw new Error("Données d'onde verte invalides");
+                }
+                const settings = {
+                    name: data.name || 'Onde verte exemple',
+                    loadedFileName: 'Onde verte_Exemple',
+                    speedUp: data.speedUp,
+                    speedDown: data.speedDown,
+                    speedLineOffsetUp: data.speedLineOffsetUp,
+                    speedLineOffsetDown: data.speedLineOffsetDown,
+                    showSpeedLines: data.showSpeedLines,
+                    pfParams: data.pfParams,
+                    pixelsPerSecond: data.pixelsPerSecond,
+                    pixelsPerMeter: data.pixelsPerMeter,
+                    displayCycles: data.displayCycles
+                };
+                isApplyingSettingsRef.current = true;
+                setIntersections(data.intersections);
+                applySettings(settings);
+                document.title = `Onde Verte - ${data.name || 'exemple'}`;
+                window.history.replaceState({}, '', `${window.location.pathname}?greenwave`);
+            } catch (e) {
+                console.error("Échec du chargement de l'onde verte exemple", e);
+                showAlert({ title: 'Erreur', message: "Impossible de charger l'onde verte exemple." });
+            }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // Ouverture d'un fichier .json d'onde verte : remplace le contenu de la
     // fenêtre courante (philosophie « une seule session Onde verte à la
     // fois »). Si le projet courant a des modifications non sauvegardées,
@@ -1851,7 +1890,8 @@ const GreenWavePage = () => {
         // « aucune onde verte ouverte » (URL sans id). Dans le second cas,
         // on affiche un écran d'accueil avec la barre de menu accessible
         // pour que l'utilisateur déclenche Fichier > Nouveau ou Ouvrir.
-        const hasUrlId = new URLSearchParams(window.location.search).has('id');
+        const gwParams = new URLSearchParams(window.location.search);
+        const hasUrlId = gwParams.has('id') || gwParams.get('example') === 'ondeverte';
         if (hasUrlId) {
             return (
                 <div className="green-wave-page">
@@ -1880,6 +1920,17 @@ const GreenWavePage = () => {
                         Aucune onde verte ouverte.<br/>
                         Choisissez <strong>Fichier → Nouveau</strong> pour en créer une à partir de vos projets sauvegardés,
                         ou <strong>Fichier → Ouvrir</strong> pour charger un fichier <code>.json</code> existant.
+                    </p>
+                    <p className="gw-welcome-hint">
+                        Première visite ?{' '}
+                        <button
+                            type="button"
+                            className="welcome-example-link"
+                            onClick={() => window.open(`${window.location.pathname}?greenwave&example=ondeverte`, '_blank')}
+                        >
+                            Découvrir avec une onde verte exemple
+                        </button>
+                        {' '}(s'ouvre dans une nouvelle fenêtre).
                     </p>
                 </div>
 

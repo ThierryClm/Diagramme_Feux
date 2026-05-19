@@ -102,6 +102,12 @@ Exportez le projet en `.json` et transmettez le fichier (mail, partage réseau, 
 
 ## Utilisation pratique
 
+### Comment découvrir l'application sans saisir un projet de zéro ?
+
+Deux projets exemple anonymisés sont fournis. Au lancement, sur l'écran d'accueil, cliquez sur **« Découvrir avec un projet exemple »** (module Diagramme) ou **« Découvrir avec une onde verte exemple »** (module Onde verte) : l'exemple s'ouvre dans une **nouvelle fenêtre**, sans toucher à un éventuel travail en cours. Rien n'est enregistré tant que vous ne sauvegardez pas.
+
+Vous pouvez aussi télécharger les fichiers directement pour les ouvrir via **Fichier → Ouvrir** : [Carrefour_Exemple.json](public/Carrefour_Exemple.json) (carrefour) et [Onde verte_Exemple.json](public/Onde%20verte_Exemple.json) (onde verte).
+
 ### Quels navigateurs et systèmes sont supportés ?
 
 **Chrome, Firefox, Edge, Safari** dans une version récente (2 ans max). L'application étant une page web, elle fonctionne sur **Windows, macOS et Linux** indifféremment, ainsi qu'en environnement Citrix ou bureau distant.

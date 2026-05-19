@@ -97,6 +97,7 @@ const HelpContent = ({ initialAnchor = null }) => {
 
             <section id="help-interface" className="help-section">
                 <h4>Interface principale</h4>
+                <p><strong>Pour découvrir l'application :</strong> sur l'écran d'accueil (avant d'ouvrir un projet), cliquez sur <em>« Découvrir avec un projet exemple »</em> — un carrefour exemple anonymisé s'ouvre dans une nouvelle fenêtre. Le module Onde verte propose de même une onde verte exemple. Rien n'est enregistré tant que vous ne sauvegardez pas.</p>
                 <ul>
                     <li><strong>En-tête :</strong> Nom du carrefour, nombre de groupes, durée du cycle, zoom</li>
                     <li><strong>Panneau gauche :</strong> Onglets Projets, Configuration et Trafic</li>

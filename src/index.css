@@ -3034,3 +3034,34 @@ body.blue-night-mode .validate-btn.invalidated {
     border-color: #dc322f;
     color: #dc322f;
 }
+/* Écran d'accueil (aucun projet ouvert) — Diagramme & Onde verte.
+   Jusqu'ici non stylé : centrage léger + lien « projet exemple ». */
+.welcome-screen,
+.gw-welcome-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 64px 24px;
+    text-align: center;
+}
+.welcome-hint,
+.gw-welcome-hint {
+    color: #888;
+    font-size: 1.05em;
+    line-height: 1.6;
+    margin: 0;
+}
+.welcome-example-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: #4ecdc4;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.welcome-example-link:hover {
+    color: #6fe3da;
+}
