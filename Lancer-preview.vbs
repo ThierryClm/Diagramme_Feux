@@ -32,9 +32,6 @@ baseFile   = dir & "\.preview.built"   ' commit du dernier build previewe
 previewUrl = "http://localhost:4173"
 LOCK_TTL   = 180   ' secondes : au-dela, un verrou est considere perime
 
-' HEAD courant (sert au delta de changelog et a la memorisation post-build)
-curHead = Trim(GitCapture("rev-parse HEAD"))
-
 ' Emplacement de msedge.exe (deux chemins possibles selon l'install)
 edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 If Not fso.FileExists(edge) Then
@@ -46,6 +43,11 @@ If IsPreviewUp(previewUrl) Then
   OpenWindow previewUrl
   WScript.Quit
 End If
+
+' Au-dela de la branche 1, on aura besoin du HEAD courant (delta de
+' changelog + memorisation post-build). On ne le calcule donc PAS sur le
+' chemin rapide « serveur deja up » pour ne pas le ralentir.
+curHead = Trim(GitCapture("rev-parse HEAD"))
 
 ' ---- Branche 2 : un build est deja en cours (verrou frais) ----
 ' On montre la page d'attente (elle basculera quand ce build aura fini)
