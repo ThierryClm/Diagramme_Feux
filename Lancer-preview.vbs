@@ -14,9 +14,10 @@
 ' ecrivant dans le meme dist/ pendant qu'un preview le servait : course
 ' -> page corrompue / plantage au bout de quelques lancements.
 '
-' La page d'attente affiche les 3 derniers sujets de commit (+ "..."
-' s'il y en a plus). Fichier ASCII volontairement (les .vbs sont lus en
-' ANSI) : les accents passent par des entites HTML ou les sorties git UTF-8.
+' La page d'attente n'affiche QUE les commits reellement nouveaux depuis
+' le dernier build previewe (delta memorise dans .preview.built) ; rien
+' si le code est inchange. Fichier ASCII volontairement (les .vbs sont lus
+' en ANSI) : les accents passent par des entites HTML ou les sorties git UTF-8.
 
 Set shell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
@@ -27,8 +28,12 @@ genFile    = dir & "\.loading-preview.gen.html"
 tmpLog     = dir & "\.gitlog.tmp"
 tmpCnt     = dir & "\.gitcount.tmp"
 lockFile   = dir & "\.preview.lock"
+baseFile   = dir & "\.preview.built"   ' commit du dernier build previewe
 previewUrl = "http://localhost:4173"
 LOCK_TTL   = 180   ' secondes : au-dela, un verrou est considere perime
+
+' HEAD courant (sert au delta de changelog et a la memorisation post-build)
+curHead = Trim(GitCapture("rev-parse HEAD"))
 
 ' Emplacement de msedge.exe (deux chemins possibles selon l'install)
 edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
@@ -60,7 +65,9 @@ OpenWindow "file:///" & Replace(Replace(genFile, "\", "/"), " ", "%20")
 ' verrou est efface juste avant preview : les lancements suivants pendant
 ' le service basculent en branche 1. S'il echoue, le verrou perime tout
 ' seul apres LOCK_TTL (branche 3 reessaiera).
-shell.Run "cmd /c cd /d """ & dir & """ && npm run build && ( del /f /q """ & lockFile & """ 2>nul & npm run preview )", 0, False
+' Apres un build reussi : on memorise le commit construit (curHead) dans
+' baseFile -> le prochain lancement saura quoi montrer (delta) ou rien.
+shell.Run "cmd /c cd /d """ & dir & """ && npm run build && ( del /f /q """ & lockFile & """ 2>nul & echo " & curHead & ">""" & baseFile & """ & npm run preview )", 0, False
 
 ' ===================== Procedures / fonctions =====================
 
@@ -137,24 +144,35 @@ Function ScreenSize()
   ScreenSize = w & "," & h
 End Function
 
-' Genere .loading-preview.gen.html a partir du gabarit, avec les 3
-' derniers sujets de commit injectes (bloc vide si git indisponible).
+' Genere .loading-preview.gen.html a partir du gabarit.
+' Bloc « Nouveautes » = commits REELLEMENT nouveaux depuis le dernier
+' build previewe (baseFile) :
+'   - pas de reference (1er usage)        -> les 3 derniers (one-off)
+'   - HEAD == dernier build previewe      -> aucun bloc
+'   - sinon                               -> delta baseFile..HEAD (max 3 + ...)
 Sub BuildLoadingPage
-  Dim subjects, total, block, items, shown, arr, i, line, html
+  Dim lastBuilt, hasBaseline, subjects, total, block, items, shown, arr, i, line, html
 
-  On Error Resume Next
-  shell.Run "cmd /c chcp 65001>nul & git -C """ & dir & """ log -3 --format=%s 1> """ & tmpLog & """ 2>nul", 0, True
-  shell.Run "cmd /c git -C """ & dir & """ rev-list --count HEAD 1> """ & tmpCnt & """ 2>nul", 0, True
-  On Error GoTo 0
+  lastBuilt = ""
+  If fso.FileExists(baseFile) Then lastBuilt = Trim(ReadAscii(baseFile))
+  hasBaseline = (Len(lastBuilt) > 0)
 
-  subjects = ""
-  total = 0
-  If fso.FileExists(tmpLog) Then subjects = ReadUtf8(tmpLog)
-  If fso.FileExists(tmpCnt) Then total = CLng("0" & Trim(ReadAscii(tmpCnt)))
+  subjects = "" : total = 0
+  If Not hasBaseline Then
+    subjects = GitCapture("log -3 --format=%s")
+    total = CLng("0" & Trim(GitCapture("rev-list --count HEAD")))
+  ElseIf lastBuilt = curHead Then
+    subjects = ""                       ' rien de neuf -> aucun bloc
+  Else
+    subjects = GitCapture("log " & lastBuilt & "..HEAD --format=%s")
+    total = CLng("0" & Trim(GitCapture("rev-list --count " & lastBuilt & "..HEAD")))
+    If Len(Trim(subjects)) = 0 Then     ' baseFile invalide -> repli 3 derniers
+      subjects = GitCapture("log -3 --format=%s")
+      total = CLng("0" & Trim(GitCapture("rev-list --count HEAD")))
+    End If
+  End If
 
-  block = ""
-  items = ""
-  shown = 0
+  block = "" : items = "" : shown = 0
   If Len(Trim(subjects)) > 0 Then
     arr = Split(Replace(subjects, vbCr, ""), vbLf)
     For i = 0 To UBound(arr)
@@ -167,7 +185,7 @@ Sub BuildLoadingPage
     If total > shown Then items = items & "<li class=""more"">&#8230;</li>"
     If Len(items) > 0 Then
       block = "<div class=""changelog"">" & _
-              "<div class=""changelog-title"">Nouveaut&#233;s de ce build</div>" & _
+              "<div class=""changelog-title"">Nouveaut&#233;s de cette mise &#224; jour</div>" & _
               "<ul>" & items & "</ul></div>"
     End If
   End If
@@ -175,12 +193,22 @@ Sub BuildLoadingPage
   html = ReadUtf8(template)
   html = Replace(html, "<!--CHANGELOG-->", block)
   WriteUtf8 genFile, html
-
-  On Error Resume Next
-  If fso.FileExists(tmpLog) Then fso.DeleteFile tmpLog
-  If fso.FileExists(tmpCnt) Then fso.DeleteFile tmpCnt
-  On Error GoTo 0
 End Sub
+
+' Execute "git -C <dir> <args>" et renvoie sa sortie standard (UTF-8),
+' chaine vide si git indisponible.
+Function GitCapture(argLine)
+  Dim out
+  out = ""
+  On Error Resume Next
+  shell.Run "cmd /c chcp 65001>nul & git -C """ & dir & """ " & argLine & " 1> """ & tmpLog & """ 2>nul", 0, True
+  If fso.FileExists(tmpLog) Then
+    out = ReadUtf8(tmpLog)
+    fso.DeleteFile tmpLog
+  End If
+  On Error GoTo 0
+  GitCapture = out
+End Function
 
 Function ReadUtf8(path)
   Dim st: Set st = CreateObject("ADODB.Stream")

@@ -43,3 +43,4 @@ desktop.ini
 /.gitlog.tmp
 /.gitcount.tmp
 /.preview.lock
+/.preview.built
