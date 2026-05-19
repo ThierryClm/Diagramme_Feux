@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>TraCflux - Chargement...</title>
+<title>TraCflux - Démarrage (preview)...</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -15,10 +15,7 @@
     height: 100vh;
     flex-direction: column;
   }
-  .logo {
-    width: 88px; height: 88px;
-    margin-bottom: 20px;
-  }
+  .logo { width: 88px; height: 88px; margin-bottom: 20px; }
   .spinner {
     width: 36px; height: 36px;
     border: 4px solid #333;
@@ -30,15 +27,10 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   h1 { font-size: 1.3em; color: #4ecdc4; margin-bottom: 8px; }
   p { color: #888; font-size: 0.9em; }
-  .dots::after {
-    content: '';
-    animation: dots 1.5s steps(4, end) infinite;
-  }
+  .dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
   @keyframes dots {
-    0% { content: ''; }
-    25% { content: '.'; }
-    50% { content: '..'; }
-    75% { content: '...'; }
+    0% { content: ''; } 25% { content: '.'; }
+    50% { content: '..'; } 75% { content: '...'; }
   }
 </style>
 </head>
@@ -53,13 +45,15 @@
   </svg>
   <h1>TraCflux</h1>
   <div class="spinner"></div>
-  <p>Chargement de l'application<span class="dots"></span></p>
+  <p>Compilation et démarrage (preview)<span class="dots"></span></p>
 <script>
-  var url = 'http://localhost:3000';
+  // Le build peut prendre 30-60 s. On poll le serveur preview (port 4173)
+  // jusqu'à ce qu'il réponde, puis on redirige.
+  var url = 'http://localhost:4173';
   function check() {
     fetch(url, { mode: 'no-cors' })
       .then(function() { window.location.replace(url); })
-      .catch(function() { setTimeout(check, 800); });
+      .catch(function() { setTimeout(check, 1000); });
   }
   check();
 </script>
