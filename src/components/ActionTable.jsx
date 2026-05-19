@@ -82,11 +82,11 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     const askConfirm = useConfirm();
 
     // Colonnes Description / Action_Micro redimensionnables (poignee a
-    // droite de l'en-tete). Bornes : Desc 60-460 (def 160), Micro 120-920
+    // droite de l'en-tete). Bornes : Desc 100-350 (def 160), Micro 300-700
     // (def 420). Largeur memorisee dans le projet (cf. useTrafficLight).
     const COL_SPEC = {
-        description: { def: 160, min: 60, max: 460, cssVar: '--col-desc-w' },
-        micro:       { def: 420, min: 120, max: 920, cssVar: '--col-micro-w' }
+        description: { def: 160, min: 100, max: 350, cssVar: '--col-desc-w' },
+        micro:       { def: 420, min: 300, max: 700, cssVar: '--col-micro-w' }
     };
     const colWidth = (k) => {
         const n = Number(actionColWidths?.[k]);

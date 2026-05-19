@@ -130,7 +130,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     const [matricesLocked, setMatricesLocked] = useState(false);
     // Largeurs (px) ajustables des colonnes Description et Action_Micro du
     // tableau de micro-régulation. Reglage unique par projet, sauvegarde.
-    // Bornes appliquees a la restauration : Desc 60-460, Micro 120-920.
+    // Bornes appliquees a la restauration : Desc 100-350, Micro 300-700.
     const [actionColWidths, setActionColWidths] = useState({ description: 160, micro: 420 });
     const [externalLinks, setExternalLinks] = useState([]);
     const [projectProperties, setProjectProperties] = useState(() => {
@@ -1147,8 +1147,8 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
                     return Math.min(hi, Math.max(lo, Math.round(n)));
                 };
                 setActionColWidths({
-                    description: clamp(acw.description, 60, 460, 160),
-                    micro: clamp(acw.micro, 120, 920, 420)
+                    description: clamp(acw.description, 100, 350, 160),
+                    micro: clamp(acw.micro, 300, 700, 420)
                 });
             }
 
