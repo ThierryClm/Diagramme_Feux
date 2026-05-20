@@ -30,6 +30,7 @@ tmpCnt     = dir & "\.gitcount.tmp"
 lockFile   = dir & "\.preview.lock"
 baseFile   = dir & "\.preview.built"   ' commit du dernier build previewe
 logFile    = dir & "\.preview-build.log"   ' sortie build+preview (debug)
+runFile    = dir & "\.preview-build.cmd"   ' batch genere a chaque lancement
 previewUrl = "http://localhost:4173"
 LOCK_TTL   = 90    ' secondes : au-dela, un verrou est considere perime
                    ' (un build normal fait ~30-60 s)
@@ -69,12 +70,29 @@ OpenWindow "file:///" & Replace(Replace(genFile, "\", "/"), " ", "%20")
 ' verrou est efface juste avant preview : les lancements suivants pendant
 ' le service basculent en branche 1. S'il echoue, le verrou perime tout
 ' seul apres LOCK_TTL (branche 3 reessaiera).
-' Apres un build reussi : on memorise le commit construit (curHead) dans
-' baseFile -> le prochain lancement saura quoi montrer (delta) ou rien.
-' Toute la sortie (build + preview) est redirigee vers .preview-build.log
-' -> en cas de boucle infinie sur la page d'attente, ouvrir ce fichier
-' pour voir ce qui a echoue (fenetre cmd cachee sinon muette).
-shell.Run "cmd /c ( cd /d """ & dir & """ && npm run build && ( del /f /q """ & lockFile & """ 2>nul & echo " & curHead & ">""" & baseFile & """ & npm run preview ) ) > """ & logFile & """ 2>&1", 0, False
+' On genere un petit batch (.preview-build.cmd) plutot que d'inliner
+' une chaine cmd geante avec parens et redirections : trop fragile au
+' quoting Windows (echec silencieux observe). @echo on dans le batch
+' fait apparaitre chaque commande dans le log -> debug immediat.
+Dim bf
+Set bf = fso.CreateTextFile(runFile, True, False)
+bf.WriteLine "@echo on"
+bf.WriteLine "echo === Preview launcher %DATE% %TIME% ==="
+bf.WriteLine "cd /d """ & dir & """"
+bf.WriteLine "echo Working directory: %CD%"
+bf.WriteLine "call npm run build"
+bf.WriteLine "if errorlevel 1 ( echo *** BUILD FAILED *** & exit /b 1 )"
+bf.WriteLine "echo Build OK, removing lock and writing baseline (" & curHead & ")"
+bf.WriteLine "del /f /q """ & lockFile & """ 2>nul"
+bf.WriteLine "echo " & curHead & "> """ & baseFile & """"
+bf.WriteLine "echo Starting preview server..."
+bf.WriteLine "call npm run preview"
+bf.Close
+
+' Le batch tourne en fenetre cachee, sortie complete capturee dans logFile.
+' Chr(34) = guillemet (plus lisible que les """ imbriques en VBScript).
+Dim q : q = Chr(34)
+shell.Run "cmd /c " & q & q & runFile & q & " > " & q & logFile & q & " 2>&1" & q, 0, False
 
 ' ===================== Procedures / fonctions =====================
 
