@@ -142,6 +142,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <li><strong>Remarques du diagramme :</strong> Le menu <strong>Mise en page → Détachements</strong> permet d'ouvrir le champ Remarques du plan de feu actif dans une fenêtre séparée, déplaçable sur un second écran. Pratique lors d'une projection : le diagramme reste visible sur l'écran principal pendant que vous gardez vos notes sur un écran annexe pour commenter la présentation. L'option est grisée tant que la case <em>Remarques du diagramme</em> n'est pas cochée dans le menu Mise en page (impossible de détacher un champ masqué).</li>
                     <li><strong>Zoom indépendant dans chaque fenêtre détachée :</strong> Chaque popup (Formulaire, Matrice, Trafic, Conditions micro, Variables micro, Image, Remarques) accepte le zoom natif du navigateur sans affecter la fenêtre principale. Utilisez <strong>Ctrl + molette de la souris</strong> pour zoomer/dézoomer, ou <strong>Ctrl++</strong> / <strong>Ctrl+-</strong>, et <strong>Ctrl+0</strong> pour revenir à 100 %. Pratique pour optimiser la lecture sur un grand écran ou un vidéoprojecteur sans modifier la mise en page de l'application principale. Selon le navigateur, le niveau de zoom peut être mémorisé d'une session à l'autre.</li>
                     <li><strong>Confirmation à la fermeture :</strong> Si le projet a été modifié sans être sauvegardé, le navigateur affiche une confirmation avant de fermer l'onglet ou la fenêtre.</li>
+                    <li><strong>Désactivation des infobulles par section :</strong> Le menu <strong>Mise en page → Infobulles...</strong> ouvre un sous-menu où chaque section de l'interface (<em>Page principale</em>, <em>Configuration</em>, <em>Diagramme</em>, <em>Matrice</em>, <em>Trafic</em>, <em>Conditions de micro-régulation</em>) peut être cochée individuellement. Décocher une section masque toutes ses infobulles — utile pour épurer l'interface une fois familiarisé avec l'outil. Préférence enregistrée au niveau de l'application (s'applique à tous les projets).</li>
                 </ul>
             </section>
 
@@ -189,6 +190,12 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <li><strong style={{ color: '#fff', background: 'rgba(255,0,0,0.3)', padding: '0 4px', borderRadius: '2px' }}>Fond rouge :</strong> Conflit détecté — le temps de dégagement requis n'est pas respecté dans le diagramme.</li>
                     <li><strong style={{ color: '#fff', background: 'rgba(255,165,0,0.3)', padding: '0 4px', borderRadius: '2px' }}>Fond orange :</strong> Valeur manquante — une case symétrique (GFx→GFy / GFy→GFx) n'est pas renseignée, ce qui compromet la symétrie de la matrice.</li>
                 </ul>
+                <p>Au survol stable d'une case pendant <strong>une seconde</strong>, une infobulle apparaît si elle a quelque chose à dire :</p>
+                <ul>
+                    <li>la valeur diffère du PF de référence (PF1) → l'écart est précisé : <em>« Augmentée / Réduite de X s vs PF de base (PF1) : a → b »</em> ;</li>
+                    <li>la case est en <strong style={{ background:'rgba(255,0,0,0.3)', padding:'0 4px', borderRadius:'2px' }}>fond rouge</strong> → le problème est décrit : recouvrement des verts, ou intervert demandé supérieur au délai réel disponible entre fin de vert d'un groupe et début de vert de l'autre.</li>
+                </ul>
+                <p>Le délai d'une seconde évite l'apparition d'infobulles à la chaîne lors d'un balayage rapide de la grille.</p>
             </section>
 
             <section id="help-diagramme" className="help-section">
@@ -215,6 +222,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <li><strong>Plage 1/2 :</strong> Groupes délimitant la zone verticale (Adaptatif)</li>
                     <li><strong>Action GF 1-4 :</strong> Groupes liés à l'action (Fermeture anticipée, Escamotage)</li>
                 </ul>
+                <p>Les colonnes <strong>Description</strong>, <strong>Abrv</strong> et <strong>Action_Micro</strong> sont <strong>redimensionnables</strong> : glissez la poignée à droite de leur en-tête pour ajuster la largeur (les autres colonnes ne bougent pas) ; double-clic sur la poignée pour revenir à la largeur par défaut. Les largeurs choisies sont enregistrées avec le projet.</p>
             </section>
 
             <section className="help-section">

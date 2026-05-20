@@ -102,9 +102,17 @@ Exportez le projet en `.json` et transmettez le fichier (mail, partage réseau, 
 
 ## Utilisation pratique
 
+### Je débute sur le sujet et le nombre de paramètres à saisir m'impressionne — comment être guidé pendant la saisie ?
+
+Chaque champ du formulaire, de la matrice et du tableau des conditions de micro-régulation est documenté par une **infobulle** qui s'affiche au survol et explique ce qu'il attend (signification, format, ordre de grandeur typique). Cela vous permet de vous familiariser progressivement avec l'outil, sans devoir tout retenir d'emblée.
+
+Une fois à l'aise avec une partie de l'interface, vous pouvez **désactiver les infobulles section par section** (Page principale, Configuration, Diagramme, Matrice, Trafic, Conditions de micro-régulation) depuis le menu **Mise en page → Infobulles...** : l'interface s'épure à mesure que votre maîtrise progresse. Préférence enregistrée au niveau de l'application.
+
+En complément, l'écran d'accueil propose **« Découvrir avec un projet exemple »** : un carrefour déjà renseigné, librement modifiable et non enregistrable — idéal pour comprendre concrètement à quoi servent les différents champs sans risque d'abîmer votre propre travail.
+
 ### Comment découvrir l'application sans saisir un projet de zéro ?
 
-Deux projets exemple anonymisés sont fournis. Au lancement, sur l'écran d'accueil, cliquez sur **« Découvrir avec un projet exemple »** (module Diagramme) ou **« Découvrir avec une onde verte exemple »** (module Onde verte) : l'exemple s'ouvre dans une **nouvelle fenêtre**, sans toucher à un éventuel travail en cours. Rien n'est enregistré tant que vous ne sauvegardez pas.
+Deux projets exemple anonymisés sont fournis. Au lancement, sur l'écran d'accueil, cliquez sur **« Découvrir avec un projet exemple »** (module Diagramme) ou **« Découvrir avec une onde verte exemple »** (module Onde verte) : l'exemple s'ouvre dans une **nouvelle fenêtre**, sans toucher à un éventuel travail en cours. Il est librement modifiable pour explorer, mais **non enregistrable** — pour démarrer votre propre projet, faites **Fichier → Nouveau projet**.
 
 Vous pouvez aussi télécharger les fichiers directement pour les ouvrir via **Fichier → Ouvrir** : [Carrefour_Exemple.json](public/Carrefour_Exemple.json) (carrefour) et [Onde verte_Exemple.json](public/Onde%20verte_Exemple.json) (onde verte).
 
