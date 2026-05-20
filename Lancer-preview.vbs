@@ -29,8 +29,10 @@ tmpLog     = dir & "\.gitlog.tmp"
 tmpCnt     = dir & "\.gitcount.tmp"
 lockFile   = dir & "\.preview.lock"
 baseFile   = dir & "\.preview.built"   ' commit du dernier build previewe
+logFile    = dir & "\.preview-build.log"   ' sortie build+preview (debug)
 previewUrl = "http://localhost:4173"
-LOCK_TTL   = 180   ' secondes : au-dela, un verrou est considere perime
+LOCK_TTL   = 90    ' secondes : au-dela, un verrou est considere perime
+                   ' (un build normal fait ~30-60 s)
 
 ' Emplacement de msedge.exe (deux chemins possibles selon l'install)
 edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
@@ -69,7 +71,10 @@ OpenWindow "file:///" & Replace(Replace(genFile, "\", "/"), " ", "%20")
 ' seul apres LOCK_TTL (branche 3 reessaiera).
 ' Apres un build reussi : on memorise le commit construit (curHead) dans
 ' baseFile -> le prochain lancement saura quoi montrer (delta) ou rien.
-shell.Run "cmd /c cd /d """ & dir & """ && npm run build && ( del /f /q """ & lockFile & """ 2>nul & echo " & curHead & ">""" & baseFile & """ & npm run preview )", 0, False
+' Toute la sortie (build + preview) est redirigee vers .preview-build.log
+' -> en cas de boucle infinie sur la page d'attente, ouvrir ce fichier
+' pour voir ce qui a echoue (fenetre cmd cachee sinon muette).
+shell.Run "cmd /c ( cd /d """ & dir & """ && npm run build && ( del /f /q """ & lockFile & """ 2>nul & echo " & curHead & ">""" & baseFile & """ & npm run preview ) ) > """ & logFile & """ 2>&1", 0, False
 
 ' ===================== Procedures / fonctions =====================
 

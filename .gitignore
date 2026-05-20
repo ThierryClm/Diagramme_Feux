@@ -44,6 +44,7 @@ desktop.ini
 /.gitcount.tmp
 /.preview.lock
 /.preview.built
+/.preview-build.log
 # Profil Edge dedie au lanceur preview (force un processus Edge separe
 # pour que les flags de fenetre soient respectes).
 /.edge-preview-profile/
