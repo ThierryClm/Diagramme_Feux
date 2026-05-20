@@ -664,10 +664,8 @@ const HelpContent = ({ initialAnchor = null }) => {
                 <ul>
                     <li><strong>Feuille Formulaire :</strong> Configuration des groupes (nom, type, durées)</li>
                     <li><strong>Feuille PF :</strong> Diagramme et matrice de dégagement pour chaque plan de feux</li>
-                    <li><strong>Feuille Trafic :</strong> Données de trafic par groupe — colonne I = coefficient de voie (Coef) ; colonne J = premier jeu de données, nommé par la cellule J3 ; colonne O = second jeu, nommé par la cellule O3</li>
+                    <li><strong>Feuille Trafic :</strong> Données de trafic par groupe — une colonne <em>X</em> pour le coefficient de voie (Coef), une colonne <em>Y</em> pour un premier jeu de données (nom porté par une cellule d'en-tête dédiée), et éventuellement une colonne <em>Z</em> pour un second jeu.</li>
                 </ul>
-                <p><strong>Synchronisation automatique :</strong> Quand vous changez d'onglet PF (PF1, PF2...), le jeu de données trafic « Associé à » se synchronise automatiquement avec l'onglet actif si un dataset du même nom existe.</p>
-                <p><strong>Groupes :</strong> Tous les groupes de 1 au nombre total (cellule H2) sont importés, y compris les groupes vides (sans nom ni configuration).</p>
             </section>
 
             <h3 id="help-onde-verte" style={{ color: '#4ecdc4', borderBottom: '1px solid #4ecdc4', paddingBottom: '8px', marginTop: '32px', marginBottom: '16px' }}>Chapitre 2 — Onde verte</h3>
