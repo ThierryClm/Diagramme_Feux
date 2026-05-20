@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import EmptyState from './EmptyState';
+import { compareWithPF1 as compareWithPF1Pure, buildCellTooltipLines as buildCellTooltipLinesPure } from '../utils/matrixComparison';
 import './IntergreenMatrix.css';
 import './NumericInput.css';
 
@@ -78,25 +79,10 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
     const pf1Matrix = pfTabs?.find(pf => pf.id === 1)?.conflictMatrix || null;
     const isComparingWithPF1 = activePFId && activePFId !== 1 && pf1Matrix && pf1Matrix.length > 0;
 
-    // Compare current value with PF1 value
-    // Returns: 'higher' (red), 'lower' (green), or null (equal or no comparison)
-    const compareWithPF1 = (fromIdx, toIdx, currentVal) => {
-        if (!isComparingWithPF1) return null;
-        if (fromIdx === toIdx) return null; // Skip diagonal
-
-        const pf1Val = pf1Matrix[fromIdx]?.[toIdx];
-
-        // Convert to numbers for comparison
-        const current = (currentVal === '' || currentVal === undefined || currentVal === null) ? 0 : parseInt(currentVal);
-        const pf1 = (pf1Val === '' || pf1Val === undefined || pf1Val === null) ? 0 : parseInt(pf1Val);
-
-        // Only compare if at least one has a value
-        if (current === 0 && pf1 === 0) return null;
-
-        if (current > pf1) return 'higher'; // Red - value is higher than PF1
-        if (current < pf1) return 'lower';  // Green - value is lower than PF1
-        return null; // Equal
-    };
+    // Compare current value with PF1 value (logique pure dans utils/matrixComparison).
+    // Returns: 'higher' (red), 'lower' (green), or null (equal or no comparison).
+    const compareWithPF1 = (fromIdx, toIdx, currentVal) =>
+        compareWithPF1Pure(fromIdx, toIdx, currentVal, isComparingWithPF1 ? pf1Matrix : null);
 
     // Get all "Seconde lucarne" actions
     const getSecondesLucarnes = () => {
@@ -385,42 +371,19 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
         return d;
     };
 
-    // Lignes d'infobulle de cellule (vide si rien a signaler) :
-    //  - ecart vs PF1 (seulement quand on consulte un autre PF) ;
+    // Lignes d'infobulle de cellule (logique pure dans utils/matrixComparison) :
+    //  - écart vs PF1 (seulement quand on consulte un autre PF) ;
     //  - description du conflit pour les cases en fond rouge.
-    const buildCellTooltipLines = (fromIdx, toIdx) => {
-        if (fromIdx === toIdx) return [];
-        const lines = [];
-        const val = conflictMatrix[fromIdx][toIdx];
-
-        if (isComparingWithPF1) {
-            const pf1Val = pf1Matrix?.[fromIdx]?.[toIdx];
-            const cur = (val === '' || val == null) ? 0 : parseInt(val);
-            const pf1Num = (pf1Val === '' || pf1Val == null) ? 0 : parseInt(pf1Val);
-            if (cur !== pf1Num && !(cur === 0 && pf1Num === 0)) {
-                const fromLabel = pf1Num === 0 ? '—' : pf1Num + ' s';
-                const toLabel = cur === 0 ? '—' : cur + ' s';
-                const delta = Math.abs(cur - pf1Num);
-                lines.push(
-                    (cur > pf1Num ? 'Augmentée' : 'Réduite') +
-                    ` de ${delta} s vs PF de base (PF1) : ${fromLabel} → ${toLabel}`
-                );
-            }
-        }
-
-        if (isDelayInsufficient(fromIdx, toIdx)) {
-            const fromName = `GF${groups[fromIdx]?.id ?? fromIdx + 1}`;
-            const toName   = `GF${groups[toIdx]?.id   ?? toIdx + 1}`;
-            if (hasOverlap(fromIdx, toIdx)) {
-                lines.push(`Conflit : les verts de ${fromName} et ${toName} se recouvrent.`);
-            } else {
-                const actual = computeActualDelay(fromIdx, toIdx);
-                lines.push(`Conflit : intervert demandé ${val} s > délai réel ${actual} s entre fin vert ${fromName} et début vert ${toName}.`);
-            }
-        }
-
-        return lines;
-    };
+    const buildCellTooltipLines = (fromIdx, toIdx) =>
+        buildCellTooltipLinesPure({
+            fromIdx, toIdx,
+            conflictMatrix,
+            refMatrix: isComparingWithPF1 ? pf1Matrix : null,
+            groups,
+            isDelayInsufficient,
+            hasOverlap,
+            computeActualDelay
+        });
 
     // Infobulle custom (delai 1 s a l'apparition, disparition immediate a
     // la sortie de la case). title natif limite a ~500 ms non configurable
