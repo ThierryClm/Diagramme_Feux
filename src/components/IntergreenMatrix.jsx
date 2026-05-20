@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import EmptyState from './EmptyState';
 import './IntergreenMatrix.css';
 import './NumericInput.css';
@@ -368,6 +368,86 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
         return matrixVal > actualDelay;
     };
 
+    // Delai reel (s) entre fin vert GF[from] et debut vert GF[to], pour la
+    // description d'un conflit. Reprend la logique de isDelayInsufficient.
+    const computeActualDelay = (fromIdx, toIdx) => {
+        if (!groups || !groups[fromIdx] || !groups[toIdx]) return null;
+        const cycle = cycleLength || 100;
+        const fromGroup = groups[fromIdx];
+        const toGroup = groups[toIdx];
+        const flecheFrom = flecheAnticipations[fromGroup.id];
+        const flecheTo = flecheAnticipations[toGroup.id];
+        const fromEnd = flecheFrom ? flecheFrom.fin % cycle : (fromGroup.offset + fromGroup.durations.green) % cycle;
+        const toStart = flecheTo ? flecheTo.deb % cycle : toGroup.offset % cycle;
+        let d = toStart - fromEnd;
+        if (d < 0) d += cycle;
+        return d;
+    };
+
+    // Lignes d'infobulle de cellule (vide si rien a signaler) :
+    //  - ecart vs PF1 (seulement quand on consulte un autre PF) ;
+    //  - description du conflit pour les cases en fond rouge.
+    const buildCellTooltipLines = (fromIdx, toIdx) => {
+        if (fromIdx === toIdx) return [];
+        const lines = [];
+        const val = conflictMatrix[fromIdx][toIdx];
+
+        if (isComparingWithPF1) {
+            const pf1Val = pf1Matrix?.[fromIdx]?.[toIdx];
+            const cur = (val === '' || val == null) ? 0 : parseInt(val);
+            const pf1Num = (pf1Val === '' || pf1Val == null) ? 0 : parseInt(pf1Val);
+            if (cur !== pf1Num && !(cur === 0 && pf1Num === 0)) {
+                const fromLabel = pf1Num === 0 ? '—' : pf1Num + ' s';
+                const toLabel = cur === 0 ? '—' : cur + ' s';
+                const delta = Math.abs(cur - pf1Num);
+                lines.push(
+                    (cur > pf1Num ? 'Augmentée' : 'Réduite') +
+                    ` de ${delta} s vs PF de base (PF1) : ${fromLabel} → ${toLabel}`
+                );
+            }
+        }
+
+        if (isDelayInsufficient(fromIdx, toIdx)) {
+            const fromName = `GF${groups[fromIdx]?.id ?? fromIdx + 1}`;
+            const toName   = `GF${groups[toIdx]?.id   ?? toIdx + 1}`;
+            if (hasOverlap(fromIdx, toIdx)) {
+                lines.push(`Conflit : les verts de ${fromName} et ${toName} se recouvrent.`);
+            } else {
+                const actual = computeActualDelay(fromIdx, toIdx);
+                lines.push(`Conflit : intervert demandé ${val} s > délai réel ${actual} s entre fin vert ${fromName} et début vert ${toName}.`);
+            }
+        }
+
+        return lines;
+    };
+
+    // Infobulle custom (delai 1 s a l'apparition, disparition immediate a
+    // la sortie de la case). title natif limite a ~500 ms non configurable
+    // -> implementation custom pour respecter le delai et eviter l'effet
+    // "sapin de Noel" lors du survol rapide de la grille.
+    const [cellTooltip, setCellTooltip] = useState(null); // { x, y, lines }
+    const tooltipTimerRef = useRef(null);
+    const scheduleCellTooltip = (e, fromIdx, toIdx) => {
+        if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
+        const lines = buildCellTooltipLines(fromIdx, toIdx);
+        if (lines.length === 0) return;
+        const x = e.clientX;
+        const y = e.clientY;
+        tooltipTimerRef.current = setTimeout(() => {
+            setCellTooltip({ x, y, lines });
+        }, 1000);
+    };
+    const hideCellTooltip = () => {
+        if (tooltipTimerRef.current) {
+            clearTimeout(tooltipTimerRef.current);
+            tooltipTimerRef.current = null;
+        }
+        setCellTooltip(null);
+    };
+    useEffect(() => () => {
+        if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
+    }, []);
+
     // 16x16 is big. Let's make it a scrollable grid.
     const size = conflictMatrix.length;
     const indices = Array.from({ length: size }, (_, i) => i + 1);
@@ -451,8 +531,14 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                                         <td
                                             key={toIdx}
                                             className={(fromIdx === toIdx ? 'diagonal-cell' : cellClass) + biClass + (hoveredGroupId === toIdx + 1 ? ' matrix-hovered-col' : '')}
-                                            onMouseEnter={fromIdx !== toIdx && onCellHover ? () => onCellHover({ from: fromIdx + 1, to: toIdx + 1, isConflict: hasInsufficientDelay }) : undefined}
-                                            onMouseLeave={fromIdx !== toIdx && onCellHover ? () => onCellHover(null) : undefined}
+                                            onMouseEnter={fromIdx !== toIdx ? (e) => {
+                                                if (onCellHover) onCellHover({ from: fromIdx + 1, to: toIdx + 1, isConflict: hasInsufficientDelay });
+                                                scheduleCellTooltip(e, fromIdx, toIdx);
+                                            } : undefined}
+                                            onMouseLeave={fromIdx !== toIdx ? () => {
+                                                if (onCellHover) onCellHover(null);
+                                                hideCellTooltip();
+                                            } : undefined}
                                         >
                                             {fromIdx === toIdx ? (
                                                 <span className="diagonal">-</span>
@@ -486,6 +572,12 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                             </span>
                         ))}
                     </small>
+                </div>
+            )}
+
+            {cellTooltip && (
+                <div className="matrix-cell-tooltip" style={{ left: cellTooltip.x + 14, top: cellTooltip.y + 14 }}>
+                    {cellTooltip.lines.map((l, i) => <div key={i}>{l}</div>)}
                 </div>
             )}
 
