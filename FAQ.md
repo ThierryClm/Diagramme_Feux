@@ -46,6 +46,12 @@ Un **import sur mesure reste possible**, à condition de réaliser un **dévelop
 
 Si vous êtes dans cette situation, le canal recommandé est le dépôt GitHub du projet : ouvrez une [issue](https://github.com/ThierryClm/Diagramme_Feux/issues) décrivant le besoin (volume de projets concernés, exemple de fichier anonymisé, format de vos feuilles) afin qu'un développement *open source* puisse être discuté ou contribué. Le format `.json` natif de TraCflux sert de structure cible — la valeur ajoutée d'un parseur consiste uniquement à bien lire votre format Excel source.
 
+### L'import Excel est-il sûr ?
+
+**N'importer que des fichiers `.xlsx` d'origine connue** (vos propres feuilles, ou celles de collègues identifiés). La bibliothèque utilisée pour lire les fichiers Excel (`xlsx` / SheetJS) contient deux vulnérabilités connues — *prototype pollution* et *déni de service par expression régulière* — sans correctif diffusé sur le registre npm officiel. Un fichier `.xlsx` malveillant, ouvert via l'import, pourrait perturber l'onglet du navigateur.
+
+Dans l'usage normal de TraCflux (outil local, mono-utilisateur, fichiers produits par vous), le risque est faible : il faudrait qu'un attaquant vous transmette spécifiquement un fichier piégé (phishing). Aucun risque pour le système d'exploitation ni pour les autres projets enregistrés. La situation est documentée et acceptée en l'état tant que l'usage reste local — voir le [README](README.md#sécurité-et-limites-connues) pour le détail.
+
 ### À qui s'adresse cet outil ?
 
 Aux **traficiens, ingénieurs trafic, bureaux d'études et techniciens de collectivité** qui conçoivent ou analysent des plans de feux tricolores. Aussi utile aux étudiants en génie urbain ou exploitation routière qui apprennent à dimensionner des diagrammes de feux.

@@ -96,6 +96,23 @@ L'application embarque un système de comptes optionnel à 3 niveaux de permissi
 
 **Sécurité réelle des fichiers projet** : à assurer au niveau du système d'exploitation et du réseau local — droits NTFS / ACL sur le partage réseau, comptes Windows / Active Directory, permissions de dossier sur le serveur de fichiers. C'est ce niveau qui décide qui peut lire, écrire ou supprimer les `.json` exportés par l'application.
 
+## Sécurité et limites connues
+
+### Import Excel — fichiers d'origine externe
+
+La bibliothèque utilisée pour lire les fichiers Excel (`xlsx` / SheetJS, version `0.18.5`) comporte deux vulnérabilités connues, sans correctif diffusé sur le registre npm officiel :
+
+- **Prototype Pollution** ([GHSA-4r6h-8v6p-xvw6](https://github.com/advisories/GHSA-4r6h-8v6p-xvw6)) — CVSS 7.8
+- **ReDoS** (Regular Expression Denial of Service, [GHSA-5pgg-2g8v-p4x9](https://github.com/advisories/GHSA-5pgg-2g8v-p4x9)) — CVSS 7.5
+
+Les versions corrigées existent uniquement sur `cdn.sheetjs.com` (SheetJS a retiré son édition communautaire du registre npm en 2023).
+
+**Recommandation utilisateur :** n'importer que des fichiers `.xlsx` d'**origine connue** (feuilles produites par vous ou par des collègues identifiés). Un fichier malveillant ouvert via l'import pourrait perturber l'onglet du navigateur.
+
+**Évaluation du risque dans l'usage prévu :** faible. TraCflux est un outil **local mono-utilisateur** ; `xlsx` n'est sollicité qu'au moment où l'utilisateur sélectionne manuellement un fichier ([`src/utils/excelImporter.js`](src/utils/excelImporter.js)). Aucun risque pour le système d'exploitation, aucun risque pour les autres projets enregistrés. Seul vecteur résiduel : phishing ciblé.
+
+**Décision actuelle :** statu quo tant que l'usage reste local. Une migration vers `xlsx-js-style`, `exceljs` ou la version corrigée hors-npm de SheetJS sera envisagée si l'app évolue vers un déploiement multi-utilisateurs.
+
 ## Questions fréquentes
 
 Une [FAQ](FAQ.md) répond aux questions courantes (confidentialité des données, formats d'import/export, licence, partage de projets, etc.).

@@ -674,6 +674,16 @@ const HelpContent = ({ initialAnchor = null }) => {
                     natif de TraCflux sert de structure cible — la valeur ajoutée d'un
                     parseur consiste uniquement à bien lire votre format Excel source.
                 </p>
+                <p>
+                    <strong>Sécurité — fichiers d'origine externe :</strong> n'importer que des
+                    fichiers <code>.xlsx</code> d'origine connue (vos propres feuilles ou celles
+                    de collègues identifiés). La bibliothèque de lecture utilisée (<code>xlsx</code>
+                    / SheetJS) comporte deux vulnérabilités connues sans correctif diffusé sur le
+                    registre npm officiel. Un fichier malveillant ouvert via l'import pourrait
+                    perturber l'onglet du navigateur. Dans l'usage local mono-utilisateur de
+                    TraCflux, le risque est faible (vecteur de type phishing) et aucun risque ne
+                    pèse sur le système d'exploitation. La FAQ et le README détaillent la situation.
+                </p>
                 <h5 style={{ marginTop: '14px', marginBottom: '8px', color: '#aaa' }}>Structure attendue par l'importeur fourni</h5>
                 <p>À titre informatif (un exemple, non un standard) :</p>
                 <ul>
