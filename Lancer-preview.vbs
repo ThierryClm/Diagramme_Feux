@@ -111,16 +111,22 @@ Sub WriteLock(path)
   On Error GoTo 0
 End Sub
 
-' Ouvre l'URL dans Edge en mode app, fenetre dimensionnee a l'ecran
-' (barre de titre conservee) ; repli navigateur par defaut.
-' Chromium IGNORE --start-maximized pour les fenetres --app ; on force
-' donc la position et la taille en pixels ecran (--start-maximized garde
-' quand meme, inoffensif si une version future le respecte).
+' Ouvre l'URL dans Edge en mode app, fenetre dimensionnee a l'ecran.
+'
+' POURQUOI --user-data-dir : Quand un processus Edge est deja en cours
+' (cas frequent : Edge en tache de fond ou autre fenetre ouverte), un
+' nouveau --app est cree par l'instance existante qui IGNORE les flags
+' de fenetre (--window-size, --start-maximized). Resultat : fenetre en
+' taille par defaut. Forcer un profil dedie -> Edge demarre un nouveau
+' PROCESSUS qui respecte les flags.
 Sub OpenWindow(targetUri)
-  Dim sz
+  Dim sz, profile
   If fso.FileExists(edge) Then
     sz = ScreenSize()
+    profile = dir & "\.edge-preview-profile"
     shell.Run """" & edge & """ --app=""" & targetUri & """" & _
+              " --user-data-dir=""" & profile & """" & _
+              " --no-first-run --no-default-browser-check" & _
               " --window-position=0,0 --window-size=" & sz & _
               " --start-maximized", 1, False
   Else
