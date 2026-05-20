@@ -127,9 +127,20 @@ End Sub
 ' fausse quand la mise a l'echelle Windows est >100 % (la fenetre sort
 ' de l'ecran). Le maximize natif du systeme s'en charge correctement.
 Sub OpenWindow(targetUri)
-  Dim profile
+  Dim profile, sentinel, f
   If fso.FileExists(edge) Then
     profile = dir & "\.edge-preview-profile"
+    ' Pre-creer le dossier de profil + le fichier sentinelle "First Run".
+    ' Cette astuce Chromium standard fait croire a Edge que le premier
+    ' demarrage a deja eu lieu, et SAUTE l'assistant "creer un compte
+    ' Microsoft / synchroniser" qui apparait sinon a chaque profil neuf
+    ' (le flag --no-first-run seul n'est plus suffisant).
+    If Not fso.FolderExists(profile) Then fso.CreateFolder profile
+    sentinel = profile & "\First Run"
+    If Not fso.FileExists(sentinel) Then
+      Set f = fso.CreateTextFile(sentinel, True)
+      f.Close
+    End If
     shell.Run """" & edge & """ --app=""" & targetUri & """" & _
               " --user-data-dir=""" & profile & """" & _
               " --no-first-run --no-default-browser-check" & _
