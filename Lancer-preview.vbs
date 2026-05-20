@@ -50,7 +50,10 @@ End If
 ' Au-dela de la branche 1, on aura besoin du HEAD courant (delta de
 ' changelog + memorisation post-build). On ne le calcule donc PAS sur le
 ' chemin rapide « serveur deja up » pour ne pas le ralentir.
-curHead = Trim(GitCapture("rev-parse HEAD"))
+' Trim() VBScript ne supprime pas CR/LF -> on les retire d'abord, sinon
+' un hash issu de "git ... > tmp" ressort avec \r\n et casse les lignes
+' du batch ou il est interpole.
+curHead = Trim(Replace(Replace(GitCapture("rev-parse HEAD"), vbCr, ""), vbLf, ""))
 
 ' ---- Branche 2 : un build est deja en cours (verrou frais) ----
 ' On montre la page d'attente (elle basculera quand ce build aura fini)
