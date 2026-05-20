@@ -88,7 +88,7 @@ const HelpContent = ({ initialAnchor = null }) => {
             <h3 style={{ color: '#4ecdc4', borderBottom: '1px solid #4ecdc4', paddingBottom: '8px', marginBottom: '16px' }}>Chapitre 1 — Boite à outils d'optimisation des diagrammes de feu</h3>
             <section className="help-section">
                 <h4>Présentation</h4>
-                <p>Application de conception de diagrammes de feux de signalisation pour carrefours à feux.</p>
+                <p>Application de conception de diagrammes de feux pour carrefours à feux.</p>
                 <p>Elle permet de concevoir, visualiser et valider les plans de feux d'un carrefour à feux tricolores. L'application couvre l'ensemble du processus : définition des groupes de feux (ou lignes de feu) et de leurs paramètres temporels (vert, orange, rouge), saisie de la matrice des temps de dégagement entre groupes conflictuels, configuration des actions de micro-régulation (adaptatif, escamotage, fermeture anticipée, ouverture anticipée), gestion des données de trafic et de capacité, et coordination des feux sur un axe via l'outil onde verte. Elle génère un dossier imprimable complet incluant le formulaire, les matrices, les diagrammes, le phasage bulle et les conditions de micro-régulation pour chaque plan de feu.</p>
                 <p>Chaque modification se répercute instantanément sur l'ensemble de l'interface : ajustez un temps de vert dans le formulaire et le diagramme se redessine en temps réel ; déplacez une barre directement sur le diagramme et les valeurs du formulaire suivent ; modifiez la matrice des temps interverts et la détection des conflits se met à jour immédiatement. Cette interactivité permanente entre le formulaire, le diagramme, la matrice et le tableau des actions vous offre une vision globale et cohérente à chaque instant.</p>
                 <p>Le glisser-déposer des barres, la surbrillance croisée entre le tableau des actions et le diagramme, les flèches de dépendance, le calcul automatique des conflits et des données trafic : tout est pensé pour vous accompagner dans la mise au point de vos plans de feux, de la première esquisse jusqu'à la validation finale.</p>
@@ -138,7 +138,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                         </ul>
                         Une fois autorisées, plus aucun message de blocage n'apparaîtra et toutes les fenêtres détachées s'ouvriront simultanément à l'ouverture d'un projet.
                     </li>
-                    <li><strong>Largeur dynamique de la sidebar :</strong> Lorsque le nom des groupes de feux est masqué, la sidebar libère 160 px supplémentaires pour le diagramme.</li>
+                    <li><strong>Largeur dynamique du panneau de configuration :</strong> Lorsque le nom des groupes de feux est masqué, ce panneau libère 160 px supplémentaires pour le diagramme.</li>
                     <li><strong>Remarques du diagramme :</strong> Le menu <strong>Mise en page → Détachements</strong> permet d'ouvrir le champ Remarques du plan de feu actif dans une fenêtre séparée, déplaçable sur un second écran. Pratique lors d'une projection : le diagramme reste visible sur l'écran principal pendant que vous gardez vos notes sur un écran annexe pour commenter la présentation. L'option est grisée tant que la case <em>Remarques du diagramme</em> n'est pas cochée dans le menu Mise en page (impossible de détacher un champ masqué).</li>
                     <li><strong>Zoom indépendant dans chaque fenêtre détachée :</strong> Chaque popup (Formulaire, Matrice, Trafic, Conditions micro, Variables micro, Image, Remarques) accepte le zoom natif du navigateur sans affecter la fenêtre principale. Utilisez <strong>Ctrl + molette de la souris</strong> pour zoomer/dézoomer, ou <strong>Ctrl++</strong> / <strong>Ctrl+-</strong>, et <strong>Ctrl+0</strong> pour revenir à 100 %. Pratique pour optimiser la lecture sur un grand écran ou un vidéoprojecteur sans modifier la mise en page de l'application principale. Selon le navigateur, le niveau de zoom peut être mémorisé d'une session à l'autre.</li>
                     <li><strong>Confirmation à la fermeture :</strong> Si le projet a été modifié sans être sauvegardé, le navigateur affiche une confirmation avant de fermer l'onglet ou la fenêtre.</li>
@@ -163,18 +163,34 @@ const HelpContent = ({ initialAnchor = null }) => {
 
             <section id="help-config-groupes" className="help-section">
                 <h4>Configuration des groupes</h4>
+                <p>Champs du formulaire (panneau de configuration), dans l'ordre des colonnes :</p>
                 <ul>
-                    <li><strong>Type :</strong> Catégorie d'usager du groupe de feux
+                    <li><strong>GF :</strong> Numéro du groupe de feux (1, 2, 3…), attribué automatiquement. Sert de référence dans la matrice et les actions de micro-régulation.</li>
+                    <li><strong>Nom :</strong> Libellé descriptif libre (ex. <em>« rue Tabaga »</em>). Affiché dans le diagramme.</li>
+                    <li><strong>Type :</strong> Catégorie d'usager du groupe de feux.
                         <ul>
-                            <li><em>VL :</em> Véhicules légers (voitures, motos)</li>
-                            <li><em>TC :</em> Transports en commun (bus, tramway)</li>
-                            <li><em>Cycle :</em> Piste ou traversée cyclable</li>
-                            <li><em>Piéton :</em> Passages piétons</li>
+                            <li><em>V :</em> Véhicules</li>
+                            <li><em>B :</em> Bus / transports en commun</li>
+                            <li><em>P :</em> Piéton</li>
+                            <li><em>CY :</em> Cycliste</li>
+                            <li><em>FL :</em> Flèche d'anticipation</li>
+                            <li><em>PP :</em> Priorité piéton</li>
                         </ul>
                     </li>
-                    <li><strong>Courant :</strong> Identification du mouvement de trafic associé au groupe de feux (ex: "Entrée Nord", "Tourne-à-gauche Est")</li>
-                    <li><strong>J (Jaune) :</strong> Durée du feu jaune/orange pour les véhicules. <em>Pour les types Piéton et Cycliste, ce champ correspond au temps de dégagement (affiché dans le diagramme après le vert).</em></li>
-                    <li><strong>Vm (Vert minimum) :</strong> Durée minimale du vert garantie, utilisée pour les calculs de micro-régulation</li>
+                    <li><strong>Courant :</strong> Mouvement de trafic associé au groupe.
+                        <ul>
+                            <li><em>TD :</em> Tout droit</li>
+                            <li><em>TàD :</em> Tourne à droite</li>
+                            <li><em>TàG :</em> Tourne à gauche</li>
+                            <li><em>TD_TàD :</em> Tout droit + tourne à droite</li>
+                            <li><em>TD_TàG :</em> Tout droit + tourne à gauche</li>
+                            <li><em>TD_G_D :</em> Tout droit + tourne à gauche et à droite</li>
+                            <li><em>Piéton :</em> Mouvement piéton (2 sens)</li>
+                            <li><em>Cycle :</em> Mouvement cycliste (2 sens)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Mini :</strong> Durée minimale du vert garantie (en secondes), utilisée par la micro-régulation.</li>
+                    <li><strong>Jaune :</strong> Durée du feu jaune/orange. <em>Pour les types Piéton et Cycliste, ce champ correspond au temps de dégagement (affiché dans le diagramme après le vert).</em></li>
                 </ul>
             </section>
 
@@ -230,7 +246,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                 <p>Permet de définir des actions spéciales sur le diagramme. Survolez une ligne pour mettre en surbrillance l'action correspondante dans le diagramme (et inversement).</p>
                 <ul>
                     <li><strong>Adaptatif vertical :</strong> Zone d'adaptation du temps de vert (rectangle bleu). Utilisez Plage1/Plage2 pour définir les groupes concernés.</li>
-                    <li><strong>Contrôle de flot :</strong> Contrôle du flux de trafic. Affiche une barre intermittente jaune/gris de DEB à (DEB + Vert minimum), puis orange pour la durée de jaune, puis rouge jusqu'à FIN.</li>
+                    <li><strong>Contrôle de flot :</strong> Communément utilisé dans les carrefours à sens giratoire pour contrôler certaines branches amont de l'entrée à favoriser. Affiche une barre intermittente jaune/gris de DEB à (DEB + Vert minimum), puis orange pour la durée de jaune, puis rouge jusqu'à FIN.</li>
                     <li><strong>Seconde lucarne :</strong> Deuxième phase de vert (vert foncé + orange). Crée une barre supplémentaire sur la ligne du groupe.</li>
                     <li><strong>Escamotage de phase :</strong> Phase pouvant être supprimée (rectangle gris transparent sur toute la hauteur).</li>
                     <li><strong>Escamotage :</strong> Escamotage lié à un groupe spécifique. Définissez GF (source) et Action GF 1 (cible) pour afficher les flèches de dépendance. Si les valeurs Déb et Fin sont renseignées, le rectangle hachuré est positionné sur cette plage au lieu de la phase verte par défaut du groupe, ce qui permet de cibler une seconde lucarne.</li>
@@ -405,7 +421,6 @@ const HelpContent = ({ initialAnchor = null }) => {
                 <ul>
                     <li><strong>Ctrl+Z :</strong> Annuler la dernière action</li>
                     <li><strong>Ctrl+Y :</strong> Refaire la dernière action annulée</li>
-                    <li><strong>F1 :</strong> Aide en ligne contextuelle (pointe sur la section correspondant à la zone survolée)</li>
                     <li><strong>Flèches directionnelles :</strong> Déplacent point par point la flèche sélectionnée sur l'image du carrefour (focus requis sur l'image)</li>
                 </ul>
             </section>
