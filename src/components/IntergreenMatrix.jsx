@@ -437,7 +437,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
         const y = e.clientY;
         tooltipTimerRef.current = setTimeout(() => {
             setCellTooltip({ x, y, lines });
-        }, 1000);
+        }, 500);
     };
     const hideCellTooltip = () => {
         if (tooltipTimerRef.current) {
@@ -578,8 +578,20 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
             )}
 
             {cellTooltip && (
-                <div className="matrix-cell-tooltip" style={{ left: cellTooltip.x + 14, top: cellTooltip.y + 14 }}>
-                    {cellTooltip.lines.map((l, i) => <div key={i}>{l}</div>)}
+                <div className="action-hover-tooltip" style={{
+                    position: 'fixed',
+                    left: cellTooltip.x + 12,
+                    top: cellTooltip.y + 8,
+                    pointerEvents: 'none',
+                    zIndex: 9999,
+                    maxWidth: '380px'
+                }}>
+                    {cellTooltip.lines.map((l, i) => (
+                        <div
+                            key={i}
+                            className={i === 0 ? 'action-hover-tooltip-name' : 'action-hover-tooltip-micro'}
+                        >{l}</div>
+                    ))}
                 </div>
             )}
 

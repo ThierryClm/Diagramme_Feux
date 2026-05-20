@@ -213,21 +213,6 @@ td.matrix-hovered-col {
 .matrix-bi-sep-right {
     border-right: 1px solid white !important;
 }
-/* Infobulle custom sur survol d'une case de matrice : ecart vs PF1
-   et/ou description du conflit (fond rouge). Affichee apres 1 s de
-   survol stable, disparait a la sortie de la case. */
-.matrix-cell-tooltip {
-    position: fixed;
-    z-index: 9999;
-    background: #222;
-    color: #eee;
-    border: 1px solid #555;
-    padding: 6px 10px;
-    font-size: 12px;
-    line-height: 1.4;
-    border-radius: 4px;
-    max-width: 380px;
-    white-space: normal;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
-    pointer-events: none;
-}
+/* Infobulle de survol d'une case de matrice : utilise desormais les
+   memes classes (.action-hover-tooltip*) que les infobulles d'actions
+   du diagramme pour un visuel uniforme (cf. TimelineDiagram.css). */
