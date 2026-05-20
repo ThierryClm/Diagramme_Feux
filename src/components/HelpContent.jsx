@@ -632,19 +632,41 @@ const HelpContent = ({ initialAnchor = null }) => {
 
             <section className="help-section">
                 <h4>Import Excel</h4>
-                <p>L'application peut importer des fichiers Excel (.xlsx) contenant la configuration complète du carrefour :</p>
+                <p>
+                    L'application embarque un import Excel (<code>.xlsx</code>) capable de
+                    charger en un seul geste la configuration complète d'un carrefour
+                    (groupes, plans de feux, matrice de dégagement, données trafic).
+                    Cet importeur est cependant <strong>conçu pour une structure de
+                    fichier Excel précise</strong> — celle utilisée historiquement par
+                    l'auteur pour ses propres projets. Il n'est pas exploitable tel
+                    quel sur des fichiers Excel issus d'autres pratiques ou d'autres
+                    outils : chaque organisation a ses propres conventions de feuilles,
+                    de colonnes et de nommage.
+                </p>
+                <p>
+                    Un <strong>import sur mesure reste possible</strong>, à condition de
+                    réaliser un <strong>développement spécifique</strong> fondé sur la
+                    connaissance exacte de la structure du fichier source. Cette piste
+                    devient pertinente lors d'un <strong>basculement de parc</strong>
+                    vers TraCflux, lorsque le volume de projets à reprendre rend la
+                    ressaisie manuelle peu réaliste.
+                </p>
+                <p>
+                    Le canal recommandé est alors le dépôt GitHub du projet : une issue
+                    décrivant le besoin (volume de projets concernés, exemple de fichier
+                    anonymisé, format des feuilles) permet de discuter ou de contribuer
+                    un développement <em>open source</em>. Le format <code>.json</code>
+                    natif de TraCflux sert de structure cible — la valeur ajoutée d'un
+                    parseur consiste uniquement à bien lire votre format Excel source.
+                </p>
+                <h5 style={{ marginTop: '14px', marginBottom: '8px', color: '#aaa' }}>Structure attendue par l'importeur fourni</h5>
+                <p>À titre informatif (un exemple, non un standard) :</p>
                 <ul>
                     <li><strong>Feuille Formulaire :</strong> Configuration des groupes (nom, type, durées)</li>
                     <li><strong>Feuille PF :</strong> Diagramme et matrice de dégagement pour chaque plan de feux</li>
-                    <li><strong>Feuille Trafic :</strong> Données de trafic par groupe</li>
+                    <li><strong>Feuille Trafic :</strong> Données de trafic par groupe — colonne I = coefficient de voie (Coef) ; colonne J = premier jeu de données, nommé par la cellule J3 ; colonne O = second jeu, nommé par la cellule O3</li>
                 </ul>
-                <p><strong>Import des données trafic :</strong></p>
-                <ul>
-                    <li>Colonne I : Coefficient de voie (Coef)</li>
-                    <li>Colonne J : Premier jeu de données trafic, nommé par la cellule J3</li>
-                    <li>Colonne O : Second jeu de données trafic, nommé par la cellule O3</li>
-                </ul>
-                <p><strong>Synchronisation automatique :</strong> Quand vous changez d'onglet PF (PF1, PF2...), le jeu de données trafic "Associé à" se synchronise automatiquement avec l'onglet actif si un dataset du même nom existe.</p>
+                <p><strong>Synchronisation automatique :</strong> Quand vous changez d'onglet PF (PF1, PF2...), le jeu de données trafic « Associé à » se synchronise automatiquement avec l'onglet actif si un dataset du même nom existe.</p>
                 <p><strong>Groupes :</strong> Tous les groupes de 1 au nombre total (cellule H2) sont importés, y compris les groupes vides (sans nom ni configuration).</p>
             </section>
 

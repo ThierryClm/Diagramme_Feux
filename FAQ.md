@@ -38,6 +38,14 @@ L'application étant **libre et open source**, l'ajout d'un parseur pour un form
 
 **En pratique, en attendant qu'un parseur existe :** l'approche pragmatique consiste à démarrer par **un ou deux carrefours pilotes** que vous ressaisissez intégralement. Cela vous permet de valider concrètement l'apport de l'outil sur votre activité avant d'engager une migration plus large. Une fois la valeur ajoutée confirmée, vous pouvez soit demander le développement d'un parseur (issue GitHub avec un échantillon de votre format), soit organiser la ressaisie progressive du parc.
 
+### Puis-je importer mes carrefours depuis un fichier Excel ?
+
+Oui, mais avec une réserve importante : l'import Excel intégré à TraCflux est conçu pour **une structure de fichier précise** — celle utilisée historiquement par l'auteur pour ses propres projets. Il n'est pas exploitable tel quel sur des fichiers Excel issus d'autres pratiques, chaque organisation ayant ses propres conventions de feuilles, de colonnes et de nommage.
+
+Un **import sur mesure reste possible**, à condition de réaliser un **développement spécifique** fondé sur la connaissance exacte de la structure du fichier source. Cette piste devient pertinente lors d'un **basculement de parc** vers TraCflux, lorsque le volume de projets à reprendre rend la ressaisie manuelle peu réaliste.
+
+Si vous êtes dans cette situation, le canal recommandé est le dépôt GitHub du projet : ouvrez une [issue](https://github.com/ThierryClm/Diagramme_Feux/issues) décrivant le besoin (volume de projets concernés, exemple de fichier anonymisé, format de vos feuilles) afin qu'un développement *open source* puisse être discuté ou contribué. Le format `.json` natif de TraCflux sert de structure cible — la valeur ajoutée d'un parseur consiste uniquement à bien lire votre format Excel source.
+
 ### À qui s'adresse cet outil ?
 
 Aux **traficiens, ingénieurs trafic, bureaux d'études et techniciens de collectivité** qui conçoivent ou analysent des plans de feux tricolores. Aussi utile aux étudiants en génie urbain ou exploitation routière qui apprennent à dimensionner des diagrammes de feux.
