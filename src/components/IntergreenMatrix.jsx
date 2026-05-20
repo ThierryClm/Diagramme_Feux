@@ -68,7 +68,8 @@ const MatrixInput = ({ value, onChange, className }) => {
     );
 };
 
-const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover, showGroupNames = true, locked = false, onDetach, hoveredGroupId }) => {
+const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength, actionData, activePFId, pfTabs, biCarrefourSeparator, onCellHover, showGroupNames = true, locked = false, onDetach, hoveredGroupId, tooltipsEnabled = true }) => {
+    const tip = (text) => tooltipsEnabled ? text : undefined;
 
     // Bi-carrefour separator index
     const separatorIdx = biCarrefourSeparator != null ? groups.findIndex(g => g.id === biCarrefourSeparator) : -1;
@@ -429,6 +430,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
     const tooltipTimerRef = useRef(null);
     const scheduleCellTooltip = (e, fromIdx, toIdx) => {
         if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
+        if (!tooltipsEnabled) return;   // section Matrice desactivee
         const lines = buildCellTooltipLines(fromIdx, toIdx);
         if (lines.length === 0) return;
         const x = e.clientX;
@@ -459,7 +461,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                 {locked && (
                     <span
                         style={{ color: '#aaa', fontWeight: 'normal', fontSize: '0.85em' }}
-                        title="La matrice est en lecture seule. Décochez « Verrouiller les matrices » dans le menu Diagramme pour la modifier."
+                        title={tip("La matrice est en lecture seule. Décochez « Verrouiller les matrices » dans le menu Diagramme pour la modifier.")}
                     >
                         (Verrouillé)
                     </span>
@@ -468,7 +470,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                     <button
                         className="detach-btn"
                         onClick={onDetach}
-                        title="Détacher dans une fenêtre séparée"
+                        title={tip("Détacher dans une fenêtre séparée")}
                     >
                         Détacher
                     </button>
@@ -480,7 +482,7 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
                     <div className="empty-state-overlay">
                         <EmptyState
                             icon="matrix"
-                            title="Matrice non renseignée"
+                            title={tip("Matrice non renseignée")}
                             hint="Saisissez les temps interverts (en secondes) entre les groupes de feux antagonistes. Un clic dans une cellule suffit."
                         />
                     </div>

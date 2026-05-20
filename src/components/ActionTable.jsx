@@ -78,7 +78,8 @@ const isRowFilled = (row) => {
         row.actGf1 || row.actGf1Gf2 || row.actGf1Gf3 || row.actGf1Gf4;
 };
 
-const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel, showFloatingConditions, setShowFloatingConditions, showFloatingVariables, setShowFloatingVariables, showWrapFlash = true, showDescription = true, actionColWidths = { description: 160, micro: 420 }, setActionColWidths = () => {} }) => {
+const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel, showFloatingConditions, setShowFloatingConditions, showFloatingVariables, setShowFloatingVariables, showWrapFlash = true, showDescription = true, actionColWidths = { description: 160, micro: 420 }, setActionColWidths = () => {}, tooltipsEnabled = true }) => {
+    const tip = (text) => tooltipsEnabled ? text : undefined;
     const askConfirm = useConfirm();
 
     // Colonnes redimensionnables (poignee a droite de l'en-tete). Bornes :
@@ -402,13 +403,13 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         <table className="action-table" style={{ '--col-desc-w': dispWidth('description') + 'px', '--col-micro-w': dispWidth('micro') + 'px', '--col-abrv-w': dispWidth('abrv') + 'px' }}>
             <thead>
                 <tr className="header-group">
-                    <th rowSpan="2" title="Groupe de feu / ligne de feu - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('gf', 'asc')}>GF ↕</th>
-                    <th rowSpan="2" title="Action - Cliquer pour trier (alphabétique)" className="sortable" onClick={() => handleSort('action', 'asc')}>Action ↕</th>
-                    {showDescription && <th rowSpan="2" className="col-resizable">Description<span className="col-resize-handle" title="Glisser pour ajuster · double-clic : largeur par défaut" onMouseDown={startResize('description')} onDoubleClick={resetCol('description')} /></th>}
-                    <th rowSpan="2" title="Début - Cliquer pour trier (croissant)" className="sortable" onClick={() => handleSort('deb', 'asc')}>Déb ↕</th>
+                    <th rowSpan="2" title={tip("Groupe de feu / ligne de feu - Cliquer pour trier (croissant)")} className="sortable" onClick={() => handleSort('gf', 'asc')}>GF ↕</th>
+                    <th rowSpan="2" title={tip("Action - Cliquer pour trier (alphabétique)")} className="sortable" onClick={() => handleSort('action', 'asc')}>Action ↕</th>
+                    {showDescription && <th rowSpan="2" className="col-resizable">Description<span className="col-resize-handle" title={tip("Glisser pour ajuster · double-clic : largeur par défaut")} onMouseDown={startResize('description')} onDoubleClick={resetCol('description')} /></th>}
+                    <th rowSpan="2" title={tip("Début - Cliquer pour trier (croissant)")} className="sortable" onClick={() => handleSort('deb', 'asc')}>Déb ↕</th>
                     <th rowSpan="2">Fin</th>
-                    <th rowSpan="2" className="col-resizable">Abrv<span className="col-resize-handle" title="Glisser pour ajuster · double-clic : largeur par défaut" onMouseDown={startResize('abrv')} onDoubleClick={resetCol('abrv')} /></th>
-                    <th rowSpan="2" className="col-resizable">Action_Micro<span className="col-resize-handle" title="Glisser pour ajuster · double-clic : largeur par défaut" onMouseDown={startResize('micro')} onDoubleClick={resetCol('micro')} /></th>
+                    <th rowSpan="2" className="col-resizable">Abrv<span className="col-resize-handle" title={tip("Glisser pour ajuster · double-clic : largeur par défaut")} onMouseDown={startResize('abrv')} onDoubleClick={resetCol('abrv')} /></th>
+                    <th rowSpan="2" className="col-resizable">Action_Micro<span className="col-resize-handle" title={tip("Glisser pour ajuster · double-clic : largeur par défaut")} onMouseDown={startResize('micro')} onDoubleClick={resetCol('micro')} /></th>
                     <th colSpan="2" className="header-grouped">Plage</th>
                     <th colSpan="4" className="header-grouped">Action GF</th>
                 </tr>
@@ -428,10 +429,10 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                         <td><div className="micro-highlight-container"><div className="micro-highlight-backdrop" aria-hidden="true">{(row.micro || '').split(/(\b\w*(?:DA|TPPh|AVert|TMAB)\w*\b|[{}\[\]()]|\b(?:et|ou)\b)/g).map((part, i) => /DA|TPPh|AVert|TMAB/.test(part) ? <span key={i} className="micro-keyword">{part}</span> : /^[{}\[\]()]$/.test(part) || /^(et|ou)$/.test(part) ? <span key={i} className="micro-bold">{part}</span> : part)}</div><textarea ref={(el) => { textareaRefs.current[row.id] = el; autoResizeTextarea(el); }} className="input-micro micro-has-backdrop" value={row.micro || ''} onChange={(e) => { updateActionRow(row.id, 'micro', e.target.value); autoResizeTextarea(e.target); }} rows={1} /></div></td>
                         <td><input type="number" min="1" max={maxGroup} className={`input-small ${PLAGE_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.plage1} onChange={(e) => handleGroupFieldChange(row.id, 'plage1', e.target.value)} disabled={PLAGE_DISABLED_ACTIONS.includes(row.action)} /></td>
                         <td><input type="number" min="1" max={maxGroup} className={`input-small ${PLAGE_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.plage2} onChange={(e) => handleGroupFieldChange(row.id, 'plage2', e.target.value)} disabled={PLAGE_DISABLED_ACTIONS.includes(row.action)} /></td>
-                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${GF_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.actGf1} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action)} title={row.action === 'Fermeture anticipée' && row.actGf1 ? `Glissement sur GF ${row.actGf1}` : undefined} /></td>
-                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`} value={row.actGf1Gf2} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf2', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)} title={row.action === 'Fermeture anticipée' && row.actGf1Gf2 ? `Glissement sur GF ${row.actGf1Gf2}` : undefined} /></td>
-                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`} value={row.actGf1Gf3} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf3', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)} title={row.action === 'Fermeture anticipée' && row.actGf1Gf3 ? `Glissement sur GF ${row.actGf1Gf3}` : undefined} /></td>
-                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`} value={row.actGf1Gf4} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf4', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)} title={row.action === 'Fermeture anticipée' && row.actGf1Gf4 ? `Glissement sur GF ${row.actGf1Gf4}` : undefined} /></td>
+                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${GF_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.actGf1} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action)} title={tip(row.action === 'Fermeture anticipée' && row.actGf1 ? `Glissement sur GF ${row.actGf1}` : undefined)} /></td>
+                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`} value={row.actGf1Gf2} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf2', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)} title={tip(row.action === 'Fermeture anticipée' && row.actGf1Gf2 ? `Glissement sur GF ${row.actGf1Gf2}` : undefined)} /></td>
+                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`} value={row.actGf1Gf3} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf3', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)} title={tip(row.action === 'Fermeture anticipée' && row.actGf1Gf3 ? `Glissement sur GF ${row.actGf1Gf3}` : undefined)} /></td>
+                        <td><input type="number" min="1" max={maxGroup} className={`input-small ${(GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)) ? 'input-disabled' : ''}`} value={row.actGf1Gf4} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1Gf4', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action) || GF234_DISABLED_ACTIONS.includes(row.action)} title={tip(row.action === 'Fermeture anticipée' && row.actGf1Gf4 ? `Glissement sur GF ${row.actGf1Gf4}` : undefined)} /></td>
                     </tr>
                 ))}
             </tbody>
@@ -474,7 +475,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                 <>
                     <div className="action-table-title-row">
                         <h3 className="action-table-title">Conditions de micro-régulation</h3>
-                        <button className="detach-btn" onClick={handleDetach} title="Ouvrir dans une fenêtre séparée">Détacher</button>
+                        <button className="detach-btn" onClick={handleDetach} title={tip("Ouvrir dans une fenêtre séparée")}>Détacher</button>
                     </div>
                     {renderTableContent()}
                 </>
@@ -485,7 +486,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                 <div
                     className={`action-table-separator-horizontal ${isResizing ? 'resizing' : ''}`}
                     onMouseDown={handleSeparatorMouseDown}
-                    title="Glissez pour redimensionner la section Variables micro"
+                    title={tip("Glissez pour redimensionner la section Variables micro")}
                 />
             )}
 
@@ -498,7 +499,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                 }}>
                     <div className="variables-micro-header">
                         <h3>Variables micro</h3>
-                        <button className="detach-btn" onClick={handleDetachVariables} title="Ouvrir dans une fenêtre séparée">Détacher</button>
+                        <button className="detach-btn" onClick={handleDetachVariables} title={tip("Ouvrir dans une fenêtre séparée")}>Détacher</button>
                     </div>
                     <div className="variables-micro-scroll" style={{ overflow: variablesHeight < 50 && !showFloatingConditions ? 'hidden' : 'auto' }}>
                         {renderVariablesMicroFields(visibleMicroFields)}
@@ -511,7 +512,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                 <div
                     className={`action-table-panel-resize ${isResizingPanel ? 'resizing' : ''}`}
                     onMouseDown={handlePanelResizeStart}
-                    title="Faites glisser pour redimensionner la zone Plan de feu"
+                    title={tip("Faites glisser pour redimensionner la zone Plan de feu")}
                 />
             )}
         </div>

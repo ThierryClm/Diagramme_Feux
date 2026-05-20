@@ -20,8 +20,10 @@ const TrafficTable = ({
     addCustomTrafficDataset,
     actionData = [],
     simulationSelectedActions = [],
-    onDetach
+    onDetach,
+    tooltipsEnabled = true
 }) => {
+    const tip = (text) => tooltipsEnabled ? text : undefined;
     const showAlert = useAlert();
     const [showPasteDropdown, setShowPasteDropdown] = useState(false);
     const [showAllGroups, setShowAllGroups] = useState(false);
@@ -282,7 +284,7 @@ const TrafficTable = ({
                         <button
                             className="detach-btn"
                             onClick={onDetach}
-                            title="Détacher dans une fenêtre séparée"
+                            title={tip("Détacher dans une fenêtre séparée")}
                         >
                             Détacher
                         </button>
@@ -319,7 +321,7 @@ const TrafficTable = ({
                 <div className="empty-state-overlay" style={{ alignItems: 'flex-start', paddingTop: '120px' }}>
                     <EmptyState
                         icon="traffic"
-                        title="Données trafic non renseignées"
+                        title={tip("Données trafic non renseignées")}
                         hint={`Saisissez les volumes de trafic (véh/h) dans la colonne "${activeTrafficDataset}" pour les groupes véhicules. Les coefficients de voie permettent d'affiner le calcul de capacité.`}
                     />
                 </div>
@@ -329,7 +331,7 @@ const TrafficTable = ({
                     <tr>
                         <th className="col-grp">GF</th>
                         <th className="col-nom">Nom</th>
-                        <th title="Coefficient de voie correspondant aux courants de circulation du groupe de feu">Coef</th>
+                        <th title={tip("Coefficient de voie correspondant aux courants de circulation du groupe de feu")}>Coef</th>
                         <th className="col-trafic-header">
                             {isDatasetEmpty && otherDatasetsWithData.length > 0 ? (
                                 <div className="paste-button-container">
@@ -357,10 +359,10 @@ const TrafficTable = ({
                                 'Trafic'
                             )}
                         </th>
-                        <th title="Durée de vert nécessaire pour passer le trafic">V.<br/>Utile</th>
-                        <th title="Capacité utilisée pour passer le trafic affecté au groupe de feu">Cap.<br/>U</th>
-                        <th title="Temps d'attente théorique moyen en pied de feu hors saturation">Retard</th>
-                        <th title="File d'attente théorique maximale hors saturation">File<br/>d'attente</th>
+                        <th title={tip("Durée de vert nécessaire pour passer le trafic")}>V.<br/>Utile</th>
+                        <th title={tip("Capacité utilisée pour passer le trafic affecté au groupe de feu")}>Cap.<br/>U</th>
+                        <th title={tip("Temps d'attente théorique moyen en pied de feu hors saturation")}>Retard</th>
+                        <th title={tip("File d'attente théorique maximale hors saturation")}>File<br/>d'attente</th>
                     </tr>
                 </thead>
                 <tbody>

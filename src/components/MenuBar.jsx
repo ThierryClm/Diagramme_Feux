@@ -328,6 +328,19 @@ const MenuBar = ({
                         { label: 'Image du carrefour', action: 'toggleFloatingImage', checked: layoutOptions.showFloatingImage, disabled: !layoutOptions.hasIntersectionImage, keepSubmenuOpen: true }
                     ]
                 },
+                {
+                    label: 'Infobulles...',
+                    type: 'submenu',
+                    submenuId: 'tooltips',
+                    submenu: [
+                        { label: 'Page principale',                 action: 'toggleTooltipsMain',    checked: !!layoutOptions.tooltipPrefs?.main,    keepSubmenuOpen: true },
+                        { label: 'Configuration',                   action: 'toggleTooltipsConfig',  checked: !!layoutOptions.tooltipPrefs?.config,  keepSubmenuOpen: true },
+                        { label: 'Diagramme',                       action: 'toggleTooltipsDiagram', checked: !!layoutOptions.tooltipPrefs?.diagram, keepSubmenuOpen: true },
+                        { label: 'Matrice',                         action: 'toggleTooltipsMatrix',  checked: !!layoutOptions.tooltipPrefs?.matrix,  keepSubmenuOpen: true },
+                        { label: 'Trafic',                          action: 'toggleTooltipsTraffic', checked: !!layoutOptions.tooltipPrefs?.traffic, keepSubmenuOpen: true },
+                        { label: 'Conditions de micro-régulation',  action: 'toggleTooltipsMicro',   checked: !!layoutOptions.tooltipPrefs?.micro,   keepSubmenuOpen: true }
+                    ]
+                },
                 { type: 'separator' },
                 {
                     label: 'Dilatation du diagramme',

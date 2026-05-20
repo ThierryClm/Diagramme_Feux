@@ -6,7 +6,8 @@ import EmptyState from './EmptyState';
 import RemarquesEditor from './RemarquesEditor';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, showWrapFlash = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts, remarquesDetached = false }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, showWrapFlash = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts, remarquesDetached = false, tooltipsEnabled = true }) => {
+    const tip = (text) => tooltipsEnabled ? text : undefined;
     const containerRef = useRef(null);
     // Whether the mouse is currently over the diagram container (not the action table)
     // Used to suppress the action tooltip when hovering actions via the ActionTable rows
@@ -1050,7 +1051,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                         setCycleLengthInput(cycleLength.toString());
                                     }
                                 }}
-                                title="Durée du cycle (min 10s)"
+                                title={tip("Durée du cycle (min 10s)")}
                             />
                             <span>s</span>
                         </label>
@@ -1254,7 +1255,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                             <div className="empty-state-overlay">
                                 <EmptyState
                                     icon="diagram"
-                                    title="Diagramme vide"
+                                    title={tip("Diagramme vide")}
                                     hint={hint}
                                 />
                             </div>
@@ -1297,7 +1298,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                     width: `${rp.duration * pixelsPerSecond}px`,
                                     height: `${RULER_HEIGHT + 1 + (groups.length * ROW_TOTAL_HEIGHT) + 30}px`
                                 }}
-                                title={`Point de repos — ${rp.duration}s à t=${rp.originalDeb}s`}
+                                title={tip(`Point de repos — ${rp.duration}s à t=${rp.originalDeb}s`)}
                             >
                                 <span className="rest-point-label">Repos</span>
                             </div>

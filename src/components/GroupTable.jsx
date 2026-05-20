@@ -4,7 +4,8 @@ import NumericInput from './NumericInput';
 import EmptyState from './EmptyState';
 import './GroupTable.css';
 
-const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = true, onDetach, hoveredGroupId }) => {
+const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = true, onDetach, hoveredGroupId, tooltipsEnabled = true }) => {
+    const tip = (text) => tooltipsEnabled ? text : undefined;
 
     const handleStartChange = (id, value) => {
         updateGroupParams(id, { offset: parseInt(value) || 0 });
@@ -46,7 +47,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                     <button
                         className="detach-btn"
                         onClick={onDetach}
-                        title="Détacher dans une fenêtre séparée"
+                        title={tip("Détacher dans une fenêtre séparée")}
                     >
                         Détacher
                     </button>
@@ -57,7 +58,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                 <div className="empty-state-overlay">
                     <EmptyState
                         icon="list"
-                        title="Formulaire non renseigné"
+                        title={tip("Formulaire non renseigné")}
                         hint="Saisissez les noms des groupes de feu ainsi que les types (Véhicules, Piéton, Cycliste, etc.) dans la colonne « Type »."
                     />
                 </div>
@@ -115,7 +116,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                                         className="input-courant"
                                         value={g.courant || ''}
                                         onChange={(e) => updateGroupParams(g.id, { courant: e.target.value })}
-                                        title={
+                                        title={tip(
                                             g.courant === 'TD' ? 'Flèche tout droit' :
                                             g.courant === 'TàD' ? 'Flèche tourne à droite' :
                                             g.courant === 'TàG' ? 'Flèche tourne à gauche' :
@@ -124,7 +125,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                                             g.courant === 'TD_G_D' ? 'Flèche tout droit - tourne à gauche et à droite' :
                                             g.courant === 'Piéton' ? 'Flèche 2 sens' :
                                             g.courant === 'Cycle' ? 'Flèche 2 sens' : ''
-                                        }
+                                        )}
                                     >
                                         <option value=""></option>
                                         <option value="TD">TD</option>
@@ -147,7 +148,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                                         min={0}
                                         max={cycleLength}
                                         allowEmpty={false}
-                                        title="Durée minimale du vert"
+                                        title={tip("Durée minimale du vert")}
                                     />
                                 </td>
                                 {/* Yellow Duration */}
@@ -160,7 +161,7 @@ const GroupTable = ({ groups, updateGroupParams, cycleLength, showGroupNames = t
                                         min={0}
                                         max={cycleLength}
                                         allowEmpty={false}
-                                        title="Durée de l'orange / dégagement piéton"
+                                        title={tip("Durée de l'orange / dégagement piéton")}
                                     />
                                 </td>
                             </tr>

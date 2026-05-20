@@ -270,6 +270,28 @@ function App() {
         const saved = localStorage.getItem('showWrapFlash');
         return saved === null ? true : saved === 'true';
     });
+    // Preferences "Infobulles..." (Mise en page). 6 sections, toutes
+    // cochees par defaut. Persiste au niveau de l'application (localStorage).
+    const [tooltipPrefs, setTooltipPrefsState] = useState(() => {
+        try {
+            const raw = localStorage.getItem('tracflux.tooltips');
+            const def = { main: true, config: true, diagram: true, matrix: true, traffic: true, micro: true };
+            if (!raw) return def;
+            const parsed = JSON.parse(raw);
+            return { ...def, ...parsed };
+        } catch {
+            return { main: true, config: true, diagram: true, matrix: true, traffic: true, micro: true };
+        }
+    });
+    const setTooltipPref = useCallback((key) => {
+        setTooltipPrefsState(prev => {
+            const next = { ...prev, [key]: !prev[key] };
+            try { localStorage.setItem('tracflux.tooltips', JSON.stringify(next)); } catch {}
+            return next;
+        });
+    }, []);
+    // Helper local : utilise tooltipPrefs.main pour les title= de App.jsx.
+    const tip = (text) => tooltipPrefs.main ? text : undefined;
     const [showSaveReminder, setShowSaveReminder] = useState(() => {
         const saved = localStorage.getItem('showSaveReminder');
         return saved === null ? true : saved === 'true';
@@ -1143,6 +1165,12 @@ function App() {
                 localStorage.setItem('showWrapFlash', String(newVal));
                 break;
             }
+            case 'toggleTooltipsMain':    setTooltipPref('main');    break;
+            case 'toggleTooltipsConfig':  setTooltipPref('config');  break;
+            case 'toggleTooltipsDiagram': setTooltipPref('diagram'); break;
+            case 'toggleTooltipsMatrix':  setTooltipPref('matrix');  break;
+            case 'toggleTooltipsTraffic': setTooltipPref('traffic'); break;
+            case 'toggleTooltipsMicro':   setTooltipPref('micro');   break;
             case 'toggleSaveReminder': {
                 const newVal = !showSaveReminder;
                 setShowSaveReminder(newVal);
@@ -1805,6 +1833,7 @@ draw();
                     showGroupNames={showGroupNamesMatrix}
                     locked={matricesLocked}
                     hoveredGroupId={hoveredArrowGroupId}
+                tooltipsEnabled={tooltipPrefs.matrix}
                 />
             </div>
         );
@@ -1824,6 +1853,7 @@ draw();
                     hoveredGroupId={hoveredArrowGroupId}
                     startDrag={startDrag}
                     endDrag={endDrag}
+                tooltipsEnabled={tooltipPrefs.config}
                 />
             </div>
         );
@@ -1864,6 +1894,7 @@ draw();
                     addCustomTrafficDataset={addCustomTrafficDataset}
                     actionData={actionData}
                     simulationSelectedActions={simulationSelectedActions}
+                tooltipsEnabled={tooltipPrefs.traffic}
                 />
             </div>
         );
@@ -1899,7 +1930,7 @@ draw();
                     hasActiveProject={hasActiveProject}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -1940,12 +1971,12 @@ draw();
                         value={projectName || ''}
                         onChange={(e) => setProjectName(e.target.value)}
                         placeholder="Nom du projet"
-                        title="Nom du projet (utilisé pour la sauvegarde)"
+                        title={tip("Nom du projet (utilisé pour la sauvegarde)")}
                     />
                     {isDirty && (
                         <span
                             className="unsaved-indicator"
-                            title="Modifications non sauvegardées"
+                            title={tip("Modifications non sauvegardées")}
                             aria-label="Modifications non sauvegardées"
                         >*</span>
                     )}
@@ -1992,7 +2023,7 @@ draw();
                         className="undo-btn"
                         onClick={() => { if (undo() !== false) toast.info('Action annulée'); }}
                         disabled={!canUndo}
-                        title="Annuler (Ctrl+Z)"
+                        title={tip("Annuler (Ctrl+Z)")}
                     >
                         ↶ Annuler
                     </button>
@@ -2000,14 +2031,14 @@ draw();
                         className="undo-btn"
                         onClick={() => { if (redo() !== false) toast.info('Action rétablie'); }}
                         disabled={!canRedo}
-                        title="Refaire (Ctrl+Y)"
+                        title={tip("Refaire (Ctrl+Y)")}
                     >
                         ↷ Refaire
                     </button>
                     <button
                         className={`toggle-btn ${showDependencies ? 'active' : ''}`}
                         onClick={() => setShowDependencies(!showDependencies)}
-                        title="Afficher/masquer les temps de dégagement"
+                        title={tip("Afficher/masquer les temps de dégagement")}
                     >
                         ⟷ Dépendance
                     </button>
@@ -2022,7 +2053,7 @@ draw();
                                 setDependencyGap(Math.max(1, Math.min(99, val)));
                             }}
                             className="input-dependency-gap"
-                            title="Écart maximum pour afficher les dépendances (secondes)"
+                            title={tip("Écart maximum pour afficher les dépendances (secondes)")}
                         />
                     )}
                 </div>
@@ -2048,7 +2079,7 @@ draw();
                                     setPFColor(activePFId, '#4CAF50');
                                 }
                             }}
-                            title="Clic: valider / Ctrl+clic: invalider"
+                            title={tip("Clic: valider / Ctrl+clic: invalider")}
                         >
                             {pfTabs.find(pf => pf.id === activePFId)?.color === '#e74c3c' ? 'Invalidé'
                             : pfTabs.find(pf => pf.id === activePFId)?.color === '#4CAF50' ? 'Validé'
@@ -2058,14 +2089,14 @@ draw();
                 </div>
 
                 <div className="user-info">
-                    <span className="user-name" title={`Permissions: ${PERMISSIONS[currentUser?.permissions]?.label || 'Inconnues'}`}>
+                    <span className="user-name" title={tip(`Permissions: ${PERMISSIONS[currentUser?.permissions]?.label || 'Inconnues'}`)}>
                         {currentUser?.username}
                         {currentUser?.isAdmin && ' (Admin)'}
                     </span>
                     <button
                         className="logout-btn"
                         onClick={logout}
-                        title="Se déconnecter"
+                        title={tip("Se déconnecter")}
                     >
                         Déconnexion
                     </button>
@@ -2106,7 +2137,7 @@ draw();
                                             <span className="phasage-group-name">{g.name || '-'}</span>
                                             <span className="phasage-group-courant">{g.courant || '-'}</span>
                                             {!hasArrow && (
-                                                <span className="phasage-no-arrow-hint" title="Aucune flèche définie pour ce groupe">∅</span>
+                                                <span className="phasage-no-arrow-hint" title={tip("Aucune flèche définie pour ce groupe")}>∅</span>
                                             )}
                                         </label>
                                     );
@@ -2167,7 +2198,7 @@ draw();
                                 >
                                     Configuration
                                     {groups.length > 0 && groups.every(g => !g.type || g.type === '') && (
-                                        <span className="tab-warning-icon" title="Formulaire non renseigné" role="img" aria-label="Formulaire non renseigné"> ⚠</span>
+                                        <span className="tab-warning-icon" title={tip("Formulaire non renseigné")} role="img" aria-label="Formulaire non renseigné"> ⚠</span>
                                     )}
                                 </button>
                                 <button
@@ -2224,6 +2255,7 @@ draw();
                                         hoveredGroupId={hoveredArrowGroupId}
                                         startDrag={startDrag}
                                         endDrag={endDrag}
+                                    tooltipsEnabled={tooltipPrefs.config}
                                     />
                                     </div>
                                     <div style={{ marginTop: '2rem' }} onMouseEnter={() => { helpZoneRef.current = 'matrice'; }}>
@@ -2241,6 +2273,7 @@ draw();
                                             locked={matricesLocked}
                                             onDetach={() => setShowFloatingMatrix(v => !v)}
                                             hoveredGroupId={hoveredArrowGroupId}
+                                        tooltipsEnabled={tooltipPrefs.matrix}
                                         />
                                     </div>
                                 </>
@@ -2262,6 +2295,7 @@ draw();
                                     locked={matricesLocked}
                                     onDetach={() => setShowFloatingMatrix(v => !v)}
                                     hoveredGroupId={hoveredArrowGroupId}
+                                tooltipsEnabled={tooltipPrefs.matrix}
                                 />
                                 </div>
                             )}
@@ -2286,6 +2320,7 @@ draw();
                                     actionData={actionData}
                                     simulationSelectedActions={simulationSelectedActions}
                                     onDetach={() => setShowFloatingTraffic(v => !v)}
+                                tooltipsEnabled={tooltipPrefs.traffic}
                                 />
                                 </div>
                             )}
@@ -2326,19 +2361,19 @@ draw();
                                     {recentOpenDirs.length > 0 && (
                                         <div className="dir-row">
                                             <span className="dir-label">Ouvrir:</span>
-                                            <span className="dir-value" title={recentOpenDirs[0].name}>{recentOpenDirs[0].name}</span>
+                                            <span className="dir-value" title={tip(recentOpenDirs[0].name)}>{recentOpenDirs[0].name}</span>
                                         </div>
                                     )}
                                     {recentSaveDirs.length > 0 && (
                                         <div className="dir-row">
                                             <span className="dir-label">Enregistrer:</span>
-                                            <span className="dir-value" title={recentSaveDirs[0].name}>{recentSaveDirs[0].name}</span>
+                                            <span className="dir-value" title={tip(recentSaveDirs[0].name)}>{recentSaveDirs[0].name}</span>
                                         </div>
                                     )}
                                     {recentImportDirs.length > 0 && (
                                         <div className="dir-row">
                                             <span className="dir-label">Importer:</span>
-                                            <span className="dir-value" title={recentImportDirs[0].name}>{recentImportDirs[0].name}</span>
+                                            <span className="dir-value" title={tip(recentImportDirs[0].name)}>{recentImportDirs[0].name}</span>
                                         </div>
                                     )}
                                 </div>
@@ -2411,7 +2446,7 @@ draw();
                                     setSidebarWidth(395);
                                 }
                             }}
-                            title="Activer/désactiver le mode simulation"
+                            title={tip("Activer/désactiver le mode simulation")}
                         >
                             <span className="pf-tab-name">Simulation</span>
                         </div>
@@ -2425,7 +2460,7 @@ draw();
                                 }
                                 setPhasageBulleEnabled(!phasageBulleEnabled);
                             }}
-                            title="Afficher le phasage en bulles"
+                            title={tip("Afficher le phasage en bulles")}
                         >
                             <span className="pf-tab-name">Phasage bulle</span>
                         </div>
@@ -2491,6 +2526,7 @@ draw();
                                 showGroupNames={showGroupNamesDiagram}
                                 showMicroOnHover={showMicroOnHover}
                                 showWrapFlash={showWrapFlash}
+                            tooltipsEnabled={tooltipPrefs.diagram}
                             />
                         </div>
                     )}
@@ -2501,7 +2537,7 @@ draw();
                             className={`horizontal-resize-divider ${isResizingDiagram ? 'resizing' : ''}`}
                             onMouseDown={handleDiagramResizeStart}
                             onDoubleClick={resetDiagramHeight}
-                            title="Faites glisser pour redimensionner. Double-clic pour réinitialiser."
+                            title={tip("Faites glisser pour redimensionner. Double-clic pour réinitialiser.")}
                         >
                             <div className="horizontal-resize-handle"></div>
                         </div>
@@ -2645,6 +2681,7 @@ draw();
                                 showDescription={showActionDescription}
                                 actionColWidths={actionColWidths}
                                 setActionColWidths={setActionColWidths}
+                            tooltipsEnabled={tooltipPrefs.micro}
                             />
                         </div>
                     </div>
@@ -2653,7 +2690,7 @@ draw();
             </>)}
 
             {/* Modal Ouvrir */}
-            <Modal isOpen={openModal} onClose={() => setOpenModal(false)} title="Ouvrir un projet" overlayClassName="modal-menu-overlay">
+            <Modal isOpen={openModal} onClose={() => setOpenModal(false)} title={tip("Ouvrir un projet")} overlayClassName="modal-menu-overlay">
                 {getAllSaves().length > 0 ? (
                     <>
                         <div className="project-list-container">
@@ -2737,7 +2774,7 @@ draw();
             </Modal>
 
             {/* Modal Glisser */}
-            <Modal isOpen={slideModal} onClose={() => setSlideModal(false)} title="Glisser le diagramme" overlayClassName="modal-menu-overlay modal-compact-overlay">
+            <Modal isOpen={slideModal} onClose={() => setSlideModal(false)} title={tip("Glisser le diagramme")} overlayClassName="modal-menu-overlay modal-compact-overlay">
                 <div className="form-row">
                     <label>
                         Du groupe :
@@ -2745,7 +2782,7 @@ draw();
                             value={slideFromGroup}
                             onChange={(e) => { setSlideFromGroup(parseInt(e.target.value)); setSlideTouched(true); }}
                             style={{ marginLeft: '10px', padding: '5px' }}
-                            title="Premier groupe de la plage à décaler"
+                            title={tip("Premier groupe de la plage à décaler")}
                         >
                             {groups.map((g) => (
                                 <option key={g.id} value={g.id}>
@@ -2762,7 +2799,7 @@ draw();
                             value={slideToGroup}
                             onChange={(e) => { setSlideToGroup(parseInt(e.target.value)); setSlideTouched(true); }}
                             style={{ marginLeft: '10px', padding: '5px' }}
-                            title="Dernier groupe de la plage à décaler"
+                            title={tip("Dernier groupe de la plage à décaler")}
                         >
                             {groups.map((g) => (
                                 <option key={g.id} value={g.id}>
@@ -2779,7 +2816,7 @@ draw();
                             type="number"
                             value={slideValue}
                             onChange={(e) => { setSlideValue(parseInt(e.target.value) || 0); setSlideTouched(true); }}
-                            title="Positif : décale vers la droite / Négatif : décale vers la gauche"
+                            title={tip("Positif : décale vers la droite / Négatif : décale vers la gauche")}
                         />
                     </label>
                 </div>
@@ -2794,7 +2831,7 @@ draw();
             </Modal>
 
             {/* Modal Inserer */}
-            <Modal isOpen={insertModal} onClose={() => setInsertModal(false)} title="Insérer une plage" overlayClassName="modal-menu-overlay modal-compact-overlay">
+            <Modal isOpen={insertModal} onClose={() => setInsertModal(false)} title={tip("Insérer une plage")} overlayClassName="modal-menu-overlay modal-compact-overlay">
                 <div className="form-row">
                     <label>
                         À partir de la seconde :
@@ -2804,7 +2841,7 @@ draw();
                             max={cycleLength}
                             value={insertStart}
                             onChange={(e) => { setInsertStart(parseInt(e.target.value) || 0); setInsertTouched(true); }}
-                            title={`Les groupes après cette seconde seront décalés. Cycle: ${cycleLength}s`}
+                            title={tip(`Les groupes après cette seconde seront décalés. Cycle: ${cycleLength}s`)}
                         />
                     </label>
                 </div>
@@ -2816,7 +2853,7 @@ draw();
                             min="1"
                             value={insertDuration}
                             onChange={(e) => { setInsertDuration(parseInt(e.target.value) || 1); setInsertTouched(true); }}
-                            title={`Le cycle passera de ${cycleLength}s à ${cycleLength + insertDuration}s`}
+                            title={tip(`Le cycle passera de ${cycleLength}s à ${cycleLength + insertDuration}s`)}
                         />
                     </label>
                 </div>
@@ -2831,7 +2868,7 @@ draw();
             </Modal>
 
             {/* Modal Réduire */}
-            <Modal isOpen={reduceModal} onClose={() => setReduceModal(false)} title="Réduire une plage" overlayClassName="modal-menu-overlay modal-compact-overlay">
+            <Modal isOpen={reduceModal} onClose={() => setReduceModal(false)} title={tip("Réduire une plage")} overlayClassName="modal-menu-overlay modal-compact-overlay">
                 <div className="form-row">
                     <label>
                         À partir de la seconde :
@@ -2841,7 +2878,7 @@ draw();
                             max={cycleLength - 1}
                             value={reduceStart}
                             onChange={(e) => { setReduceStart(parseInt(e.target.value) || 0); setReduceTouched(true); }}
-                            title={`Les groupes après cette position seront décalés. Cycle: ${cycleLength}s`}
+                            title={tip(`Les groupes après cette position seront décalés. Cycle: ${cycleLength}s`)}
                         />
                     </label>
                 </div>
@@ -2854,7 +2891,7 @@ draw();
                             max={cycleLength - reduceStart}
                             value={reduceDuration}
                             onChange={(e) => { setReduceDuration(parseInt(e.target.value) || 1); setReduceTouched(true); }}
-                            title={`Le cycle passera de ${cycleLength}s à ${Math.max(1, cycleLength - reduceDuration)}s`}
+                            title={tip(`Le cycle passera de ${cycleLength}s à ${Math.max(1, cycleLength - reduceDuration)}s`)}
                         />
                     </label>
                 </div>
@@ -2869,7 +2906,7 @@ draw();
             </Modal>
 
             {/* Modal Options - Légende des actions */}
-            <Modal isOpen={optionsModal} onClose={() => setOptionsModal(false)} title="Options - Légende des actions">
+            <Modal isOpen={optionsModal} onClose={() => setOptionsModal(false)} title={tip("Options - Légende des actions")}>
                 <div className="legend-container">
                     <div className="legend-item">
                         <div className="legend-preview legend-adaptatif"></div>
@@ -2911,12 +2948,12 @@ draw();
             </Modal>
 
             {/* Modal Aide en ligne */}
-            <Modal isOpen={helpModal} onClose={() => setHelpModal(false)} title="Aide - TraCflux" className="modal-wide">
+            <Modal isOpen={helpModal} onClose={() => setHelpModal(false)} title={tip("Aide - TraCflux")} className="modal-wide">
                 <HelpContent initialAnchor={helpAnchor} />
             </Modal>
 
             {/* Modal À propos */}
-            <Modal isOpen={aboutModal} onClose={() => setAboutModal(false)} title={`À propos — ${APP_NAME}`}>
+            <Modal isOpen={aboutModal} onClose={() => setAboutModal(false)} title={tip(`À propos — ${APP_NAME}`)}>
                 <div style={{ padding: '10px 4px', textAlign: 'center', position: 'relative' }}>
                     <img
                         src="./logo.svg"
@@ -2971,7 +3008,7 @@ draw();
             </Modal>
 
             {/* Modal Rapport de diagnostic */}
-            <Modal isOpen={diagnosticModal} onClose={() => setDiagnosticModal(false)} title="Rapport de diagnostic" className="modal-wide">
+            <Modal isOpen={diagnosticModal} onClose={() => setDiagnosticModal(false)} title={tip("Rapport de diagnostic")} className="modal-wide">
                 {(() => {
                     // diagnosticRefresh is read here so the modal re-renders when the journal is cleared
                     void diagnosticRefresh;
@@ -3042,7 +3079,7 @@ draw();
                                 <button
                                     className="modal-btn modal-btn-secondary"
                                     disabled={journalCount === 0}
-                                    title={journalCount === 0 ? 'Aucune entrée à copier' : 'Copier uniquement le journal d\'erreurs'}
+                                    title={tip(journalCount === 0 ? 'Aucune entrée à copier' : 'Copier uniquement le journal d\'erreurs')}
                                     onClick={async () => {
                                         try {
                                             await navigator.clipboard.writeText(buildErrorJournal());
@@ -3057,7 +3094,7 @@ draw();
                                 <button
                                     className="modal-btn modal-btn-secondary"
                                     disabled={journalCount === 0}
-                                    title={journalCount === 0 ? 'Journal déjà vide' : 'Vider le journal — utile pour repartir propre avant de reproduire un bug'}
+                                    title={tip(journalCount === 0 ? 'Journal déjà vide' : 'Vider le journal — utile pour repartir propre avant de reproduire un bug')}
                                     onClick={() => {
                                         const n = journalCount;
                                         clearInterceptedEntries();
@@ -3091,7 +3128,7 @@ draw();
                                 </button>
                                 <button
                                     className="modal-btn modal-btn-primary"
-                                    title="Version structurée (JSON) — plus facile à parser ou analyser"
+                                    title={tip("Version structurée (JSON) — plus facile à parser ou analyser")}
                                     onClick={() => {
                                         const obj = buildDiagnosticJSON({
                                             intersectionName,
@@ -3118,7 +3155,7 @@ draw();
             </Modal>
 
             {/* Modal Importer CSV/Excel */}
-            <Modal isOpen={importModal} onClose={() => setImportModal(false)} title="Importer un fichier">
+            <Modal isOpen={importModal} onClose={() => setImportModal(false)} title={tip("Importer un fichier")}>
                 {importHintDir && (
                     <div style={{
                         backgroundColor: '#2a3a2a',
@@ -3266,7 +3303,7 @@ draw();
             </Modal>
 
             {/* Modal Importer HTM */}
-            <Modal isOpen={importHTMModal} onClose={() => setImportHTMModal(false)} title="Importer un fichier HTM">
+            <Modal isOpen={importHTMModal} onClose={() => setImportHTMModal(false)} title={tip("Importer un fichier HTM")}>
                 <div className="form-row">
                     <label>
                         Sélectionner un fichier HTM :
@@ -3347,7 +3384,7 @@ draw();
                                                     e.stopPropagation();
                                                     deleteGreenWave(gw.name);
                                                 }}
-                                                title="Supprimer"
+                                                title={tip("Supprimer")}
                                             >
                                                 ×
                                             </button>
@@ -3391,7 +3428,7 @@ draw();
             />
 
             {/* Modal Déplacer un groupe */}
-            <Modal isOpen={moveGroupModal} onClose={() => setMoveGroupModal(false)} title="Déplacer un groupe de feu" overlayClassName="modal-menu-overlay modal-compact-overlay">
+            <Modal isOpen={moveGroupModal} onClose={() => setMoveGroupModal(false)} title={tip("Déplacer un groupe de feu")} overlayClassName="modal-menu-overlay modal-compact-overlay">
                 <div className="form-row">
                     <label>
                         Groupe à déplacer :
@@ -3399,7 +3436,7 @@ draw();
                             value={groupToMove}
                             onChange={(e) => { setGroupToMove(e.target.value); setMoveGroupTouched(true); }}
                             style={{ marginLeft: '10px', padding: '5px' }}
-                            title="Sélectionnez le groupe à repositionner"
+                            title={tip("Sélectionnez le groupe à repositionner")}
                         >
                             {groups.map((g) => (
                                 <option key={g.id} value={g.id}>
@@ -3416,7 +3453,7 @@ draw();
                             value={moveAfterGroup}
                             onChange={(e) => { setMoveAfterGroup(e.target.value); setMoveGroupTouched(true); }}
                             style={{ marginLeft: '10px', padding: '5px' }}
-                            title="Met à jour la matrice, le diagramme et le tableau des actions"
+                            title={tip("Met à jour la matrice, le diagramme et le tableau des actions")}
                         >
                             <option value="0">Au début (première position)</option>
                             {groups
@@ -3447,7 +3484,7 @@ draw();
             </Modal>
 
             {/* Modal Bi-Carrefour */}
-            <Modal isOpen={biCarrefourModal} onClose={() => setBiCarrefourModal(false)} title="Intégrer un bi-Carrefour" overlayClassName="modal-menu-overlay modal-compact-overlay">
+            <Modal isOpen={biCarrefourModal} onClose={() => setBiCarrefourModal(false)} title={tip("Intégrer un bi-Carrefour")} overlayClassName="modal-menu-overlay modal-compact-overlay">
                 <div className="form-row">
                     <label>
                         Séparation après le groupe :
@@ -3455,7 +3492,7 @@ draw();
                             value={biCarrefourGroupId}
                             onChange={(e) => { setBiCarrefourGroupId(e.target.value); setBiCarrefourTouched(true); }}
                             style={{ marginLeft: '10px', padding: '5px' }}
-                            title="Une ligne de séparation sera affichée dans la matrice et le diagramme après ce groupe"
+                            title={tip("Une ligne de séparation sera affichée dans la matrice et le diagramme après ce groupe")}
                         >
                             {groups.slice(0, -1).map((g) => (
                                 <option key={g.id} value={g.id}>
@@ -3735,6 +3772,7 @@ draw();
                                                 setHoveredActionId={() => {}}
                                                 planName={pfTabs.find(pf => pf.id === activePFId)?.name || 'PF1'}
                                                 isPrintMode={true}
+                                            tooltipsEnabled={tooltipPrefs.diagram}
                                             />
                                         </div>
 
@@ -4236,6 +4274,7 @@ draw();
                                                         setHoveredActionId={() => {}}
                                                         planName={pf.name}
                                                         isPrintMode={true}
+                                                    tooltipsEnabled={tooltipPrefs.diagram}
                                                     />
                                                 </div>
                                             </div>
