@@ -111,46 +111,28 @@ Sub WriteLock(path)
   On Error GoTo 0
 End Sub
 
-' Ouvre l'URL dans Edge en mode app, fenetre dimensionnee a l'ecran.
+' Ouvre l'URL dans Edge en mode app, fenetre maximisee.
 '
-' POURQUOI --user-data-dir : Quand un processus Edge est deja en cours
-' (cas frequent : Edge en tache de fond ou autre fenetre ouverte), un
-' nouveau --app est cree par l'instance existante qui IGNORE les flags
-' de fenetre (--window-size, --start-maximized). Resultat : fenetre en
-' taille par defaut. Forcer un profil dedie -> Edge demarre un nouveau
-' PROCESSUS qui respecte les flags.
+' POURQUOI --user-data-dir : sans profil dedie, Edge reutilise un
+' processus existant (cas frequent : Edge en tache de fond) qui IGNORE
+' les flags de fenetre. Avec un profil isole, un NOUVEAU processus
+' demarre et --start-maximized est respecte.
+'
+' Pas de calcul de --window-size : la resolution WMI est physique, donc
+' fausse quand la mise a l'echelle Windows est >100 % (la fenetre sort
+' de l'ecran). Le maximize natif du systeme s'en charge correctement.
 Sub OpenWindow(targetUri)
-  Dim sz, profile
+  Dim profile
   If fso.FileExists(edge) Then
-    sz = ScreenSize()
     profile = dir & "\.edge-preview-profile"
     shell.Run """" & edge & """ --app=""" & targetUri & """" & _
               " --user-data-dir=""" & profile & """" & _
               " --no-first-run --no-default-browser-check" & _
-              " --window-position=0,0 --window-size=" & sz & _
               " --start-maximized", 1, False
   Else
     shell.Run """" & targetUri & """", 1, False
   End If
 End Sub
-
-' "largeur,hauteur" de l'ecran principal via WMI ; repli 1920,1080.
-Function ScreenSize()
-  Dim wmi, items, o, w, h
-  w = 0 : h = 0
-  On Error Resume Next
-  Set wmi = GetObject("winmgmts:\\.\root\cimv2")
-  Set items = wmi.ExecQuery("SELECT CurrentHorizontalResolution,CurrentVerticalResolution FROM Win32_VideoController")
-  For Each o In items
-    If Not IsNull(o.CurrentHorizontalResolution) And w = 0 Then
-      w = o.CurrentHorizontalResolution
-      h = o.CurrentVerticalResolution
-    End If
-  Next
-  On Error GoTo 0
-  If w = 0 Or h = 0 Then w = 1920 : h = 1080
-  ScreenSize = w & "," & h
-End Function
 
 ' Genere .loading-preview.gen.html a partir du gabarit.
 ' Bloc « Nouveautes » = commits REELLEMENT nouveaux depuis le dernier
