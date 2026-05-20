@@ -50,6 +50,16 @@ Si vous êtes dans cette situation, le canal recommandé est le dépôt GitHub d
 
 Aux **traficiens, ingénieurs trafic, bureaux d'études et techniciens de collectivité** qui conçoivent ou analysent des plans de feux tricolores. Aussi utile aux étudiants en génie urbain ou exploitation routière qui apprennent à dimensionner des diagrammes de feux.
 
+### L'application est-elle adaptée à mon niveau d'expertise ?
+
+Elle s'adresse à deux profils, qui y trouvent des bénéfices différents :
+
+- **Praticien expérimenté en régulation** — l'application joue le rôle d'**outil de vérification et d'aide à l'analyse** : la détection automatique des conflits, l'écart visuel des matrices entre plans de feux, l'identification des recouvrements et asymétries vous évitent des erreurs qu'aucun œil ne tient durablement sur un parc de plusieurs dizaines de carrefours. Vous gardez la main sur les choix de conception ; l'application sécurise leur cohérence.
+
+- **Profil moins aguerri ou usage ponctuel** — l'application joue le rôle de **support guidé** : la matrice et les champs sont documentés par infobulles, le diagramme rend visibles les enchaînements, et un projet exemple permet d'explorer un cas concret avant de saisir le vôtre. Vous progressez en construisant, sans avoir besoin de maîtriser toute la terminologie d'emblée.
+
+Dans les deux cas, la plus-value est la même : **rendre visible ce qu'un raisonnement mental ne tient plus à grande échelle** — conflits, écarts entre PF, ruptures de symétrie. C'est précisément là où l'erreur se loge le plus souvent.
+
 ### De quels modules est composée l'application ?
 
 L'application est une **solution organisée en deux modules complémentaires** :
@@ -62,6 +72,18 @@ Les deux modules partagent les mêmes données (stockage local, thèmes, paramè
 ### Que peut-on faire avec ?
 
 Définir des groupes de feux (VL, TC, Cycliste, Piéton), construire la matrice intervert, visualiser le diagramme temporel de chaque plan de feux, détecter automatiquement les conflits, simuler des actions (escamotage, ouverture anticipée, point de repos…), gérer plusieurs plans de feux par carrefour, calculer une onde verte, exporter en PDF/PNG/Excel.
+
+### Quels sont les pièges classiques que l'application aide à éviter ?
+
+Quelques situations que l'application **détecte ou rend visible immédiatement**, et qui passent souvent inaperçues à la lecture ou au calcul manuel :
+
+- **Intervert insuffisant masqué par un offset** — un délai de dégagement requis dans la matrice se retrouve plus court dans le diagramme à cause d'un offset ajusté ailleurs. La case bascule en fond rouge ; l'infobulle au survol donne la valeur réelle vs la valeur requise.
+- **Matrice asymétrique non détectée** — une valeur posée pour GF*x* → GF*y* sans contrepartie GF*y* → GF*x* (ou inversement). La case manquante est signalée en fond orange, et la liste des paires asymétriques s'affiche sous la matrice.
+- **Écart involontaire entre un PF et le plan de référence** — en passant de PF1 à un autre plan, une valeur de matrice modifiée par mégarde se voit aussitôt (texte rouge ou vert selon le sens de la variation, infobulle qui précise « Augmentée / Réduite de X s vs PF de base »).
+- **Recouvrement de verts** entre deux groupes conflictuels — impossible à voir d'un coup d'œil sur un diagramme dense ; l'application le repère et le décrit (« Conflit : les verts de GF*x* et GF*y* se recouvrent »).
+- **Conflit de seconde lucarne** avec le vert principal d'un autre groupe — la liste apparaît automatiquement sous la matrice.
+
+Ces vérifications ne remplacent pas le jugement du concepteur — elles libèrent du temps de raisonnement en éliminant les erreurs mécaniques, pour se concentrer sur les choix qui méritent réflexion.
 
 ### Quelles sont ses limites actuelles ?
 
@@ -123,6 +145,19 @@ En complément, l'écran d'accueil propose **« Découvrir avec un projet exempl
 Deux projets exemple anonymisés sont fournis. Au lancement, sur l'écran d'accueil, cliquez sur **« Découvrir avec un projet exemple »** (module Diagramme) ou **« Découvrir avec une onde verte exemple »** (module Onde verte) : l'exemple s'ouvre dans une **nouvelle fenêtre**, sans toucher à un éventuel travail en cours. Il est librement modifiable pour explorer, mais **non enregistrable** — pour démarrer votre propre projet, faites **Fichier → Nouveau projet**.
 
 Vous pouvez aussi télécharger les fichiers directement pour les ouvrir via **Fichier → Ouvrir** : [Carrefour_Exemple.json](public/Carrefour_Exemple.json) (carrefour) et [Onde verte_Exemple.json](public/Onde%20verte_Exemple.json) (onde verte).
+
+### Par où commencer sur un nouveau carrefour ?
+
+L'application est structurée pour suivre une démarche progressive — voici une séquence qui fonctionne bien :
+
+1. **Décrire les groupes de feux** dans le formulaire (onglet *Configuration*) : nom, type (véhicules, piéton, cycle, anticipation…), durée de vert minimale. Vous posez ainsi ce qui circule dans le carrefour.
+2. **Renseigner la matrice des temps interverts** : les temps de dégagement requis entre groupes conflictuels. Une matrice non symétrique ou des cases manquantes sont signalées (fond orange).
+3. **Construire le PF1**, le plan de feux de référence (fonctionnement nominal en heure creuse, par exemple) : ajustez offsets et durées de vert dans le diagramme. L'application contrôle en temps réel que les interverts sont respectés (fond rouge en cas de conflit).
+4. **Vérifier les conflits restants** : la liste sous la matrice indique les paires en violation. Au survol d'une case rouge, une infobulle décrit le problème (recouvrement de verts ou délai insuffisant).
+5. **Décliner les autres PF** (HPM, HPS, HC, HN, variantes priorité bus…) à partir de PF1 : les différences sont colorées (rouge = augmenté, vert = réduit) et explicitées par infobulle au survol — ce qui rend immédiatement visible ce qui change d'un plan à l'autre.
+6. **Affiner** : conditions de micro-régulation, données trafic, onde verte si plusieurs carrefours sont coordonnés.
+
+Vous pouvez à tout moment ouvrir le **projet exemple** depuis l'écran d'accueil pour comparer avec un carrefour déjà entièrement renseigné.
 
 ### Quels navigateurs et systèmes sont supportés ?
 
