@@ -1,6 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import EmptyState from './EmptyState';
 import { compareWithPF1 as compareWithPF1Pure, buildCellTooltipLines as buildCellTooltipLinesPure } from '../utils/matrixComparison';
+import {
+    getFlecheAnticipations as getFlecheAnticipationsPure,
+    hasOverlap as hasOverlapPure,
+    computeActualDelay as computeActualDelayPure,
+    isDelayInsufficient as isDelayInsufficientPure
+} from '../utils/matrixDelayConflict';
 import './IntergreenMatrix.css';
 import './NumericInput.css';
 
@@ -259,117 +265,14 @@ const IntergreenMatrix = ({ conflictMatrix, setMatrixValue, groups, cycleLength,
 
     const asymmetricPairs = getAsymmetricPairs();
 
-    // Get flèche d'anticipation actions - these override the green phase timing
-    const getFlecheAnticipations = () => {
-        if (!actionData) return {};
-        return actionData.filter(action =>
-            action.action === "Flèche d'anticipation" &&
-            action.gf !== '' &&
-            action.deb !== '' &&
-            action.fin !== ''
-        ).reduce((acc, action) => {
-            const gf = parseInt(action.gf);
-            if (!acc[gf]) {
-                acc[gf] = {
-                    deb: parseInt(action.deb),
-                    fin: parseInt(action.fin)
-                };
-            }
-            return acc;
-        }, {});
-    };
-
-    const flecheAnticipations = getFlecheAnticipations();
-
-    // Check if two groups have overlapping green phases
-    const hasOverlap = (fromIdx, toIdx) => {
-        const matrixVal = conflictMatrix[fromIdx][toIdx];
-        // Skip if value is empty (not defined), but consider 0 as valid
-        if (matrixVal === '' || matrixVal === undefined || matrixVal === null) return false;
-        if (!groups || !groups[fromIdx] || !groups[toIdx]) return false;
-
-        const groupA = groups[fromIdx];
-        const groupB = groups[toIdx];
-        const cycle = cycleLength || 100;
-
-        // Check for flèche d'anticipation - use those timings instead
-        const flecheA = flecheAnticipations[groupA.id];
-        const flecheB = flecheAnticipations[groupB.id];
-
-        const aStart = flecheA ? flecheA.deb % cycle : groupA.offset % cycle;
-        const aEnd = flecheA ? flecheA.fin % cycle : (groupA.offset + groupA.durations.green) % cycle;
-        const bStart = flecheB ? flecheB.deb % cycle : groupB.offset % cycle;
-        const bEnd = flecheB ? flecheB.fin % cycle : (groupB.offset + groupB.durations.green) % cycle;
-
-        // Check for overlap considering cyclic timeline
-        // Two intervals overlap if they share any common point
-        const aWraps = aEnd <= aStart; // A wraps around cycle
-        const bWraps = bEnd <= bStart; // B wraps around cycle
-
-        if (!aWraps && !bWraps) {
-            // Neither wraps: simple interval check
-            return aStart < bEnd && bStart < aEnd;
-        } else if (aWraps && !bWraps) {
-            // A wraps: A is [aStart, cycle) + [0, aEnd)
-            return bStart < aEnd || bEnd > aStart;
-        } else if (!aWraps && bWraps) {
-            // B wraps: B is [bStart, cycle) + [0, bEnd)
-            return aStart < bEnd || aEnd > bStart;
-        } else {
-            // Both wrap: they definitely overlap
-            return true;
-        }
-    };
-
-    // Check if matrix value exceeds actual delay between groups
-    const isDelayInsufficient = (fromIdx, toIdx) => {
-        const matrixVal = conflictMatrix[fromIdx][toIdx];
-        // Skip if value is empty (not defined), but consider 0 as valid
-        if (matrixVal === '' || matrixVal === undefined || matrixVal === null) return false;
-        if (!groups || !groups[fromIdx] || !groups[toIdx]) return false;
-
-        // First check for overlap - if groups overlap, it's definitely a conflict
-        if (hasOverlap(fromIdx, toIdx)) return true;
-
-        const fromGroup = groups[fromIdx];
-        const toGroup = groups[toIdx];
-        const cycle = cycleLength || 100;
-
-        // Check for flèche d'anticipation - use those timings instead
-        const flecheFrom = flecheAnticipations[fromGroup.id];
-        const flecheTo = flecheAnticipations[toGroup.id];
-
-        // End of fromGroup green phase (or flèche d'anticipation fin)
-        const fromEnd = flecheFrom
-            ? flecheFrom.fin % cycle
-            : (fromGroup.offset + fromGroup.durations.green) % cycle;
-        // Start of toGroup green phase (or flèche d'anticipation deb)
-        const toStart = flecheTo
-            ? flecheTo.deb % cycle
-            : toGroup.offset % cycle;
-
-        // Calculate actual delay
-        let actualDelay = toStart - fromEnd;
-        if (actualDelay < 0) actualDelay += cycle;
-
-        return matrixVal > actualDelay;
-    };
-
-    // Delai reel (s) entre fin vert GF[from] et debut vert GF[to], pour la
-    // description d'un conflit. Reprend la logique de isDelayInsufficient.
-    const computeActualDelay = (fromIdx, toIdx) => {
-        if (!groups || !groups[fromIdx] || !groups[toIdx]) return null;
-        const cycle = cycleLength || 100;
-        const fromGroup = groups[fromIdx];
-        const toGroup = groups[toIdx];
-        const flecheFrom = flecheAnticipations[fromGroup.id];
-        const flecheTo = flecheAnticipations[toGroup.id];
-        const fromEnd = flecheFrom ? flecheFrom.fin % cycle : (fromGroup.offset + fromGroup.durations.green) % cycle;
-        const toStart = flecheTo ? flecheTo.deb % cycle : toGroup.offset % cycle;
-        let d = toStart - fromEnd;
-        if (d < 0) d += cycle;
-        return d;
-    };
+    // Logique de détection des conflits (verbatim dans utils/matrixDelayConflict).
+    // On capture les dépendances dans un ctx partagé puis on referme via des
+    // closures pour conserver la signature (fromIdx, toIdx) aux points d'appel.
+    const flecheAnticipations = getFlecheAnticipationsPure(actionData);
+    const conflictCtx = { conflictMatrix, groups, cycleLength, flecheAnticipations };
+    const hasOverlap = (fromIdx, toIdx) => hasOverlapPure(fromIdx, toIdx, conflictCtx);
+    const computeActualDelay = (fromIdx, toIdx) => computeActualDelayPure(fromIdx, toIdx, conflictCtx);
+    const isDelayInsufficient = (fromIdx, toIdx) => isDelayInsufficientPure(fromIdx, toIdx, conflictCtx);
 
     // Lignes d'infobulle de cellule (logique pure dans utils/matrixComparison) :
     //  - écart vs PF1 (seulement quand on consulte un autre PF) ;
