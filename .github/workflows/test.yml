@@ -1,0 +1,33 @@
+name: Tests
+
+# Exécute la suite Vitest + le build Vite sur chaque push et chaque PR
+# vers master. Bloque les régressions silencieuses dans la logique métier
+# (matrice des interverts, conflits, micro-régulation, simulation, etc.).
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Vitest suite
+        run: npm test -- --run
+
+      - name: Production build (smoke check)
+        run: npm run build
