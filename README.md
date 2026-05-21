@@ -77,6 +77,17 @@ L'application s'ouvre à `http://localhost:3000`.
 | `npm run preview` | Aperçu local du build de production |
 | `npm test` | Lancer les tests (Vitest) |
 
+### Lanceurs preview Windows (optionnel)
+
+Deux scripts VBScript sont fournis pour ouvrir l'aperçu dans une fenêtre navigateur en **mode application** (sans barre d'adresse ni onglets), maximisée :
+
+- [`Lancer-preview.vbs`](Lancer-preview.vbs) — Microsoft Edge
+- [`Lancer-preview-chrome.vbs`](Lancer-preview-chrome.vbs) — Google Chrome
+
+Pour créer un raccourci sur le bureau : clic droit sur le fichier `.vbs` → **Envoyer vers** → **Bureau (créer un raccourci)**. Le double-clic construit l'app si nécessaire, démarre le serveur preview et ouvre la fenêtre. Le lancement est idempotent : un second double-clic réutilise la session existante au lieu d'en démarrer une nouvelle. Une page d'attente s'affiche pendant le build et liste les nouveautés depuis le dernier aperçu.
+
+Ces lanceurs sont spécifiques à Windows. Sur macOS et Linux, utiliser directement `npm run preview` en ligne de commande.
+
 ## Exemple
 
 Un projet d'exemple est fourni dans le dossier [`examples/`](examples/). Ouvrez l'application, puis utilisez **Fichier → Ouvrir un projet** et sélectionnez `examples/Carrefour_exemple.json`.

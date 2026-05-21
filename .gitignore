@@ -49,3 +49,5 @@ desktop.ini
 # Profil Edge dedie au lanceur preview (force un processus Edge separe
 # pour que les flags de fenetre soient respectes).
 /.edge-preview-profile/
+# Idem cote Chrome (variante du lanceur preview).
+/.chrome-preview-profile/
