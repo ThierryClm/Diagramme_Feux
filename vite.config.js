@@ -42,6 +42,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['./src/tests/setup.js']
+    setupFiles: ['./src/tests/setup.js'],
+    // Scope explicite : sinon vitest ramasse les fichiers *.test.js / *.spec.js
+    // potentiellement presents dans les profils navigateurs preview (Edge,
+    // Chrome) ou ailleurs dans le workspace.
+    include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)']
   }
 })
