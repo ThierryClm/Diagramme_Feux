@@ -1,6 +1,5 @@
 ' Lance TraCflux en mode PREVIEW (build de production servi localement),
-' dans une fenetre Edge en mode APPLICATION (sans barre d'adresse ni
-' onglets), maximisee.
+' dans une fenetre Edge maximisee.
 '
 ' LANCEUR IDEMPOTENT (corrige le plantage des lancements repetes) :
 '   1. Serveur deja en ligne sur 4173  -> ouvre juste une fenetre dessus,
@@ -137,7 +136,7 @@ Sub WriteLock(path)
   On Error GoTo 0
 End Sub
 
-' Ouvre l'URL dans Edge en mode app, fenetre maximisee.
+' Ouvre l'URL dans Edge, fenetre maximisee.
 '
 ' POURQUOI --user-data-dir : sans profil dedie, Edge reutilise un
 ' processus existant (cas frequent : Edge en tache de fond) qui IGNORE
@@ -147,6 +146,12 @@ End Sub
 ' Pas de calcul de --window-size : la resolution WMI est physique, donc
 ' fausse quand la mise a l'echelle Windows est >100 % (la fenetre sort
 ' de l'ecran). Le maximize natif du systeme s'en charge correctement.
+'
+' PAS de --app= : ce flag mettrait Edge en "mode application" (sans
+' onglets ni barre d'adresse) mais casse window.open() - les fenetres
+' detachees de TraCflux s'ouvrent plein ecran ou sont silencieusement
+' bloquees. Pour l'experience "app installee", passer par le bouton
+' "Installer cette app" dans la barre d'adresse Edge.
 Sub OpenWindow(targetUri)
   Dim profile, sentinel, f
   If fso.FileExists(edge) Then
@@ -162,7 +167,7 @@ Sub OpenWindow(targetUri)
       Set f = fso.CreateTextFile(sentinel, True)
       f.Close
     End If
-    shell.Run """" & edge & """ --app=""" & targetUri & """" & _
+    shell.Run """" & edge & """ """ & targetUri & """" & _
               " --user-data-dir=""" & profile & """" & _
               " --no-first-run --no-default-browser-check" & _
               " --start-maximized", 1, False

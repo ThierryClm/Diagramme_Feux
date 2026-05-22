@@ -1,6 +1,5 @@
 ' Lance TraCflux en mode PREVIEW (build de production servi localement),
-' dans une fenetre CHROME en mode APPLICATION (sans barre d'adresse ni
-' onglets), maximisee.
+' dans une fenetre Chrome maximisee.
 '
 ' Variante Chrome du lanceur principal (Lancer-preview.vbs). Meme logique
 ' idempotente a 3 branches, meme verrou, meme page d'attente. Seule la
@@ -110,7 +109,7 @@ Sub WriteLock(path)
   On Error GoTo 0
 End Sub
 
-' Ouvre l'URL dans Chrome en mode app, fenetre maximisee.
+' Ouvre l'URL dans Chrome, fenetre maximisee.
 '
 ' POURQUOI --user-data-dir : sans profil dedie, Chrome reutilise un
 ' processus existant (cas frequent : Chrome ouvert avec ton profil
@@ -119,6 +118,12 @@ End Sub
 '
 ' Le fichier "First Run" pre-cree saute l'ecran d'accueil "synchroniser
 ' avec un compte Google" qui apparait sinon a chaque profil neuf.
+'
+' PAS de --app= : ce flag mettrait Chrome en "mode application" (sans
+' onglets ni barre d'adresse) mais casse window.open() - les fenetres
+' detachees de TraCflux s'ouvrent plein ecran ou sont silencieusement
+' bloquees. Pour l'experience "app installee", passer par le bouton
+' "Installer cette app" dans la barre d'adresse Chrome.
 Sub OpenWindow(targetUri)
   Dim profile, sentinel, f
   If fso.FileExists(chrome) Then
@@ -129,7 +134,7 @@ Sub OpenWindow(targetUri)
       Set f = fso.CreateTextFile(sentinel, True)
       f.Close
     End If
-    shell.Run """" & chrome & """ --app=""" & targetUri & """" & _
+    shell.Run """" & chrome & """ """ & targetUri & """" & _
               " --user-data-dir=""" & profile & """" & _
               " --no-first-run --no-default-browser-check" & _
               " --start-maximized", 1, False
