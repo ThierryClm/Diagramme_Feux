@@ -118,6 +118,7 @@ const HelpContent = ({ initialAnchor = null }) => {
 
             <section className="help-section">
                 <h4>Mise en page de l'interface et optimisation de l'écran</h4>
+                <p><strong>Principe du détachement :</strong> les fenêtres détachées (matrice, formulaire, image du carrefour, données trafic, conditions micro, variables micro, remarques) sont conçues pour être <strong>placées sur un second écran</strong> pendant que la fenêtre principale reste sur votre écran de travail. Vous libérez ainsi tout l'espace de l'écran principal pour le diagramme, tout en gardant en permanence visible sur l'écran annexe la ressource dont vous avez besoin (matrice intervert pendant le réglage du diagramme, image du carrefour pendant une présentation à un client, etc.). Sans second écran, le détachement reste utile pour superposer ponctuellement une fenêtre sur la principale.</p>
                 <ul>
                     <li><strong>Zoom du diagramme :</strong> Le curseur "Zoom" dans l'en-tête permet d'ajuster l'échelle horizontale du diagramme (de 4 à 20 px/s). Vous pouvez également utiliser <strong>Ctrl + molette de la souris</strong> pour zoomer ou dézoomer la page entière.</li>
                     <li><strong>Séparateur vertical :</strong> La barre de séparation entre le panneau de configuration (à gauche) et la zone du diagramme (à droite) est déplaçable par glisser-déposer. Sa position est sauvegardée automatiquement.</li>

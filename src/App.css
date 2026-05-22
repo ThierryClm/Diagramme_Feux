@@ -1832,6 +1832,8 @@ body.amber-mode .help-back-to-top {
     flex-direction: column;
     gap: 2px;
     padding: 12px 20px;
+    overflow-y: auto;
+    max-height: 65vh;
 }
 
 .dossier-dialog-body label {
@@ -3289,10 +3291,9 @@ body.amber-mode .help-back-to-top {
         max-height: unset !important;
         overflow: visible !important;
     }
-    /* Bulles : positionnement centré + réduction 15% pour tenir dans la page (l'échelle utilisateur est gérée en interne par le composant) */
-    body.print-dossier .dossier-phasage-content .phase-bubble {
-        transform: translate(-50%, -50%) scale(0.85) !important;
-    }
+    /* Bulles : positionnement centré sans scale CSS — la taille est désormais
+       pilotée en JSX via initialBubbleScale, qui applique un cap basé sur le
+       nombre de phases pour ne pas déborder de la page. */
     body.print-dossier .dossier-phasage-content .phase-bubble-content {
         background: #fff !important;
         border: none !important;

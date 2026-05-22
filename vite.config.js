@@ -15,7 +15,13 @@ export default defineConfig({
         description: 'Outil de conception et d\'optimisation de diagrammes de feux tricolores',
         theme_color: '#1e1e1e',
         background_color: '#1e1e1e',
-        display: 'standalone',
+        // 'minimal-ui' (au lieu de 'standalone') : conserve une barre URL
+        // minimale en mode PWA installé. Indispensable pour que window.open()
+        // des fenêtres détachées (usePopupWindow.js) respecte les paramètres
+        // de taille/position — en 'standalone' les popups héritent du mode
+        // app et s'ouvrent plein écran ou sont bloquées (cf. memory
+        // vbs-app-mode-breaks-popups : même classe de problème).
+        display: 'minimal-ui',
         orientation: 'landscape',
         lang: 'fr',
         scope: './',

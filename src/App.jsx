@@ -4358,7 +4358,23 @@ draw();
                                             const bulleCount = pf.phasageBulleCount || 4;
                                             const bulleCycleLength = pf.id === activePFId ? cycleLength : (pf.cycleLength || cycleLength);
                                             const userBubbleScale = pf.phasageBubbleScale ?? 100;
-                                            const bsf = (bulleCount === 2 ? 1.2 : bulleCount === 5 ? 0.9 : bulleCount === 6 ? 0.8 : 1.0) * (userBubbleScale / 100);
+                                            // Cap d'impression : respecter le réglage utilisateur sauf si la taille
+                                            // résultante ferait déborder les bulles hors de la page. Les marges
+                                            // (% du conteneur où sont placés les centres de bulles) viennent de
+                                            // PhasageBulle.getEllipseConfig : la marge la plus petite limite la taille.
+                                            const PRINT_H = 738; // ~A4 paysage - en-tête section - h3
+                                            const PRINT_W = 1123;
+                                            const SAFETY = 0.92; // marge pour labels + arrondi
+                                            const Y_MARGIN = { 2: 0.50, 3: 0.24, 4: 0.18, 5: 0.177, 6: 0.188 }[bulleCount] ?? 0.18;
+                                            const X_MARGIN = { 2: 0.28, 3: 0.27, 4: 0.24, 5: 0.23, 6: 0.21 }[bulleCount] ?? 0.22;
+                                            const baseFactor = bulleCount === 2 ? 1.2 : bulleCount === 5 ? 0.9 : bulleCount === 6 ? 0.8 : 1.0;
+                                            const maxTotalScaleH = (2 * Y_MARGIN * PRINT_H) / 456;
+                                            const maxTotalScaleW = (2 * X_MARGIN * PRINT_W) / 570;
+                                            const maxTotalScale = SAFETY * Math.min(maxTotalScaleH, maxTotalScaleW);
+                                            const naturalTotalScale = baseFactor * (userBubbleScale / 100);
+                                            const cappedTotalScale = Math.min(naturalTotalScale, maxTotalScale);
+                                            const printBubbleScale = (cappedTotalScale / baseFactor) * 100;
+                                            const bsf = cappedTotalScale;
                                             const bulleW = 570 * bsf;
                                             const bulleH = 456 * bsf;
                                             // Image ratio: hide ellipse if very elongated
@@ -4393,7 +4409,7 @@ draw();
                                                         initialCount={bulleCount}
                                                         imageBrightness={imageBrightness}
                                                         imageContrast={imageContrast}
-                                                        initialBubbleScale={userBubbleScale}
+                                                        initialBubbleScale={printBubbleScale}
                                                         initialEllipseScale={pf.phasageEllipseScale ?? 100}
                                                         initialBubbleRatio={pf.phasageBubbleRatio ?? 100}
                                                     />
