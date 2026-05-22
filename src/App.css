@@ -1873,6 +1873,12 @@ body.amber-mode .help-back-to-top {
     font-weight: bold;
 }
 
+/* PF invalidé : touche de rouge */
+.dossier-pf-invalidated {
+    color: #e74c3c !important;
+    font-weight: bold;
+}
+
 /* Sous-options indentées sous chaque PF */
 .dossier-pf-suboptions {
     margin-left: 28px;

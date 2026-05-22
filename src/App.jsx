@@ -1053,7 +1053,7 @@ function App() {
                         securiteMatrix: false,
                         matrice: true,
                         ...Object.fromEntries(pfTabs.flatMap(pf => {
-                            const checked = !!pf.color;
+                            const checked = pf.color === '#4CAF50';
                             return [
                                 [`diagram_${pf.id}`, checked],
                                 [`conditionsMicro_${pf.id}`, checked],
@@ -3558,11 +3558,12 @@ draw();
                                 Matrice des temps intervers
                             </label>
                             {pfTabs.map(pf => {
-                                const isValidated = !!pf.color;
+                                const isValidated = pf.color === '#4CAF50';
+                                const isInvalidated = pf.color === '#e74c3c';
                                 const pfChecked = dossierSections[`diagram_${pf.id}`] || false;
                                 return (
                                 <div key={pf.id} className="dossier-pf-group">
-                                    <label className={isValidated ? 'dossier-pf-validated' : ''}>
+                                    <label className={isValidated ? 'dossier-pf-validated' : isInvalidated ? 'dossier-pf-invalidated' : ''}>
                                         <input type="checkbox" checked={pfChecked}
                                             onChange={e => {
                                                 const checked = e.target.checked;

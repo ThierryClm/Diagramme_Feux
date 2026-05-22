@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>TraCflux — social preview 1280×640</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #1E1E1E;
+    }
+    .card {
+      width: 1280px;
+      height: 640px;
+      position: relative;
+      overflow: hidden;
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      color: #ffffff;
+    }
+    .bg {
+      position: absolute;
+      inset: 0;
+      background-image: url("screenshots/diagramme-principal.png");
+      background-size: cover;
+      background-position: center;
+      filter: blur(2px);
+      transform: scale(1.05);
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(30, 30, 30, 0.82) 0%,
+        rgba(30, 30, 30, 0.68) 50%,
+        rgba(30, 30, 30, 0.78) 100%
+      );
+    }
+    .content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 80px;
+      box-sizing: border-box;
+    }
+    .logo {
+      width: 140px;
+      height: 140px;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.5));
+    }
+    .title {
+      font-size: 112px;
+      font-weight: 700;
+      letter-spacing: -2px;
+      line-height: 1;
+      margin: 0;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+    }
+    .accent {
+      display: flex;
+      gap: 12px;
+      margin: 28px 0 32px;
+    }
+    .accent span {
+      width: 64px;
+      height: 6px;
+      border-radius: 3px;
+    }
+    .accent .red    { background: #E53935; }
+    .accent .orange { background: #FB8C00; }
+    .accent .green  { background: #43A047; }
+    .tagline {
+      font-size: 32px;
+      font-weight: 400;
+      line-height: 1.35;
+      margin: 0 0 36px;
+      max-width: 980px;
+      color: #f0f0f0;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+    }
+    .url {
+      font-size: 22px;
+      font-weight: 500;
+      color: #bdbdbd;
+      letter-spacing: 0.5px;
+      font-family: "Consolas", "SF Mono", "Menlo", monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="bg"></div>
+    <div class="overlay"></div>
+    <div class="content">
+      <!-- Logo TraCflux inline (synchronisé avec docs/logo.svg) -->
+      <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <path d="M 62.7 22.3 A 18 18 0 1 0 62.7 47.7"
+              fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="58" cy="24" r="5" fill="#E53935"/>
+        <circle cx="58" cy="35" r="5" fill="#FB8C00"/>
+        <circle cx="58" cy="46" r="5" fill="#43A047"/>
+        <rect x="44" y="29" width="6" height="45" fill="#ffffff"/>
+        <rect x="30" y="74" width="36" height="5" fill="#ffffff"/>
+      </svg>
+
+      <h1 class="title">TraCflux</h1>
+
+      <div class="accent">
+        <span class="red"></span>
+        <span class="orange"></span>
+        <span class="green"></span>
+      </div>
+
+      <p class="tagline">
+        Concevoir et optimiser les diagrammes de feux tricolores —<br>
+        outil open source pour traficiens et ingénieurs trafic
+      </p>
+
+      <div class="url">github.com/ThierryClm/Diagramme_Feux</div>
+    </div>
+  </div>
+</body>
+</html>
