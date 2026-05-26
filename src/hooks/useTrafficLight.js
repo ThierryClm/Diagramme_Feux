@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     DEFAULT_CYCLE,
+    MAX_PF,
+    MAX_GROUPS,
     createEmptyActionRow,
     createEmptyActionData,
     buildDiagramFromGroups,
@@ -224,7 +226,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     }, [groups, conflictMatrix, intersectionName, cycleLength, dependencyGap]);
 
     const setGroupCountInternal = (count) => {
-        const newCount = Math.max(1, parseInt(count) || 1);
+        const newCount = Math.min(MAX_GROUPS, Math.max(1, parseInt(count) || 1));
 
         setGroups(prev => {
             const oldCount = prev.length;
@@ -1618,8 +1620,10 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         setActionData(reorderedData);
     }, [setActionData]);
 
-    // Duplicate current PF
+    // Duplicate current PF. Renvoie null si la limite MAX_PF est atteinte
+    // (l'appelant affiche le message d'erreur).
     const duplicatePF = useCallback(() => {
+        if (pfTabs.length >= MAX_PF) return null;
         const nextId = Math.max(...pfTabs.map(pf => pf.id)) + 1;
         const newName = `PF${nextId}`;
         const currentData = JSON.parse(JSON.stringify(actionData));

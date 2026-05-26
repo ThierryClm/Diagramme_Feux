@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react';
 import { useTrafficLight } from './hooks/useTrafficLight';
+import { MAX_PF, MAX_GROUPS } from './utils/pfHelpers';
 import { useAuth, PERMISSIONS } from './hooks/useAuth';
 import TimelineDiagram from './components/TimelineDiagram';
 import ToastContainer from './components/ToastContainer';
@@ -1071,7 +1072,11 @@ function App() {
                 break;
             case 'duplicate': {
                 const newId = duplicatePF();
-                if (newId) toast.success(`PF dupliqué en PF${newId}`);
+                if (newId) {
+                    toast.success(`PF dupliqué en PF${newId}`);
+                } else {
+                    toast.error(`Limite de ${MAX_PF} plans de feux atteinte. Supprimez-en un avant d'en ajouter un nouveau.`);
+                }
                 break;
             }
             case 'deleteActiveDiagram':
@@ -1984,7 +1989,7 @@ draw();
                         GFx
                         <input
                             type="number"
-                            min="1" max="32"
+                            min="1" max={MAX_GROUPS}
                             value={groupCountInput}
                             onChange={(e) => setGroupCountInput(e.target.value)}
                             onKeyDown={(e) => {
@@ -1994,7 +1999,7 @@ draw();
                             }}
                             onBlur={async () => {
                                 const newCount = parseInt(groupCountInput);
-                                if (!isNaN(newCount) && newCount >= 1 && newCount <= 32 && newCount !== groups.length) {
+                                if (!isNaN(newCount) && newCount >= 1 && newCount <= MAX_GROUPS && newCount !== groups.length) {
                                     const isReduce = newCount < groups.length;
                                     const ok = await askConfirm({
                                         title: isReduce ? 'Réduire le nombre de groupes' : 'Ajouter des groupes',

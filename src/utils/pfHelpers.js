@@ -5,6 +5,13 @@
 
 export const DEFAULT_CYCLE = 60;
 
+// Limites maximales par projet : pas une contrainte technique, mais un
+// garde-fou pour eviter qu'un projet ne devienne illisible (matrice
+// intervert et onglets PF saturent au-dela de ces ordres de grandeur,
+// 32 groupes etant deja a la limite du lisible a l'ecran).
+export const MAX_PF = 12;
+export const MAX_GROUPS = 32;
+
 /**
  * Create an empty action row with the given id.
  */

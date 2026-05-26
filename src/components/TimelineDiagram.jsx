@@ -1100,7 +1100,9 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     <div className="sidebar-header-row">
                         <span className="col-label col-grp">GF</span>
                         {showGroupNames && <span className="col-label col-name">Nom</span>}
-                        <span className="col-label col-da">DA</span>
+                        <CustomTooltip text="Code trajet (2 caractères) concernant la procédure d'approche bus.">
+                            <span className="col-label col-da">DA</span>
+                        </CustomTooltip>
                         <span className="col-label col-time">Déb</span>
                         <span className="col-label col-time">Fin</span>
                         <span className="col-label col-time">Durée</span>
