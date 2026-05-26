@@ -3852,12 +3852,15 @@ draw();
                                 })()}
 
                                 {printType === 'dossier' && (() => {
-                                    // A4 paysage marges 10mm: largeur utile réelle mesurée ~1200px
-                                    // (277mm théorique = 1047px à 96dpi, mais le rendu navigateur est plus large)
-                                    // Sidebar TimelineDiagram réelle = 325px (sans commentaires/remarques masqués)
-                                    const dossierPrintWidth = 1200;
+                                    // A4 paysage marges 10mm: largeur utile = 277mm = 1047px à 96dpi.
+                                    // On utilise 1040px pour laisser une petite marge de securite (arrondis CSS).
+                                    // L'ancienne valeur 1200 partait d'une mesure navigateur obsolete et causait
+                                    // un debordement horizontal sur les cycles > refCycle (truncation observee
+                                    // sur cycles 122s et 137s — cf. issue 2026-05-26).
+                                    // Sidebar TimelineDiagram reelle = 325px (sans commentaires/remarques masques)
+                                    const dossierPrintWidth = 1040;
                                     const dossierSidebarReal = 325;
-                                    const availableWidth = dossierPrintWidth - dossierSidebarReal; // 875px
+                                    const availableWidth = dossierPrintWidth - dossierSidebarReal; // 715px
                                     const refCycle = 120; // Cycle de référence pour l'échelle homogène
                                     // Cycle ≤ 120s: échelle fixe (homogénéité entre dossiers)
                                     // Cycle > 120s: ratio pour remplir la largeur de la page
