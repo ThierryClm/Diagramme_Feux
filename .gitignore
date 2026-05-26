@@ -38,16 +38,3 @@ desktop.ini
 /.tmp-anonymisation/
 # Données de travail (originaux clients non anonymisés, dumps web)
 /examples/
-# Page d'attente preview générée + temporaires git du lanceur
-/.loading-preview.gen.html
-/.gitlog.tmp
-/.gitcount.tmp
-/.preview.lock
-/.preview.built
-/.preview-build.log
-/.preview-build.cmd
-# Profil Edge dedie au lanceur preview (force un processus Edge separe
-# pour que les flags de fenetre soient respectes).
-/.edge-preview-profile/
-# Idem cote Chrome (variante du lanceur preview).
-/.chrome-preview-profile/
