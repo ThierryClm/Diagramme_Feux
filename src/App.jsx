@@ -3853,14 +3853,15 @@ draw();
 
                                 {printType === 'dossier' && (() => {
                                     // A4 paysage marges 10mm: largeur utile = 277mm = 1047px à 96dpi.
-                                    // On utilise 1040px pour laisser une petite marge de securite (arrondis CSS).
+                                    // On utilise 1035px pour laisser une petite marge de securite (~12 px) :
+                                    // 1040px coupait juste le trait droit du cadre du diagramme sur les cycles
+                                    // longs (137s observe), 1035px le rend visible sans rogner la largeur utile.
                                     // L'ancienne valeur 1200 partait d'une mesure navigateur obsolete et causait
-                                    // un debordement horizontal sur les cycles > refCycle (truncation observee
-                                    // sur cycles 122s et 137s — cf. issue 2026-05-26).
+                                    // un debordement de ~20s sur les cycles > refCycle (corrige le 2026-05-26).
                                     // Sidebar TimelineDiagram reelle = 325px (sans commentaires/remarques masques)
-                                    const dossierPrintWidth = 1040;
+                                    const dossierPrintWidth = 1035;
                                     const dossierSidebarReal = 325;
-                                    const availableWidth = dossierPrintWidth - dossierSidebarReal; // 715px
+                                    const availableWidth = dossierPrintWidth - dossierSidebarReal; // 710px
                                     const refCycle = 120; // Cycle de référence pour l'échelle homogène
                                     // Cycle ≤ 120s: échelle fixe (homogénéité entre dossiers)
                                     // Cycle > 120s: ratio pour remplir la largeur de la page

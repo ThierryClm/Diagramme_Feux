@@ -1640,9 +1640,61 @@ body.amber-mode .help-back-to-top {
     color: #000 !important;
 }
 
-/* Escamotage de phase à l'impression : bordure visible, pas de hachures */
+/* Escamotage de phase à l'impression : bordure fine alignée au pixel près sur le
+   quadrillage. La bordure droite est dessinée par box-shadow décalé de +1 px
+   pour qu'elle coïncide pile avec le trait de fin de zone (sinon elle tombait
+   1 px avant à cause de box-sizing: border-box). */
 .print-diagram-content .escamotage-overlay {
-    border: 2px solid rgba(0, 0, 0, 0.6) !important;
+    border: 1px solid rgba(0, 0, 0, 0.7) !important;
+    border-right: none !important;
+    box-shadow: 1px 0 0 0 rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Adaptatif vertical à l'impression : pas de border-radius (coins arrondis
+   décalaient visuellement le début/fin), bordure fine, et même astuce
+   box-shadow que pour Escamotage pour aligner pile la bordure droite. */
+.print-diagram-content .adaptatif-overlay {
+    border: 1px solid rgba(0, 0, 200, 0.7) !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    box-shadow: 1px 0 0 0 rgba(0, 0, 200, 0.7) !important;
+}
+
+/* Ouverture anticipée à l'impression : box-sizing border-box pour que la
+   bordure n'ajoute pas de pixels en dehors du data range (sinon le rectangle
+   dépassait de ~1 px à droite de la fin théorique). */
+.print-diagram-content .ouverture-anticipee {
+    box-sizing: border-box !important;
+    border-radius: 0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Accolades de Fermeture anticipée à l'impression : traits fins (1 px au lieu
+   de 3), retours verticaux de 8 px, angle extérieur arrondi pour un effet de
+   trait continu, et chevron central abaissé pour toucher pile la ligne
+   horizontale des bras (visuellement « un seul élément »). */
+.print-diagram-content .brace-marker::before,
+.print-diagram-content .brace-marker::after {
+    border-width: 1px !important;
+    height: 8px !important;
+}
+.print-diagram-content .brace-marker::before {
+    /* Angle extérieur (haut-gauche) arrondi */
+    border-radius: 4px 0 0 0 !important;
+}
+.print-diagram-content .brace-marker::after {
+    /* Angle extérieur (haut-droit) arrondi + bras décalé de 1 px à droite pour
+       que sa bordure droite coïncide pile avec le trait de quadrillage de fin. */
+    border-radius: 0 4px 0 0 !important;
+    right: -1px !important;
+}
+.print-diagram-content .brace-marker .brace-point {
+    /* Chevron 5×5 à top:4 : ses extrémités latérales (après rotation 45°)
+       tombent à y=6,5 — pile sur la ligne horizontale des bras. */
+    border-width: 1px !important;
+    width: 5px !important;
+    height: 5px !important;
+    top: 4px !important;
 }
 
 /* Escamotage (groupe) à l'impression : hachures bien visibles */
