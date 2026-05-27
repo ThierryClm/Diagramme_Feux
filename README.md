@@ -75,18 +75,33 @@ L'application s'ouvre à `http://localhost:3000`.
 | `npm run dev` | Serveur de développement (rechargement à chaud) |
 | `npm run build` | Build de production dans `dist/` |
 | `npm run preview` | Aperçu local du build de production |
+| `npm run clean` | Nettoyage local : supprime `dist/` et arrête les processus `node.exe` (Windows — voir [Dépannage](#dépannage)) |
 | `npm test` | Lancer les tests (Vitest) |
 
 ### Lanceurs preview Windows (optionnel)
 
-Deux scripts VBScript sont fournis pour ouvrir l'aperçu dans une fenêtre navigateur en **mode application** (sans barre d'adresse ni onglets), maximisée :
+Deux scripts VBScript sont fournis pour ouvrir l'aperçu d'un double-clic :
 
 - [`Lancer-preview.vbs`](Lancer-preview.vbs) — Microsoft Edge
 - [`Lancer-preview-chrome.vbs`](Lancer-preview-chrome.vbs) — Google Chrome
 
-Pour créer un raccourci sur le bureau : clic droit sur le fichier `.vbs` → **Envoyer vers** → **Bureau (créer un raccourci)**. Le double-clic construit l'app si nécessaire, démarre le serveur preview et ouvre la fenêtre. Le lancement est idempotent : un second double-clic réutilise la session existante au lieu d'en démarrer une nouvelle. Une page d'attente s'affiche pendant le build et liste les nouveautés depuis le dernier aperçu.
+Pour créer un raccourci sur le bureau : clic droit sur le fichier `.vbs` → **Envoyer vers** → **Bureau (créer un raccourci)**. Le double-clic affiche une page d'attente pendant le build, puis bascule automatiquement sur l'application dès que le serveur est prêt. Si le serveur est déjà en ligne, une nouvelle fenêtre s'ouvre directement dessus.
+
+Pour une expérience « application native » sans onglets ni barre d'adresse, utiliser le bouton **« Installer cette app »** de la barre d'adresse Chrome/Edge une fois l'app ouverte (voir l'aide en ligne, section Mise en page).
 
 Ces lanceurs sont spécifiques à Windows. Sur macOS et Linux, utiliser directement `npm run preview` en ligne de commande.
+
+### Dépannage
+
+Après plusieurs `npm run preview` consécutifs dans une même session de développement, des processus `node.exe` peuvent s'accumuler en arrière-plan, et les fenêtres détachées peuvent perdre leur thème (cache navigateur désynchronisé avec le service worker du build le plus récent).
+
+**Solution** :
+1. `npm run clean` (supprime `dist/` et arrête tous les `node.exe`)
+2. Fermer toutes les fenêtres du navigateur ouvertes sur `localhost:4173`
+3. Optionnel : `edge://settings/cookies/detail?site=localhost%3A4173` → **Supprimer** (vide le service worker et le cache pour ce site uniquement)
+4. Relancer normalement (`npm run preview` ou via le lanceur VBS)
+
+Ce symptôme ne concerne **que le workflow développeur**. Les utilisateurs finaux (PWA hébergée ou installation depuis une release) ne sont pas concernés.
 
 ## Exemple
 
