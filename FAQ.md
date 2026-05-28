@@ -29,7 +29,7 @@ L'application étant gratuite et libre, son adoption par vos partenaires n'a auc
 
 ### J'utilise déjà un autre outil qui ne me satisfait pas pleinement, mais je ne souhaite pas ressaisir l'intégralité de mes plans de feux. Comment migrer mes données existantes ?
 
-L'import natif est aujourd'hui limité (Excel partiel, HTM, JSON pour le format propre à l'application). Les imports des formats propriétaires ([redacted], Traffy, Swarco, Fareco, SEA, lecture de boîtes noires...) sont identifiés comme pistes d'évolution mais ne sont pas encore opérationnels — voir [Quelles fonctionnalités sont envisageables à terme ?](#quelles-fonctionnalités-sont-envisageables-à-terme-).
+L'import natif est aujourd'hui limité (Excel partiel, HTM, JSON pour le format propre à l'application). L'**interopérabilité** avec d'autres systèmes de programmation de contrôleurs de carrefour — propriétaires ou ouverts — est identifiée comme un axe d'évolution majeur de l'outil, mais n'est pas encore opérationnelle — voir [Quelles fonctionnalités sont envisageables à terme ?](#quelles-fonctionnalités-sont-envisageables-à-terme-).
 
 L'application étant **libre et open source**, l'ajout d'un parseur pour un format donné reste tout à fait envisageable :
 
@@ -103,9 +103,7 @@ Un service d'accompagnement est **envisagé pour une étape ultérieure** du pro
 
 Plusieurs options apparaissent grisées dans le menu Fichier — elles correspondent à des pistes d'évolution non encore opérationnelles :
 
-- **Lire une boîte noire (.bn)** — exploitation des enregistrements bruts de contrôleurs (durées de vert, états système, détections ITTN) pour analyser un comportement réel sur une heure d'exploitation. Le décodage du format binaire reste à finaliser.
-- **Import des programmations contrôleur** Traffy, Swarco, Fareco, SEA... — chaque constructeur utilise un format propriétaire qui demanderait un parseur dédié.
-- **Import [redacted] ([redacted])** est partiellement disponible (cliquable) mais reste en cours de développement.
+- **Interopérabilité** — échange de données de programmation de carrefours à feux avec d'autres systèmes du marché, propriétaires ou ouverts. C'est un axe d'ouverture important de l'outil : permettre la reprise et la restitution de plans de feux sans ressaisie, en s'intégrant à l'écosystème existant des traficiens. Le potentiel est significatif et constitue une direction d'évolution privilégiée.
 - **Import Excel** dépend du modèle de fichier Excel (mises en page variables d'un éditeur à l'autre, structures de feuilles différentes selon les agences) — non généralisé dans cette version. L'export Excel reste opérationnel.
 
 Ces fonctionnalités seront travaillées si le besoin est confirmé par plusieurs utilisateurs.

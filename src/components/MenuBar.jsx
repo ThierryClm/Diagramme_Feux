@@ -208,18 +208,7 @@ const MenuBar = ({
                     title: layoutOptions.isExampleProject ? 'Projet exemple : non enregistrable' : (!hasActiveProject ? 'Aucun projet ouvert' : '')
                 }]),
                 { type: 'separator' },
-                {
-                    label: 'Importer programmation contrôleur',
-                    type: 'submenu',
-                    submenuId: 'importController',
-                    submenu: [
-                        { label: '[redacted] ([redacted])...', action: 'import[redacted]', title: 'Import partiel — fonctionnalité en cours de développement' },
-                        { label: 'Traffy', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' },
-                        { label: 'Swarco', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' },
-                        { label: 'Fareco', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' },
-                        { label: 'SEA', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' }
-                    ]
-                },
+                { label: 'Interopérabilité...', disabled: true, title: 'Fonctionnalité envisageable : interopérabilité avec d\'autres systèmes (propriétaires ou ouverts) pour l\'échange de programmation de contrôleurs de carrefour. Évolutivité prévue — non opérationnelle dans cette version.' },
                 ...(recentImportDirs.length > 0 ? [{
                     label: 'Importer Excel...',
                     type: 'submenu',
@@ -233,7 +222,6 @@ const MenuBar = ({
                     disabled: !hasPermission('canImportExcel') || !excelImportEnabled,
                     title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : 'Importation sur mesure pour une collectivité.'
                 }]),
-                { label: 'Lire une boîte noire (.bn)...', action: 'openBlackBox', disabled: true, title: 'Fonctionnalité envisageable — non opérationnelle dans cette version' },
                 { label: 'Liens externes...', action: 'externalLinks', disabled: !hasActiveProject, title: !hasActiveProject ? 'Aucun projet ouvert' : '' },
                 { type: 'separator' },
                 { label: 'Imprimer le projet...', action: 'printDossier', disabled: !hasActiveProject, title: !hasActiveProject ? 'Aucun projet ouvert' : '' },

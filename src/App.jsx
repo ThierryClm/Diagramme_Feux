@@ -1191,9 +1191,6 @@ function App() {
             case 'import[redacted]':
                 handleImport[redacted]();
                 break;
-            case 'openBlackBox':
-                handleOpenBlackBox();
-                break;
             case 'browseImport':
                 setImportFile(null);
                 setImportError('');
@@ -1670,106 +1667,6 @@ function App() {
             if (e.name !== 'AbortError') {
                 console.error('Erreur import [redacted]:', e);
                 showAlert({ title: 'Erreur [redacted]', message: "Erreur lors de l'import [redacted] : " + e.message });
-            }
-        }
-    };
-
-    // Lire une boîte noire (.bn)
-    const handleOpenBlackBox = async () => {
-        try {
-            let file;
-            if (window.showOpenFilePicker) {
-                const [fileHandle] = await window.showOpenFilePicker({
-                    types: [{ description: 'Boîte noire', accept: { 'application/octet-stream': ['.bn'] } }]
-                });
-                file = await fileHandle.getFile();
-            } else {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.bn';
-                await new Promise(resolve => { input.onchange = resolve; input.click(); });
-                file = input.files[0];
-            }
-            if (!file) return;
-
-            const buffer = await file.arrayBuffer();
-            const data = new Uint8Array(buffer);
-            if (data.length < 0x5C + 100) { showAlert({ title: 'Erreur', message: 'Fichier trop petit.' }); return; }
-
-            const carrefour = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
-            const year = data[4] | (data[5] << 8) | (data[6] << 16) | (data[7] << 24);
-            const month = data[8] | (data[9] << 8) | (data[10] << 16) | (data[11] << 24);
-            const day = data[12] | (data[13] << 8) | (data[14] << 16) | (data[15] << 24);
-
-            // Heure / minute lues depuis le nom de fichier (format bn{n}_{ddmmyyyy}_{hhmm}.bn)
-            // — le fichier d'en-tête contient un autre timestamp dont la sémantique reste à clarifier.
-            const timeMatch = file.name.match(/_(\d{2})(\d{2})\.bn$/i);
-            const hour = timeMatch ? timeMatch[1] : '??';
-            const minute = timeMatch ? timeMatch[2] : '??';
-
-            const dataStart = 0x5C;
-            const totalData = data.length - dataStart;
-            const numSeconds = 3600;
-            const numVarsFile = Math.floor(totalData / numSeconds);
-            const dispCount = numVarsFile - 1;  // afficher TOUTES les variables (hors row 0 = BTS)
-
-            // Taille du contrôleur (mémorisée par n° de carrefour, défaut 16)
-            const sizeKey = `bn_controller_size_${carrefour}`;
-            const savedSize = parseInt(localStorage.getItem(sizeKey)) || 16;
-
-            // Pour chaque ligne, on calcule à la fois l'interprétation toggle (utilisée pour
-            // les GF, où chaque 0x01 inverse l'état) et l'interprétation raw (0x01 = haut).
-            // Le popup choisira la bonne représentation selon la taille du contrôleur sélectionnée.
-            const varToggle = [];
-            const varRaw = [];
-            for (let v = 1; v <= dispCount; v++) {
-                let toggleStr = '';
-                let rawStr = '';
-                let state = 0;
-                for (let t = 0; t < numSeconds; t++) {
-                    const byte = data[dataStart + v * numSeconds + t];
-                    if (byte === 1) state = 1 - state;
-                    toggleStr += state ? '1' : '0';
-                    rawStr += byte === 1 ? '1' : '0';
-                }
-                varToggle.push(toggleStr);
-                varRaw.push(rawStr);
-            }
-
-            // Ouvrir dans une popup
-            const popup = window.open('', '_blank', 'width=1200,height=800');
-            if (!popup) { showAlert({ title: 'Popup bloquée', message: 'Le navigateur a bloqué l\'ouverture de la fenêtre. Autorisez les popups pour ce site puis réessayez.' }); return; }
-
-            popup.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>BN${carrefour}</title>
-<style>*{box-sizing:border-box}body{background:#1a1a1a;color:#fff;font-family:monospace;margin:0;padding:10px;overflow:hidden;height:100vh;display:flex;flex-direction:column}h2{color:#4ecdc4;margin:5px 0;font-size:15px;flex-shrink:0}.info{color:#aaa;margin-bottom:5px;font-size:11px;flex-shrink:0}.controls{margin:4px 0;display:flex;gap:8px;align-items:center;font-size:11px;flex-shrink:0;flex-wrap:wrap}.legend{margin-left:8px}button,select{background:#333;color:#fff;border:1px solid #555;padding:3px 10px;border-radius:3px;cursor:pointer;font-size:11px}button:hover,select:hover{background:#555}.viewer{flex:1;position:relative;overflow:hidden;border:1px solid #444}.scrollbar-h{position:absolute;bottom:0;left:160px;right:14px;height:14px;background:#222}.scrollbar-h input{width:100%;height:14px;margin:0;padding:0}.scrollbar-v{position:absolute;top:28px;right:0;bottom:14px;width:14px;background:#222}.scrollbar-v input{width:100%;height:100%;margin:0;padding:0;writing-mode:bt-lr;-webkit-appearance:slider-vertical}input[type=range]{-webkit-appearance:auto;cursor:pointer;background:#333}canvas{position:absolute;top:0;left:0}</style></head><body>
-<h2>Carrefour ${carrefour} — Boîte noire</h2>
-<div class="info">${day}/${month}/${year} ${hour}:${minute} — ${numSeconds}s (1h) — ${dispCount} variables</div>
-<div class="controls"><button id="zoomIn">Zoom +</button><button id="zoomOut">Zoom -</button><span>Zoom: <strong id="zoomLabel">1x</strong></span><span style="margin-left:10px">Taille contrôleur: <select id="ctrlSize"><option value="8">8</option><option value="16">16</option><option value="32">32</option></select></span><span style="margin-left:10px">Sec: <strong id="secLabel">0</strong></span><span>Var: <strong id="rowLabel">0</strong></span><span class="legend" style="color:#00aa00">█ GF</span><span class="legend" style="color:#996600">█ Variable</span></div>
-<div class="viewer" id="viewer"><canvas id="c"></canvas><div class="scrollbar-h"><input type="range" id="hScroll" min="0" max="${numSeconds-120}" value="0" step="1"></div><div class="scrollbar-v"><input type="range" id="vScroll" min="0" max="${dispCount-1}" value="0" step="1" orient="vertical"></div></div>
-<script>
-var DTOG=${JSON.stringify(varToggle)};
-var DRAW=${JSON.stringify(varRaw)};
-var TS=${numSeconds};var TV=${dispCount};var zoom=1;
-var SIZE_KEY=${JSON.stringify(sizeKey)};
-var sel=document.getElementById("ctrlSize");
-sel.value=${JSON.stringify(String(savedSize))};
-var NG=parseInt(sel.value);
-sel.addEventListener("change",function(){NG=parseInt(sel.value);try{localStorage.setItem(SIZE_KEY,sel.value)}catch(e){}draw()});
-function getLabel(i){return i<NG?"GF"+(i+1):"Var "+(i+2)}
-function getData(i){return i<NG?DTOG[i]:DRAW[i]}
-var hs=document.getElementById("hScroll");var vs=document.getElementById("vScroll");
-document.getElementById("zoomIn").addEventListener("click",function(){zoom=Math.min(zoom+1,8);draw()});
-document.getElementById("zoomOut").addEventListener("click",function(){zoom=Math.max(zoom-1,1);draw()});
-function draw(){var vr=document.getElementById("viewer");var vw=vr.clientWidth-14,vh=vr.clientHeight-14;var lw=160,hh=28;var baseCW=Math.max(2,Math.floor((vw-lw)/120));var cw=baseCW*zoom;var ss=parseInt(hs.value)||0;var sg=parseInt(vs.value)||0;var ch=Math.max(10,Math.floor((vh-hh)/TV));var barH=Math.max(4,Math.floor(ch*0.35));var showS=Math.min(Math.floor((vw-lw)/cw),TS-ss);var showG=Math.min(TV-sg,Math.floor((vh-hh)/ch));var cv=document.getElementById("c");cv.width=vw;cv.height=vh;var cx=cv.getContext("2d");cx.fillStyle="#1a1a1a";cx.fillRect(0,0,vw,vh);for(var s=0;s<showS;s++){var sec=ss+s,x=lw+s*cw;if(sec%10===0){cx.strokeStyle="#666";cx.lineWidth=1.5;cx.beginPath();cx.moveTo(x,hh);cx.lineTo(x,vh);cx.stroke();cx.fillStyle="#eee";cx.font="bold 11px monospace";cx.textAlign="center";cx.fillText(String(sec),x+cw/2,hh-4);cx.lineWidth=1}else if(sec%5===0){cx.strokeStyle="#444";cx.lineWidth=1;cx.beginPath();cx.moveTo(x,hh);cx.lineTo(x,vh);cx.stroke();if(cw>=8){cx.fillStyle="#999";cx.font="9px monospace";cx.textAlign="center";cx.fillText(String(sec),x+cw/2,hh-4)}}else{cx.strokeStyle="#2a2a2a";cx.lineWidth=0.5;cx.beginPath();cx.moveTo(x,hh);cx.lineTo(x,vh);cx.stroke()}}for(var g=0;g<showG;g++){var gi=sg+g;var y=hh+g*ch;var isGF=gi<NG;cx.textAlign="right";if(isGF){var fs2=Math.min(13,9+zoom);cx.font="bold "+fs2+"px monospace";cx.fillStyle="#fff"}else{cx.font="8px monospace";cx.fillStyle="#7799bb"}cx.fillText(getLabel(gi),lw-4,y+barH/2+4);cx.strokeStyle="#252525";cx.beginPath();cx.moveTo(lw,y+ch-1);cx.lineTo(vw,y+ch-1);cx.stroke();var rowData=getData(gi);if(!rowData)continue;for(var s2=0;s2<showS;s2++){var sc=ss+s2;if(sc>=TS)break;if(rowData[sc]==="1"){cx.fillStyle=isGF?"#00aa00":"#996600";cx.fillRect(lw+s2*cw,y,cw,barH)}}}cx.strokeStyle="#555";cx.beginPath();cx.moveTo(lw,0);cx.lineTo(lw,vh);cx.stroke();cx.beginPath();cx.moveTo(0,hh);cx.lineTo(vw,hh);cx.stroke();document.getElementById("secLabel").textContent=ss+" - "+(ss+showS);document.getElementById("rowLabel").textContent=(sg+1)+" - "+(sg+showG);document.getElementById("zoomLabel").textContent=zoom+"x"}
-hs.addEventListener("input",draw);vs.addEventListener("input",draw);window.addEventListener("resize",draw);
-document.getElementById("viewer").addEventListener("wheel",function(e){e.preventDefault();if(e.ctrlKey){if(e.deltaY<0)zoom=Math.min(zoom+1,8);else zoom=Math.max(zoom-1,1);draw();return}if(e.shiftKey){vs.value=Math.max(0,Math.min(TV-1,parseInt(vs.value)+(e.deltaY>0?3:-3)))}else{hs.value=Math.max(0,Math.min(TS-120,parseInt(hs.value)+(e.deltaY>0?10:-10)))}draw()});
-draw();
-</script></body></html>`);
-            popup.document.close();
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error('Erreur boîte noire:', e);
-                showAlert({ title: 'Erreur de lecture', message: 'Erreur lors de la lecture : ' + e.message });
             }
         }
     };

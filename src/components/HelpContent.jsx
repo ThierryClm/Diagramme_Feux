@@ -532,29 +532,10 @@ const HelpContent = ({ initialAnchor = null }) => {
             </section>
 
             <section className="help-section">
-                <h4>Import [redacted]</h4>
-                <p>Menu Fichier → <strong>Importer programmation contrôleur</strong> → <strong>[redacted]</strong> permet d'importer un fichier <code>[redacted]</code> (fichier de programmation contrôleur [redacted]/[redacted]).</p>
-                <h5 style={{ marginTop: '12px', marginBottom: '8px', color: '#aaa' }}>Données importées</h5>
-                <ul>
-                    <li><strong>Nom du carrefour</strong></li>
-                    <li><strong>Groupes de feux :</strong> nom, type (V/P/B/PP), durée d'orange, vert minimum</li>
-                    <li><strong>Phasage :</strong> offset et durée de vert pour un plan de feu</li>
-                    <li><strong>Matrice des temps interverts :</strong> convertie depuis la matrice de sécurité (sécurité + 3s pour les groupes V/B, valeur directe pour les groupes P)</li>
-                    <li><strong>Lignes bus :</strong> le champ DA est positionné à "T" pour les groupes associés à une ligne bus</li>
-                    <li><strong>Variables micro :</strong> détecteurs (boucles), TMAB, DA avant vert, CLIGNO, priorité, adaptatif vertical, point de repos</li>
-                    <li><strong>Conditions micro :</strong> Adaptatif vertical et Point de repos positionnés en actions avec GF=0</li>
-                    <li><strong>Propriétés du projet :</strong> nom du contrôleur ([redacted]), nom du programme ([redacted]4, etc.), date de programmation</li>
-                    <li><strong>Groupes vides :</strong> insérés automatiquement lorsque des discontinuités de numérotation sont détectées</li>
-                </ul>
-                <h5 style={{ marginTop: '12px', marginBottom: '8px', color: '#aaa' }}>Limitations</h5>
-                <ul>
-                    <li>Seul un plan de feu est importé (le premier/principal)</li>
-                    <li>Les conditions de micro-régulation (logique de phases détaillée) ne sont pas décodées</li>
-                    <li>Les valeurs d'équation TMAB ne sont pas disponibles</li>
-                    <li>Pas de code commune, numéro de projet ni commentaires généraux (non stockés dans les fichiers contrôleur)</li>
-                    <li>La matrice des temps interverts peut présenter des écarts mineurs avec les valeurs du projet d'origine</li>
-                    <li>Les codes trajet des lignes bus (DA) sont positionnés à "T" générique (codes de ligne spécifiques non décodés)</li>
-                </ul>
+                <h4>Interopérabilité</h4>
+                <p>Menu Fichier → <strong>Interopérabilité…</strong> — axe d'évolution envisagé pour échanger des données de programmation de carrefours à feux avec d'autres systèmes, qu'ils soient propriétaires ou ouverts.</p>
+                <p>L'objectif à terme est de faciliter la reprise et la restitution de plans de feux entre TraCflux et les principaux environnements du marché, afin d'éviter les ressaisies et de fluidifier le travail des traficiens. Cette capacité d'interopérabilité constitue un potentiel important de l'outil et un levier d'ouverture vers l'écosystème existant.</p>
+                <p><em>Cette fonctionnalité n'est pas opérationnelle dans la présente version : elle est présentée à titre d'orientation produit.</em></p>
             </section>
 
             <section className="help-section">
