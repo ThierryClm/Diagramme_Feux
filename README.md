@@ -47,7 +47,7 @@ L'auditoire ne voit que l'essentiel — le carrefour qui « vit » au rythme du 
 - Coordination de plusieurs carrefours sur un axe routier
 - Visualisation espace-temps avec bandes passantes (sens montant et descendant)
 - Réglage interactif des décalages, vitesses et plans de feux
-- Synchronisation bidirectionnelle avec les projets du module principal
+- Synchronisation unidirectionnelle : rafraîchissement des données depuis les projets du module principal vers l'onde verte
 
 ### Transverse
 
