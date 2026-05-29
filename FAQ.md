@@ -213,7 +213,7 @@ Le fond de plan du carrefour (« Image du carrefour ») accepte tous les formats
 
 Les formats spécialisés **TIFF / GeoTIFF** (`.tif`), **HEIC** (photos iPhone) et formats propriétaires SIG ne sont pas pris en charge directement (les navigateurs ne les affichent pas nativement). Convertissez-les en JPEG ou PNG via votre visionneuse d'images, votre SIG ou un outil en ligne.
 
-L'image chargée est **embarquée en base64 dans le fichier `.json` du projet** : elle voyage avec le projet. Pour limiter son poids, l'application **l'optimise automatiquement à l'import** (redimensionnement + ré-encodage WebP), sans dégrader la lisibilité du fond de plan — un message confirme le gain obtenu. Les images **SVG** (vectorielles) sont conservées telles quelles. Les projets anciens dont l'image est encore lourde sont également optimisés à leur ouverture. L'image source sur votre disque n'est jamais modifiée.
+L'image chargée est **embarquée en base64 dans le fichier `.json` du projet** : elle voyage avec le projet. Pour limiter son poids, l'application **l'optimise automatiquement à l'import** (redimensionnement + ré-encodage WebP), sans dégrader la lisibilité du fond de plan — un message confirme le gain obtenu. Les images **SVG** (vectorielles) sont conservées telles quelles. L'optimisation a lieu une seule fois, à l'import (pas de re-compression à la réouverture). L'image source sur votre disque n'est jamais modifiée.
 
 ### Y a-t-il une limite au nombre de groupes ou de plans de feux ?
 

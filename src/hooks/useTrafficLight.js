@@ -932,11 +932,12 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     // Nombre max de projets conservés dans le cache localStorage.
     // C'est un plafond de COMPTAGE, pas la vraie limite : le quota réel est en
     // octets (~5 Mo navigateur), géré par safeLocalStorage qui absorbe un
-    // éventuel QuotaExceededError. Monté de 5 à 10 pour que la synchronisation
-    // de l'onde verte retrouve davantage de carrefours récents.
+    // éventuel QuotaExceededError. Monté à 15 : depuis l'optimisation auto des
+    // images de fond (~250 Ko/projet au lieu de ~800 Ko), bien plus de projets
+    // tiennent dans le quota (15 × 250 Ko ≈ 3,75 Mo, avec marge).
     // Solution de fond pour lever la contrainte de capacité : migration du
     // stockage des projets vers IndexedDB (gros chantier — cf. mémoire projet).
-    const MAX_CACHED_PROJECTS = 10;
+    const MAX_CACHED_PROJECTS = 15;
 
     // Update project order - move project to top and limit to MAX_CACHED_PROJECTS
     const updateProjectOrder = (name) => {

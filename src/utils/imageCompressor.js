@@ -10,8 +10,8 @@
  * plus tard).
  */
 
-const MAX_DIMENSION = 600;          // px : plafond largeur/hauteur (préserve le ratio).
-                                   // 600 px suffit pour un fond de plan sans perte de lecture.
+const MAX_DIMENSION = 800;          // px : plafond largeur/hauteur (préserve le ratio).
+                                   // 800 px : compromis lisibilité (fond de plan) / poids du projet.
 const WEBP_QUALITY = 0.9;          // qualité élevée pour préserver la lisibilité (projection)
 const SKIP_BELOW_BYTES = 200 * 1024;   // en dessous, on ne touche pas (inutile de dégrader)
 export const ALERT_ABOVE_BYTES = 200 * 1024; // au-delà (après compression), on alerte

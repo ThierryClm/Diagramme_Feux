@@ -5,7 +5,6 @@ import { useAuth, PERMISSIONS } from './hooks/useAuth';
 import TimelineDiagram from './components/TimelineDiagram';
 import ToastContainer from './components/ToastContainer';
 import { toast, getToastPrefs, setToastPref } from './utils/toast';
-import { compressImageDataUrl, dataUrlBytes, formatBytes } from './utils/imageCompressor';
 import GroupTable from './components/GroupTable';
 import TrafficTable from './components/TrafficTable';
 import IntergreenMatrix from './components/IntergreenMatrix';
@@ -391,23 +390,6 @@ function App() {
         const name = projectName || intersectionName;
         document.title = `${prefix}${name} — Diagramme de Feux`;
     }, [hasActiveProject, projectName, intersectionName, isDirty]);
-
-    // Auto-optimisation de l'image de fond à l'ouverture d'un projet : si elle
-    // dépasse le seuil (cf. imageCompressor), on la redimensionne/ré-encode.
-    // compressImageDataUrl ignore les images déjà optimisées (WebP <= cap), donc
-    // pas de boucle ni de perte de génération sur les réouvertures répétées.
-    useEffect(() => {
-        if (!intersectionImage) return;
-        let cancelled = false;
-        (async () => {
-            const { dataUrl, compressed } = await compressImageDataUrl(intersectionImage);
-            if (!cancelled && compressed) {
-                setIntersectionImage(dataUrl);
-                toast.info(`Image du projet optimisée automatiquement → ${formatBytes(dataUrlBytes(dataUrl))}`);
-            }
-        })();
-        return () => { cancelled = true; };
-    }, [intersectionImage, setIntersectionImage]);
 
     // Deep link vers une section de l'aide F1 : si l'URL contient
     // ?openHelp=ondeVerte (ouvert depuis la fenêtre Onde verte), on ouvre
