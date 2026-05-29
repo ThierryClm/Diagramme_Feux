@@ -398,7 +398,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <li><strong>SVG</strong> (.svg) — vectoriel, idéal pour les <em>schémas exportés depuis AutoCAD, Illustrator</em> ou autres outils vectoriels (reste net à tout zoom)</li>
                     <li><strong>WebP, GIF, BMP, AVIF</strong> — également acceptés (formats web courants)</li>
                 </ul>
-                <p>Astuce : pour un fichier .json de projet portable et léger, préférez un fond de plan compressé (JPEG de qualité moyenne, ou PNG si le plan ne comporte que des aplats). L'image est embarquée en base64 dans le projet sauvegardé.</p>
+                <p><strong>Optimisation automatique :</strong> à l'import, l'image est automatiquement redimensionnée et ré-encodée en WebP pour alléger le projet, sans dégrader la lisibilité du fond de plan. Un message en bas à droite confirme le gain obtenu (par exemple « 848 Ko → 279 Ko »). Les images <strong>SVG</strong> (vectorielles) sont conservées telles quelles. Les projets anciens dont l'image est encore volumineuse sont optimisés automatiquement à leur ouverture. L'image reste embarquée en base64 dans le projet sauvegardé ; l'image source sur votre disque n'est jamais modifiée.</p>
                 <p>Note sur les formats non supportés : les fichiers <strong>TIFF / GeoTIFF</strong> (.tif), <strong>HEIC</strong> (photos iPhone) et autres formats spécialisés ne sont pas affichés par les navigateurs. Convertissez-les au préalable en JPEG ou PNG (la plupart des visionneuses d'images, ou un export depuis un SIG, savent le faire).</p>
 
                 <p>Une fois l'image chargée, elle affiche les flèches des groupes de feux avec un code couleur dynamique :</p>

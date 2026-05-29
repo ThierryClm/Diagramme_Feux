@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { safeShowOpenFilePicker } from '../utils/filePicker';
+import { compressImageDataUrl, dataUrlBytes, formatBytes, ALERT_ABOVE_BYTES } from '../utils/imageCompressor';
+import { toast } from '../utils/toast';
 import './IntersectionImage.css';
 
 const IntersectionImage = ({
@@ -91,6 +93,26 @@ const IntersectionImage = ({
     const animationRef = useRef(null);
     const lastTimeRef = useRef(null);
 
+    // Compresse l'image importée (redimensionnement + WebP) avant de l'appliquer,
+    // puis alerte si elle reste volumineuse. L'image source n'est pas modifiée.
+    const applyImportedImage = useCallback(async (rawDataUrl) => {
+        const originalBytes = dataUrlBytes(rawDataUrl);
+        const { dataUrl, compressed } = await compressImageDataUrl(rawDataUrl);
+        onImageChange(dataUrl);
+
+        const finalBytes = dataUrlBytes(dataUrl);
+        if (compressed && originalBytes > 0) {
+            const reduction = Math.round((1 - finalBytes / originalBytes) * 100);
+            toast.success(`Image chargée et optimisée : ${formatBytes(originalBytes)} → ${formatBytes(finalBytes)} (−${reduction} %)`);
+        } else {
+            toast.success(`Image chargée (${formatBytes(finalBytes)})`);
+        }
+
+        if (finalBytes > ALERT_ABOVE_BYTES) {
+            toast.info("Image encore volumineuse (> 1 Mo) après optimisation. Pour alléger le projet, utilisez une image de définition plus modeste.");
+        }
+    }, [onImageChange]);
+
     // Handle image upload via File System Access API
     const handleImageUpload = async (e) => {
         // If called from input element (fallback)
@@ -99,7 +121,7 @@ const IntersectionImage = ({
             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    onImageChange(event.target.result);
+                    applyImportedImage(event.target.result);
                 };
                 reader.readAsDataURL(file);
             }
@@ -145,7 +167,7 @@ const IntersectionImage = ({
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = (event) => {
-                        onImageChange(event.target.result);
+                        applyImportedImage(event.target.result);
                     };
                     reader.readAsDataURL(file);
                 }
