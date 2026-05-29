@@ -413,9 +413,31 @@ const GreenWavePage = () => {
         };
         setPfParams(updatedPfParams);
 
+        // Allège l'export : retire les matrices d'intervert (jamais lues par
+        // l'onde verte, cf. handleSyncGreenWave) et les lignes d'action
+        // entièrement vides. On transforme une COPIE — les données en mémoire
+        // restent complètes, seul le fichier exporté est réduit.
+        const isEmptyActionRow = (r) => !r || (
+            !r.gf && !r.action && !r.description && !r.deb && !r.fin &&
+            !r.abrv && !r.micro && !r.plage1 && !r.plage2 &&
+            !r.actGf1 && !r.actGf1Gf2 && !r.actGf1Gf3 && !r.actGf1Gf4
+        );
+        const slimActions = (arr) => Array.isArray(arr) ? arr.filter(r => !isEmptyActionRow(r)) : arr;
+        const slimIntersections = intersections.map(it => {
+            const copy = { ...it, actionData: slimActions(it.actionData) };
+            if (Array.isArray(it.pfTabs)) {
+                copy.pfTabs = it.pfTabs.map(pf => {
+                    const pfCopy = { ...pf, data: slimActions(pf.data) };
+                    delete pfCopy.conflictMatrix;
+                    return pfCopy;
+                });
+            }
+            return copy;
+        });
+
         const greenWaveData = {
             name: greenWaveName || 'Onde verte',
-            intersections,
+            intersections: slimIntersections,
             speedUp,
             speedDown,
             speedLineOffsetUp,
@@ -498,11 +520,14 @@ const GreenWavePage = () => {
         }
     };
 
-    // Synchronize green wave data from saved projects
+    // Synchronise les données de l'onde verte depuis les projets sauvegardés.
+    // Unidirectionnel : projets -> onde verte. Seuls les projets encore présents
+    // dans le cache localStorage peuvent être rafraîchis (cf. MAX_CACHED_PROJECTS).
     const handleSyncGreenWave = () => {
         if (!intersections) return;
 
-        let updatedCount = 0;
+        const synced = [];
+        const notSynced = [];
         const updatedIntersections = intersections.map(intersection => {
             // Try to load project data from localStorage
             const projectKey = `traffic_project_${intersection.projectName}`;
@@ -512,7 +537,6 @@ const GreenWavePage = () => {
                 try {
                     const projectData = JSON.parse(projectRaw);
                     if (projectData.groups) {
-                        updatedCount++;
                         // Get pfTabs and actionData from the selected plan de feu
                         const pfTabs = projectData.pfTabs || [{ id: 1, name: 'PF1', data: [] }];
                         const selectedPfId = intersection.selectedPfId || pfTabs[0]?.id || 1;
@@ -540,6 +564,7 @@ const GreenWavePage = () => {
                             });
                         }
 
+                        synced.push(intersection.projectName);
                         return {
                             ...intersection,
                             groups: updatedGroups,
@@ -552,16 +577,30 @@ const GreenWavePage = () => {
                     console.error(`Failed to sync project ${intersection.projectName}`, e);
                 }
             }
+            notSynced.push(intersection.projectName);
             return intersection;
         });
 
         setIntersections(updatedIntersections);
 
-        if (updatedCount > 0) {
-            toast.success(`${updatedCount} carrefour(s) synchronisé(s)`);
-        } else {
-            showAlert({ title: 'Synchronisation', message: 'Aucun carrefour mis à jour. Vérifiez que les projets existent.' });
+        // Fenêtre récapitulative : carrefours synchronisés / non synchronisés + limite
+        const lines = [];
+        if (synced.length > 0) {
+            lines.push(`${synced.length} carrefour(s) synchronisé(s) :`);
+            synced.forEach(name => lines.push(`  - ${name}`));
         }
+        if (notSynced.length > 0) {
+            if (lines.length) lines.push('');
+            lines.push(`${notSynced.length} carrefour(s) non synchronisé(s) :`);
+            notSynced.forEach(name => lines.push(`  - ${name}`));
+            lines.push('');
+            lines.push("Ces carrefours n'ont pas de projet disponible dans le cache du navigateur : seuls les projets récemment ouverts ou enregistrés y sont conservés. Pour les rafraîchir, ouvrez puis enregistrez leur projet dans le module principal, puis relancez la synchronisation.");
+        }
+        if (lines.length === 0) {
+            lines.push('Aucun carrefour à synchroniser.');
+        }
+
+        showAlert({ title: "Synchronisation de l'onde verte", message: lines.join('\n') });
     };
 
     // Appliquer les settings chargés. Pendant l'application, le flag
