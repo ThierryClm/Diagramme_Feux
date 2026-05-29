@@ -215,6 +215,14 @@ Les formats spécialisés **TIFF / GeoTIFF** (`.tif`), **HEIC** (photos iPhone) 
 
 L'image chargée est **embarquée en base64 dans le fichier `.json` du projet** : elle voyage avec le projet. Pour limiter son poids, l'application **l'optimise automatiquement à l'import** (redimensionnement + ré-encodage WebP), sans dégrader la lisibilité du fond de plan — un message confirme le gain obtenu. Les images **SVG** (vectorielles) sont conservées telles quelles. L'optimisation a lieu une seule fois, à l'import (pas de re-compression à la réouverture). L'image source sur votre disque n'est jamais modifiée.
 
+### TraCflux gère-t-il la multiprogrammation ?
+
+Oui. Chaque carrefour peut porter plusieurs plans de feux (onglets PF), et **chaque PF est un programme complet et indépendant** : cycle, durées de vert, offsets, matrice intervert et micro-régulation lui sont propres. Vous déclinez ainsi les programmes habituels d'un carrefour au sein d'un même projet — pointe du matin (HPM), pointe du soir (HPS), heure creuse (HC), nuit (HN), variante priorité bus, événementiel…
+
+Le **PF1 sert de plan de référence** : sur les autres PF, tout écart de la matrice intervert est coloré (rouge = augmenté, vert = réduit) et explicité au survol, ce qui rend immédiatement visibles les différences d'un programme à l'autre.
+
+À noter : TraCflux **conçoit et analyse** la multiprogrammation ; le **basculement réel** entre programmes (calendrier horaire, sélection sur trafic) reste assuré par le **contrôleur sur le terrain**.
+
 ### Y a-t-il une limite au nombre de groupes ou de plans de feux ?
 
 Pas de limite stricte. L'application a été testée avec une trentaine de groupes et plusieurs plans de feux par projet. Les performances restent fluides ; pour des intersections très complexes, surveillez l'usage du localStorage (un avertissement apparaît dans le rapport de diagnostic au-delà de 4 Mo).

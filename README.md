@@ -16,7 +16,7 @@ Solution open source pour la conception et l'optimisation de plans de feux trico
 
 TraCflux s'organise en **deux modules complémentaires** :
 
-- **Diagramme de Feux** *(module principal)* — conception et analyse des plans de feux d'un carrefour : groupes, matrice intervert, diagramme temporel, micro-régulation, plans multiples.
+- **Diagramme de Feux** *(module principal)* — conception et analyse des plans de feux d'un carrefour : groupes, matrice intervert, diagramme temporel, micro-régulation, multiprogrammation (plans de feux multiples).
 - **Onde verte** *(module complémentaire)* — coordination espace-temps de plusieurs carrefours sur un axe routier, avec visualisation des bandes passantes. S'appuie sur les projets de carrefours préalablement créés dans le module principal.
 
 Conçue pour être utilisée **localement**, sans serveur ni télémétrie : toutes les données restent dans le navigateur (localStorage) et sur votre poste.
@@ -36,7 +36,7 @@ L'auditoire ne voit que l'essentiel — le carrefour qui « vit » au rythme du 
 - Définition des groupes de feux (VL, TC, Cycliste, Piéton) avec durées vert/orange/rouge
 - Matrice d'intervert avec détection automatique des conflits
 - Diagramme temporel horizontal avec tête de lecture
-- Plans de feux multiples (PF) gérés par onglets
+- **Multiprogrammation** — plans de feux multiples (PF) gérés par onglets : un même carrefour décliné en plusieurs programmes (pointe du matin, pointe du soir, heure creuse, nuit, événementiel…), chacun avec son cycle, ses durées de vert, ses offsets, sa matrice intervert et sa micro-régulation propres
 - Table d'actions de micro-régulation par plan (escamotage, ouverture/fermeture anticipée, etc.)
 - Fond de plan personnalisable (photo aérienne, plan CAO, schéma au trait) avec flèches d'animation des groupes — optimisé automatiquement à l'import (redimensionnement + WebP) pour alléger le projet
 - Import/export (JSON, CSV, Excel)

@@ -102,7 +102,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <li><strong>En-tête :</strong> Nom du carrefour, nombre de groupes, durée du cycle, zoom</li>
                     <li><strong>Panneau gauche :</strong> Onglets Projets, Configuration et Trafic</li>
                     <li><strong>Zone centrale :</strong> Diagramme temporel et tableau des conditions de micro-régulation</li>
-                    <li><strong>Onglets PF :</strong> Gérez plusieurs plans de feux (PF1, PF2...) :
+                    <li><strong>Onglets PF — la multiprogrammation :</strong> Gérez plusieurs plans de feux (PF1, PF2...). Chaque PF est un <em>programme complet et indépendant</em> du même carrefour (pointe du matin, pointe du soir, heure creuse, nuit, événementiel…) : cycle, durées de vert, offsets, matrice intervert et micro-régulation lui sont propres. Le basculement réel entre programmes (calendrier, trafic) reste assuré par le contrôleur sur le terrain ; TraCflux sert à les concevoir et les analyser.
                         <ul>
                             <li><em>Ajouter :</em> Cliquez sur le bouton "+" pour créer un nouveau plan de feux vierge.</li>
                             <li><em>Dupliquer :</em> Via le menu Diagramme → Dupliquer, crée un nouvel onglet avec une copie du plan actuel.</li>
