@@ -2927,6 +2927,7 @@ function App() {
                         actionData,
                         conflictMatrix,
                         intersectionImage,
+                        imageNaturalDims,
                         includeProject: diagnosticIncludeProject
                     });
                     const journalEntries = getInterceptedEntries();
@@ -3045,6 +3046,7 @@ function App() {
                                             actionData,
                                             conflictMatrix,
                                             intersectionImage,
+                                            imageNaturalDims,
                                             includeProject: diagnosticIncludeProject
                                         });
                                         downloadDiagnosticJSON(obj, 'diagnostic');

@@ -5,6 +5,33 @@
  */
 import { APP_VERSION, APP_NAME } from '../version';
 import { getInterceptedEntries } from './errorInterceptor';
+import { dataUrlBytes } from './imageCompressor';
+
+// Petits formatages locaux au rapport — gardés ici pour rester lisibles dans
+// le texte plain (pas de "1,2 Mo" mais des Ko entiers, cohérent avec la ligne
+// « Taille utilisée » du localStorage).
+const formatKb = (bytes) => (bytes > 0 ? `${Math.round(bytes / 1024)} Ko` : null);
+
+// Estime la taille en octets du projet une fois sérialisé (ce que ferait un
+// Enregistrer sous). Image comprise. Approche caractères ≈ octets (base64 +
+// ASCII : précision largement suffisante pour un diagnostic).
+const estimateProjectBytes = (ctx) => {
+    try {
+        const dump = JSON.stringify({
+            intersectionName: ctx.intersectionName,
+            projectName: ctx.projectName,
+            groups: ctx.groups,
+            cycleLength: ctx.cycleLength,
+            conflictMatrix: ctx.conflictMatrix,
+            pfTabs: ctx.pfTabs,
+            activePFId: ctx.activePFId,
+            intersectionImage: ctx.intersectionImage
+        });
+        return dump.length;
+    } catch {
+        return 0;
+    }
+};
 
 /**
  * Estimate the size (in KB) currently used in localStorage.
@@ -93,6 +120,7 @@ export const buildDiagnosticReport = (ctx) => {
         actionData,
         conflictMatrix,
         intersectionImage,
+        imageNaturalDims,
         includeProject = false
     } = ctx;
 
@@ -154,7 +182,19 @@ export const buildDiagnosticReport = (ctx) => {
     lines.push(`  Actions remplies : ${filledActions} / ${(actionData || []).length}`);
     lines.push(`  Matrice (taille) : ${matrixSize}×${matrixSize}`);
     lines.push(`  Matrice (cases remplies) : ${matrixFilled}`);
-    lines.push(`  Image carrefour  : ${intersectionImage ? 'chargée' : 'absente'}`);
+    const imageBytes = intersectionImage ? dataUrlBytes(intersectionImage) : 0;
+    const imgW = (imageNaturalDims && imageNaturalDims.width) || 0;
+    const imgH = (imageNaturalDims && imageNaturalDims.height) || 0;
+    const imgKb = formatKb(imageBytes);
+    const imgRes = (imgW > 1 && imgH > 1) ? `${imgW} × ${imgH} px` : null;
+    const imgDetail = intersectionImage
+        ? `chargée${imgKb ? ` — ${imgKb}` : ''}${imgRes ? `, ${imgRes}` : ''}`
+        : 'absente';
+    lines.push(`  Image carrefour  : ${imgDetail}`);
+
+    const projectBytes = estimateProjectBytes(ctx);
+    const projectKb = formatKb(projectBytes);
+    lines.push(`  Taille JSON      : ${projectKb || 'indisponible'} (projet sérialisé, image comprise)`);
     lines.push('');
     lines.push('## Détail des plans de feux');
     (pfTabs || []).forEach(pf => {
@@ -227,6 +267,7 @@ export const buildDiagnosticJSON = (ctx) => {
         actionData,
         conflictMatrix,
         intersectionImage,
+        imageNaturalDims,
         includeProject = false
     } = ctx;
 
@@ -287,7 +328,11 @@ export const buildDiagnosticJSON = (ctx) => {
             totalActions: (actionData || []).length,
             matrixSize,
             matrixFilled,
-            hasImage: !!intersectionImage
+            hasImage: !!intersectionImage,
+            imageBytes: intersectionImage ? dataUrlBytes(intersectionImage) : 0,
+            imageWidth: (imageNaturalDims && imageNaturalDims.width > 1) ? imageNaturalDims.width : null,
+            imageHeight: (imageNaturalDims && imageNaturalDims.height > 1) ? imageNaturalDims.height : null,
+            projectBytes: estimateProjectBytes(ctx)
         },
         pfDetails: (pfTabs || []).map(pf => ({
             id: pf.id,
