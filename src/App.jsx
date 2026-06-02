@@ -1596,6 +1596,7 @@ function App() {
         importFile, setImportFile, setImportError, setImportModal, setImportHintDir,
         htmFile, setHtmFile, setHtmImportError, importedHTMFiles, setImportedHTMFiles, setImportHTMModal,
         cycleLength, loadFullState, updateGroupParams,
+        setHasActiveProject,
         lastImportDirectoryRef,
         saveDirectoryHandle, loadDirectoryHandle,
         recentImportDirs, addRecentDirectory,

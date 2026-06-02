@@ -10,6 +10,7 @@ const useImportOperations = ({
     importFile, setImportFile, setImportError, setImportModal, setImportHintDir,
     htmFile, setHtmFile, setHtmImportError, importedHTMFiles, setImportedHTMFiles, setImportHTMModal,
     cycleLength, loadFullState, updateGroupParams,
+    setHasActiveProject,
     lastImportDirectoryRef,
     saveDirectoryHandle, loadDirectoryHandle,
     recentImportDirs, addRecentDirectory,
@@ -87,6 +88,7 @@ const useImportOperations = ({
                 activePFId: 1,
                 trafficDatasets: importedData.trafficDatasets
             });
+            setHasActiveProject?.(true);
 
             // Apply traffic data if available
             if (importedData.trafficData && Object.keys(importedData.trafficData).length > 0) {
@@ -168,6 +170,7 @@ const useImportOperations = ({
                 activePFId: 1,
                 trafficDatasets: importedData.trafficDatasets
             });
+            setHasActiveProject?.(true);
 
             if (importedData.trafficData && Object.keys(importedData.trafficData).length > 0) {
                 importedData.groups.forEach((group) => {
@@ -218,6 +221,7 @@ const useImportOperations = ({
                     activePFId: 1,
                     trafficDatasets: importedData.trafficDatasets
                 });
+                setHasActiveProject?.(true);
 
                 // Apply traffic data if available
                 if (importedData.trafficData && Object.keys(importedData.trafficData).length > 0) {
@@ -295,6 +299,7 @@ const useImportOperations = ({
                             groups: importedGroups,
                             cycleLength: cycleLength
                         });
+                        setHasActiveProject?.(true);
 
                         setImportModal(false);
                         setImportFile(null);
@@ -368,6 +373,7 @@ const useImportOperations = ({
                     groups: parsedGroups,
                     cycleLength: cycleLength
                 });
+                setHasActiveProject?.(true);
 
                 setImportHTMModal(false);
                 setHtmFile(null);
