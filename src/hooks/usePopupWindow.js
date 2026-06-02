@@ -209,6 +209,15 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
         }
     }, []);
 
+    // Update document title when the title prop changes while the popup is open
+    // (le titre est posé une fois à l'ouverture ; cet effet le rafraîchit pour
+    // refléter par ex. le nom du carrefour ou le PF actif).
+    useEffect(() => {
+        if (!isOpen) return;
+        if (!popupRef.current || popupRef.current.closed) return;
+        popupRef.current.document.title = title;
+    }, [title, isOpen]);
+
     // Sync theme changes to popup via MutationObserver (instead of every render)
     useEffect(() => {
         if (!popupRef.current || popupRef.current.closed) return;

@@ -6,7 +6,7 @@ import usePopupWindow from './usePopupWindow';
  * Cas d'usage typique : projection sur un second écran avec le diagramme
  * sur l'écran principal et les notes du présentateur sur l'écran annexe.
  */
-const useFloatingRemarks = () => {
+const useFloatingRemarks = (activePFName = '') => {
     const [showFloatingRemarks, setShowFloatingRemarks] = useState(() => {
         return localStorage.getItem('floating_remarques_visible') === 'true';
     });
@@ -15,10 +15,13 @@ const useFloatingRemarks = () => {
         localStorage.setItem('floating_remarques_visible', showFloatingRemarks.toString());
     }, [showFloatingRemarks]);
 
+    const pf = (activePFName || '').trim();
+    const popupTitle = pf ? `Remarques du diagramme — ${pf}` : 'Remarques du diagramme';
+
     const remarquesPopup = usePopupWindow({
         isOpen: showFloatingRemarks,
         onClose: () => setShowFloatingRemarks(false),
-        title: 'Remarques du diagramme',
+        title: popupTitle,
         width: 600,
         height: 400
     });

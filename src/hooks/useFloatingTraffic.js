@@ -4,7 +4,7 @@ import usePopupWindow from './usePopupWindow';
 /**
  * Gère l'état et la fenêtre popup des données trafic flottantes.
  */
-const useFloatingTraffic = (groupCount) => {
+const useFloatingTraffic = (groupCount, activePFName = '') => {
     const [showFloatingTraffic, setShowFloatingTraffic] = useState(() => {
         return localStorage.getItem('floating_traffic_visible') === 'true';
     });
@@ -13,10 +13,13 @@ const useFloatingTraffic = (groupCount) => {
         localStorage.setItem('floating_traffic_visible', showFloatingTraffic.toString());
     }, [showFloatingTraffic]);
 
+    const pf = (activePFName || '').trim();
+    const popupTitle = pf ? `Données trafic — ${pf}` : 'Données trafic';
+
     const trafficPopup = usePopupWindow({
         isOpen: showFloatingTraffic,
         onClose: () => setShowFloatingTraffic(false),
-        title: 'Données trafic',
+        title: popupTitle,
         width: 550,
         height: Math.min(580, 180 + groupCount * 32)
     });

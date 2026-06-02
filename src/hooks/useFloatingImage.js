@@ -6,8 +6,10 @@ import usePopupWindow from './usePopupWindow';
  * visibilité, recadrage, zoom, dimensions naturelles et popup détachée.
  *
  * @param {string|null} intersectionImage - Data URL de l'image courante
+ * @param {string} [intersectionName] - Nom du carrefour, repris dans le titre du popup
+ * @param {string} [activePFName] - Nom du PF actif, repris dans le titre du popup
  */
-const useFloatingImage = (intersectionImage) => {
+const useFloatingImage = (intersectionImage, intersectionName = '', activePFName = '') => {
     const [showFloatingImage, setShowFloatingImage] = useState(() => {
         const saved = localStorage.getItem('floating_image_visible');
         return saved === 'true';
@@ -57,11 +59,18 @@ const useFloatingImage = (intersectionImage) => {
         localStorage.setItem('floating_image_zoom', floatingZoom.toString());
     }, [floatingZoom]);
 
+    // Titre dynamique : « <Carrefour> — <PF> » selon ce qui est disponible.
+    const trimmedName = (intersectionName || '').trim();
+    const trimmedPF = (activePFName || '').trim();
+    const popupTitle = trimmedName && trimmedPF
+        ? `${trimmedName} — ${trimmedPF}`
+        : (trimmedName || 'Carrefour');
+
     // Popup window for floating image
     const floatingImagePopup = usePopupWindow({
         isOpen: showFloatingImage && !!intersectionImage,
         onClose: () => setShowFloatingImage(false),
-        title: 'Carrefour',
+        title: popupTitle,
         width: Math.round((750 - floatingCrop.left - floatingCrop.right) * floatingZoom) + 40,
         height: Math.round((530 - floatingCrop.top - floatingCrop.bottom) * floatingZoom) + 120
     });

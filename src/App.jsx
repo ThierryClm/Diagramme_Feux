@@ -415,33 +415,36 @@ function App() {
         return () => clearTimeout(timer);
     }, [isDirty, projectName, intersectionName, groups, actionData, cycleLength, conflictMatrix, projectProperties, showSaveReminder]);
 
+    // Nom du PF actif, repris dans le titre de chaque fenêtre détachée.
+    const activePFName = pfTabs.find(pf => pf.id === activePFId)?.name || '';
+
     // Floating matrix state
     const {
         showFloatingMatrix,
         setShowFloatingMatrix,
         matrixPopup
-    } = useFloatingMatrix(groups.length);
+    } = useFloatingMatrix(groups.length, activePFName);
 
     // Floating form state
     const {
         showFloatingForm,
         setShowFloatingForm,
         formPopup
-    } = useFloatingForm(groups.length);
+    } = useFloatingForm(groups.length, activePFName);
 
     // Floating traffic state
     const {
         showFloatingTraffic,
         setShowFloatingTraffic,
         trafficPopup
-    } = useFloatingTraffic(groups.length);
+    } = useFloatingTraffic(groups.length, activePFName);
 
     // Floating remarques state (notes du PF actif, projection sur 2e écran)
     const {
         showFloatingRemarks,
         setShowFloatingRemarks,
         remarquesPopup
-    } = useFloatingRemarks();
+    } = useFloatingRemarks(activePFName);
 
     // Floating legend state
     const {
@@ -489,7 +492,7 @@ function App() {
         floatingZoom, setFloatingZoom,
         imageNaturalDims,
         floatingImagePopup
-    } = useFloatingImage(intersectionImage);
+    } = useFloatingImage(intersectionImage, intersectionName, activePFName);
 
     // Diagram arrow style
     const [diagramArrowStyle, setDiagramArrowStyle] = useState('solid');
