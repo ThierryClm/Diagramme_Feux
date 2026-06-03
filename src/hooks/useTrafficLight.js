@@ -92,18 +92,53 @@ const freeUpLocalStorage = (targetBytes = 1000000) => {
     }
 };
 
-// Check and free space if localStorage is nearly full (> 4.5MB of ~5MB limit)
-const ensureLocalStorageSpace = () => {
-    const usage = getLocalStorageUsage();
-    const threshold = 4.5 * 1024 * 1024; // 4.5 MB
-
-    if (usage > threshold) {
-        console.log(`localStorage presque plein (${(usage / 1024 / 1024).toFixed(2)} MB), libération de 1 MB...`);
-        const freed = freeUpLocalStorage(1000000);
-        console.log(`Espace libéré: ${(freed / 1024).toFixed(0)} KB`);
-        return freed > 0;
+// Supprime les clés `_backup` orphelines (dont le projet principal n'existe
+// plus). Historiquement, l'éviction par plafond comptable retirait le projet
+// principal sans toucher au backup, qui s'accumulait silencieusement dans le
+// quota. Comme aucun chemin de code ne LIT ces backups (jamais restaurés),
+// on peut les supprimer sans risque. Renvoie l'espace libéré en octets UTF-16.
+const removeOrphanBackups = () => {
+    let freed = 0;
+    const orphanKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith('traffic_project_') || !key.endsWith('_backup')) continue;
+        const mainKey = key.slice(0, -'_backup'.length);
+        if (localStorage.getItem(mainKey) === null) {
+            const value = localStorage.getItem(key) || '';
+            freed += (key.length + value.length) * 2;
+            orphanKeys.push(key);
+        }
     }
-    return true;
+    orphanKeys.forEach(k => localStorage.removeItem(k));
+    if (orphanKeys.length > 0) {
+        console.log(`Nettoyage : ${orphanKeys.length} _backup orphelin(s) supprimé(s) (${(freed / 1024).toFixed(0)} KB)`);
+    }
+    return freed;
+};
+
+// Vérifie et libère de l'espace si localStorage approche du quota.
+// Stratégie en 2 temps : (1) supprimer les _backup orphelins (gratuit, sans
+// toucher aux projets actifs) ; (2) si encore au-dessus du seuil, évincer les
+// projets les plus anciens. Le seuil est aligné sur ~80 % du quota navigateur
+// typique en UTF-16 (~10 Mo), au lieu des 4,5 Mo historiques qui étaient
+// déclenchés bien trop tôt par l'accumulation de backups.
+const ensureLocalStorageSpace = () => {
+    let usage = getLocalStorageUsage();
+    const threshold = 8 * 1024 * 1024; // 8 MB UTF-16
+
+    if (usage <= threshold) return true;
+
+    // (1) Récupération gratuite : backups orphelins
+    const orphanFreed = removeOrphanBackups();
+    usage -= orphanFreed;
+    if (usage <= threshold) return true;
+
+    // (2) Encore au-dessus : on évince les projets les plus anciens
+    console.log(`localStorage encore au-dessus du seuil (${(usage / 1024 / 1024).toFixed(2)} MB), libération de 1 MB par éviction...`);
+    const freed = freeUpLocalStorage(1000000);
+    console.log(`Éviction : ${(freed / 1024).toFixed(0)} KB libérés`);
+    return freed > 0;
 };
 
 // Traffic dataset types
