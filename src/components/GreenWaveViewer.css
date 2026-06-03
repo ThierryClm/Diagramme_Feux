@@ -5,7 +5,10 @@
     display: flex;
     flex-direction: column;
     color: #fff;
-    overflow: auto;
+    /* Pas de `overflow: auto` ici : ça créerait un contexte de défilement
+       pour les `position: sticky` descendants (menu, en-tête tableau)
+       alors que c'est en réalité le document qui scrolle. Le défilement
+       horizontal du diagramme est géré par .green-wave-diagram-scroll. */
 }
 
 .green-wave-page-header {
@@ -1076,3 +1079,43 @@ body.sepia-mode .green-wave-data-table .gf-descendant-header {
     background: #e8c89a;
 }
 
+/* === Sticky headers ===
+   Sur les ondes vertes avec beaucoup de carrefours, la page dépasse la
+   fenêtre et un ascenseur global apparaît. La barre de menu, le titre du
+   tableau des données saisies (avec ses boutons + / Détacher) et les
+   colonnes du tableau doivent rester visibles pendant le défilement.
+   .green-wave-page est le conteneur scrollable (overflow: auto), donc
+   les `position: sticky` se réfèrent à son bord supérieur.
+   Les `top` sont les hauteurs cumulées des éléments collés au-dessus. */
+
+.green-wave-page > .menu-bar {
+    position: sticky;
+    top: 0;
+    /* z-index 100 déjà appliqué via .menu-bar */
+}
+
+.green-wave-page .green-wave-params-panel > h3 {
+    position: sticky;
+    top: 30px; /* hauteur menu (28 + 2 bordure inférieure) */
+    z-index: 5;
+    background: #252525; /* identique au panel : masque le contenu qui défile en-dessous */
+    margin: 0;            /* supprime margin-bottom pour ne pas créer un gap transparent */
+    padding-bottom: 8px;  /* compense le margin retiré (espace avant le tableau) */
+}
+
+body.light-mode .green-wave-page .green-wave-params-panel > h3,
+body.sepia-mode .green-wave-page .green-wave-params-panel > h3 {
+    background: #f5f5f5; /* identique au panel light/sepia */
+}
+
+.green-wave-page .green-wave-data-table thead > tr:first-child > th {
+    position: sticky;
+    top: 60px; /* menu (30) + h3 (~30) */
+    z-index: 4;
+}
+
+.green-wave-page .green-wave-data-table thead .sub-header > th {
+    position: sticky;
+    top: 84px; /* + hauteur première ligne (~24) */
+    z-index: 4;
+}

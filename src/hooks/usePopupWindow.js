@@ -17,8 +17,26 @@ let lastBringTime = 0;
 // l'utilisateur recevrait 2 alertes consécutives pour le même problème.
 let popupBlockedNotified = false;
 
+// Drapeau « une modale main-window réclame le premier plan ». Quand on ouvre
+// une modale React dans la fenêtre principale alors qu'une fenêtre détachée
+// est focus, le mécanisme bringAllPopupsToFront masquerait la modale derrière
+// la popup OS. Ce flag suspend temporairement ce comportement.
+let mainModalActive = false;
+
+export function setMainModalActive(active) {
+    mainModalActive = !!active;
+    if (mainModalActive) {
+        // Ramène la fenêtre principale au premier plan pour que la modale soit visible.
+        try { window.focus(); } catch { /* ignore */ }
+    }
+}
+
+export function isMainModalActive() {
+    return mainModalActive;
+}
+
 export function bringAllPopupsToFront(except) {
-    if (isBringingToFront || openPopups.size === 0 || isFilePickerActive()) return;
+    if (isBringingToFront || openPopups.size === 0 || isFilePickerActive() || mainModalActive) return;
     const now = Date.now();
     if (now - lastBringTime < 200) return;
     isBringingToFront = true;
@@ -38,7 +56,7 @@ function installMainListener() {
     mainListenerInstalled = true;
 
     const bringPopupsIfAllowed = () => {
-        if (openPopups.size === 0 || isBringingToFront || isFilePickerActive()) return;
+        if (openPopups.size === 0 || isBringingToFront || isFilePickerActive() || mainModalActive) return;
         if (bringPopupsTimer) clearTimeout(bringPopupsTimer);
         bringPopupsTimer = setTimeout(() => {
             bringPopupsTimer = null;
@@ -159,7 +177,7 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
 
             // When this popup gains focus, bring all other popups to front too
             popup.addEventListener('focus', () => {
-                if (!isFilePickerActive()) {
+                if (!isFilePickerActive() && !mainModalActive) {
                     setTimeout(() => bringAllPopupsToFront(popup), 150);
                 }
             });

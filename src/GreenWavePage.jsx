@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { safeShowSaveFilePicker, safeShowOpenFilePicker } from './utils/filePicker';
-import usePopupWindow from './hooks/usePopupWindow';
+import usePopupWindow, { setMainModalActive } from './hooks/usePopupWindow';
 import GreenWaveMenuBar from './components/GreenWaveMenuBar';
 import CreateGreenWaveDialog from './components/CreateGreenWaveDialog';
 import HelpContent from './components/HelpContent';
@@ -47,6 +47,20 @@ const GreenWavePage = () => {
     }, []);
 
     const [intersections, setIntersections] = useState(null);
+    // Sélecteur de projet pour le « + Ajouter un carrefour » du tableau des
+    // données saisies. Modale React (l'ancien window.prompt natif était
+    // invisible dans la popup détachée et bloqué en mode PWA installé).
+    const [addCarrefourModalOpen, setAddCarrefourModalOpen] = useState(false);
+    const [addCarrefourCandidates, setAddCarrefourCandidates] = useState([]);
+    const [addCarrefourSelected, setAddCarrefourSelected] = useState(null);
+
+    // Réclame le premier plan tant que la modale est ouverte : ramène la
+    // fenêtre principale devant et suspend le retour-au-premier-plan des
+    // fenêtres détachées, sinon la modale est masquée derrière la popup.
+    useEffect(() => {
+        setMainModalActive(addCarrefourModalOpen);
+        return () => setMainModalActive(false);
+    }, [addCarrefourModalOpen]);
     // Invitation « onde verte exemple » (cf. utils/welcomeInvite) — figée
     // au montage. Compteurs propres au module Onde verte.
     const [showExampleInvite] = useState(() => isInviteVisible('greenwave'));
@@ -500,10 +514,22 @@ const GreenWavePage = () => {
                 // getParent n'est pas toujours disponible
             }
 
-            // Update name from filename if not set
+            // Synchronise le titre affiché sur le nom du fichier sauvegardé :
+            // c'est le comportement attendu après un « Enregistrer sous » avec
+            // renommage. Au passage, on purge l'éventuelle entrée localStorage
+            // de l'ancien nom pour éviter d'avoir un doublon (ancien + nouveau)
+            // dans la liste des ondes vertes sauvegardées.
             const savedName = fileHandle.name.replace(/\.json$/i, '');
-            if (!greenWaveName) {
-                setGreenWaveName(savedName);
+            const previousName = greenWaveName;
+            setGreenWaveName(savedName);
+            if (previousName && previousName !== savedName) {
+                try {
+                    const cache = JSON.parse(localStorage.getItem('savedGreenWaves') || '{}');
+                    if (cache[previousName]) {
+                        delete cache[previousName];
+                        localStorage.setItem('savedGreenWaves', JSON.stringify(cache));
+                    }
+                } catch { /* ignore */ }
             }
             // Mémorise le nouveau nom de fichier (au cas où l'utilisateur
             // l'a modifié dans la boîte de dialogue) pour que la prochaine
@@ -739,37 +765,79 @@ const GreenWavePage = () => {
     }, [applySettings]);
 
     // Calculate the maximum values for axes
-    const { maxTime, maxDistance, cycleLength } = useMemo(() => {
+    const { maxTime, minDistance, maxDistance, cycleLength } = useMemo(() => {
         if (!intersections || intersections.length === 0) {
-            return { maxTime: 100, maxDistance: 500, cycleLength: 100 };
+            return { maxTime: 100, minDistance: 0, maxDistance: 500, cycleLength: 100 };
         }
 
-        const maxDist = Math.max(...intersections.map(i => i.distance));
+        // On considère les deux colonnes (distance + distanceG2 pour le bi-carrefour).
+        // 0 reste toujours dans la fenêtre d'affichage (repère central pour l'axe),
+        // et on ajoute 50 m de respiration en haut comme en bas si négatif.
+        const allDistances = intersections.flatMap(i => [i.distance, i.distanceG2 ?? i.distance]);
+        const minDist = Math.min(0, ...allDistances);
+        const maxDist = Math.max(...allDistances);
         const cycle = intersections[0]?.cycleLength || 100;
 
         return {
             maxTime: cycle * displayCycles, // Show 2 or 3 cycles
+            minDistance: minDist < 0 ? minDist - 50 : 0,
             maxDistance: maxDist + 50,
             cycleLength: cycle
         };
     }, [intersections, displayCycles]);
 
 
+    // Bornes des distances de carrefour : [-9999 ; +9999] m. Les valeurs
+    // négatives permettent de placer des carrefours au sud d'un point 0
+    // (carrefour central par ex.) sans devoir décaler tous les existants.
+    const DISTANCE_MIN = -9999;
+    const DISTANCE_MAX = 9999;
+    const clampDistance = (value) => {
+        const n = parseInt(value);
+        if (isNaN(n)) return 0;
+        return Math.max(DISTANCE_MIN, Math.min(DISTANCE_MAX, n));
+    };
+
+    // Brouillons de saisie des champs distance : permet à l'utilisateur de
+    // taper "-" puis les chiffres sans que la chaîne intermédiaire (invalide
+    // côté nombre) écrase la valeur du modèle à 0. Clé : `${idx}.g1|g2`.
+    // L'entrée est vidée au blur (commit) ; à ce moment, l'input réaffiche la
+    // valeur clampée du modèle.
+    const [distanceDrafts, setDistanceDrafts] = useState({});
+
     // Update intersection distance for group 1
     const updateDistance = (intersectionIdx, value) => {
-        setIntersections(prev => {
-            const updated = [...prev];
-            updated[intersectionIdx] = { ...updated[intersectionIdx], distance: parseInt(value) || 0 };
-            return updated;
-        });
+        setDistanceDrafts(prev => ({ ...prev, [`${intersectionIdx}.g1`]: value }));
+        const n = parseInt(value);
+        if (!isNaN(n)) {
+            setIntersections(prev => {
+                const updated = [...prev];
+                updated[intersectionIdx] = { ...updated[intersectionIdx], distance: clampDistance(value) };
+                return updated;
+            });
+        }
     };
 
     // Update intersection distance for group 2
     const updateDistanceG2 = (intersectionIdx, value) => {
-        setIntersections(prev => {
-            const updated = [...prev];
-            updated[intersectionIdx] = { ...updated[intersectionIdx], distanceG2: parseInt(value) || 0 };
-            return updated;
+        setDistanceDrafts(prev => ({ ...prev, [`${intersectionIdx}.g2`]: value }));
+        const n = parseInt(value);
+        if (!isNaN(n)) {
+            setIntersections(prev => {
+                const updated = [...prev];
+                updated[intersectionIdx] = { ...updated[intersectionIdx], distanceG2: clampDistance(value) };
+                return updated;
+            });
+        }
+    };
+
+    // Au blur, retire le brouillon : l'input réaffiche alors la valeur clampée
+    // du modèle (les valeurs invalides — "-" seul, "" — laissent le modèle inchangé).
+    const commitDistanceDraft = (intersectionIdx, which) => {
+        setDistanceDrafts(prev => {
+            const next = { ...prev };
+            delete next[`${intersectionIdx}.${which}`];
+            return next;
         });
     };
 
@@ -980,63 +1048,11 @@ const GreenWavePage = () => {
         });
     };
 
-    // Add a new intersection from saved projects
-    const addIntersection = () => {
-        // Get list of saved projects from localStorage (same logic as getAllSaves in useTrafficLight)
-        const availableProjects = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith('traffic_project_')) {
-                availableProjects.push(key.replace('traffic_project_', ''));
-            }
-        }
-
-        // Sort by saved order if available
-        const orderRaw = localStorage.getItem('traffic_project_order');
-        if (orderRaw) {
-            try {
-                const order = JSON.parse(orderRaw);
-                availableProjects.sort((a, b) => {
-                    const idxA = order.indexOf(a);
-                    const idxB = order.indexOf(b);
-                    if (idxA === -1 && idxB === -1) return 0;
-                    if (idxA === -1) return 1;
-                    if (idxB === -1) return -1;
-                    return idxA - idxB;
-                });
-            } catch (e) {
-                // ignore
-            }
-        }
-
-        if (availableProjects.length === 0) {
-            showAlert({ title: 'Aucun projet', message: 'Aucun projet sauvegardé disponible.' });
-            return;
-        }
-
-        // Show selection dialog
-        const projectName = prompt(
-            `Sélectionnez un projet à ajouter:\n\n${availableProjects.map((p, i) => `${i + 1}. ${p}`).join('\n')}\n\nEntrez le numéro ou le nom du projet:`,
-            '1'
-        );
-
-        if (!projectName) return;
-
-        // Find the project by number or name
-        let selectedProject;
-        const projectNumber = parseInt(projectName);
-        if (!isNaN(projectNumber) && projectNumber >= 1 && projectNumber <= availableProjects.length) {
-            selectedProject = availableProjects[projectNumber - 1];
-        } else {
-            selectedProject = availableProjects.find(p => p.toLowerCase() === projectName.toLowerCase());
-        }
-
-        if (!selectedProject) {
-            showAlert({ title: 'Projet introuvable', message: 'Projet non trouvé.' });
-            return;
-        }
-
-        // Load project data from localStorage
+    // Charge un projet par son nom et l'ajoute comme nouveau carrefour à
+    // l'onde verte. Sortie : appelé soit depuis la modale de sélection, soit
+    // (futur) depuis tout autre déclencheur.
+    const addIntersectionFromProject = (selectedProject) => {
+        if (!selectedProject) return;
         const projectKey = `traffic_project_${selectedProject}`;
         const projectRaw = localStorage.getItem(projectKey);
         if (!projectRaw) {
@@ -1097,6 +1113,54 @@ const GreenWavePage = () => {
         }
     };
 
+    // Add a new intersection from saved projects — ouvre la modale de
+    // sélection. Filtre proprement les clés localStorage (exclusion des
+    // _backup et de la clé d'ordre).
+    const addIntersection = () => {
+        const availableProjects = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key || !key.startsWith('traffic_project_')) continue;
+            if (key.endsWith('_backup') || key === 'traffic_project_order') continue;
+            availableProjects.push(key.replace('traffic_project_', ''));
+        }
+
+        // Sort by saved order if available
+        const orderRaw = localStorage.getItem('traffic_project_order');
+        if (orderRaw) {
+            try {
+                const order = JSON.parse(orderRaw);
+                availableProjects.sort((a, b) => {
+                    const idxA = order.indexOf(a);
+                    const idxB = order.indexOf(b);
+                    if (idxA === -1 && idxB === -1) return 0;
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                });
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        if (availableProjects.length === 0) {
+            showAlert({ title: 'Aucun projet', message: 'Aucun projet sauvegardé disponible.' });
+            return;
+        }
+
+        setAddCarrefourCandidates(availableProjects);
+        setAddCarrefourSelected(availableProjects[0]);
+        setAddCarrefourModalOpen(true);
+    };
+
+    // Confirme la sélection depuis la modale.
+    const confirmAddCarrefour = (name) => {
+        const target = name || addCarrefourSelected;
+        setAddCarrefourModalOpen(false);
+        setAddCarrefourSelected(null);
+        addIntersectionFromProject(target);
+    };
+
     // Move intersection up or down in the list
     const moveIntersection = (index, direction) => {
         setIntersections(prev => {
@@ -1122,11 +1186,12 @@ const GreenWavePage = () => {
     const PADDING_RIGHT = 20;
 
     const diagramWidth = maxTime * pixelsPerSecond + PADDING_LEFT + PADDING_RIGHT;
-    const diagramHeight = maxDistance * pixelsPerMeter + PADDING_TOP + PADDING_BOTTOM;
+    const diagramHeight = (maxDistance - minDistance) * pixelsPerMeter + PADDING_TOP + PADDING_BOTTOM;
 
-    // Convert coordinates
+    // Convert coordinates : Y est mesuré depuis le bas du diagramme, où se
+    // trouve la distance minimale (négative possible).
     const timeToX = (time) => PADDING_LEFT + time * pixelsPerSecond;
-    const distanceToY = (distance) => diagramHeight - PADDING_BOTTOM - distance * pixelsPerMeter;
+    const distanceToY = (distance) => diagramHeight - PADDING_BOTTOM - (distance - minDistance) * pixelsPerMeter;
 
     // Generate axis ticks
     const timeTicks = [];
@@ -1136,8 +1201,11 @@ const GreenWavePage = () => {
     }
 
     const distanceTicks = [];
-    const distanceStep = maxDistance > 500 ? 100 : 50;
-    for (let d = 0; d <= maxDistance; d += distanceStep) {
+    const distanceSpan = maxDistance - minDistance;
+    const distanceStep = distanceSpan > 500 ? 100 : 50;
+    // Graduation arrondie au pas inférieur pour démarrer proprement (ex. -180 → -200).
+    const firstTick = Math.floor(minDistance / distanceStep) * distanceStep;
+    for (let d = firstTick; d <= maxDistance; d += distanceStep) {
         distanceTicks.push(d);
     }
 
@@ -1450,13 +1518,15 @@ const GreenWavePage = () => {
     // Apply offsets (in seconds) to shift lines horizontally
     const speedLinesUp = [];
     const speedLinesDown = [];
+    // Les lignes de vitesse balaient la pleine amplitude [minDistance ; maxDistance].
+    const speedSpanMeters = maxDistance - minDistance;
     for (let startTime = 0; startTime < maxTime; startTime += cycleLength) {
         // Ascending lines (bottom to top) - apply speedLineOffsetUp
         const startTimeUp = startTime + speedLineOffsetUp;
         speedLinesUp.push({
             x1: timeToX(startTimeUp),
-            y1: distanceToY(0),
-            x2: timeToX(startTimeUp + maxDistance / speedUpMps),
+            y1: distanceToY(minDistance),
+            x2: timeToX(startTimeUp + speedSpanMeters / speedUpMps),
             y2: distanceToY(maxDistance)
         });
         // Descending lines (top to bottom) - apply speedLineOffsetDown
@@ -1464,8 +1534,8 @@ const GreenWavePage = () => {
         speedLinesDown.push({
             x1: timeToX(startTimeDown),
             y1: distanceToY(maxDistance),
-            x2: timeToX(startTimeDown + maxDistance / speedDownMps),
-            y2: distanceToY(0)
+            x2: timeToX(startTimeDown + speedSpanMeters / speedDownMps),
+            y2: distanceToY(minDistance)
         });
     }
 
@@ -1605,9 +1675,12 @@ const GreenWavePage = () => {
                                     </td>
                                     <td className="col-distance">
                                         <input
-                                            type="number"
-                                            value={intersection.distanceG2 ?? intersection.distance}
+                                            type="text"
+                                            inputMode="numeric"
+                                            pattern="-?\d*"
+                                            value={distanceDrafts[`${idx}.g2`] ?? (intersection.distanceG2 ?? intersection.distance)}
                                             onChange={(e) => updateDistanceG2(idx, e.target.value)}
+                                            onBlur={() => commitDistanceDraft(idx, 'g2')}
                                         />
                                     </td>
                                     <td className="col-group-select">
@@ -1625,9 +1698,12 @@ const GreenWavePage = () => {
                                     </td>
                                     <td className="col-distance">
                                         <input
-                                            type="number"
-                                            value={intersection.distance}
+                                            type="text"
+                                            inputMode="numeric"
+                                            pattern="-?\d*"
+                                            value={distanceDrafts[`${idx}.g1`] ?? intersection.distance}
                                             onChange={(e) => updateDistance(idx, e.target.value)}
+                                            onBlur={() => commitDistanceDraft(idx, 'g1')}
                                         />
                                     </td>
                                 </tr>
@@ -2840,6 +2916,52 @@ const GreenWavePage = () => {
                 verte au moment de l'ouverture. */}
             <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="Aide - TraCflux" className="modal-wide">
                 <HelpContent initialAnchor="help-onde-verte" />
+            </Modal>
+
+            {/* Sélecteur de projet pour le « + Ajouter un carrefour ».
+                Remplace l'ancien window.prompt natif (invisible en mode popup
+                détachée et bloqué dans certains contextes PWA). */}
+            <Modal
+                isOpen={addCarrefourModalOpen}
+                onClose={() => { setAddCarrefourModalOpen(false); setAddCarrefourSelected(null); }}
+                title="Ajouter un carrefour à l'onde verte"
+            >
+                {addCarrefourCandidates.length > 0 ? (
+                    <>
+                        <div className="project-list-container">
+                            <ul className="project-list">
+                                {addCarrefourCandidates.map(name => (
+                                    <li
+                                        key={name}
+                                        className={addCarrefourSelected === name ? 'selected' : ''}
+                                        onClick={() => setAddCarrefourSelected(name)}
+                                        onDoubleClick={() => confirmAddCarrefour(name)}
+                                    >
+                                        <span className="project-icon"></span>
+                                        <div className="project-info-modal">
+                                            <span className="project-name">{name}</span>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="modal-actions">
+                            <button
+                                className="modal-btn modal-btn-secondary"
+                                onClick={() => { setAddCarrefourModalOpen(false); setAddCarrefourSelected(null); }}
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                className="modal-btn modal-btn-primary"
+                                onClick={() => confirmAddCarrefour()}
+                                disabled={!addCarrefourSelected}
+                            >
+                                Ajouter
+                            </button>
+                        </div>
+                    </>
+                ) : null}
             </Modal>
 
             {renderRestoreModal()}

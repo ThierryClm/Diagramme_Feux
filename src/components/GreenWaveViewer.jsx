@@ -8,16 +8,21 @@ const GreenWaveViewer = ({ isOpen, onClose, intersections, folderName }) => {
     const [speedDown, setSpeedDown] = useState(50); // km/h - vitesse descendante
 
     // Calculate the maximum values for axes
-    const { maxTime, maxDistance, cycleLength } = useMemo(() => {
+    const { maxTime, minDistance, maxDistance, cycleLength } = useMemo(() => {
         if (!intersections || intersections.length === 0) {
-            return { maxTime: 100, maxDistance: 500, cycleLength: 100 };
+            return { maxTime: 100, minDistance: 0, maxDistance: 500, cycleLength: 100 };
         }
 
-        const maxDist = Math.max(...intersections.map(i => i.distance));
+        // On considère les deux colonnes (distance + distanceG2 pour le bi-carrefour).
+        // 0 reste toujours dans la fenêtre d'affichage (repère central pour l'axe).
+        const allDistances = intersections.flatMap(i => [i.distance, i.distanceG2 ?? i.distance]);
+        const minDist = Math.min(0, ...allDistances);
+        const maxDist = Math.max(...allDistances);
         const cycle = intersections[0]?.cycleLength || 100;
 
         return {
             maxTime: cycle * 2, // Show 2 cycles
+            minDistance: minDist < 0 ? minDist - 50 : 0,
             maxDistance: maxDist + 50,
             cycleLength: cycle
         };
@@ -33,11 +38,11 @@ const GreenWaveViewer = ({ isOpen, onClose, intersections, folderName }) => {
     const PADDING_RIGHT = 20;
 
     const diagramWidth = maxTime * pixelsPerSecond + PADDING_LEFT + PADDING_RIGHT;
-    const diagramHeight = maxDistance * pixelsPerMeter + PADDING_TOP + PADDING_BOTTOM;
+    const diagramHeight = (maxDistance - minDistance) * pixelsPerMeter + PADDING_TOP + PADDING_BOTTOM;
 
-    // Convert coordinates
+    // Convert coordinates : Y mesuré depuis le bas du diagramme = minDistance.
     const timeToX = (time) => PADDING_LEFT + time * pixelsPerSecond;
-    const distanceToY = (distance) => diagramHeight - PADDING_BOTTOM - distance * pixelsPerMeter;
+    const distanceToY = (distance) => diagramHeight - PADDING_BOTTOM - (distance - minDistance) * pixelsPerMeter;
 
     // Generate axis ticks
     const timeTicks = [];
@@ -47,28 +52,31 @@ const GreenWaveViewer = ({ isOpen, onClose, intersections, folderName }) => {
     }
 
     const distanceTicks = [];
-    const distanceStep = maxDistance > 500 ? 100 : 50;
-    for (let d = 0; d <= maxDistance; d += distanceStep) {
+    const distanceSpan = maxDistance - minDistance;
+    const distanceStep = distanceSpan > 500 ? 100 : 50;
+    const firstTick = Math.floor(minDistance / distanceStep) * distanceStep;
+    for (let d = firstTick; d <= maxDistance; d += distanceStep) {
         distanceTicks.push(d);
     }
 
     // Generate speed lines (green wave corridors) - ascending and descending
     const speedLinesUp = [];
     const speedLinesDown = [];
+    const speedSpanMeters = maxDistance - minDistance;
     for (let startTime = 0; startTime < maxTime; startTime += cycleLength) {
         // Ascending lines (bottom to top)
         speedLinesUp.push({
             x1: timeToX(startTime),
-            y1: distanceToY(0),
-            x2: timeToX(startTime + maxDistance / speedUpMps),
+            y1: distanceToY(minDistance),
+            x2: timeToX(startTime + speedSpanMeters / speedUpMps),
             y2: distanceToY(maxDistance)
         });
         // Descending lines (top to bottom)
         speedLinesDown.push({
             x1: timeToX(startTime),
             y1: distanceToY(maxDistance),
-            x2: timeToX(startTime + maxDistance / speedDownMps),
-            y2: distanceToY(0)
+            x2: timeToX(startTime + speedSpanMeters / speedDownMps),
+            y2: distanceToY(minDistance)
         });
     }
 
