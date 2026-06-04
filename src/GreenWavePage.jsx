@@ -805,6 +805,16 @@ const GreenWavePage = () => {
     // valeur clampée du modèle.
     const [distanceDrafts, setDistanceDrafts] = useState({});
 
+    // Surbrillance dirigée tableau → barre uniquement : hover sur les cellules
+    // GF montant / GF descendant du tableau met en valeur la barre correspondante
+    // (toutes ses répétitions de cycle) dans le diagramme. Le sens inverse
+    // (hover barre → cellules) n'est pas géré car la zone de drag transparente
+    // des bandes passantes intercepte le hover des barres quand elles se croisent.
+    // Shape : { idx, direction: 'M' | 'D' } ou null.
+    const [hoveredOndeVerteCell, setHoveredOndeVerteCell] = useState(null);
+    const isOndeVerteHovered = (idx, direction) =>
+        hoveredOndeVerteCell?.idx === idx && hoveredOndeVerteCell?.direction === direction;
+
     // Update intersection distance for group 1
     const updateDistance = (intersectionIdx, value) => {
         setDistanceDrafts(prev => ({ ...prev, [`${intersectionIdx}.g1`]: value }));
@@ -1660,7 +1670,11 @@ const GreenWavePage = () => {
                                     <td className={`col-cycle ${hasCycleConflict ? 'cycle-conflict' : ''}`} title={hasCycleConflict ? `Cycle différent du cycle de référence (${referenceCycle}s)` : ''}>
                                         {intersection.cycleLength}
                                     </td>
-                                    <td className="col-group-select">
+                                    <td
+                                        className={`col-group-select ${isOndeVerteHovered(idx, 'M') ? 'ov-cell-hover' : ''}`}
+                                        onMouseEnter={() => setHoveredOndeVerteCell({ idx, direction: 'M' })}
+                                        onMouseLeave={() => setHoveredOndeVerteCell(null)}
+                                    >
                                         <select
                                             value={intersection.selectedGroup2 || ''}
                                             onChange={(e) => updateSelectedGroup2(idx, parseInt(e.target.value))}
@@ -1673,7 +1687,11 @@ const GreenWavePage = () => {
                                             ))}
                                         </select>
                                     </td>
-                                    <td className="col-distance">
+                                    <td
+                                        className={`col-distance ${isOndeVerteHovered(idx, 'M') ? 'ov-cell-hover' : ''}`}
+                                        onMouseEnter={() => setHoveredOndeVerteCell({ idx, direction: 'M' })}
+                                        onMouseLeave={() => setHoveredOndeVerteCell(null)}
+                                    >
                                         <input
                                             type="text"
                                             inputMode="numeric"
@@ -1683,7 +1701,11 @@ const GreenWavePage = () => {
                                             onBlur={() => commitDistanceDraft(idx, 'g2')}
                                         />
                                     </td>
-                                    <td className="col-group-select">
+                                    <td
+                                        className={`col-group-select ${isOndeVerteHovered(idx, 'D') ? 'ov-cell-hover' : ''}`}
+                                        onMouseEnter={() => setHoveredOndeVerteCell({ idx, direction: 'D' })}
+                                        onMouseLeave={() => setHoveredOndeVerteCell(null)}
+                                    >
                                         <select
                                             value={intersection.selectedGroup1 || ''}
                                             onChange={(e) => updateSelectedGroup1(idx, parseInt(e.target.value))}
@@ -1696,7 +1718,11 @@ const GreenWavePage = () => {
                                             ))}
                                         </select>
                                     </td>
-                                    <td className="col-distance">
+                                    <td
+                                        className={`col-distance ${isOndeVerteHovered(idx, 'D') ? 'ov-cell-hover' : ''}`}
+                                        onMouseEnter={() => setHoveredOndeVerteCell({ idx, direction: 'D' })}
+                                        onMouseLeave={() => setHoveredOndeVerteCell(null)}
+                                    >
                                         <input
                                             type="text"
                                             inputMode="numeric"
@@ -2327,6 +2353,7 @@ const GreenWavePage = () => {
                                 const start1 = group1.offset + cycleOffset;
                                 const duration1 = group1.durations?.green || 0;
                                 const end1 = start1 + duration1;
+                                const hoveredD = isOndeVerteHovered(idx, 'D');
                                 bars.push(
                                     <g key={`bar-${idx}-g1-c${cycle}`}>
                                         <rect
@@ -2335,7 +2362,9 @@ const GreenWavePage = () => {
                                             width={duration1 * pixelsPerSecond}
                                             height={barHeight}
                                             fill="#FF9800"
-                                            opacity={0.9}
+                                            opacity={hoveredD ? 1 : 0.9}
+                                            stroke={hoveredD ? '#fff' : 'none'}
+                                            strokeWidth={hoveredD ? 1 : 0}
                                         />
                                         {/* Deb value at start - above bar */}
                                         <text
@@ -2365,6 +2394,7 @@ const GreenWavePage = () => {
                                 const start2 = group2.offset + cycleOffset;
                                 const duration2 = group2.durations?.green || 0;
                                 const end2 = start2 + duration2;
+                                const hoveredM = isOndeVerteHovered(idx, 'M');
                                 bars.push(
                                     <g key={`bar-${idx}-g2-c${cycle}`}>
                                         <rect
@@ -2373,7 +2403,9 @@ const GreenWavePage = () => {
                                             width={duration2 * pixelsPerSecond}
                                             height={barHeight}
                                             fill="#4CAF50"
-                                            opacity={0.9}
+                                            opacity={hoveredM ? 1 : 0.9}
+                                            stroke={hoveredM ? '#fff' : 'none'}
+                                            strokeWidth={hoveredM ? 1 : 0}
                                         />
                                         {/* Deb value at start - above bar */}
                                         <text

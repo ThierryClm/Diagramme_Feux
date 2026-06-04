@@ -1119,3 +1119,31 @@ body.sepia-mode .green-wave-page .green-wave-params-panel > h3 {
     top: 84px; /* + hauteur première ligne (~24) */
     z-index: 4;
 }
+
+/* Surbrillance dirigée tableau → barre : marque les cellules survolées du
+   GF montant / GF descendant. Fond + bordure interne pour rester lisible
+   sur tous les thèmes (sombre par défaut, clair, sépia, haut contraste,
+   ambre, daltonien, bleu nuit). */
+.green-wave-data-table td.ov-cell-hover {
+    background: rgba(255, 200, 0, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(255, 200, 0, 0.55);
+    transition: background 0.1s ease-out, box-shadow 0.1s ease-out;
+}
+/* Thèmes clairs (fond pâle) : le jaune pur disparaît, on bascule sur un
+   ton ambré plus dense qui contraste avec le fond. */
+body.light-mode .green-wave-data-table td.ov-cell-hover,
+body.sepia-mode .green-wave-data-table td.ov-cell-hover {
+    background: rgba(200, 120, 0, 0.20);
+    box-shadow: inset 0 0 0 1px rgba(200, 120, 0, 0.6);
+}
+/* Thème ambre : le jaune se confond avec les accents amber. On bascule
+   sur une teinte neutre claire. */
+body.amber-mode .green-wave-data-table td.ov-cell-hover {
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+/* Haut contraste : on renforce franchement pour rester visible. */
+body.high-contrast-mode .green-wave-data-table td.ov-cell-hover {
+    background: rgba(255, 255, 0, 0.30);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 0, 0.85);
+}
