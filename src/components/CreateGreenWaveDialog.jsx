@@ -1,40 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { useAlert } from './ConfirmProvider';
+import React, { useState, useEffect, useRef } from 'react';
+import { useAlert, useConfirm } from './ConfirmProvider';
+import { safeShowOpenFilePicker } from '../utils/filePicker';
+import { validateProject } from '../utils/projectValidator';
 import './CreateGreenWaveDialog.css';
 
 const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadProjectData }) => {
     const showAlert = useAlert();
+    const askConfirm = useConfirm();
     const [intersections, setIntersections] = useState([]);
     const [availableProjects, setAvailableProjects] = useState([]);
     const [selectedProject, setSelectedProject] = useState('');
 
+    // Ref pour ne réinitialiser que sur la transition fermé→ouvert. Sans ça,
+    // tout re-render du parent qui change la référence de getAllSaves (ex.
+    // quand askConfirm fait re-render App via le ConfirmProvider) ré-exécute
+    // l'effet et écrase les carrefours déjà ajoutés.
+    const wasOpenRef = useRef(false);
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !wasOpenRef.current) {
             setIntersections([]);
             setSelectedProject('');
             setAvailableProjects(getAllSaves());
         }
+        wasOpenRef.current = isOpen;
     }, [isOpen, getAllSaves]);
 
-    const addIntersection = () => {
-        if (!selectedProject) return;
-
-        // Load project data to get groups
-        const projectData = loadProjectData(selectedProject);
-        if (!projectData) return;
-
+    // Helper : construit et ajoute une intersection à partir des données déjà
+    // parsées d'un projet. Utilisé à la fois par handleCachePick (depuis le
+    // dropdown localStorage) et handleBrowseFile (depuis un .json sur disque).
+    // Distances par défaut basées sur l'index : Distance M = N × 200, Distance D
+    // = N × 200 + 20 (ébauche régulière, ajustée ensuite dans la vue principale).
+    const addIntersectionFromData = (projectName, projectData) => {
         // Get pfTabs (plans de feu) from project
         // Note: pfTabs stores actions under the key 'data', not 'actions'
         const pfTabs = projectData.pfTabs || [{ id: 1, name: 'PF1', data: projectData.actionData || [] }];
         const selectedPfId = pfTabs[0]?.id || 1;
         const selectedPf = pfTabs.find(pf => pf.id === selectedPfId);
 
+        const indexBasedM = intersections.length * 200;
+
         const newIntersection = {
             id: Date.now(),
-            projectName: selectedProject,
-            distance: intersections.length > 0
-                ? intersections[intersections.length - 1].distance + 100
-                : 0,
+            projectName: projectName,
+            distance: indexBasedM,
+            distanceD: indexBasedM + 20,
             groups: projectData.groups || [],
             cycleLength: projectData.cycleLength || 100,
             selectedGroup1: projectData.groups?.[0]?.id || 1,
@@ -45,7 +54,95 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
         };
 
         setIntersections([...intersections, newIntersection]);
+    };
+
+    // Ajout depuis le dropdown « Depuis le cache… » : déclenche immédiatement
+    // l'ajout du carrefour sélectionné, puis remet le dropdown sur son
+    // placeholder pour permettre d'enchaîner. La suppression d'un ajout
+    // erroné se fait via la croix rouge de la ligne correspondante.
+    const handleCachePick = (name) => {
+        if (!name) return;
+        const projectData = loadProjectData(name);
+        if (projectData) {
+            addIntersectionFromData(name, projectData);
+        }
         setSelectedProject('');
+    };
+
+    // Parcourir le disque pour ajouter un projet absent du cache localStorage
+    // (typiquement : projets vivant sur SharePoint, dossier réseau, USB…).
+    // Le projet est mis en cache pour que la synchronisation onde verte
+    // fonctionne ensuite normalement.
+    const handleBrowseFile = async () => {
+        try {
+            const [fileHandle] = await safeShowOpenFilePicker({
+                types: [{
+                    description: 'Projet TraCflux (.json)',
+                    accept: { 'application/json': ['.json'] }
+                }],
+                multiple: false
+            });
+            const file = await fileHandle.getFile();
+            const text = await file.text();
+
+            if (!text || text.trim() === '') {
+                showAlert({ title: 'Fichier vide', message: 'Le fichier sélectionné est vide.' });
+                return;
+            }
+
+            let projectData;
+            try {
+                projectData = JSON.parse(text);
+            } catch {
+                showAlert({ title: 'JSON invalide', message: 'Le fichier sélectionné ne contient pas un JSON valide.' });
+                return;
+            }
+
+            const validation = validateProject(projectData);
+            if (!validation.ok) {
+                showAlert({ title: 'Projet non reconnu', message: validation.error });
+                return;
+            }
+
+            // Nom du projet : champ JSON `projectName` ou `intersectionName`, sinon nom de fichier.
+            const fileName = fileHandle.name.replace(/\.json$/i, '');
+            const projectName = projectData.projectName || projectData.intersectionName || fileName;
+            const storageKey = `traffic_project_${projectName}`;
+
+            // Confirmation si une entrée du même nom existe déjà en cache.
+            const existing = localStorage.getItem(storageKey);
+            if (existing) {
+                const ok = await askConfirm({
+                    title: 'Projet déjà en cache',
+                    message: `Un projet « ${projectName} » existe déjà dans le cache local.\n\nLe remplacer par celui chargé depuis « ${fileHandle.name} » ?\n\nLes éventuelles modifications locales non sauvegardées seront perdues.`,
+                    confirmLabel: 'Remplacer',
+                    danger: true
+                });
+                if (!ok) return;
+            }
+
+            // Mise en cache localStorage + mise à jour de l'ordre (plus récent en tête).
+            try {
+                localStorage.setItem(storageKey, text);
+                const orderRaw = localStorage.getItem('traffic_project_order');
+                let order = orderRaw ? JSON.parse(orderRaw) : [];
+                order = order.filter(n => n !== projectName);
+                order.unshift(projectName);
+                localStorage.setItem('traffic_project_order', JSON.stringify(order));
+            } catch (storageErr) {
+                showAlert({ title: 'Stockage insuffisant', message: 'Impossible d\'ajouter ce projet au cache local : ' + storageErr.message });
+                return;
+            }
+
+            // Rafraîchit le dropdown et ajoute directement comme nouveau carrefour.
+            setAvailableProjects(getAllSaves());
+            addIntersectionFromData(projectName, projectData);
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error('Erreur Parcourir:', e);
+                showAlert({ title: 'Erreur', message: 'Erreur lors de la lecture du fichier : ' + e.message });
+            }
+        }
     };
 
     const removeIntersection = (id) => {
@@ -123,19 +220,22 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                         <div className="add-project-row">
                             <select
                                 value={selectedProject}
-                                onChange={(e) => setSelectedProject(e.target.value)}
+                                onChange={(e) => handleCachePick(e.target.value)}
+                                title="Ajouter un projet déjà présent dans le cache local"
+                                style={{ background: 'transparent', border: '1px solid #4CAF50', color: '#4CAF50' }}
                             >
-                                <option value="">-- Sélectionner un projet --</option>
+                                <option value="">Depuis le cache…</option>
                                 {availableProjects.map(project => (
                                     <option key={project.name} value={project.name}>{project.name}</option>
                                 ))}
                             </select>
                             <button
                                 className="btn-add"
-                                onClick={addIntersection}
-                                disabled={!selectedProject}
+                                onClick={handleBrowseFile}
+                                title="Sélectionner un projet TraCflux (.json) sur le disque ou un réseau partagé"
+                                style={{ background: 'transparent', border: '1px solid #4CAF50', color: '#4CAF50' }}
                             >
-                                + Ajouter
+                                Parcourir…
                             </button>
                         </div>
                     </div>
@@ -180,8 +280,7 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                                             parseInt(e.target.value) || 0
                                         )}
                                         onBlur={() => handleDistanceMBlur(intersection.id)}
-                                        min="0"
-                                        title="en mètres"
+                                        title="en mètres (valeurs négatives autorisées)"
                                     />
                                     <select
                                         className="col-group"
@@ -207,8 +306,7 @@ const CreateGreenWaveDialog = ({ isOpen, onClose, onConfirm, getAllSaves, loadPr
                                             'distanceD',
                                             parseInt(e.target.value) || 0
                                         )}
-                                        min="0"
-                                        title="en mètres"
+                                        title="en mètres (valeurs négatives autorisées)"
                                     />
                                     <select
                                         className="col-group"

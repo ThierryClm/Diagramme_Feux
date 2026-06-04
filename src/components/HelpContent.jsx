@@ -681,7 +681,13 @@ const HelpContent = ({ initialAnchor = null }) => {
             <section className="help-section">
                 <h4>Présentation</h4>
                 <p>L'onde verte permet de coordonner les feux de signalisation le long d'un axe routier afin d'offrir aux usagers une progression fluide sans arrêt aux feux successifs.</p>
-                <p>Directement connectée aux plans de feux de vos carrefours, l'onde verte se construit et se met à jour en temps réel : modifiez un offset, changez de plan de feu ou ajustez une vitesse, et le diagramme espace-temps se redessine instantanément. Chaque carrefour ajouté récupère automatiquement ses données depuis le projet sauvegardé, garantissant une cohérence permanente entre vos diagrammes de feux et la coordination d'axe. La synchronisation bidirectionnelle, le changement de plan de feu global ou individuel, et la visualisation immédiate des bandes passantes font de cet outil un véritable assistant pour optimiser la fluidité de vos axes routiers.</p>
+                <p>Directement connectée aux plans de feux de vos carrefours, l'onde verte se construit et se met à jour en temps réel : modifiez un offset, changez de plan de feu ou ajustez une vitesse, et le diagramme espace-temps se redessine instantanément. Chaque carrefour ajouté récupère automatiquement ses données depuis le projet sauvegardé, garantissant une cohérence permanente entre vos diagrammes de feux et la coordination d'axe. La synchronisation, le changement de plan de feu global ou individuel, et la visualisation immédiate des bandes passantes font de cet outil un véritable assistant pour optimiser la fluidité de vos axes routiers.</p>
+            </section>
+
+            <section className="help-section">
+                <h4>Par où commencer</h4>
+                <p>La méthode la plus intuitive consiste à démarrer par le carrefour le plus <strong>au sud</strong> de l'axe puis à ajouter les suivants vers le nord. Les interdistances entre carrefours seront ensuite ajustées.</p>
+                <p>Si l'on souhaite par la suite ajouter un carrefour situé plus au sud de l'onde verte, alors il y a la possibilité de saisir des distances <strong>négatives</strong>. Cela évite notamment la ressaisie de l'ensemble des interdistances entre les carrefours existants.</p>
             </section>
 
             <section className="help-section">
