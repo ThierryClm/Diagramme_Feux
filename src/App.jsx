@@ -29,7 +29,6 @@ import UserManagerModal from './components/UserManagerModal';
 import ExternalLinksModal from './components/ExternalLinksModal';
 import PropertiesPanel from './components/PropertiesPanel';
 import { calculateSimulatedDiagram } from './utils/simulationCalculator';
-import { import[redacted]File } from './utils/[redacted]Importer';
 import usePopupWindow from './hooks/usePopupWindow';
 import useFloatingLegend from './hooks/useFloatingLegend';
 import useFloatingMatrix from './hooks/useFloatingMatrix';
@@ -1191,9 +1190,6 @@ function App() {
             case 'import':
                 handleImportExcelDirect();
                 break;
-            case 'import[redacted]':
-                handleImport[redacted]();
-                break;
             case 'browseImport':
                 setImportFile(null);
                 setImportError('');
@@ -1602,78 +1598,6 @@ function App() {
         recentImportDirs, addRecentDirectory,
         addToRecentFiles
     });
-
-    // Import [redacted] [redacted]
-    const handleImport[redacted] = async () => {
-        try {
-            let file;
-            if (window.showOpenFilePicker) {
-                const [fileHandle] = await safeShowOpenFilePicker({
-                    types: [{
-                        description: 'Fichiers [redacted] ([redacted])',
-                        accept: { '*/*': ['[redacted]'] }
-                    }],
-                    multiple: false
-                });
-                file = await fileHandle.getFile();
-            } else {
-                // Fallback: input file classique
-                file = await new Promise((resolve, reject) => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '[redacted]';
-                    input.onchange = () => {
-                        if (input.files[0]) resolve(input.files[0]);
-                        else reject(new Error('Aucun fichier sélectionné'));
-                    };
-                    input.click();
-                });
-            }
-
-            const importedData = await import[redacted]File(file);
-
-            // Construire les pfTabs avec les variables micro et actions
-            const pfData = importedData.actionData || Array.from({ length: 30 }, (_, i) => ({
-                id: i + 1, gf: '', action: '', description: '', deb: '', fin: '',
-                abrv: '', micro: '', plage1: '', plage2: '',
-                actGf1: '', actGf1Gf2: '', actGf1Gf3: '', actGf1Gf4: ''
-            }));
-            const microFields = importedData.microVariables || [];
-            const actionsCount = pfData.filter(a => a.gf || a.action).length;
-
-            loadFullState({
-                projectName: importedData.intersectionName,
-                intersectionName: importedData.intersectionName,
-                groups: importedData.groups,
-                cycleLength: importedData.cycleLength,
-                conflictMatrix: importedData.conflictMatrix,
-                pfTabs: [{
-                    id: 1,
-                    name: 'PF1',
-                    data: pfData,
-                    microCustomFields: microFields
-                }],
-                projectProperties: importedData.projectProperties || {}
-            });
-
-            let message = `Import [redacted] réussi !\n\n${importedData.groups.length} groupes importés\nDurée de cycle : ${importedData.cycleLength}s`;
-            if (actionsCount > 0) message += `\n${actionsCount} conditions micro importées`;
-            if (microFields.length > 0) message += `\n${microFields.length} variables micro importées`;
-            // Séparer les infos des vrais avertissements
-            const infos = (importedData.warnings || []).filter(w => w.startsWith('Matrice :'));
-            const realWarnings = (importedData.warnings || []).filter(w => !w.startsWith('Matrice :'));
-            if (infos.length > 0) message += `\n${infos.join('\n')}`;
-            if (realWarnings.length > 0) {
-                message += `\n\n⚠️ Avertissements (${realWarnings.length}) :\n${realWarnings.join('\n')}`;
-            }
-            showAlert({ title: 'Import [redacted]', message });
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error('Erreur import [redacted]:', e);
-                showAlert({ title: 'Erreur [redacted]', message: "Erreur lors de l'import [redacted] : " + e.message });
-            }
-        }
-    };
 
     // Keyboard shortcuts (Ctrl+Z/Y, Ctrl+N/O/S)
     const handleMenuActionRef = useRef(handleMenuAction);
