@@ -534,7 +534,7 @@ const HelpContent = ({ initialAnchor = null }) => {
             <section className="help-section">
                 <h4>Interopérabilité</h4>
                 <p>Menu Fichier → <strong>Interopérabilité…</strong> — axe d'évolution envisagé pour échanger des données de programmation de carrefours à feux avec d'autres systèmes, qu'ils soient propriétaires ou ouverts.</p>
-                <p>L'objectif à terme est de faciliter la reprise et la restitution de plans de feux entre TraCflux et les principaux environnements du marché, afin d'éviter les ressaisies et de fluidifier le travail des traficiens. Cette capacité d'interopérabilité constitue un potentiel important de l'outil et un levier d'ouverture vers l'écosystème existant.</p>
+                <p>L'objectif à terme est de faciliter la reprise et la restitution de plans de feux entre TraCflux et les principaux environnements du marché, afin d'éviter les ressaisies et de fluidifier le travail des traficiens. TraCflux est conçu pour s'inscrire dans les <strong>protocoles standards du domaine</strong>, notamment <strong>DIASER</strong>, qui constitue un cadre d'échange reconnu pour la régulation des feux. Cette capacité d'interopérabilité constitue un potentiel important de l'outil et un levier d'ouverture vers l'écosystème existant.</p>
                 <p><em>Cette fonctionnalité n'est pas opérationnelle dans la présente version : elle est présentée à titre d'orientation produit.</em></p>
             </section>
 

@@ -103,7 +103,7 @@ Un service d'accompagnement est **envisagé pour une étape ultérieure** du pro
 
 Plusieurs options apparaissent grisées dans le menu Fichier — elles correspondent à des pistes d'évolution non encore opérationnelles :
 
-- **Interopérabilité** — échange de données de programmation de carrefours à feux avec d'autres systèmes du marché, propriétaires ou ouverts. C'est un axe d'ouverture important de l'outil : permettre la reprise et la restitution de plans de feux sans ressaisie, en s'intégrant à l'écosystème existant des traficiens. Le potentiel est significatif et constitue une direction d'évolution privilégiée.
+- **Interopérabilité** — échange de données de programmation de carrefours à feux avec d'autres systèmes du marché, propriétaires ou ouverts. TraCflux est conçu pour s'inscrire dans les **protocoles standards du domaine**, notamment **DIASER** (cadre d'échange reconnu pour la régulation des feux). C'est un axe d'ouverture important de l'outil : permettre la reprise et la restitution de plans de feux sans ressaisie, en s'intégrant à l'écosystème existant des traficiens. Le potentiel est significatif et constitue une direction d'évolution privilégiée.
 - **Import Excel** dépend du modèle de fichier Excel (mises en page variables d'un éditeur à l'autre, structures de feuilles différentes selon les agences) — non généralisé dans cette version. L'export Excel reste opérationnel.
 
 Ces fonctionnalités seront travaillées si le besoin est confirmé par plusieurs utilisateurs.
