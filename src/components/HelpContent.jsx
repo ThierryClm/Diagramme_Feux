@@ -261,6 +261,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <li><strong>Point de repos :</strong> Point de repos dans le cycle. Si Plage 1/2 non renseignées, s'applique à tous les groupes.</li>
                     <li><strong>Synchro BTS :</strong> Synchronisation avec le système BTS. Si Plage 1/2 non renseignées, s'applique à tous les groupes.</li>
                 </ul>
+                <p><strong>Variables DIASER (Priorité Bus).</strong> Les actions de micro-régulation dédiées à la priorité bus s'appuient sur les variables définies par la norme <strong>DIASER</strong>, protocole d'échange standard entre le contrôleur de carrefour et les véhicules de transport en commun. Elles sont saisies dans les colonnes <code>Action_Micro</code> et <code>Description</code>.</p>
 
                 <h5 style={{ marginTop: '20px', marginBottom: '10px', color: '#aaa' }}>Légende des symboles</h5>
                 <div className="legend-container" style={{ gap: '8px' }}>
@@ -534,7 +535,7 @@ const HelpContent = ({ initialAnchor = null }) => {
             <section className="help-section">
                 <h4>Interopérabilité</h4>
                 <p>Menu Fichier → <strong>Interopérabilité…</strong> — axe d'évolution envisagé pour échanger des données de programmation de carrefours à feux avec d'autres systèmes, qu'ils soient propriétaires ou ouverts.</p>
-                <p>L'objectif à terme est de faciliter la reprise et la restitution de plans de feux entre TraCflux et les principaux environnements du marché, afin d'éviter les ressaisies et de fluidifier le travail des traficiens. TraCflux est conçu pour s'inscrire dans les <strong>protocoles standards du domaine</strong>, notamment <strong>DIASER</strong>, qui constitue un cadre d'échange reconnu pour la régulation des feux. Cette capacité d'interopérabilité constitue un potentiel important de l'outil et un levier d'ouverture vers l'écosystème existant.</p>
+                <p>L'objectif à terme est de faciliter la reprise et la restitution de plans de feux entre TraCflux et les principaux environnements du marché, afin d'éviter les ressaisies et de fluidifier le travail des traficiens. Cette capacité d'interopérabilité constitue un potentiel important de l'outil et un levier d'ouverture vers l'écosystème existant.</p>
                 <p><em>Cette fonctionnalité n'est pas opérationnelle dans la présente version : elle est présentée à titre d'orientation produit.</em></p>
             </section>
 

@@ -24,10 +24,10 @@ desktop.ini
 .env.*.local
 
 # User project data (real carrefour exports — never commit)
-/*[redacted]
+/*.cmpx
 /*.bn
 /Car *.json
-/RSI_*[redacted]
+/RSI_*.cmpx
 /samples/
 /bn/
 
