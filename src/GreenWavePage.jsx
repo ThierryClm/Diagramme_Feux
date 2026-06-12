@@ -2612,7 +2612,7 @@ const GreenWavePage = () => {
 
                             for (let cycle = -1; cycle < displayCycles; cycle++) {
                                 const cycleOffset = cycle * cycleLength;
-                                const bandStartAtRef = start + cycleOffset + speedLineOffsetUp;
+                                const bandStartAtRef = start + cycleOffset;
                                 const bandEndAtRef = bandStartAtRef + width;
 
                                 const leftPoints = [];
@@ -2681,7 +2681,7 @@ const GreenWavePage = () => {
 
                             for (let cycle = -1; cycle < displayCycles; cycle++) {
                                 const cycleOffset = cycle * cycleLength;
-                                const bandStartAtRef = start + cycleOffset + speedLineOffsetDown;
+                                const bandStartAtRef = start + cycleOffset;
                                 const bandEndAtRef = bandStartAtRef + width;
 
                                 const leftPoints = [];
