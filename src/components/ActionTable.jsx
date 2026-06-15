@@ -104,9 +104,12 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         setLiveResize({ col: d.col, w });
     }, []);
     const onResizeEnd = useCallback(() => {
-        window.removeEventListener('mousemove', onResizeMove);
-        window.removeEventListener('mouseup', onResizeEnd);
         const d = resizeRef.current;
+        // Détacher les listeners de la MÊME fenêtre que celle où ils ont été
+        // posés (popup détachée le cas échéant — cf. startResize).
+        const win = (d && d.win) || window;
+        win.removeEventListener('mousemove', onResizeMove);
+        win.removeEventListener('mouseup', onResizeEnd);
         resizeRef.current = null;
         setLiveResize(prev => {
             if (d && prev && prev.col === d.col) {
@@ -118,9 +121,13 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     const startResize = (col) => (e) => {
         e.preventDefault();
         e.stopPropagation();
-        resizeRef.current = { col, startX: e.clientX, startW: colWidth(col) };
-        window.addEventListener('mousemove', onResizeMove);
-        window.addEventListener('mouseup', onResizeEnd);
+        // Le composant tourne dans le contexte JS principal mais peut être rendu
+        // dans une fenêtre détachée : on attache les listeners à la fenêtre qui
+        // possède la poignée cliquée, sinon le drag dans la popup n'est jamais reçu.
+        const win = e.target?.ownerDocument?.defaultView || window;
+        resizeRef.current = { col, startX: e.clientX, startW: colWidth(col), win };
+        win.addEventListener('mousemove', onResizeMove);
+        win.addEventListener('mouseup', onResizeEnd);
     };
     const resetCol = (col) => (e) => {
         e.preventDefault();
@@ -128,9 +135,17 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         setActionColWidths(cur => ({ ...cur, [col]: COL_SPEC[col].def }));
     };
     const dispWidth = (k) => (liveResize && liveResize.col === k) ? liveResize.w : colWidth(k);
+    // Poignée de redimensionnement de colonne. Masquée en fenêtre détachée :
+    // le drag y est non fiable (le composant tourne dans le contexte JS
+    // principal, rendu dans le DOM de la popup) et le redimensionnement reste
+    // disponible dans la vue inline. Le projet conserve les largeurs choisies.
+    const resizeHandle = (col) => showFloatingConditions ? null : (
+        <span className="col-resize-handle" title={tip("Glisser pour ajuster · double-clic : largeur par défaut")} onMouseDown={startResize(col)} onDoubleClick={resetCol(col)} />
+    );
     useEffect(() => () => {
-        window.removeEventListener('mousemove', onResizeMove);
-        window.removeEventListener('mouseup', onResizeEnd);
+        const win = (resizeRef.current && resizeRef.current.win) || window;
+        win.removeEventListener('mousemove', onResizeMove);
+        win.removeEventListener('mouseup', onResizeEnd);
     }, [onResizeMove, onResizeEnd]);
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
@@ -405,11 +420,11 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                 <tr className="header-group">
                     <th rowSpan="2" title={tip("Groupe de feu / ligne de feu - Cliquer pour trier (croissant)")} className="sortable" onClick={() => handleSort('gf', 'asc')}>GF ↕</th>
                     <th rowSpan="2" title={tip("Action - Cliquer pour trier (alphabétique)")} className="sortable" onClick={() => handleSort('action', 'asc')}>Action ↕</th>
-                    {showDescription && <th rowSpan="2" className="col-resizable">Description<span className="col-resize-handle" title={tip("Glisser pour ajuster · double-clic : largeur par défaut")} onMouseDown={startResize('description')} onDoubleClick={resetCol('description')} /></th>}
+                    {showDescription && <th rowSpan="2" className="col-resizable">Description{resizeHandle('description')}</th>}
                     <th rowSpan="2" title={tip("Début - Cliquer pour trier (croissant)")} className="sortable" onClick={() => handleSort('deb', 'asc')}>Déb ↕</th>
                     <th rowSpan="2">Fin</th>
-                    <th rowSpan="2" className="col-resizable">Abrv<span className="col-resize-handle" title={tip("Glisser pour ajuster · double-clic : largeur par défaut")} onMouseDown={startResize('abrv')} onDoubleClick={resetCol('abrv')} /></th>
-                    <th rowSpan="2" className="col-resizable">Action_Micro<span className="col-resize-handle" title={tip("Glisser pour ajuster · double-clic : largeur par défaut")} onMouseDown={startResize('micro')} onDoubleClick={resetCol('micro')} /></th>
+                    <th rowSpan="2" className="col-resizable">Abrv{resizeHandle('abrv')}</th>
+                    <th rowSpan="2" className="col-resizable">Action_Micro{resizeHandle('micro')}</th>
                     <th colSpan="2" className="header-grouped">Plage</th>
                     <th colSpan="4" className="header-grouped">Action GF</th>
                 </tr>

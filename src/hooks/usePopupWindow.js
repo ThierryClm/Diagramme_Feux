@@ -41,10 +41,44 @@ export function bringAllPopupsToFront(except) {
     if (now - lastBringTime < 200) return;
     isBringingToFront = true;
     lastBringTime = now;
+
+    // Quand le déclenchement vient de la fenêtre principale (except === null,
+    // p. ex. un clic dans un champ), remonter les popups appelle popup.focus()
+    // qui vole le focus clavier du champ en cours. On capture donc l'élément
+    // actif (et sa sélection) AVANT de remonter les popups, pour le restituer
+    // ensuite. Le but du mécanisme est seulement le z-order (popups visibles
+    // sur un 2e écran), pas la prise de focus.
+    let savedActive = null;
+    if (except === null) {
+        const el = document.activeElement;
+        if (el && el !== document.body && typeof el.focus === 'function') {
+            const sel = {};
+            try {
+                if (typeof el.selectionStart === 'number') {
+                    sel.start = el.selectionStart;
+                    sel.end = el.selectionEnd;
+                }
+            } catch { /* champs sans sélection (number, etc.) */ }
+            savedActive = { el, sel };
+        }
+    }
+
     openPopups.forEach(p => {
         if (p !== except && !p.closed) p.focus();
     });
     if (except && !except.closed) except.focus();
+
+    // Restituer le focus à la fenêtre principale + au champ d'origine.
+    if (savedActive) {
+        try {
+            window.focus();
+            savedActive.el.focus({ preventScroll: true });
+            if (savedActive.sel.start !== undefined && typeof savedActive.el.setSelectionRange === 'function') {
+                savedActive.el.setSelectionRange(savedActive.sel.start, savedActive.sel.end);
+            }
+        } catch { /* ignore */ }
+    }
+
     setTimeout(() => { isBringingToFront = false; }, 200);
 }
 

@@ -726,6 +726,28 @@
     border: none;
 }
 
+/* Contraste renforcé du curseur « Position dans le cycle » : le thumb orange
+   sur piste sombre se confond avec les accents du thème Ambre et manque de
+   contraste en Haut contraste. On force une piste noire et un thumb blanc
+   bordé de noir, lisible dans ces deux thèmes. */
+body.amber-mode .time-slider,
+body.high-contrast-mode .time-slider {
+    background: #000;
+    border: 1px solid #fff;
+}
+body.amber-mode .time-slider::-webkit-slider-thumb,
+body.high-contrast-mode .time-slider::-webkit-slider-thumb {
+    background: #fff;
+    border: 2px solid #000;
+    box-shadow: 0 0 0 1px #fff;
+}
+body.amber-mode .time-slider::-moz-range-thumb,
+body.high-contrast-mode .time-slider::-moz-range-thumb {
+    background: #fff;
+    border: 2px solid #000;
+    box-shadow: 0 0 0 1px #fff;
+}
+
 /* Animating arrows */
 .arrow-marker.animating .arrow-symbol {
     transition: filter 0.3s ease;
