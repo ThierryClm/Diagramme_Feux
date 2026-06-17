@@ -496,6 +496,18 @@ const HelpContent = ({ initialAnchor = null }) => {
             </section>
 
             <section className="help-section">
+                <h4>Comparer la capacité des plans de feu</h4>
+                <p>Le menu <strong>Diagramme → Comparer la capacité des plans de feu…</strong> (disponible dès qu'il existe au moins deux plans de feu) ouvre, dans une <strong>fenêtre déplaçable et non modale</strong> (qui peut rester ouverte pendant que vous travaillez, voire sur un second écran), un tableau comparatif du <strong>vert utile</strong> et de la <strong>capacité utilisée</strong> entre plusieurs PF. Objectif : repérer d'un coup d'œil quel programme absorbe le mieux le trafic et où chaque PF arrive à saturation.</p>
+                <ul>
+                    <li><strong>Choix des PF :</strong> cochez les plans de feu à comparer (tous cochés par défaut). Le tableau se met à jour immédiatement.</li>
+                    <li><strong>Jeu de données trafic :</strong> deux modes. <em>« Jeu associé à chaque PF »</em> — chaque PF utilise son propre jeu de trafic. <em>Un jeu unique</em> (HPM, HPS, HC…) — le même trafic est appliqué à tous les PF cochés, ce qui isole l'effet du plan à trafic égal. Les jeux sans aucune donnée saisie apparaissent grisés et ne sont pas sélectionnables.</li>
+                    <li><strong>Lecture du tableau :</strong> une ligne par groupe de feu VL, une colonne par PF affichant Trafic, V.Utile et Cap.U. Lorsque tous les PF partagent le même trafic, une seule colonne Trafic est affichée au début pour éviter la répétition. La capacité utilisée est colorée selon les seuils habituels (vert &lt; 76 %, orange ≤ 85 %, rouge ≤ 100 %, noir &gt; 100 %).</li>
+                    <li><strong>Valeurs nominales :</strong> chaque PF est évalué avec son propre vert et son propre cycle, sans les actions de micro-régulation — c'est le sens d'une comparaison entre programmes.</li>
+                    <li><strong>Exporter (PNG) :</strong> le bouton génère une image du tableau, la télécharge et la copie dans le presse-papiers, prête à coller dans un rapport ou un courriel (couleurs comprises).</li>
+                </ul>
+            </section>
+
+            <section className="help-section">
                 <h4>Authentification</h4>
                 <p>L'application nécessite une connexion pour accéder aux fonctionnalités :</p>
                 <ul>

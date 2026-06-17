@@ -9,6 +9,7 @@ import GroupTable from './components/GroupTable';
 import TrafficTable from './components/TrafficTable';
 import IntergreenMatrix from './components/IntergreenMatrix';
 import ActionTable from './components/ActionTable';
+import CapacityComparison from './components/CapacityComparison';
 import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
@@ -133,6 +134,7 @@ function App() {
         setActiveTrafficDataset,
         updateTrafficData,
         getTrafficData,
+        trafficDatasets,
         trafficDatasetNames,
         copyTrafficDataset,
         addCustomTrafficDataset,
@@ -355,6 +357,7 @@ function App() {
     const [helpAnchor, setHelpAnchor] = useState(null);
     const [aboutModal, setAboutModal] = useState(false);
     const [diagnosticModal, setDiagnosticModal] = useState(false);
+    const [capacityCompareModal, setCapacityCompareModal] = useState(false);
     const [diagnosticIncludeProject, setDiagnosticIncludeProject] = useState(false);
     const [diagnosticRefresh, setDiagnosticRefresh] = useState(0);
     const printPreviewPageRef = useRef(null);
@@ -492,6 +495,15 @@ function App() {
         imageNaturalDims,
         floatingImagePopup
     } = useFloatingImage(intersectionImage, intersectionName, activePFName);
+
+    // Fenêtre détachée (non modale, déplaçable) du comparateur de capacité.
+    const capacityComparisonPopup = usePopupWindow({
+        isOpen: capacityCompareModal,
+        onClose: () => setCapacityCompareModal(false),
+        title: 'Comparer la capacité des plans de feu',
+        width: 920,
+        height: 620
+    });
 
     // Diagram arrow style
     const [diagramArrowStyle, setDiagramArrowStyle] = useState('solid');
@@ -1187,6 +1199,9 @@ function App() {
             case 'help':
                 setHelpModal(true);
                 break;
+            case 'compareCapacity':
+                setCapacityCompareModal(true);
+                break;
             case 'import':
                 handleImportExcelDirect();
                 break;
@@ -1702,6 +1717,21 @@ function App() {
         );
     }, [showFloatingRemarks, currentRemarques, updatePFRemarques, groups.length, remarquesPopup.renderToPopup]);
 
+    // Render capacity comparison into its detached popup window
+    useEffect(() => {
+        if (!capacityCompareModal) return;
+        capacityComparisonPopup.renderToPopup(
+            <CapacityComparison
+                pfTabs={pfTabs}
+                groups={groups}
+                trafficDatasets={trafficDatasets}
+                pfTrafficDatasetMap={pfTrafficDatasetMap}
+                activeTrafficDataset={activeTrafficDataset}
+                trafficDatasetNames={trafficDatasetNames}
+            />
+        );
+    }, [capacityCompareModal, pfTabs, groups, trafficDatasets, pfTrafficDatasetMap, activeTrafficDataset, trafficDatasetNames, capacityComparisonPopup.renderToPopup]);
+
     // Render traffic table into popup window
     useEffect(() => {
         if (!showFloatingTraffic) return;
@@ -1765,6 +1795,7 @@ function App() {
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
                     initialOpenMenu={!hasActiveProject ? 'fichier' : null}
+                    pfCount={pfTabs.length}
                 />
             {!hasActiveProject && (
                 <div className="welcome-screen">
@@ -2781,6 +2812,9 @@ function App() {
             <Modal isOpen={helpModal} onClose={() => setHelpModal(false)} title={tip("Aide - TraCflux")} className="modal-wide">
                 <HelpContent initialAnchor={helpAnchor} />
             </Modal>
+
+            {/* Comparateur de capacité : rendu dans une fenêtre détachée
+                (usePopupWindow ci-dessus), non modale et déplaçable. */}
 
             {/* Modal À propos */}
             <Modal isOpen={aboutModal} onClose={() => setAboutModal(false)} title={tip(`À propos — ${APP_NAME}`)}>

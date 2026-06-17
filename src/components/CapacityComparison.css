@@ -1,0 +1,224 @@
+.capacity-comparison {
+    padding: 10px 12px;
+    color: #ddd;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.cc-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #444;
+}
+
+.cc-controls-label {
+    display: block;
+    font-size: 0.8em;
+    color: #888;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.cc-pf-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+}
+
+.cc-pf-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.cc-pf-checkbox input { cursor: pointer; }
+
+.cc-dataset-select select {
+    background: #2a2a2a;
+    color: #eee;
+    border: 1px solid #4ecdc4;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.cc-export {
+    margin-left: auto;
+    align-self: center;
+}
+
+.cc-export-btn {
+    background: #4ecdc4;
+    color: #14302e;
+    border: none;
+    border-radius: 4px;
+    padding: 7px 14px;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.cc-export-btn:hover:not(:disabled) { background: #6fd9d1; }
+.cc-export-btn:disabled { opacity: 0.5; cursor: default; }
+
+.cc-col-trafic-single {
+    color: #9ad;
+    background: #2f2f2f;
+}
+
+/* Coin de tableau en diagonale : « Plan de feu » (haut-droite, axe colonnes),
+   « Groupe de feu » (bas-gauche, axe lignes), séparés par une diagonale ↘.
+   Le dégradé est posé SUR une base opaque car la cellule est sticky. */
+.cc-corner {
+    min-width: 150px;
+    background:
+        linear-gradient(to top right,
+            transparent calc(50% - 0.7px),
+            #777 calc(50% - 0.7px),
+            #777 calc(50% + 0.7px),
+            transparent calc(50% + 0.7px)),
+        #2a2a2a;
+}
+
+.cc-corner-pf,
+.cc-corner-gf {
+    position: absolute;
+    font-size: 0.82em;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.cc-corner-pf { top: 6px; right: 8px; color: #4ecdc4; }
+.cc-corner-gf { bottom: 6px; left: 8px; color: #ddd; }
+
+.cc-trafic-spacer {
+    background: #333;
+    border-bottom: none;
+}
+
+/* Coin en thèmes clairs */
+body.light-mode .cc-corner,
+body.sepia-mode .cc-corner {
+    background:
+        linear-gradient(to top right,
+            transparent calc(50% - 0.7px),
+            #999 calc(50% - 0.7px),
+            #999 calc(50% + 0.7px),
+            transparent calc(50% + 0.7px)),
+        #f0f0f0;
+}
+body.light-mode .cc-corner-gf,
+body.sepia-mode .cc-corner-gf { color: #222; }
+body.light-mode .cc-trafic-spacer,
+body.sepia-mode .cc-trafic-spacer { background: #e8e8e8; }
+
+.cc-table-scroll {
+    overflow: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.cc-table {
+    border-collapse: collapse;
+    width: auto;
+    font-size: 0.85em;
+}
+
+.cc-table th,
+.cc-table td {
+    border: 1px solid #444;
+    padding: 5px 10px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.cc-table thead th {
+    background: #333;
+    color: #ccc;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.cc-pf-header {
+    color: #4ecdc4;
+    font-weight: bold;
+}
+
+.cc-pf-dataset {
+    display: block;
+    font-size: 0.78em;
+    font-weight: normal;
+    color: #999;
+    margin-top: 2px;
+}
+
+.cc-subheader th {
+    top: 38px; /* sous l'en-tête PF */
+    font-weight: normal;
+    color: #aaa;
+    font-size: 0.92em;
+}
+
+.cc-col-group {
+    text-align: left !important;
+    color: #ddd;
+    position: sticky;
+    left: 0;
+    background: #2a2a2a;
+    z-index: 1;
+}
+
+.cc-table thead .cc-col-group { z-index: 2; }
+
+.cc-trafic { color: #9ad; }
+
+.cc-vutile { color: #bbb; }
+
+.cc-capacity { font-weight: bold; }
+
+.cc-empty,
+.cc-note {
+    color: #888;
+    font-size: 0.85em;
+    margin-top: 12px;
+}
+
+.cc-note .capacity-green,
+.cc-note .capacity-orange,
+.cc-note .capacity-red,
+.cc-note .capacity-black {
+    font-weight: bold;
+    padding: 0 3px;
+}
+
+/* Code couleur capacité (repris des seuils métier, défini ici pour le
+   conteneur de comparaison — indépendant des tables Simulation/Trafic). */
+.capacity-comparison .capacity-green { color: #4caf50; }
+.capacity-comparison .capacity-orange { color: #ff9800; }
+.capacity-comparison .capacity-red { color: #f44336; }
+.capacity-comparison .capacity-black {
+    color: #000 !important;
+    background-color: #ff6b6b !important;
+    font-weight: bold;
+}
+
+/* Thèmes clairs */
+body.light-mode .capacity-comparison,
+body.sepia-mode .capacity-comparison { color: #222; }
+body.light-mode .cc-col-group,
+body.sepia-mode .cc-col-group { background: #f0f0f0; color: #222; }
+body.light-mode .cc-table thead th,
+body.sepia-mode .cc-table thead th { background: #e8e8e8; color: #333; }
+body.light-mode .cc-dataset-select select,
+body.sepia-mode .cc-dataset-select select { background: #fff; color: #222; }

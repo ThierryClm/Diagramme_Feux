@@ -19,7 +19,8 @@ const MenuBar = ({
     pixelsPerSecond = 10,
     onPixelsPerSecondChange,
     showMicroOnHover = true,
-    initialOpenMenu = null
+    initialOpenMenu = null,
+    pfCount = 0
 }) => {
     const [openMenu, setOpenMenu] = useState(initialOpenMenu);
     const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -382,6 +383,13 @@ const MenuBar = ({
                 { label: 'Glisser...', action: 'slide', disabled: !hasPermission('canModifyDiagram') },
                 { label: 'Inserer...', action: 'insert', disabled: !hasPermission('canModifyDiagram') },
                 { label: 'Réduire...', action: 'reduce', disabled: !hasPermission('canModifyDiagram') },
+                { type: 'separator' },
+                {
+                    label: 'Comparer la capacité des plans de feu...',
+                    action: 'compareCapacity',
+                    disabled: pfCount < 2,
+                    title: pfCount < 2 ? 'Nécessite au moins 2 plans de feu' : 'Tableau comparatif du vert utile et de la capacité utilisée'
+                },
                 { type: 'separator' },
                 {
                     label: 'Options...',

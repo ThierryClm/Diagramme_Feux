@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { calculateSimulatedDiagram } from '../utils/simulationCalculator';
+import { calculateVUtile as calcVUtile, calculateCapacity, getCapacityColorClass } from '../utils/capacityCalc';
 import './SimulationPanel.css';
 
 const SimulationPanel = ({
@@ -129,28 +130,10 @@ const SimulationPanel = ({
         });
     }, [rawConflicts, actionData, selectedActions]);
 
-    // Calculate V.Utile = trafic / (1800 * coef / cycle)
-    const calculateVUtile = (trafficVol, laneCoef) => {
-        if (!trafficVol || !laneCoef || !simulatedCycleLength || laneCoef === 0) return null;
-        const result = trafficVol / (1800 * laneCoef / simulatedCycleLength);
-        return Math.round(result);
-    };
-
-    // Calculate Cap.U = (V.Utile / green time) * 100 (percentage)
-    const calculateCapacity = (greenTime, vUtile) => {
-        if (!greenTime || !vUtile || greenTime === 0) return { value: null, display: '' };
-        const result = Math.round((vUtile / greenTime) * 100);
-        return { value: result, display: result + '%' };
-    };
-
-    // Get capacity color class based on value
-    const getCapacityColorClass = (value) => {
-        if (value === null) return '';
-        if (value < 76) return 'capacity-green';
-        if (value <= 85) return 'capacity-orange';
-        if (value <= 100) return 'capacity-red';
-        return 'capacity-black';
-    };
+    // V.Utile / Cap.U / couleur : formules factorisées dans utils/capacityCalc
+    // (source de vérité commune avec le tableau comparatif des PF).
+    // Wrapper local pour injecter le cycle simulé courant.
+    const calculateVUtile = (trafficVol, laneCoef) => calcVUtile(trafficVol, laneCoef, simulatedCycleLength);
 
     // Calculate Retard (avec condition "Début de bande passante")
     const calculateDelay = (greenTime, trafficVol, laneCoef, groupId, groupOffset) => {
