@@ -182,6 +182,83 @@ const IntersectionImage = ({
         }
     };
 
+    // Capture d'écran (écran / fenêtre / onglet au choix de l'utilisateur) via
+    // l'API Screen Capture. On saisit une image fixe de la surface choisie et
+    // on la fait passer par le même chemin que le chargement fichier
+    // (compression + optimisation + recadrage ultérieur).
+    const handleScreenCapture = async () => {
+        setShowImageMenu(false);
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            toast.error("La capture d'écran n'est pas supportée par ce navigateur (nécessite un contexte sécurisé : localhost ou HTTPS).");
+            return;
+        }
+        let stream;
+        try {
+            stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.muted = true;
+            await video.play();
+            // Laisse une frame se peindre pour disposer des dimensions réelles.
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+            if (!w || !h) {
+                toast.error("Capture impossible : dimensions de l'image nulles.");
+                return;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/png');
+
+            applyImportedImage(dataUrl);
+        } catch (err) {
+            // AbortError / NotAllowedError = l'utilisateur a annulé le sélecteur.
+            if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+                console.error('Capture écran échouée:', err);
+                toast.error("Échec de la capture d'écran : " + err.message);
+            }
+        } finally {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+        }
+    };
+
+    // Colle une image depuis le presse-papiers. Cas d'usage principal :
+    // l'utilisateur trace une zone avec l'outil de capture Windows
+    // (Win+Maj+S), puis colle ici. L'image suit le même traitement que les
+    // autres sources (optimisation + recadrage ultérieur).
+    const handlePasteImage = async () => {
+        setShowImageMenu(false);
+        if (!navigator.clipboard || !navigator.clipboard.read) {
+            toast.error("Le collage depuis le presse-papiers n'est pas supporté par ce navigateur (nécessite un contexte sécurisé : localhost ou HTTPS).");
+            return;
+        }
+        try {
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+                const imageType = item.types.find(t => t.startsWith('image/'));
+                if (imageType) {
+                    const blob = await item.getType(imageType);
+                    const reader = new FileReader();
+                    reader.onload = (event) => applyImportedImage(event.target.result);
+                    reader.readAsDataURL(blob);
+                    return;
+                }
+            }
+            toast.info("Aucune image dans le presse-papiers. Faites d'abord une capture (Windows : Win+Maj+S), puis recommencez.");
+        } catch (err) {
+            if (err.name === 'NotAllowedError') {
+                toast.error("Accès au presse-papiers refusé. Autorisez-le dans le navigateur, puis réessayez.");
+            } else {
+                console.error('Collage image échoué:', err);
+                toast.error("Échec du collage : " + err.message);
+            }
+        }
+    };
+
     // Handle click on image to place arrow
     const handleImageClick = (e) => {
         if (!imageData || isDragging || !showArrows) return;
@@ -747,36 +824,40 @@ const IntersectionImage = ({
                     <div className="upload-btn-container" ref={imageMenuRef}>
                         <button
                             className="upload-btn"
-                            onClick={() => {
-                                if (recentImageDirs.length > 0) {
-                                    setShowImageMenu(!showImageMenu);
-                                } else {
-                                    handleImageUpload();
-                                }
-                            }}
+                            onClick={() => setShowImageMenu(!showImageMenu)}
                         >
                             {imageData ? 'Changer' : 'Charger'} image
-                            {recentImageDirs.length > 0 && <span className="dropdown-arrow">▼</span>}
+                            <span className="dropdown-arrow">▼</span>
                         </button>
-                        {showImageMenu && recentImageDirs.length > 0 && (
+                        {showImageMenu && (
                             <div className="upload-dropdown">
                                 <button onClick={() => { setShowImageMenu(false); handleImageUpload(); }}>
                                     Parcourir...
                                 </button>
-                                <div className="dropdown-separator" />
-                                <div className="dropdown-header">Répertoires récents</div>
-                                {recentImageDirs.map((dir, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => {
-                                            setShowImageMenu(false);
-                                            handleImageUpload();
-                                        }}
-                                        title={dir.name}
-                                    >
-                                        {dir.name}
-                                    </button>
-                                ))}
+                                <button onClick={handleScreenCapture}>
+                                    Capture écran...
+                                </button>
+                                <button onClick={handlePasteImage} title="Coller une image du presse-papiers (ex. après une capture de zone Windows : Win+Maj+S)">
+                                    Coller (presse-papiers)...
+                                </button>
+                                {recentImageDirs.length > 0 && (
+                                    <>
+                                        <div className="dropdown-separator" />
+                                        <div className="dropdown-header">Répertoires récents</div>
+                                        {recentImageDirs.map((dir, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => {
+                                                    setShowImageMenu(false);
+                                                    handleImageUpload();
+                                                }}
+                                                title={dir.name}
+                                            >
+                                                {dir.name}
+                                            </button>
+                                        ))}
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

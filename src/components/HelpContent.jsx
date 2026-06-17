@@ -392,7 +392,7 @@ const HelpContent = ({ initialAnchor = null }) => {
 
             <section className="help-section">
                 <h4>Image du carrefour</h4>
-                <p><strong>Charger un fond de plan :</strong> Cliquez sur le bouton de chargement dans la zone Image du carrefour pour sélectionner un fichier. Les formats acceptés sont les principaux formats web reconnus par votre navigateur :</p>
+                <p><strong>Charger un fond de plan :</strong> Cliquez sur le bouton <em>Charger / Changer image</em> dans la zone Image du carrefour. Le menu propose trois sources : <strong>Parcourir…</strong> (sélectionner un fichier), <strong>Capture écran…</strong> (saisir une image de tout votre écran, une fenêtre ou un onglet — pratique pour récupérer une carte ou un plan affiché dans un autre logiciel) ou <strong>Coller (presse-papiers)…</strong>. Pour ne capturer qu'une <em>zone précise</em>, utilisez l'outil de capture de Windows (<strong>Win+Maj+S</strong>) qui permet de tracer un rectangle, puis choisissez <strong>Coller (presse-papiers)…</strong>. Capture écran et collage nécessitent un contexte sécurisé (localhost ou HTTPS). Dans tous les cas l'image suit le même traitement (optimisation, recadrage). Les formats de fichier acceptés sont les principaux formats web reconnus par votre navigateur :</p>
                 <ul>
                     <li><strong>JPEG</strong> (.jpg, .jpeg) — recommandé pour les <em>photos aériennes</em> (Géoportail, Google Maps, cadastre, IGN, drones…) et les captures d'écran de logiciels CAO</li>
                     <li><strong>PNG</strong> (.png) — recommandé pour les <em>plans au trait, schémas, captures nettes</em> avec fond transparent ou blanc</li>
