@@ -982,8 +982,11 @@ body.amber-mode .help-back-to-top {
 .pf-tab.active {
     background: #242424;
     color: #fff;
-    border-color: #555;
+    border-color: #4ecdc4;
     font-weight: bold;
+    /* Détourage épais et contrasté de l'onglet actif (anneau box-shadow :
+       n'affecte pas la mise en page, contrairement à une bordure plus large). */
+    box-shadow: 0 0 0 2px #4ecdc4;
 }
 
 .pf-tab.dragging {
@@ -1001,6 +1004,7 @@ body.amber-mode .help-back-to-top {
     background: rgba(76, 175, 80, 0.35);
     border-color: #4CAF50;
     color: #fff;
+    box-shadow: 0 0 0 2px #4CAF50;
 }
 
 .pf-tab.pf-invalidated {
@@ -1013,6 +1017,7 @@ body.amber-mode .help-back-to-top {
     background: rgba(231, 76, 60, 0.35);
     border-color: #e74c3c;
     color: #fff;
+    box-shadow: 0 0 0 2px #e74c3c;
 }
 
 .pf-tab[draggable="true"] {
