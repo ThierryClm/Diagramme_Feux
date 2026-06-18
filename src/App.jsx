@@ -393,7 +393,7 @@ function App() {
         document.title = `${prefix}${name} — Diagramme de Feux`;
     }, [hasActiveProject, projectName, intersectionName, isDirty]);
 
-    // Deep link vers une section de l'aide F1 : si l'URL contient
+    // Deep link vers une section de l'aide : si l'URL contient
     // ?openHelp=ondeVerte (ouvert depuis la fenêtre Onde verte), on ouvre
     // automatiquement la modale d'aide et on délègue le scroll vers le
     // chapitre Onde verte à <HelpContent /> via la prop initialAnchor.

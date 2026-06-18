@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 /**
- * Aide en ligne (F1) — contenu partagé entre App.jsx et GreenWavePage.jsx.
+ * Aide en ligne (menu Aide) — contenu partagé entre App.jsx et GreenWavePage.jsx.
  *
  * Le composant gère lui-même :
  *  - la ref vers le conteneur scrollable (helpContentRef)
@@ -118,6 +118,29 @@ const HelpContent = ({ initialAnchor = null }) => {
 
             <section className="help-section">
                 <h4>Mise en page de l'interface et optimisation de l'écran</h4>
+
+                <p>Le menu <strong>Mise en page</strong> regroupe tous les leviers d'adaptation de l'affichage. Deux usages types :</p>
+
+                <p><strong>① Optimiser sur petit écran ou en mobilité</strong> (ordinateur portable, sur le terrain, dans le train). L'objectif est de donner un maximum de place au diagramme en mono-fenêtre :</p>
+                <ul>
+                    <li><strong>Masquer le panneau de configuration</strong> (case <em>Affichage des paramètres</em>, ou bouton Paramètre de l'en-tête) : libère toute la largeur pour le diagramme.</li>
+                    <li><strong>Masquer Commentaires, Remarques et Description des conditions micro</strong> : on ne garde que l'essentiel à l'écran.</li>
+                    <li><strong>Masquer le nom des groupes de feu dans le formulaire</strong> : récupère ~160 px supplémentaires.</li>
+                    <li><strong>Dilatation du diagramme (Zoom)</strong> : ajustez l'échelle horizontale pour voir tout le cycle sans défilement (ou Ctrl + molette).</li>
+                    <li><strong>Désactiver les Infobulles</strong> une fois l'outil bien en main : interface plus épurée.</li>
+                    <li>Les <strong>séparateurs ajustables</strong> (vertical et horizontal) donnent la priorité à la zone qui vous importe.</li>
+                </ul>
+
+                <p><strong>② Tirer parti de plusieurs écrans</strong> (poste de travail fixe). L'objectif est d'étaler le travail :</p>
+                <ul>
+                    <li><strong>Détachement</strong> des fenêtres (matrice, formulaire, données trafic, conditions micro, variables micro, image du carrefour, remarques) sur un second écran, en gardant le diagramme en plein sur l'écran principal.</li>
+                    <li>Cas d'usage : la <em>matrice intervert</em> visible en permanence pendant le réglage du diagramme ; l'<em>image du carrefour</em> projetée sur un vidéoprojecteur lors d'une présentation ; les <em>remarques</em> (notes du présentateur) sur l'écran annexe.</li>
+                    <li><strong>Zoom indépendant</strong> dans chaque fenêtre détachée (Ctrl + molette) sans toucher à la fenêtre principale — pratique pour un grand écran ou un vidéoprojecteur.</li>
+                    <li>Chaque projet <strong>mémorise sa configuration de détachements</strong> et la restaure à l'ouverture.</li>
+                </ul>
+
+                <p>Le détail de chaque option figure ci-dessous.</p>
+
                 <p><strong>Installer TraCflux comme application (optionnel) :</strong> pour une expérience plus proche d'une application native — raccourci dans le menu Démarrer, fenêtre sans onglets ni barre d'adresse, lancement direct depuis la barre des tâches — cliquez sur le bouton <strong>« Installer cette app »</strong> qui apparaît dans la barre d'adresse de Chrome ou Edge lorsque vous visitez TraCflux. Confirmez l'installation : TraCflux devient une vraie app sur votre poste, avec son propre raccourci. L'usage standard dans un onglet de navigateur reste évidemment possible et fonctionnellement identique ; l'installation ne fait que changer l'enveloppe visuelle.</p>
                 <p><strong>Principe du détachement :</strong> les fenêtres détachées (matrice, formulaire, image du carrefour, données trafic, conditions micro, variables micro, remarques) sont conçues pour être <strong>placées sur un second écran</strong> pendant que la fenêtre principale reste sur votre écran de travail. Vous libérez ainsi tout l'espace de l'écran principal pour le diagramme, tout en gardant en permanence visible sur l'écran annexe la ressource dont vous avez besoin (matrice intervert pendant le réglage du diagramme, image du carrefour pendant une présentation à un client, etc.). Sans second écran, le détachement reste utile pour superposer ponctuellement une fenêtre sur la principale.</p>
                 <ul>
@@ -144,7 +167,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <li><strong>Remarques du diagramme :</strong> Le menu <strong>Mise en page → Détachements</strong> permet d'ouvrir le champ Remarques du plan de feu actif dans une fenêtre séparée, déplaçable sur un second écran. Pratique lors d'une projection : le diagramme reste visible sur l'écran principal pendant que vous gardez vos notes sur un écran annexe pour commenter la présentation. L'option est grisée tant que la case <em>Remarques du diagramme</em> n'est pas cochée dans le menu Mise en page (impossible de détacher un champ masqué).</li>
                     <li><strong>Zoom indépendant dans chaque fenêtre détachée :</strong> Chaque popup (Formulaire, Matrice, Trafic, Conditions micro, Variables micro, Image, Remarques) accepte le zoom natif du navigateur sans affecter la fenêtre principale. Utilisez <strong>Ctrl + molette de la souris</strong> pour zoomer/dézoomer, ou <strong>Ctrl++</strong> / <strong>Ctrl+-</strong>, et <strong>Ctrl+0</strong> pour revenir à 100 %. Pratique pour optimiser la lecture sur un grand écran ou un vidéoprojecteur sans modifier la mise en page de l'application principale. Selon le navigateur, le niveau de zoom peut être mémorisé d'une session à l'autre.</li>
                     <li><strong>Confirmation à la fermeture :</strong> Si le projet a été modifié sans être sauvegardé, le navigateur affiche une confirmation avant de fermer l'onglet ou la fenêtre.</li>
-                    <li><strong>Désactivation des infobulles par section :</strong> Le menu <strong>Mise en page → Infobulles...</strong> ouvre un sous-menu où chaque section de l'interface (<em>Page principale</em>, <em>Configuration</em>, <em>Diagramme</em>, <em>Matrice</em>, <em>Trafic</em>, <em>Conditions de micro-régulation</em>) peut être cochée individuellement. Décocher une section masque toutes ses infobulles — utile pour épurer l'interface une fois familiarisé avec l'outil. Préférence enregistrée au niveau de l'application (s'applique à tous les projets).</li>
+                    <li><strong>Désactivation des infobulles par section :</strong> Le menu <strong>Mise en page → Infobulles</strong> ouvre un sous-menu où chaque section de l'interface (<em>Page principale</em>, <em>Configuration</em>, <em>Diagramme</em>, <em>Matrice</em>, <em>Trafic</em>, <em>Conditions de micro-régulation</em>) peut être cochée individuellement. Décocher une section masque toutes ses infobulles — utile pour épurer l'interface une fois familiarisé avec l'outil. Préférence enregistrée au niveau de l'application (s'applique à tous les projets).</li>
                 </ul>
             </section>
 

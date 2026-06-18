@@ -227,7 +227,7 @@ const MenuBar = ({
                 { type: 'separator' },
                 { label: 'Imprimer le projet...', action: 'printDossier', disabled: !hasActiveProject, title: !hasActiveProject ? 'Aucun projet ouvert' : '' },
                 {
-                    label: 'Exporter en PNG...',
+                    label: 'Exporter en PNG',
                     disabled: !hasActiveProject,
                     title: !hasActiveProject ? 'Aucun projet ouvert' : '',
                     type: 'submenu',
@@ -304,7 +304,7 @@ const MenuBar = ({
                     ]
                 },
                 {
-                    label: 'Détachement...',
+                    label: 'Détachement',
                     type: 'submenu',
                     submenuId: 'detachement',
                     submenu: [
@@ -318,20 +318,6 @@ const MenuBar = ({
                     ]
                 },
                 {
-                    label: 'Infobulles...',
-                    type: 'submenu',
-                    submenuId: 'tooltips',
-                    submenu: [
-                        { label: 'Page principale',                 action: 'toggleTooltipsMain',    checked: !!layoutOptions.tooltipPrefs?.main,    keepSubmenuOpen: true },
-                        { label: 'Configuration',                   action: 'toggleTooltipsConfig',  checked: !!layoutOptions.tooltipPrefs?.config,  keepSubmenuOpen: true },
-                        { label: 'Diagramme',                       action: 'toggleTooltipsDiagram', checked: !!layoutOptions.tooltipPrefs?.diagram, keepSubmenuOpen: true },
-                        { label: 'Matrice',                         action: 'toggleTooltipsMatrix',  checked: !!layoutOptions.tooltipPrefs?.matrix,  keepSubmenuOpen: true },
-                        { label: 'Trafic',                          action: 'toggleTooltipsTraffic', checked: !!layoutOptions.tooltipPrefs?.traffic, keepSubmenuOpen: true },
-                        { label: 'Conditions de micro-régulation',  action: 'toggleTooltipsMicro',   checked: !!layoutOptions.tooltipPrefs?.micro,   keepSubmenuOpen: true }
-                    ]
-                },
-                { type: 'separator' },
-                {
                     label: 'Dilatation du diagramme',
                     type: 'submenu',
                     submenuId: 'dilatation',
@@ -339,6 +325,7 @@ const MenuBar = ({
                         { type: 'slider', label: 'Zoom', min: 4, max: 20, value: pixelsPerSecond, unit: 'px/s', sliderId: 'pixelsPerSecond' }
                     ]
                 },
+                { type: 'separator' },
                 {
                     label: 'Options de contraste',
                     type: 'submenu',
@@ -351,6 +338,19 @@ const MenuBar = ({
                         { label: 'Daltonien', action: 'themeDaltonian', themeId: 'daltonian', keepSubmenuOpen: true },
                         { label: 'Sépia', action: 'themeSepia', themeId: 'sepia', keepSubmenuOpen: true },
                         { label: 'Bleu nuit', action: 'themeBlueNight', themeId: 'blue-night', keepSubmenuOpen: true }
+                    ]
+                },
+                {
+                    label: 'Infobulles',
+                    type: 'submenu',
+                    submenuId: 'tooltips',
+                    submenu: [
+                        { label: 'Page principale',                 action: 'toggleTooltipsMain',    checked: !!layoutOptions.tooltipPrefs?.main,    keepSubmenuOpen: true },
+                        { label: 'Configuration',                   action: 'toggleTooltipsConfig',  checked: !!layoutOptions.tooltipPrefs?.config,  keepSubmenuOpen: true },
+                        { label: 'Diagramme',                       action: 'toggleTooltipsDiagram', checked: !!layoutOptions.tooltipPrefs?.diagram, keepSubmenuOpen: true },
+                        { label: 'Matrice',                         action: 'toggleTooltipsMatrix',  checked: !!layoutOptions.tooltipPrefs?.matrix,  keepSubmenuOpen: true },
+                        { label: 'Trafic',                          action: 'toggleTooltipsTraffic', checked: !!layoutOptions.tooltipPrefs?.traffic, keepSubmenuOpen: true },
+                        { label: 'Conditions de micro-régulation',  action: 'toggleTooltipsMicro',   checked: !!layoutOptions.tooltipPrefs?.micro,   keepSubmenuOpen: true }
                     ]
                 },
                 {
@@ -392,7 +392,7 @@ const MenuBar = ({
                 },
                 { type: 'separator' },
                 {
-                    label: 'Options...',
+                    label: 'Options',
                     type: 'submenu',
                     submenuId: 'options',
                     submenu: [

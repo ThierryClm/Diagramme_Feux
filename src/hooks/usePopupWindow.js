@@ -139,7 +139,7 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
             if (!popup) {
                 if (!popupBlockedNotified) {
                     popupBlockedNotified = true;
-                    toast.error("Fenêtre détachée bloquée par le navigateur. Cliquez sur l'icône popup bloqué dans la barre d'adresse et choisissez « Toujours autoriser » pour ce site (voir l'aide F1).");
+                    toast.error("Fenêtre détachée bloquée par le navigateur. Cliquez sur l'icône popup bloqué dans la barre d'adresse et choisissez « Toujours autoriser » pour ce site (voir le menu Aide).");
                 }
                 onClose();
                 return;

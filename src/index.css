@@ -432,7 +432,7 @@ body.sepia-mode .phase-flag-indicator {
     color: #8b3a1f;
 }
 
-/* Aide F1 en mode clair / sépia : les règles par défaut utilisent du gris
+/* Aide en ligne en mode clair / sépia : les règles par défaut utilisent du gris
    pâle (#ccc, #bbb, #ddd) qui est illisible sur fond blanc. !important
    est nécessaire car la sommaire (.help-toc) a un style inline en dur. */
 body.light-mode .help-section p,

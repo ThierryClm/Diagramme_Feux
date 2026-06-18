@@ -191,6 +191,15 @@ Pendant la simulation, cette popup s'anime en synchronisation avec votre fenêtr
 
 C'est particulièrement adapté aux comités techniques, formations internes, validations devant un client ou aux échanges pédagogiques avec des élus.
 
+### Comment adapter l'affichage à mon écran (portable, plusieurs écrans) ?
+
+Tout passe par le menu **Mise en page**, selon votre contexte :
+
+- **Sur un petit écran ou en mobilité** (ordinateur portable, sur le terrain, dans le train) : donnez le maximum de place au diagramme. Masquez le panneau de configuration (case *Affichage des paramètres* ou bouton Paramètre), masquez Commentaires / Remarques / Description des conditions micro, masquez le nom des groupes dans le formulaire, ajustez la **Dilatation du diagramme (Zoom)** — ou Ctrl + molette — et désactivez les **Infobulles** une fois à l'aise. L'interface se concentre alors sur l'essentiel.
+- **Sur un poste à plusieurs écrans** : utilisez le **Détachement** pour envoyer des fenêtres (matrice intervert, formulaire, données trafic, conditions micro, image du carrefour, remarques) sur un second écran, tout en gardant le diagramme en plein sur l'écran principal. Chaque fenêtre détachée se zoome indépendamment (Ctrl + molette), et chaque projet retrouve sa configuration de détachements à l'ouverture.
+
+Le détail de chaque option est documenté dans l'aide en ligne (menu **Aide**, section *Mise en page de l'interface et optimisation de l'écran*).
+
 ### Quels formats d'import/export sont supportés ?
 
 | Format | Import | Export |

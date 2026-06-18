@@ -100,7 +100,7 @@ const GreenWavePage = () => {
     const [showRestoreModal, setShowRestoreModal] = useState(false);
     const [restoreList, setRestoreList] = useState([]);
     const [selectedRestoreName, setSelectedRestoreName] = useState(null);
-    // Modale d'aide F1 : on affiche le même composant HelpContent que l'app
+    // Modale d'aide : on affiche le même composant HelpContent que l'app
     // principale, focalisé sur le chapitre Onde verte. Pas de nouvel onglet.
     const [showHelpModal, setShowHelpModal] = useState(false);
     // Suivi des modifications non sauvegardées (équivalent isDirty de l'app
@@ -2943,7 +2943,7 @@ const GreenWavePage = () => {
                 loadProjectData={getProjectDataLocal}
             />
 
-            {/* Aide F1 : modale locale qui réutilise le composant HelpContent
+            {/* Aide : modale locale qui réutilise le composant HelpContent
                 partagé avec l'app principale, focalisée sur le chapitre Onde
                 verte au moment de l'ouverture. */}
             <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="Aide - TraCflux" className="modal-wide">
