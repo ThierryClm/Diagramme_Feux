@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import './CustomTooltip.css';
 
 /**
@@ -21,6 +22,9 @@ const CustomTooltip = ({ text, delay = 400, children }) => {
     const [visible, setVisible] = useState(false);
     const [pos, setPos] = useState({ x: 0, y: 0 });
     const timerRef = useRef(null);
+    // Document propriétaire de l'élément survolé : permet de porter l'infobulle
+    // dans le bon document (fenêtre détachée ou principale).
+    const docRef = useRef(null);
 
     if (!text) {
         // No tooltip text: render children directly
@@ -30,6 +34,7 @@ const CustomTooltip = ({ text, delay = 400, children }) => {
     const handleMouseEnter = (e) => {
         const x = e.clientX;
         const y = e.clientY;
+        docRef.current = e.currentTarget?.ownerDocument || document;
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => {
             setPos({ x, y });
@@ -63,25 +68,33 @@ const CustomTooltip = ({ text, delay = 400, children }) => {
         }
     });
 
+    // L'infobulle est rendue via un portail vers le <body> du document
+    // propriétaire de la cible. Ainsi elle échappe à tout contexte
+    // d'empilement local (un ancêtre avec transform/filter au survol piégeait
+    // le position:fixed et plaçait l'infobulle DERRIÈRE les barres du diagramme).
+    const targetDoc = docRef.current || document;
+    const tooltipNode = visible && targetDoc.body ? createPortal(
+        <div
+            className="custom-tooltip"
+            style={{
+                position: 'fixed',
+                left: pos.x + 12,
+                top: pos.y + 16,
+                pointerEvents: 'none',
+                zIndex: 9999
+            }}
+        >
+            {text.split('\n').map((line, i) => (
+                <div key={i}>{line}</div>
+            ))}
+        </div>,
+        targetDoc.body
+    ) : null;
+
     return (
         <>
             {wrappedChild}
-            {visible && (
-                <div
-                    className="custom-tooltip"
-                    style={{
-                        position: 'fixed',
-                        left: pos.x + 12,
-                        top: pos.y + 16,
-                        pointerEvents: 'none',
-                        zIndex: 9999
-                    }}
-                >
-                    {text.split('\n').map((line, i) => (
-                        <div key={i}>{line}</div>
-                    ))}
-                </div>
-            )}
+            {tooltipNode}
         </>
     );
 };
