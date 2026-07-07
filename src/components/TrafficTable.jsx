@@ -405,6 +405,7 @@ const TrafficTable = ({
                                                 step="0.1"
                                                 className="input-trafic-num"
                                                 value={g.laneCoef || ''}
+                                                onFocus={(e) => e.target.select()}
                                                 onChange={(e) => handleSharedChange(g.id, 'laneCoef', parseFloat(e.target.value) || 0)}
                                             />
                                         </td>
@@ -430,6 +431,7 @@ const TrafficTable = ({
                                                     type="text"
                                                     className="input-trafic-num"
                                                     value={numericVol || ''}
+                                                    onFocus={(e) => e.target.select()}
                                                     onChange={(e) => {
                                                         const val = e.target.value;
                                                         const coordinated = isCoordinated(trafficData.trafficVol);

@@ -4567,6 +4567,20 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             if (!action) return null;
             const deb = parseInt(action.deb) || 0;
             const fin = parseInt(action.fin) || 0;
+            // Actions ponctuelles (un seul instant, pas de plage) : on n'affiche
+            // que « seconde N », pas « seconde N à 0 » qui n'a pas de sens.
+            const isPointInTime = action.action === 'Point de repos'
+                || action.action === 'Instant Co' || action.action === 'Instant CO';
+            // Fermeture anticipée : lister les GF cibles (glissement), si renseignés.
+            const glissementGroups = action.action === 'Fermeture anticipée'
+                ? [action.actGf1, action.actGf1Gf2, action.actGf1Gf3, action.actGf1Gf4]
+                    .map(v => (v == null ? '' : v.toString().replace(/[^0-9]/g, '').trim()))
+                    .filter(v => v !== '')
+                    .map(v => `GF${v}`)
+                : [];
+            const joinFr = (arr) => arr.length <= 1
+                ? (arr[0] || '')
+                : `${arr.slice(0, -1).join(', ')} et ${arr[arr.length - 1]}`;
             const hasMicro = actionTooltip.showMicro && action.micro;
             return (
                 <div className="action-hover-tooltip" style={{
@@ -4578,7 +4592,10 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     maxWidth: '350px'
                 }}>
                     <div className="action-hover-tooltip-name">{action.action}</div>
-                    <div className="action-hover-tooltip-seconds">seconde {deb} à {fin}</div>
+                    <div className="action-hover-tooltip-seconds">{isPointInTime ? `seconde ${deb}` : `seconde ${deb} à ${fin}`}</div>
+                    {glissementGroups.length > 0 && (
+                        <div className="action-hover-tooltip-seconds">glissement sur {joinFr(glissementGroups)}</div>
+                    )}
                     {hasMicro && (
                         <div className="action-hover-tooltip-micro">
                             {(action.micro || '').split(/(\b\w*(?:DA|TPPh|AVert|TMAB)\w*\b|[{}\[\]()]|\b(?:et|ou)\b)/g).map((part, i) =>
