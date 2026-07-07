@@ -170,6 +170,11 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     // Bornes a la restauration : Desc 100-350, Micro 300-700, Abrv 38-75.
     const [actionColWidths, setActionColWidths] = useState({ description: 160, micro: 420, abrv: 38 });
     const [externalLinks, setExternalLinks] = useState([]);
+    // Sélection mémorisée du comparateur de capacité (fenêtre « Comparer la
+    // capacité des plans de feu ») : liste d'id de PF cochés (null = tous par
+    // défaut) et jeu de trafic choisi ('__per_pf__' = jeu associé à chaque PF).
+    const [capacityCompareSelection, setCapacityCompareSelection] = useState(null);
+    const [capacityCompareDataset, setCapacityCompareDataset] = useState('__per_pf__');
     const [projectProperties, setProjectProperties] = useState(() => {
         try {
             const saved = safeLocalStorage.getItem('trafficProjectProperties');
@@ -1142,6 +1147,10 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
             setCustomTrafficDatasetNames(state.customTrafficDatasetNames || []);
             setPfTrafficDatasetMap(state.pfTrafficDatasetMap || {});
 
+            // Sélection du comparateur de capacité (null/absent = tous par défaut)
+            setCapacityCompareSelection(Array.isArray(state.capacityCompareSelection) ? state.capacityCompareSelection : null);
+            setCapacityCompareDataset(state.capacityCompareDataset || '__per_pf__');
+
             // Load intersection image and arrows
             if (state.intersectionImage !== undefined) {
                 setIntersectionImage(state.intersectionImage);
@@ -1256,6 +1265,10 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         // Reset external links
         setExternalLinks([]);
 
+        // Reset sélection du comparateur de capacité (tous cochés par défaut)
+        setCapacityCompareSelection(null);
+        setCapacityCompareDataset('__per_pf__');
+
         // Reset project properties
         setProjectProperties({ ...DEFAULT_PROJECT_PROPERTIES, dateCreation: new Date().toISOString().split('T')[0] });
 
@@ -1290,6 +1303,8 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         matricesLocked,
         actionColWidths,
         externalLinks,
+        capacityCompareSelection,
+        capacityCompareDataset,
         projectProperties
         // Note: simulation state is NOT included (per user request)
     });
@@ -1812,6 +1827,8 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
             dependencyGap,
             biCarrefourSeparator,
             externalLinks,
+            capacityCompareSelection,
+            capacityCompareDataset,
             projectProperties: { ...projectProperties, dateModification: new Date().toISOString() }
             // Note: simulation state is NOT saved with project (per user request)
         };
@@ -2217,6 +2234,8 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
                     activeTrafficDataset,
                     dependencyGap,
                     biCarrefourSeparator,
+                    capacityCompareSelection,
+                    capacityCompareDataset,
                     projectProperties,
                     savedAt: new Date().toISOString()
                 };
@@ -2237,7 +2256,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
                 clearTimeout(autoSaveTimerRef.current);
             }
         };
-    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, intersectionName, projectProperties]);
+    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, intersectionName, projectProperties, capacityCompareSelection, capacityCompareDataset]);
 
     // Update traffic data for a specific group in the active dataset
     const updateTrafficData = useCallback((groupId, field, value) => {
@@ -2726,6 +2745,10 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         setActionColWidths,
         externalLinks,
         setExternalLinks,
+        capacityCompareSelection,
+        setCapacityCompareSelection,
+        capacityCompareDataset,
+        setCapacityCompareDataset,
         conflictMatrix,
         setMatrixValue: setMatrixValueWithHistory,
         conflicts,

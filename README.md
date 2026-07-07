@@ -133,7 +133,9 @@ La bibliothèque utilisée pour lire les fichiers Excel (`xlsx` / SheetJS, versi
 
 Les versions corrigées existent uniquement sur `cdn.sheetjs.com` (SheetJS a retiré son édition communautaire du registre npm en 2023).
 
-**Recommandation utilisateur :** n'importer que des fichiers `.xlsx` d'**origine connue** (feuilles produites par vous ou par des collègues identifiés). Un fichier malveillant ouvert via l'import pourrait perturber l'onglet du navigateur.
+**Recommandation utilisateur :** n'importer que des fichiers `.xls` / `.xlsx` d'**origine connue** (feuilles produites par vous ou par des collègues identifiés). Un fichier malveillant ouvert via l'import pourrait perturber l'onglet du navigateur.
+
+**Note sur les macros :** la lecture se fait via une bibliothèque JavaScript côté navigateur, qui n'extrait que les **valeurs des cellules** et **n'exécute aucune macro (VBA)**. Le risque d'exécution de macro à l'ouverture (propre à Excel bureautique) n'existe pas ici. La vigilance porte donc sur l'**origine du fichier** (contenu potentiellement malformé), indépendamment de la présence ou non de macros.
 
 **Évaluation du risque dans l'usage prévu :** faible. TraCflux est un outil **local mono-utilisateur** ; `xlsx` n'est sollicité qu'au moment où l'utilisateur sélectionne manuellement un fichier ([`src/utils/excelImporter.js`](src/utils/excelImporter.js)). Aucun risque pour le système d'exploitation, aucun risque pour les autres projets enregistrés. Seul vecteur résiduel : phishing ciblé.
 

@@ -139,6 +139,10 @@ function App() {
         copyTrafficDataset,
         addCustomTrafficDataset,
         pfTrafficDatasetMap,
+        capacityCompareSelection,
+        setCapacityCompareSelection,
+        capacityCompareDataset,
+        setCapacityCompareDataset,
         dependencyGap,
         setDependencyGap,
         biCarrefourSeparator,
@@ -375,7 +379,7 @@ function App() {
 
     // Track whether project has been modified (for "Nouveau projet" menu)
     const { projectModified, setProjectModified, resetModified: resetProjectModified, projectModifiedSkip, hasUnsavedChanges, isDirty, setHasUnsavedChanges } =
-        useProjectModification([groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName]);
+        useProjectModification([groups, actionData, cycleLength, conflictMatrix, projectProperties, intersectionName, capacityCompareSelection, capacityCompareDataset]);
 
     // Update document title (browser tab) to reflect project name and unsaved status.
     // Sur l'écran d'accueil (aucun projet ouvert), on affiche juste
@@ -1728,9 +1732,13 @@ function App() {
                 pfTrafficDatasetMap={pfTrafficDatasetMap}
                 activeTrafficDataset={activeTrafficDataset}
                 trafficDatasetNames={trafficDatasetNames}
+                selectedPfIds={capacityCompareSelection}
+                setSelectedPfIds={setCapacityCompareSelection}
+                datasetChoice={capacityCompareDataset}
+                setDatasetChoice={setCapacityCompareDataset}
             />
         );
-    }, [capacityCompareModal, pfTabs, groups, trafficDatasets, pfTrafficDatasetMap, activeTrafficDataset, trafficDatasetNames, capacityComparisonPopup.renderToPopup]);
+    }, [capacityCompareModal, pfTabs, groups, trafficDatasets, pfTrafficDatasetMap, activeTrafficDataset, trafficDatasetNames, capacityCompareSelection, setCapacityCompareSelection, capacityCompareDataset, setCapacityCompareDataset, capacityComparisonPopup.renderToPopup]);
 
     // Render traffic table into popup window
     useEffect(() => {

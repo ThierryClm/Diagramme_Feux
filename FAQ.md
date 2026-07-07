@@ -52,6 +52,8 @@ Si vous êtes dans cette situation, le canal recommandé est le dépôt GitHub d
 
 Dans l'usage normal de TraCflux (outil local, mono-utilisateur, fichiers produits par vous), le risque est faible : il faudrait qu'un attaquant vous transmette spécifiquement un fichier piégé (phishing). Aucun risque pour le système d'exploitation ni pour les autres projets enregistrés. La situation est documentée et acceptée en l'état tant que l'usage reste local — voir le [README](README.md#sécurité-et-limites-connues) pour le détail.
 
+**À propos des macros :** TraCflux lit un fichier Excel via une bibliothèque **JavaScript, côté navigateur** — il ne récupère que les **valeurs des cellules** et **n'exécute aucune macro (VBA)**. Le risque classique des documents Office (une macro malveillante qui s'exécute à l'ouverture dans Excel bureautique) **n'existe donc pas** dans TraCflux. Attention toutefois : la vigilance ci-dessus ne porte **pas** sur la présence de macros mais sur l'**origine du fichier** — un fichier sans macro peut lui aussi être délibérément malformé pour exploiter la bibliothèque de lecture. Formats acceptés : `.xls` et `.xlsx`.
+
 ### À qui s'adresse cet outil ?
 
 Aux **traficiens, ingénieurs trafic, bureaux d'études et techniciens de collectivité** qui conçoivent ou analysent des plans de feux tricolores. Aussi utile aux étudiants en génie urbain ou exploitation routière qui apprennent à dimensionner des diagrammes de feux.

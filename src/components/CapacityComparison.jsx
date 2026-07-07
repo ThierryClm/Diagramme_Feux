@@ -26,12 +26,21 @@ const CapacityComparison = ({
     trafficDatasets = {},
     pfTrafficDatasetMap = {},
     activeTrafficDataset = '',
-    trafficDatasetNames = []
+    trafficDatasetNames = [],
+    // Sélection contrôlée et persistée dans le projet (via App/useTrafficLight).
+    // selectedPfIds null/absent = tous les PF cochés par défaut.
+    selectedPfIds = null,
+    setSelectedPfIds = () => {},
+    datasetChoice = PER_PF,
+    setDatasetChoice = () => {}
 }) => {
-    const [selectedPfIds, setSelectedPfIds] = useState(() => pfTabs.map(pf => pf.id));
-    const [datasetChoice, setDatasetChoice] = useState(PER_PF);
     const [exporting, setExporting] = useState(false);
     const tableRef = useRef(null);
+
+    const allPfIds = useMemo(() => pfTabs.map(pf => pf.id), [pfTabs]);
+    // Repli « tous cochés » quand aucune sélection n'est enregistrée.
+    const effectiveSelectedIds = Array.isArray(selectedPfIds) ? selectedPfIds : allPfIds;
+    const effectiveDatasetChoice = datasetChoice || PER_PF;
 
     const vlGroups = useMemo(
         () => groups.filter(g => g.type === 'VL' || g.type === 'V'),
@@ -39,23 +48,22 @@ const CapacityComparison = ({
     );
 
     const selectedPfs = useMemo(
-        () => pfTabs.filter(pf => selectedPfIds.includes(pf.id)),
-        [pfTabs, selectedPfIds]
+        () => pfTabs.filter(pf => effectiveSelectedIds.includes(pf.id)),
+        [pfTabs, effectiveSelectedIds]
     );
 
     const togglePf = (id) => {
-        setSelectedPfIds(prev =>
-            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-        );
+        const base = Array.isArray(selectedPfIds) ? selectedPfIds : allPfIds;
+        setSelectedPfIds(base.includes(id) ? base.filter(x => x !== id) : [...base, id]);
     };
 
     // Jeu de trafic effectif pour un PF donné selon le mode choisi.
     // En mode « par PF », on réplique la résolution de l'onglet Trafic :
     // mapping explicite, sinon dataset au nom du PF s'il existe, sinon actif.
     const datasetNameForPf = (pf) =>
-        datasetChoice === PER_PF
+        effectiveDatasetChoice === PER_PF
             ? (pfTrafficDatasetMap[pf.id] || (trafficDatasetNames.includes(pf.name) ? pf.name : activeTrafficDataset))
-            : datasetChoice;
+            : effectiveDatasetChoice;
 
     const trafficVolFor = (pf, groupId) => {
         const ds = datasetNameForPf(pf);
@@ -86,7 +94,7 @@ const CapacityComparison = ({
         });
         return out;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedPfs, vlGroups, datasetChoice, trafficDatasets, pfTrafficDatasetMap, activeTrafficDataset]);
+    }, [selectedPfs, vlGroups, effectiveDatasetChoice, trafficDatasets, pfTrafficDatasetMap, activeTrafficDataset]);
 
     const datasetLabelForPf = (pf) => datasetNameForPf(pf) || '—';
 
@@ -150,7 +158,7 @@ const CapacityComparison = ({
                             <label key={pf.id} className="cc-pf-checkbox">
                                 <input
                                     type="checkbox"
-                                    checked={selectedPfIds.includes(pf.id)}
+                                    checked={effectiveSelectedIds.includes(pf.id)}
                                     onChange={() => togglePf(pf.id)}
                                 />
                                 <span>{pf.name}</span>
@@ -160,7 +168,7 @@ const CapacityComparison = ({
                 </div>
                 <div className="cc-dataset-select">
                     <span className="cc-controls-label">Jeu de données trafic :</span>
-                    <select value={datasetChoice} onChange={(e) => setDatasetChoice(e.target.value)}>
+                    <select value={effectiveDatasetChoice} onChange={(e) => setDatasetChoice(e.target.value)}>
                         <option value={PER_PF}>Jeu associé à chaque PF</option>
                         {trafficDatasetNames.map(name => {
                             const has = datasetHasData(name);
