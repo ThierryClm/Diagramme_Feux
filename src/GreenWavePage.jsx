@@ -2144,7 +2144,10 @@ const GreenWavePage = () => {
                                 <div style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#4ecdc4', marginBottom: '8px' }}>{APP_NAME}</div>
                                 <div style={{ fontSize: '1.1em', color: '#aaa', marginBottom: '4px' }}>Version {APP_VERSION}</div>
                                 <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '20px', maxWidth: '420px', margin: '0 auto 20px' }}>{APP_DESCRIPTION}</div>
-                                <div style={{ fontSize: '0.95em', marginBottom: '16px' }}>Module <strong>Onde verte</strong> — coordination espace-temps des axes à feux.</div>
+                                <div style={{ fontSize: '0.95em', marginBottom: '16px' }}>
+                                    <div>Module <strong>Onde verte</strong></div>
+                                    <div style={{ marginTop: '4px', color: '#aaa' }}>Conception d'ondes vertes bidirectionnelles modérantes</div>
+                                </div>
                                 <button className="gw-about-close" onClick={() => setShowAboutModal(false)} style={{ marginTop: '12px' }}>Fermer</button>
                             </div>
                         </div>
@@ -2893,7 +2896,8 @@ const GreenWavePage = () => {
                                 {APP_DESCRIPTION}
                             </div>
                             <div style={{ fontSize: '0.95em', marginBottom: '16px' }}>
-                                Module <strong>Onde verte</strong> — coordination espace-temps des axes à feux.
+                                <div>Module <strong>Onde verte</strong></div>
+                                <div style={{ marginTop: '4px', color: '#aaa' }}>Conception d'ondes vertes bidirectionnelles modérantes</div>
                             </div>
                             <hr style={{ border: 'none', borderTop: '1px solid #444', margin: '16px 0' }} />
                             <div style={{ fontSize: '0.85em', color: '#888', lineHeight: '1.6' }}>
