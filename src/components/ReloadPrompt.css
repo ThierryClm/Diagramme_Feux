@@ -1,0 +1,70 @@
+.reload-prompt {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px 10px 16px;
+    background: #2a2a2a;
+    color: #eee;
+    border: 1px solid #4ecdc4;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    font-size: 0.9em;
+    animation: reload-prompt-in 0.2s ease;
+}
+
+@keyframes reload-prompt-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.reload-prompt-msg {
+    font-weight: 500;
+}
+
+.reload-prompt-btn {
+    padding: 4px 14px;
+    background: #4ecdc4;
+    color: #14302e;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.reload-prompt-btn:hover {
+    background: #6fe0d8;
+}
+
+.reload-prompt-close {
+    padding: 0 4px;
+    background: transparent;
+    color: #999;
+    border: none;
+    font-size: 1.2em;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.reload-prompt-close:hover {
+    color: #eee;
+}
+
+/* Thème clair */
+body.light-mode .reload-prompt {
+    background: #fff;
+    color: #222;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .reload-prompt-close {
+    color: #888;
+}
+
+body.light-mode .reload-prompt-close:hover {
+    color: #222;
+}

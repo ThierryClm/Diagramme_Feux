@@ -7,7 +7,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' (et non 'autoUpdate') : la nouvelle version reste en attente
+      // et l'app affiche un bandeau « Recharger » (cf. ReloadPrompt.jsx) au
+      // lieu de recharger silencieusement — on ne coupe jamais une édition en
+      // cours ni ne ferme les fenêtres détachées.
+      registerType: 'prompt',
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg'],
       manifest: {
         name: 'TraCflux',

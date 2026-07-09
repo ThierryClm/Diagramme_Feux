@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import GreenWavePage from './GreenWavePage.jsx'
 import { ConfirmProvider } from './components/ConfirmProvider'
+import ReloadPrompt from './components/ReloadPrompt.jsx'
 import { installErrorInterceptor } from './utils/errorInterceptor'
 import './index.css'
 
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')).render(
     <StrictMode>
         <ConfirmProvider>
             {isGreenWavePage ? <GreenWavePage /> : <App />}
+            <ReloadPrompt />
         </ConfirmProvider>
     </StrictMode>,
 )
