@@ -6,7 +6,7 @@ import EmptyState from './EmptyState';
 import RemarquesEditor from './RemarquesEditor';
 import './TimelineDiagram.css';
 
-const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, showWrapFlash = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts, remarquesDetached = false, tooltipsEnabled = true }) => {
+const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, showWrapFlash = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts, remarquesDetached = false, tooltipsEnabled = true, readOnly = false, onDetach = null }) => {
     const tip = (text) => tooltipsEnabled ? text : undefined;
     const containerRef = useRef(null);
     // Whether the mouse is currently over the diagram container (not the action table)
@@ -378,6 +378,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
     // Drag handlers for resizing phase bars
     const handleDragStart = useCallback((e, groupId, type, currentValue) => {
+        if (readOnly) return; // miroir de présentation : pas d'édition
         e.stopPropagation();
         e.preventDefault();
         if (startDrag) startDrag(); // Save history once at drag start
@@ -428,6 +429,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
     // Drag handler for action overlays
     const handleActionDragStart = useCallback((e, actionId, field, currentValue) => {
+        if (readOnly) return; // miroir de présentation : pas d'édition
         e.stopPropagation();
         e.preventDefault();
         if (startDrag) startDrag(); // Save history once at drag start
@@ -1022,7 +1024,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
 
     return (<>
         <div
-            className={`timeline-container ${dragState ? 'dragging' : ''}`}
+            className={`timeline-container ${dragState ? 'dragging' : ''}${readOnly ? ' read-only' : ''}`}
             ref={containerRef}
             onMouseEnter={() => setIsMouseInDiagram(true)}
             onMouseLeave={() => setIsMouseInDiagram(false)}
@@ -1030,7 +1032,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
             <h3 className="diagram-title">
                 <span>Diagramme{planName ? ` : simulation du plan de feu ${planName}` : (activePFName ? ` - ${activePFName}` : '')}</span>
                 {setCycleLengthInput && (
-                    planName ? (
+                    (planName || readOnly) ? (
                         <span style={{ marginLeft: '50px', fontSize: '14px', fontWeight: 'normal' }}>
                             Cycle {simulationResult?.simulatedCycleLength || cycleLength} secondes
                         </span>
@@ -1057,7 +1059,14 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                         </label>
                     )
                 )}
-                {planName && setIsPlayingSimulation && (
+                {onDetach && !readOnly && (
+                    <button
+                        className="detach-btn diagram-detach-btn"
+                        onClick={onDetach}
+                        title={tip("Ouvrir le diagramme dans une fenêtre séparée (miroir lecture seule, ex. 2e écran)")}
+                    >Détacher</button>
+                )}
+                {planName && setIsPlayingSimulation && !readOnly && (
                     <div className="diagram-playback" style={{ marginLeft: '20px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 'normal' }}>
                         <CustomTooltip text={isPlayingSimulation ? 'Pause' : 'Lecture'}>
                             <button
@@ -1182,7 +1191,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             selectOnFocus
                                             maxLength={2}
                                             placeholder=""
-                                            disabled={!!simulationResult}
+                                            disabled={readOnly || !!simulationResult}
                                         />
                                     </CustomTooltip>
                                 ) : (
@@ -1194,7 +1203,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             className="input-time-sm"
                                             value={hasValue ? start : ''}
                                             onCommit={(val) => !simulationResult && handleStartChange(g.id, val)}
-                                            disabled={!!simulationResult}
+                                            disabled={readOnly || !!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
                                             selectOnFocus
                                             placeholder=""
@@ -1205,7 +1214,7 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                                             className="input-time-sm"
                                             value={hasValue ? end : ''}
                                             onCommit={(val) => !simulationResult && handleEndChange(g.id, val, start)}
-                                            disabled={!!simulationResult}
+                                            disabled={readOnly || !!simulationResult}
                                             onClick={(e) => e.stopPropagation()}
                                             selectOnFocus
                                             wrapAt={cycleLength}

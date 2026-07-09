@@ -10,6 +10,7 @@ import TrafficTable from './components/TrafficTable';
 import IntergreenMatrix from './components/IntergreenMatrix';
 import ActionTable from './components/ActionTable';
 import CapacityComparison from './components/CapacityComparison';
+import ConflictList from './components/ConflictList';
 import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
@@ -477,6 +478,22 @@ function App() {
         try { localStorage.setItem('floating_variables_visible', String(showFloatingVariables)); } catch {}
     }, [showFloatingVariables]);
 
+    // Miroir de présentation du diagramme (fenêtre détachée, lecture seule).
+    const [showFloatingDiagram, setShowFloatingDiagram] = useState(() => {
+        try { return localStorage.getItem('floating_diagram_visible') === 'true'; } catch { return false; }
+    });
+    useEffect(() => {
+        try { localStorage.setItem('floating_diagram_visible', String(showFloatingDiagram)); } catch {}
+    }, [showFloatingDiagram]);
+
+    // Liste des conflits détachée (mise en évidence sur un écran).
+    const [showFloatingConflicts, setShowFloatingConflicts] = useState(() => {
+        try { return localStorage.getItem('floating_conflicts_visible') === 'true'; } catch { return false; }
+    });
+    useEffect(() => {
+        try { localStorage.setItem('floating_conflicts_visible', String(showFloatingConflicts)); } catch {}
+    }, [showFloatingConflicts]);
+
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
 
@@ -507,6 +524,24 @@ function App() {
         title: 'Comparer la capacité des plans de feu',
         width: 920,
         height: 620
+    });
+
+    // Miroir de présentation du diagramme (fenêtre détachée, lecture seule).
+    const diagramPopup = usePopupWindow({
+        isOpen: showFloatingDiagram,
+        onClose: () => setShowFloatingDiagram(false),
+        title: `Diagramme${activePFName ? ` — ${activePFName}` : ''}`,
+        width: 1180,
+        height: 620
+    });
+
+    // Liste des conflits en fenêtre détachée.
+    const conflictsPopup = usePopupWindow({
+        isOpen: showFloatingConflicts,
+        onClose: () => setShowFloatingConflicts(false),
+        title: `Conflits${activePFName ? ` — ${activePFName}` : ''}`,
+        width: 460,
+        height: 420
     });
 
     // Diagram arrow style
@@ -1280,6 +1315,12 @@ function App() {
             case 'toggleFloatingForm':
                 setShowFloatingForm(v => !v);
                 break;
+            case 'toggleFloatingDiagram':
+                setShowFloatingDiagram(v => !v);
+                break;
+            case 'toggleFloatingConflicts':
+                setShowFloatingConflicts(v => !v);
+                break;
             case 'toggleFloatingConditions':
                 setShowFloatingConditions(v => !v);
                 break;
@@ -1740,6 +1781,77 @@ function App() {
         );
     }, [capacityCompareModal, pfTabs, groups, trafficDatasets, pfTrafficDatasetMap, activeTrafficDataset, trafficDatasetNames, capacityCompareSelection, setCapacityCompareSelection, capacityCompareDataset, setCapacityCompareDataset, capacityComparisonPopup.renderToPopup]);
 
+    // Render read-only diagram mirror into its detached popup (présentation).
+    // Reflète le diagramme du PF actif en direct (offsets, verts, simulation)
+    // sans permettre l'édition (readOnly) : tous les setters sont neutralisés.
+    useEffect(() => {
+        if (!showFloatingDiagram) return;
+        const noop = () => {};
+        diagramPopup.renderToPopup(
+            <div style={{ padding: '8px', height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+                <TimelineDiagram
+                    readOnly
+                    groups={groups}
+                    globalTime={globalTime}
+                    getGroupState={getGroupState}
+                    pixelsPerSecond={pixelsPerSecond}
+                    conflicts={displayConflicts}
+                    conflictMatrix={conflictMatrix}
+                    cycleLength={cycleLength}
+                    actionData={actionData}
+                    simulationFilter={simulationEnabled ? new Set(simulationSelectedActions) : null}
+                    simulationResult={simulationResult}
+                    simulationCurrentTime={simulationEnabled ? simulationCurrentTime : null}
+                    isPlayingSimulation={simulationEnabled && isPlayingSimulation}
+                    hoveredArrowGroupId={hoveredArrowGroupId}
+                    hoveredArrowGroupSaturated={hoveredArrowGroupSaturated}
+                    hoveredConflict={hoveredConflict}
+                    hoveredVUtile={hoveredVUtile}
+                    planName={simulationEnabled ? activePFName : ''}
+                    activePFName={activePFName}
+                    biCarrefourSeparator={biCarrefourSeparator}
+                    showComments={false}
+                    showRemarks={false}
+                    showGroupNames={showGroupNamesDiagram}
+                    showMicroOnHover={showMicroOnHover}
+                    showWrapFlash={false}
+                    tooltipsEnabled={tooltipPrefs.diagram}
+                    cycleLengthInput={String(cycleLength)}
+                    setCycleLengthInput={noop}
+                    onGroupClick={noop}
+                    updateGroupParams={noop}
+                    updateActionRow={noop}
+                    startDrag={noop}
+                    endDrag={noop}
+                    setHoveredActionId={noop}
+                    setHoveredGroupId={noop}
+                    setHoveredDiagramTime={noop}
+                    setIsPlayingSimulation={noop}
+                    setSimulationCurrentTime={noop}
+                    setCycleLength={noop}
+                    onDragConflicts={noop}
+                    updateRemarques={noop}
+                />
+            </div>
+        );
+    }, [showFloatingDiagram, groups, globalTime, getGroupState, pixelsPerSecond, displayConflicts, conflictMatrix, cycleLength, actionData, simulationEnabled, simulationSelectedActions, simulationResult, simulationCurrentTime, isPlayingSimulation, hoveredArrowGroupId, hoveredArrowGroupSaturated, hoveredConflict, hoveredVUtile, activePFName, biCarrefourSeparator, showGroupNamesDiagram, showMicroOnHover, tooltipPrefs, diagramPopup.renderToPopup]);
+
+    // Render conflicts list into popup window
+    useEffect(() => {
+        if (!showFloatingConflicts) return;
+        conflictsPopup.renderToPopup(
+            <div style={{ padding: '12px', height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+                <ConflictList
+                    detached
+                    conflicts={displayConflicts}
+                    groups={groups}
+                    isConflictGrayed={isConflictGrayed}
+                    setHoveredConflict={setHoveredConflict}
+                />
+            </div>
+        );
+    }, [showFloatingConflicts, displayConflicts, groups, isConflictGrayed, setHoveredConflict, conflictsPopup.renderToPopup]);
+
     // Render traffic table into popup window
     useEffect(() => {
         if (!showFloatingTraffic) return;
@@ -1798,7 +1910,7 @@ function App() {
                     hasActiveProject={hasActiveProject}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -2195,32 +2307,14 @@ function App() {
                             )}
 
                             {displayConflicts.length > 0 && (
-                                <div className="conflict-list">
-                                    <h4>Conflits:</h4>
-                                    <ul>
-                                        {displayConflicts.map((c, i) => {
-                                            const grayed = isConflictGrayed(c);
-                                            const fromGroup = groups.find(g => g.id === c.from);
-                                            const toGroup = groups.find(g => g.id === c.to);
-                                            const flagLabel = fromGroup?.phaseFlag;
-                                            return (
-                                                <li
-                                                    key={i}
-                                                    onMouseEnter={() => setHoveredConflict({ from: c.from, to: c.to })}
-                                                    onMouseLeave={() => setHoveredConflict(null)}
-                                                    style={{ cursor: 'pointer', opacity: grayed ? 0.4 : 1 }}
-                                                >
-                                                    {c.type === 'intergreen' ? (
-                                                        <>GF{c.from} → GF{c.to} : Dégagement insuffisant ({c.actual.toFixed(1)}s / {c.required}s requis)</>
-                                                    ) : (
-                                                        <>GF{c.from} ↔ GF{c.to} : {c.message}</>
-                                                    )}
-                                                    {grayed && <span style={{ marginLeft: 6, fontSize: '0.85em', color: '#888' }}>({flagLabel === 'a' ? 'aiguillage' : 'escamotage'})</span>}
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                </div>
+                                <ConflictList
+                                    conflicts={displayConflicts}
+                                    groups={groups}
+                                    isConflictGrayed={isConflictGrayed}
+                                    setHoveredConflict={setHoveredConflict}
+                                    onDetach={showFloatingConflicts ? null : () => setShowFloatingConflicts(true)}
+                                    tip={tip}
+                                />
                             )}
 
                             {/* Répertoires mémorisés */}
@@ -2396,6 +2490,7 @@ function App() {
                                 showMicroOnHover={showMicroOnHover}
                                 showWrapFlash={showWrapFlash}
                             tooltipsEnabled={tooltipPrefs.diagram}
+                                onDetach={showFloatingDiagram ? null : () => setShowFloatingDiagram(true)}
                             />
                         </div>
                     )}

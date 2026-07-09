@@ -1429,3 +1429,33 @@ body.sepia-mode .rest-point-label {
     color: rgba(60, 60, 60, 0.85);
     text-shadow: 0 0 3px rgba(255, 255, 255, 0.6);
 }
+/* === Miroir de présentation (lecture seule) ============================
+   Masque les poignées de glissement et neutralise les zones de drag (curseur
+   ew-resize inline des flèches point de repos / instant Co / adaptatif),
+   pour un affichage strictement non éditable. */
+.timeline-container.read-only .drag-handle,
+.timeline-container.read-only .action-drag-handle {
+    display: none !important;
+}
+.timeline-container.read-only [style*="ew-resize"] {
+    pointer-events: none !important;
+    cursor: default !important;
+}
+/* Labels d'actions cliquables (abréviations sous les flèches) : plus de main
+   ni d'interaction en lecture seule. */
+.timeline-container.read-only .point-repos-label,
+.timeline-container.read-only .synchro-bts-label,
+.timeline-container.read-only .instant-co-label,
+.timeline-container.read-only .adaptatif-label,
+.timeline-container.read-only .escamotage-label {
+    cursor: default !important;
+    pointer-events: none !important;
+}
+
+/* Bouton « Détacher » dans l'en-tête du diagramme (fenêtre principale). */
+/* Apparence commune via .detach-btn ; ici, uniquement le positionnement
+   dans l'en-tête du diagramme (à droite du champ cycle). */
+.diagram-detach-btn {
+    margin-left: 12px;
+    vertical-align: middle;
+}

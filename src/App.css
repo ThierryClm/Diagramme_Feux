@@ -349,6 +349,27 @@ body.light-mode .welcome-screen .welcome-hint strong { color: #555; }
     font-size: 0.85em;
 }
 
+.conflict-list h4 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.conflict-none {
+    margin: 0;
+    font-size: 0.9em;
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+/* En fenêtre détachée : on remplit la fenêtre proprement */
+.conflict-list-detached {
+    margin-top: 0;
+    height: 100%;
+    box-sizing: border-box;
+}
+
 /* Répertoires mémorisés dans la sidebar */
 .directories-info {
     margin-top: 1rem;
