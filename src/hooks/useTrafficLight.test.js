@@ -232,3 +232,135 @@ describe('useTrafficLight — undo/redo', () => {
         expect(result.current.groups[0].name).toBe('Modifié');
     });
 });
+
+// ---------------- Sérialisation complète (aller-retour sans perte) ----------------
+//
+// Régression : l'autosave, la sauvegarde explicite et l'export fichier
+// utilisaient trois payloads différents. L'autosave (qui réécrit le cache
+// après chaque édition) omettait customTrafficDatasetNames / pfTrafficDatasetMap
+// / externalLinks / matricesLocked / actionColWidths, et loadProject les
+// réinitialisait. Résultat : recharger un projet depuis la liste (cache)
+// perdait ces modifications. Tout est désormais sérialisé via getFullState.
+
+describe('useTrafficLight — sérialisation complète du projet', () => {
+    it('getFullState expose tous les champs restaurés au chargement', () => {
+        const { result } = renderHook(() => useTrafficLight());
+        const fs = result.current.getFullState();
+        ['imageBrightness', 'imageContrast', 'customTrafficDatasetNames',
+            'pfTrafficDatasetMap', 'externalLinks', 'matricesLocked',
+            'actionColWidths', 'capacityCompareSelection', 'capacityCompareDataset']
+            .forEach(k => expect(fs).toHaveProperty(k));
+    });
+
+    it('aller-retour loadFullState -> getFullState préserve les champs jadis perdus par le cache', () => {
+        const { result } = renderHook(() => useTrafficLight());
+        const state = {
+            projectName: 'RoundTrip',
+            groups: result.current.groups, // groupes par défaut valides
+            cycleLength: 72,
+            customTrafficDatasetNames: ['Matin spécial'],
+            pfTrafficDatasetMap: { 1: 'HPM' },
+            externalLinks: [{ label: 'Doc', url: 'https://exemple.test' }],
+            matricesLocked: true,
+            actionColWidths: { description: 200, micro: 500, abrv: 50 },
+            imageBrightness: 130,
+            imageContrast: 90,
+            capacityCompareSelection: [1, 2],
+            capacityCompareDataset: 'HPM'
+        };
+        act(() => { result.current.loadFullState(state); });
+        const out = result.current.getFullState();
+        expect(out.customTrafficDatasetNames).toEqual(['Matin spécial']);
+        expect(out.pfTrafficDatasetMap).toEqual({ 1: 'HPM' });
+        expect(out.externalLinks).toEqual([{ label: 'Doc', url: 'https://exemple.test' }]);
+        expect(out.matricesLocked).toBe(true);
+        expect(out.actionColWidths).toEqual({ description: 200, micro: 500, abrv: 50 });
+        expect(out.imageBrightness).toBe(130);
+        expect(out.imageContrast).toBe(90);
+        expect(out.capacityCompareSelection).toEqual([1, 2]);
+        expect(out.capacityCompareDataset).toBe('HPM');
+    });
+});
+
+// ---------------- Synchronisation cache localStorage ↔ fichier ----------------
+//
+// Deux sources persistent le même projet : le cache localStorage (écrit par
+// saveProject / l'autosave, lu par loadProject depuis la liste) et le fichier
+// réseau (getFullState -> JSON, lu par loadFullState). Ces tests garantissent
+// qu'elles restent synchronisées : un aller-retour par le cache ne perd rien,
+// et les deux lecteurs restaurent un état identique depuis un même payload.
+
+describe('useTrafficLight — synchronisation cache localStorage ↔ fichier', () => {
+    const richState = (groups) => ({
+        projectName: 'Sync',
+        groups,
+        cycleLength: 84,
+        customTrafficDatasetNames: ['Événement'],
+        pfTrafficDatasetMap: { 1: 'HPS' },
+        externalLinks: [{ label: 'Plan', url: 'https://exemple.test/plan' }],
+        matricesLocked: true,
+        actionColWidths: { description: 180, micro: 480, abrv: 44 },
+        imageBrightness: 120,
+        imageContrast: 80,
+        capacityCompareSelection: [2, 3],
+        capacityCompareDataset: 'HPS'
+    });
+
+    // Projection sur les seuls champs qui divergeaient entre les sérialiseurs.
+    // (cycleLength est exclu : la valeur globale est dérivée du PF actif, pas
+    // du champ top-level — ce n'était pas un champ perdu par le cache.)
+    const sensitive = (fs) => ({
+        customTrafficDatasetNames: fs.customTrafficDatasetNames,
+        pfTrafficDatasetMap: fs.pfTrafficDatasetMap,
+        externalLinks: fs.externalLinks,
+        matricesLocked: fs.matricesLocked,
+        actionColWidths: fs.actionColWidths,
+        imageBrightness: fs.imageBrightness,
+        imageContrast: fs.imageContrast,
+        capacityCompareSelection: fs.capacityCompareSelection,
+        capacityCompareDataset: fs.capacityCompareDataset
+    });
+
+    const expected = {
+        customTrafficDatasetNames: ['Événement'],
+        pfTrafficDatasetMap: { 1: 'HPS' },
+        externalLinks: [{ label: 'Plan', url: 'https://exemple.test/plan' }],
+        matricesLocked: true,
+        actionColWidths: { description: 180, micro: 480, abrv: 44 },
+        imageBrightness: 120,
+        imageContrast: 80,
+        capacityCompareSelection: [2, 3],
+        capacityCompareDataset: 'HPS'
+    };
+
+    it('aller-retour par le cache (saveProject -> loadProject) ne perd aucun champ sensible', async () => {
+        const { result } = renderHook(() => useTrafficLight());
+        act(() => { result.current.loadFullState(richState(result.current.groups)); });
+        await act(async () => { await result.current.saveProject('ProjetSync'); });
+
+        // Un hook neuf recharge le projet depuis la liste (cache localStorage).
+        const { result: reloaded } = renderHook(() => useTrafficLight());
+        act(() => { reloaded.current.loadProject('ProjetSync'); });
+
+        expect(sensitive(reloaded.current.getFullState())).toEqual(expected);
+    });
+
+    it('les deux lecteurs (fichier: loadFullState, cache: loadProject) restaurent le même état', () => {
+        // Payload canonique de référence (ce qu'écrivent fichier ET cache).
+        const seed = renderHook(() => useTrafficLight());
+        act(() => { seed.result.current.loadFullState(richState(seed.result.current.groups)); });
+        const payload = JSON.parse(JSON.stringify(seed.result.current.getFullState()));
+
+        // Lecteur « fichier ».
+        const viaFile = renderHook(() => useTrafficLight());
+        act(() => { viaFile.result.current.loadFullState(payload); });
+
+        // Lecteur « cache » : on dépose le payload dans localStorage puis loadProject.
+        localStorage.setItem('traffic_project_Ref', JSON.stringify(payload));
+        const viaCache = renderHook(() => useTrafficLight());
+        act(() => { viaCache.result.current.loadProject('Ref'); });
+
+        expect(sensitive(viaCache.result.current.getFullState()))
+            .toEqual(sensitive(viaFile.result.current.getFullState()));
+    });
+});

@@ -947,6 +947,27 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
             setBiCarrefourSeparator(data.biCarrefourSeparator !== undefined ? data.biCarrefourSeparator : null);
             setProjectProperties(data.projectProperties ? { ...DEFAULT_PROJECT_PROPERTIES, ...data.projectProperties } : { ...DEFAULT_PROJECT_PROPERTIES });
 
+            // Champs alignés sur loadFullState : sans ça, un projet rechargé
+            // depuis la liste (cache) perdait liens externes, sélection du
+            // comparateur, verrou des matrices et largeurs de colonnes.
+            setCapacityCompareSelection(Array.isArray(data.capacityCompareSelection) ? data.capacityCompareSelection : null);
+            setCapacityCompareDataset(data.capacityCompareDataset || '__per_pf__');
+            setMatricesLocked(data.matricesLocked === true);
+            {
+                const acw = data.actionColWidths || {};
+                const clamp = (v, lo, hi, def) => {
+                    const n = Number(v);
+                    if (!isFinite(n)) return def;
+                    return Math.min(hi, Math.max(lo, Math.round(n)));
+                };
+                setActionColWidths({
+                    description: clamp(acw.description, 100, 350, 160),
+                    micro: clamp(acw.micro, 300, 700, 420),
+                    abrv: clamp(acw.abrv, 38, 75, 38)
+                });
+            }
+            setExternalLinks(data.externalLinks && Array.isArray(data.externalLinks) ? data.externalLinks : []);
+
             // Reset simulation state when loading a project
             setSimulationEnabled(false);
             setSimulationSelectedActions([]);
@@ -1294,6 +1315,8 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         activePFId,
         intersectionImage,
         intersectionArrows,
+        imageBrightness,
+        imageContrast,
         trafficDatasets,
         activeTrafficDataset,
         customTrafficDatasetNames,
@@ -1308,6 +1331,14 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         projectProperties
         // Note: simulation state is NOT included (per user request)
     });
+
+    // Réf toujours à jour vers le sérialiseur canonique. Source UNIQUE pour
+    // l'autosave et la sauvegarde explicite : évite les fermetures périmées
+    // (certains champs manquaient aux deps) et les divergences de payload qui
+    // faisaient perdre customTrafficDatasetNames / pfTrafficDatasetMap /
+    // externalLinks lors d'un aller-retour par le cache localStorage.
+    const getFullStateRef = useRef(getFullState);
+    getFullStateRef.current = getFullState;
 
     const deleteSave = (name) => {
         localStorage.removeItem(`traffic_project_${name}`);
@@ -1808,28 +1839,15 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
         currentProjectNameRef.current = name;
         setProjectName(name);
+        // Payload canonique (getFullState) + métadonnées de sauvegarde. Une
+        // seule source de vérité, partagée avec l'autosave et l'export fichier :
+        // aucun champ ne peut être oublié ici sans l'être partout.
+        const nowIso = new Date().toISOString();
         const projectData = {
+            ...getFullStateRef.current(),
             projectName: name,
-            intersectionName,
-            groups,
-            cycleLength,
-            conflictMatrix,
-            pfTabs,
-            activePFId,
-            intersectionImage,
-            intersectionArrows,
-            imageBrightness,
-            imageContrast,
-            trafficDatasets,
-            activeTrafficDataset,
-            customTrafficDatasetNames,
-            pfTrafficDatasetMap,
-            dependencyGap,
-            biCarrefourSeparator,
-            externalLinks,
-            capacityCompareSelection,
-            capacityCompareDataset,
-            projectProperties: { ...projectProperties, dateModification: new Date().toISOString() }
+            projectProperties: { ...projectProperties, dateModification: nowIso },
+            savedAt: nowIso
             // Note: simulation state is NOT saved with project (per user request)
         };
         // Mettre à jour la date de modification dans l'état
@@ -2219,24 +2237,11 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
         autoSaveTimerRef.current = setTimeout(() => {
             try {
+                // Même payload canonique que la sauvegarde explicite et l'export
+                // fichier (getFullState) : garantit qu'un aller-retour par le
+                // cache ne perd aucun champ.
                 const projectData = {
-                    intersectionName,
-                    groups,
-                    cycleLength,
-                    conflictMatrix,
-                    pfTabs,
-                    activePFId,
-                    intersectionImage,
-                    intersectionArrows,
-                    imageBrightness,
-                    imageContrast,
-                    trafficDatasets,
-                    activeTrafficDataset,
-                    dependencyGap,
-                    biCarrefourSeparator,
-                    capacityCompareSelection,
-                    capacityCompareDataset,
-                    projectProperties,
+                    ...getFullStateRef.current(),
                     savedAt: new Date().toISOString()
                 };
                 const jsonData = JSON.stringify(projectData);
@@ -2256,7 +2261,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
                 clearTimeout(autoSaveTimerRef.current);
             }
         };
-    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, intersectionName, projectProperties, capacityCompareSelection, capacityCompareDataset]);
+    }, [groups, cycleLength, conflictMatrix, pfTabs, activePFId, intersectionImage, intersectionArrows, imageBrightness, imageContrast, trafficDatasets, activeTrafficDataset, dependencyGap, biCarrefourSeparator, intersectionName, projectProperties, capacityCompareSelection, capacityCompareDataset, customTrafficDatasetNames, pfTrafficDatasetMap, externalLinks, matricesLocked, actionColWidths]);
 
     // Update traffic data for a specific group in the active dataset
     const updateTrafficData = useCallback((groupId, field, value) => {
