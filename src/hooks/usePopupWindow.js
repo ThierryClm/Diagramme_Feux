@@ -35,8 +35,57 @@ export function isMainModalActive() {
     return mainModalActive;
 }
 
+// --- Suspension du re-rendu des popups pendant l'édition d'un champ ---------
+// Re-rendre une fenêtre détachée (renderToPopup) pendant qu'on tape dedans vole
+// le focus/curseur. Approche directe : au moment de rendre, on regarde si un
+// champ de CETTE popup a le focus (popup.document.activeElement). Si oui, on
+// DIFFÈRE (on mémorise le contenu) ; on l'applique quand le champ perd le focus
+// (événement focusout → flush).
+const popupFlushers = new Set(); // fn() par popup : applique le contenu en attente si plus en édition
+
+// Champ de SAISIE texte/nombre où le focus et le curseur doivent être préservés.
+// On exclut range (curseurs de recadrage), checkbox/radio, boutons, color, file…
+// qui n'ont pas de curseur de texte et gagnent à se mettre à jour en direct.
+const isFieldEl = (el) => {
+    if (!el) return false;
+    if (el.isContentEditable) return true;
+    if (el.tagName === 'TEXTAREA') return true;
+    if (el.tagName === 'INPUT') {
+        const t = (el.type || 'text').toLowerCase();
+        return !['range', 'checkbox', 'radio', 'button', 'submit', 'reset', 'color', 'file'].includes(t);
+    }
+    return false;
+};
+
+const flushAllPopups = () => {
+    popupFlushers.forEach(fn => { try { fn(); } catch { /* ignore */ } });
+};
+
+// Un champ de saisie est-il en cours d'édition (fenêtre principale ou popup) ?
+// Sert à suspendre la remontée des popups au premier plan (qui volerait le
+// focus du champ) tant qu'on tape dedans.
+const isEditingAnyField = () => {
+    if (isFieldEl(document.activeElement)) return true;
+    for (const p of openPopups) {
+        try { if (!p.closed && isFieldEl(p.document.activeElement)) return true; } catch { /* closed */ }
+    }
+    return false;
+};
+
+// À la perte de focus d'un champ, on tente d'appliquer les rendus en attente
+// (différé pour laisser le focus se stabiliser lors d'un Tab entre champs :
+// chaque flush ne s'exécute que si sa popup n'a plus de champ actif).
+const onFieldFocusOut = () => { setTimeout(flushAllPopups, 0); };
+
+// Attache l'écouteur de fin d'édition à un document (principal ou popup).
+const installEditingListeners = (doc) => {
+    if (!doc || doc.__tcfluxEditingListeners) return;
+    doc.__tcfluxEditingListeners = true;
+    doc.addEventListener('focusout', onFieldFocusOut);
+};
+
 export function bringAllPopupsToFront(except) {
-    if (isBringingToFront || openPopups.size === 0 || isFilePickerActive() || mainModalActive) return;
+    if (isBringingToFront || openPopups.size === 0 || isFilePickerActive() || mainModalActive || isEditingAnyField()) return;
     const now = Date.now();
     if (now - lastBringTime < 200) return;
     isBringingToFront = true;
@@ -90,7 +139,7 @@ function installMainListener() {
     mainListenerInstalled = true;
 
     const bringPopupsIfAllowed = () => {
-        if (openPopups.size === 0 || isBringingToFront || isFilePickerActive() || mainModalActive) return;
+        if (openPopups.size === 0 || isBringingToFront || isFilePickerActive() || mainModalActive || isEditingAnyField()) return;
         if (bringPopupsTimer) clearTimeout(bringPopupsTimer);
         bringPopupsTimer = setTimeout(() => {
             bringPopupsTimer = null;
@@ -109,6 +158,9 @@ function installMainListener() {
     window.addEventListener('beforeunload', () => {
         openPopups.forEach(p => { if (!p.closed) p.close(); });
     });
+
+    // Suivi de l'édition de champ sur la fenêtre principale.
+    installEditingListeners(document);
 }
 
 /**
@@ -122,6 +174,26 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
     const popupRef = useRef(null);
     const rootRef = useRef(null);
     const intervalRef = useRef(null);
+    // Dernier contenu à afficher, mis en attente pendant l'édition d'un champ.
+    const pendingContentRef = useRef(null);
+
+    // Applique le contenu en attente, mais seulement si cette popup n'a plus de
+    // champ en cours d'édition (sinon on préserve encore le focus — cas du Tab
+    // vers un autre champ de la même popup).
+    const flushPending = useCallback(() => {
+        if (pendingContentRef.current == null) return;
+        const popup = popupRef.current;
+        if (!rootRef.current || !popup || popup.closed) return;
+        if (isFieldEl(popup.document.activeElement)) return;
+        rootRef.current.render(pendingContentRef.current);
+        pendingContentRef.current = null;
+    }, []);
+
+    // Enregistre le flush de cette popup dans le registre global.
+    useEffect(() => {
+        popupFlushers.add(flushPending);
+        return () => { popupFlushers.delete(flushPending); };
+    }, [flushPending]);
 
     // Open/close popup based on isOpen
     useEffect(() => {
@@ -148,6 +220,8 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
             popupRef.current = popup;
             openPopups.add(popup);
             installMainListener();
+            // Suivi de l'édition de champ dans cette popup (suspension des re-rendus).
+            installEditingListeners(popup.document);
 
             // Set title
             popup.document.title = title;
@@ -223,6 +297,7 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
                     intervalRef.current = null;
                     rootRef.current = null;
                     popupRef.current = null;
+                    pendingContentRef.current = null;
                     openPopups.delete(popup);
                     onClose();
                 }
@@ -254,11 +329,21 @@ const usePopupWindow = ({ isOpen, onClose, title, width, height }) => {
         };
     }, [isOpen]);
 
-    // Render content to popup
+    // Render content to popup.
+    // Pendant l'édition d'un champ (fenêtre principale ou popup), on NE touche
+    // PAS au DOM de la popup : on mémorise le dernier contenu, appliqué à la
+    // fin de l'édition via flushPending (enregistré dans popupFlushers). Le
+    // champ actif et son curseur ne sont ainsi jamais perturbés.
     const renderToPopup = useCallback((content) => {
-        if (rootRef.current && popupRef.current && !popupRef.current.closed) {
-            rootRef.current.render(content);
+        const popup = popupRef.current;
+        if (!rootRef.current || !popup || popup.closed) return;
+        // Défère si un champ de CETTE popup est en cours d'édition.
+        if (isFieldEl(popup.document.activeElement)) {
+            pendingContentRef.current = content;
+            return;
         }
+        pendingContentRef.current = null;
+        rootRef.current.render(content);
     }, []);
 
     // Update document title when the title prop changes while the popup is open
