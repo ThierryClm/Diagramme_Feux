@@ -46,6 +46,7 @@ import useFloatingImage from './hooks/useFloatingImage';
 import useDirectoryHandles from './hooks/useDirectoryHandles';
 import useFloatingImageRenderer from './hooks/useFloatingImageRenderer';
 import useFloatingForm from './hooks/useFloatingForm';
+import useFloatingProperties from './hooks/useFloatingProperties';
 import useFloatingTraffic from './hooks/useFloatingTraffic';
 import useFloatingRemarks from './hooks/useFloatingRemarks';
 import RemarquesEditor from './components/RemarquesEditor';
@@ -438,6 +439,13 @@ function App() {
         setShowFloatingForm,
         formPopup
     } = useFloatingForm(groups.length, activePFName);
+
+    // Floating properties state
+    const {
+        showFloatingProperties,
+        setShowFloatingProperties,
+        propertiesPopup
+    } = useFloatingProperties(activePFName);
 
     // Floating traffic state
     const {
@@ -1003,6 +1011,7 @@ function App() {
                     // Décoche tous les détachements (un nouveau projet repart
                     // d'un espace de travail propre — l'utilisateur détache à
                     // la demande selon ses besoins).
+                    setShowFloatingProperties(false);
                     setShowFloatingForm(false);
                     setShowFloatingMatrix(false);
                     setShowFloatingTraffic(false);
@@ -1010,6 +1019,8 @@ function App() {
                     setShowFloatingConditions(false);
                     setShowFloatingVariables(false);
                     setShowFloatingRemarks(false);
+                    setShowFloatingDiagram(false);
+                    setShowFloatingConflicts(false);
                     // Active l'interface principale : on quitte l'écran d'accueil.
                     setHasActiveProject(true);
                     toast.success('Nouveau projet créé');
@@ -1314,6 +1325,9 @@ function App() {
                 break;
             case 'toggleFloatingForm':
                 setShowFloatingForm(v => !v);
+                break;
+            case 'toggleFloatingProperties':
+                setShowFloatingProperties(v => !v);
                 break;
             case 'toggleFloatingDiagram':
                 setShowFloatingDiagram(v => !v);
@@ -1749,6 +1763,25 @@ function App() {
         );
     }, [showFloatingForm, groups, cycleLength, showGroupNamesForm, hoveredArrowGroupId, startDrag, endDrag, formPopup.renderToPopup, updateGroupParams]);
 
+    // Render properties into popup window
+    useEffect(() => {
+        if (!showFloatingProperties) return;
+        propertiesPopup.renderToPopup(
+            <div style={{ padding: '12px', height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+                <PropertiesPanel
+                    intersectionName={intersectionName}
+                    setIntersectionName={setIntersectionName}
+                    projectProperties={projectProperties}
+                    updateProjectProperty={updateProjectProperty}
+                    appCommunes={appCommunes}
+                    appMoaLogos={appMoaLogos}
+                    appMoeLogos={appMoeLogos}
+                    tooltipsEnabled={tooltipPrefs.config}
+                />
+            </div>
+        );
+    }, [showFloatingProperties, intersectionName, setIntersectionName, projectProperties, updateProjectProperty, appCommunes, appMoaLogos, appMoeLogos, tooltipPrefs, propertiesPopup.renderToPopup]);
+
     // Render remarques (notes du PF actif) into popup window
     useEffect(() => {
         if (!showFloatingRemarks) return;
@@ -1910,7 +1943,7 @@ function App() {
                     hasActiveProject={hasActiveProject}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingProperties, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -2220,6 +2253,8 @@ function App() {
                                         appCommunes={appCommunes}
                                         appMoaLogos={appMoaLogos}
                                         appMoeLogos={appMoeLogos}
+                                        onDetach={() => setShowFloatingProperties(v => !v)}
+                                        tooltipsEnabled={tooltipPrefs.config}
                                     />
                                 </div>
                             )}

@@ -48,7 +48,9 @@ const LogoBox = ({ logoPath, onSelect, label }) => {
     );
 };
 
-const PropertiesPanel = ({ intersectionName, setIntersectionName, projectProperties, updateProjectProperty, appCommunes, appMoaLogos, appMoeLogos }) => {
+const PropertiesPanel = ({ intersectionName, setIntersectionName, projectProperties, updateProjectProperty, appCommunes, appMoaLogos, appMoeLogos, onDetach, tooltipsEnabled = true }) => {
+    const tip = (text) => tooltipsEnabled ? text : undefined;
+
     const handleIntField = (field, value) => {
         const val = value.replace(/[^0-9]/g, '');
         if (val === '') { updateProjectProperty(field, ''); return; }
@@ -83,7 +85,18 @@ const PropertiesPanel = ({ intersectionName, setIntersectionName, projectPropert
 
     return (
         <div className="properties-panel">
-            <h3 className="properties-title">Propriétés du projet</h3>
+            <h3 className="properties-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                Propriétés du projet
+                {onDetach && (
+                    <button
+                        className="detach-btn"
+                        onClick={onDetach}
+                        title={tip("Détacher dans une fenêtre séparée")}
+                    >
+                        Détacher
+                    </button>
+                )}
+            </h3>
             <div className="properties-form">
                 <div className="property-field">
                     <label>Nom du carrefour</label>
