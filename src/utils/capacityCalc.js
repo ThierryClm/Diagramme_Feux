@@ -117,6 +117,22 @@ export const calculateQueueLength = (trafficVol, laneCoef, greenTime, cycleLengt
     return (Math.floor(trafficVol * redTime / 3600 / laneCoef) + 1) * 6;
 };
 
+/** Longueur moyenne d'un véhicule en file (m), espacement compris. */
+export const AVG_VEHICLE_LENGTH_M = 6;
+
+/**
+ * File d'attente MOYENNE (m), cohérente avec l'attente moyenne (loi de Little) :
+ *   file = débit(véh/s) × attente(s) × longueur_véhicule.
+ * Contrairement à calculateQueueLength (file max déterministe), elle dépend de
+ * l'attente et donc croît avec la saturation. null si sur-saturation/insuffisant.
+ */
+export const calculateAverageQueueLength = (trafficVol, laneCoef, greenTime, cycleLength) => {
+    const delay = calculateAverageDelay(trafficVol, laneCoef, greenTime, cycleLength);
+    if (delay === null || !trafficVol) return null;
+    const q = trafficVol / 3600; // véh/s
+    return Math.round(q * delay * AVG_VEHICLE_LENGTH_M);
+};
+
 /** Classe CSS de couleur selon le niveau de capacité utilisée. */
 export const getCapacityColorClass = (value) => {
     if (value === null || value === undefined) return '';

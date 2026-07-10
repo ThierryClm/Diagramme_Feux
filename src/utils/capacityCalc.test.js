@@ -10,7 +10,9 @@ import {
     calculateUniformDelay,
     calculateRandomDelay,
     calculateAverageDelay,
-    calculateQueueLength
+    calculateQueueLength,
+    calculateAverageQueueLength,
+    AVG_VEHICLE_LENGTH_M
 } from './capacityCalc';
 
 // Reproduit la formule HISTORIQUE de la colonne « Retard » de TrafficTable,
@@ -120,5 +122,24 @@ describe('capacityCalc — attente (Webster) & file', () => {
     it('null si données insuffisantes', () => {
         expect(calculateUniformDelay(0, COEF, GREEN, CYCLE)).toBeNull();
         expect(calculateQueueLength(300, 0, GREEN, CYCLE)).toBeNull();
+    });
+});
+
+describe('capacityCalc — file d\'attente moyenne (loi de Little)', () => {
+    // Réf : trafic 300, attente 27 s -> file = (300/3600)·27·6 = 13,5 -> 14 m.
+    it('file = débit × attente × longueur véhicule', () => {
+        expect(calculateAverageQueueLength(300, COEF, GREEN, CYCLE)).toBe(14);
+    });
+    it('dépend de l\'attente : croît avec la saturation', () => {
+        // trafic 300 (x=0,5) vs 500 (x plus élevé) : file plus longue si plus saturé.
+        const q300 = calculateAverageQueueLength(300, COEF, GREEN, CYCLE);
+        const q500 = calculateAverageQueueLength(500, COEF, GREEN, CYCLE);
+        expect(q500).toBeGreaterThan(q300);
+    });
+    it('null en sur-saturation (attente indéterminée)', () => {
+        expect(calculateAverageQueueLength(600, COEF, GREEN, CYCLE)).toBeNull(); // x = 1
+    });
+    it('constante de longueur véhicule = 6 m', () => {
+        expect(AVG_VEHICLE_LENGTH_M).toBe(6);
     });
 });

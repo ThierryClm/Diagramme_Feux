@@ -1,0 +1,89 @@
+.diagnostic-panel {
+    margin-top: 1rem;
+    padding: 10px 12px;
+    background: rgba(78, 205, 196, 0.06);
+    border: 1px solid #3a5a57;
+    border-radius: 4px;
+}
+
+.diagnostic-panel-detached {
+    margin-top: 0;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: auto;
+}
+
+.diagnostic-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 10px 0;
+    font-size: 0.95em;
+    color: #4ecdc4;
+}
+
+.diagnostic-empty {
+    margin: 0;
+    font-size: 0.85em;
+    color: #888;
+}
+
+.diagnostic-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8em;
+}
+
+.diagnostic-table th,
+.diagnostic-table td {
+    padding: 4px 6px;
+    text-align: center;
+    border-bottom: 1px solid #333;
+}
+
+.diagnostic-table th {
+    color: #aaa;
+    font-weight: 600;
+    line-height: 1.15;
+    vertical-align: bottom;
+}
+
+.diagnostic-table td.dg-id {
+    font-weight: bold;
+    color: #ddd;
+}
+
+.diagnostic-carrefour {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #3a5a57;
+    font-size: 0.82em;
+    color: #ccc;
+}
+
+.diagnostic-carrefour .dg-label {
+    font-weight: bold;
+    color: #4ecdc4;
+}
+
+/* Sémantique couleur du degré de saturation (reprise du tableau trafic) */
+.diagnostic-panel .capacity-green { color: #4caf50; }
+.diagnostic-panel .capacity-orange { color: #ff9800; }
+.diagnostic-panel .capacity-red { color: #f44336; }
+.diagnostic-panel .capacity-black {
+    color: #000 !important;
+    background-color: #ff6b6b !important;
+    font-weight: bold;
+    padding: 0 4px;
+    border-radius: 2px;
+}
+
+/* Thème clair */
+body.light-mode .diagnostic-panel {
+    background: rgba(0, 137, 123, 0.06);
+    border-color: #bcd;
+}
+
+body.light-mode .diagnostic-table th { color: #666; }
+body.light-mode .diagnostic-table td.dg-id { color: #222; }
+body.light-mode .diagnostic-carrefour { color: #333; }

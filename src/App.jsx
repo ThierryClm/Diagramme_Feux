@@ -11,6 +11,7 @@ import IntergreenMatrix from './components/IntergreenMatrix';
 import ActionTable from './components/ActionTable';
 import CapacityComparison from './components/CapacityComparison';
 import ConflictList from './components/ConflictList';
+import DiagnosticPanel from './components/DiagnosticPanel';
 import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
@@ -47,6 +48,7 @@ import useDirectoryHandles from './hooks/useDirectoryHandles';
 import useFloatingImageRenderer from './hooks/useFloatingImageRenderer';
 import useFloatingForm from './hooks/useFloatingForm';
 import useFloatingProperties from './hooks/useFloatingProperties';
+import useFloatingDiagnostic from './hooks/useFloatingDiagnostic';
 import useFloatingTraffic from './hooks/useFloatingTraffic';
 import useFloatingRemarks from './hooks/useFloatingRemarks';
 import RemarquesEditor from './components/RemarquesEditor';
@@ -447,6 +449,13 @@ function App() {
         propertiesPopup
     } = useFloatingProperties(activePFName);
 
+    // Floating diagnostic state
+    const {
+        showFloatingDiagnostic,
+        setShowFloatingDiagnostic,
+        diagnosticPopup
+    } = useFloatingDiagnostic(activePFName);
+
     // Floating traffic state
     const {
         showFloatingTraffic,
@@ -501,6 +510,15 @@ function App() {
     useEffect(() => {
         try { localStorage.setItem('floating_conflicts_visible', String(showFloatingConflicts)); } catch {}
     }, [showFloatingConflicts]);
+
+    // Affichage du panneau « Réserve de capacité » sous le tableau trafic
+    // (préférence d'espace de travail, cochée par défaut ; menu Mise en page).
+    const [showCapacityReserve, setShowCapacityReserve] = useState(() => {
+        try { return localStorage.getItem('show_capacity_reserve') !== 'false'; } catch { return true; }
+    });
+    useEffect(() => {
+        try { localStorage.setItem('show_capacity_reserve', String(showCapacityReserve)); } catch {}
+    }, [showCapacityReserve]);
 
     // V.Utile hover state: { groupId, vUtile } when hovering V.Utile cell
     const [hoveredVUtile, setHoveredVUtile] = useState(null);
@@ -1021,6 +1039,7 @@ function App() {
                     setShowFloatingRemarks(false);
                     setShowFloatingDiagram(false);
                     setShowFloatingConflicts(false);
+                    setShowFloatingDiagnostic(false);
                     // Active l'interface principale : on quitte l'écran d'accueil.
                     setHasActiveProject(true);
                     toast.success('Nouveau projet créé');
@@ -1328,6 +1347,12 @@ function App() {
                 break;
             case 'toggleFloatingProperties':
                 setShowFloatingProperties(v => !v);
+                break;
+            case 'toggleFloatingDiagnostic':
+                setShowFloatingDiagnostic(v => !v);
+                break;
+            case 'toggleCapacityReserve':
+                setShowCapacityReserve(v => !v);
                 break;
             case 'toggleFloatingDiagram':
                 setShowFloatingDiagram(v => !v);
@@ -1782,6 +1807,24 @@ function App() {
         );
     }, [showFloatingProperties, intersectionName, setIntersectionName, projectProperties, updateProjectProperty, appCommunes, appMoaLogos, appMoeLogos, tooltipPrefs, propertiesPopup.renderToPopup]);
 
+    // Render diagnostic into popup window
+    useEffect(() => {
+        if (!showFloatingDiagnostic) return;
+        diagnosticPopup.renderToPopup(
+            <div style={{ padding: '12px', height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+                <DiagnosticPanel
+                    detached
+                    groups={groups}
+                    cycleLength={cycleLength}
+                    getTrafficData={getTrafficData}
+                    actionData={actionData}
+                    activeTrafficDataset={activeTrafficDataset}
+                    tip={tip}
+                />
+            </div>
+        );
+    }, [showFloatingDiagnostic, groups, cycleLength, getTrafficData, actionData, activeTrafficDataset, diagnosticPopup.renderToPopup]);
+
     // Render remarques (notes du PF actif) into popup window
     useEffect(() => {
         if (!showFloatingRemarks) return;
@@ -1943,7 +1986,7 @@ function App() {
                     hasActiveProject={hasActiveProject}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingProperties, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingProperties, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, showFloatingDiagnostic, showCapacityReserve, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -2338,6 +2381,17 @@ function App() {
                                     onDetach={() => setShowFloatingTraffic(v => !v)}
                                 tooltipsEnabled={tooltipPrefs.traffic}
                                 />
+                                {showCapacityReserve && (
+                                    <DiagnosticPanel
+                                        groups={groups}
+                                        cycleLength={cycleLength}
+                                        getTrafficData={getTrafficData}
+                                        actionData={actionData}
+                                        activeTrafficDataset={activeTrafficDataset}
+                                        onDetach={showFloatingDiagnostic ? null : () => setShowFloatingDiagnostic(true)}
+                                        tip={tip}
+                                    />
+                                )}
                                 </div>
                             )}
 

@@ -292,6 +292,7 @@ const MenuBar = ({
                 { label: 'Commentaires du diagramme', action: 'toggleComments', toggle: true, checked: layoutOptions.showComments, keepSubmenuOpen: true },
                 { label: 'Remarques du diagramme', action: 'toggleRemarks', toggle: true, checked: layoutOptions.showRemarks, keepSubmenuOpen: true },
                 { label: 'Description des conditions micro', action: 'toggleActionDescription', toggle: true, checked: layoutOptions.showActionDescription, keepSubmenuOpen: true },
+                { label: 'Panneau Réserve de capacité', action: 'toggleCapacityReserve', toggle: true, checked: layoutOptions.showCapacityReserve, keepSubmenuOpen: true },
                 { type: 'separator' },
                 {
                     label: 'Nom des groupes de feu dans...',
@@ -313,6 +314,7 @@ const MenuBar = ({
                         { label: 'Matrice interverts', action: 'toggleFloatingMatrix', checked: layoutOptions.showFloatingMatrix, keepSubmenuOpen: true },
                         { label: 'Conflits', action: 'toggleFloatingConflicts', checked: layoutOptions.showFloatingConflicts, keepSubmenuOpen: true },
                         { label: 'Données trafic', action: 'toggleFloatingTraffic', checked: layoutOptions.showFloatingTraffic, keepSubmenuOpen: true },
+                        { label: 'Réserve de capacité', action: 'toggleFloatingDiagnostic', checked: layoutOptions.showFloatingDiagnostic, keepSubmenuOpen: true },
                         { label: 'Diagramme (miroir lecture seule)', action: 'toggleFloatingDiagram', checked: layoutOptions.showFloatingDiagram, keepSubmenuOpen: true },
                         { label: 'Conditions de micro-régulation', action: 'toggleFloatingConditions', checked: layoutOptions.showFloatingConditions, keepSubmenuOpen: true },
                         { label: 'Variables micro', action: 'toggleFloatingVariables', checked: layoutOptions.showFloatingVariables, keepSubmenuOpen: true },

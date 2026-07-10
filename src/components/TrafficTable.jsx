@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
 import EmptyState from './EmptyState';
 import { useAlert } from './ConfirmProvider';
+import { getTotalGreenTime as computeTotalGreenTime, parseTrafficVol, isCoordinated } from '../utils/trafficHelpers';
 import './TrafficTable.css';
 
 const TrafficTable = ({
@@ -93,18 +94,6 @@ const TrafficTable = ({
     // Traffic calculations are always shown regardless of simulation actions
     const inhibitedGroups = new Set(); // No inhibition - always calculate
 
-    // Parse trafficVol: extract numeric value (ignoring trailing 'c')
-    const parseTrafficVol = (val) => {
-        if (!val) return 0;
-        const str = String(val).replace(/c$/i, '');
-        return parseInt(str) || 0;
-    };
-
-    // Check if trafficVol is coordinated (ends with 'c')
-    const isCoordinated = (val) => {
-        return String(val || '').endsWith('c');
-    };
-
     // Update traffic volume (per dataset)
     const handleTrafficChange = (id, value) => {
         // Allow only digits and optional trailing 'c'
@@ -162,35 +151,10 @@ const TrafficTable = ({
         updateGroupParams(id, { [field]: value });
     };
 
-    // Calculate total green time for a group (main green + seconde lucarne durations)
-    const getTotalGreenTime = (groupId, mainGreenTime) => {
-        if (!mainGreenTime) return 0;
-
-        // Find all "Seconde lucarne" actions for this group
-        const lucarneActions = actionData.filter(
-            action => action.action === 'Seconde lucarne' &&
-                     parseInt(action.gf) === groupId &&
-                     action.deb !== '' && action.deb !== null &&
-                     action.fin !== '' && action.fin !== null
-        );
-
-        // Sum up lucarne durations
-        let lucarneDuration = 0;
-        lucarneActions.forEach(lucarne => {
-            const deb = parseFloat(lucarne.deb);
-            const fin = parseFloat(lucarne.fin);
-            if (!isNaN(deb) && !isNaN(fin)) {
-                // Handle wrap-around (fin < deb means it crosses cycle boundary)
-                let duration = fin - deb;
-                if (duration < 0) {
-                    duration += cycleLength;
-                }
-                lucarneDuration += duration;
-            }
-        });
-
-        return mainGreenTime + lucarneDuration;
-    };
+    // Vert total (vert principal + secondes lucarnes) — délègue à l'util
+    // partagé pour rester cohérent avec le panneau Diagnostic.
+    const getTotalGreenTime = (groupId, mainGreenTime) =>
+        computeTotalGreenTime(groupId, mainGreenTime, actionData, cycleLength);
 
     // Calculate V.Utile = trafic / (1800 * coef / cycle)
     const calculateVUtile = (trafficVol, laneCoef) => {
@@ -380,7 +344,7 @@ const TrafficTable = ({
                         </th>
                         <th title={tip("Durée de vert nécessaire pour passer le trafic")}>V.<br/>Utile</th>
                         <th title={tip("Capacité utilisée pour passer le trafic affecté au groupe de feu")}>Cap.<br/>U</th>
-                        <th title={tip("Temps d'attente théorique moyen en pied de feu hors saturation")}>Retard</th>
+                        <th title={tip("Retard moyen par véhicule, hors saturation (Webster, retard uniforme).")}>Retard</th>
                         <th title={tip("File d'attente théorique maximale hors saturation")}>File<br/>d'attente</th>
                     </tr>
                 </thead>
