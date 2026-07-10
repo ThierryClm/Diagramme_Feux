@@ -12,6 +12,7 @@ import ActionTable from './components/ActionTable';
 import CapacityComparison from './components/CapacityComparison';
 import ConflictList from './components/ConflictList';
 import DiagnosticPanel from './components/DiagnosticPanel';
+import { parseDiagfeux } from './utils/diagfeuxImporter';
 import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
@@ -630,6 +631,46 @@ function App() {
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
     const [importHintDir, setImportHintDir] = useState('');
+    const diagfeuxInputRef = useRef(null);
+
+    // Import d'un projet DiagFeux (.xml) : parse -> loadFullState + avertissements.
+    const handleDiagfeuxFileSelect = async (e) => {
+        const file = e.target.files?.[0];
+        if (e.target) e.target.value = '';
+        if (!file) return;
+        if (hasActiveProject) {
+            const ok = await askConfirm({
+                title: 'Importer un projet DiagFeux',
+                message: 'Le projet courant sera remplacé par le projet DiagFeux importé. Continuer ?',
+                confirmLabel: 'Importer',
+                danger: true
+            });
+            if (!ok) return;
+        }
+        try {
+            const text = await file.text();
+            const { state, warnings, error } = parseDiagfeux(text);
+            if (error || !state) {
+                showAlert({ title: 'Import DiagFeux impossible', message: error || 'Données illisibles.' });
+                return;
+            }
+            loadFullState(state);
+            setHasActiveProject(true);
+            setCurrentProjectPath(file.name);
+            setProjectModified(true);
+            projectModifiedSkip.current = true;
+            setHasUnsavedChanges(false);
+            toast.success(`Projet DiagFeux importé : ${state.projectName}`);
+            if (warnings.length) {
+                showAlert({
+                    title: 'Import DiagFeux — points à vérifier',
+                    message: 'Import réalisé. À contrôler :\n\n' + warnings.map(w => '• ' + w).join('\n')
+                });
+            }
+        } catch (err) {
+            showAlert({ title: 'Import DiagFeux', message: 'Erreur : ' + (err?.message || err) });
+        }
+    };
 
     // Green wave data states
     const [selectedGreenWave, setSelectedGreenWave] = useState(null);
@@ -1273,6 +1314,9 @@ function App() {
                 break;
             case 'import':
                 handleImportExcelDirect();
+                break;
+            case 'importDiagfeux':
+                diagfeuxInputRef.current?.click();
                 break;
             case 'browseImport':
                 setImportFile(null);
@@ -4733,6 +4777,14 @@ function App() {
                     </div>
                 </div>
             )}
+            {/* Import DiagFeux : input caché déclenché par le menu Interopérabilité */}
+            <input
+                ref={diagfeuxInputRef}
+                type="file"
+                accept=".xml"
+                onChange={handleDiagfeuxFileSelect}
+                style={{ display: 'none' }}
+            />
             <ToastContainer />
         </div>
     )

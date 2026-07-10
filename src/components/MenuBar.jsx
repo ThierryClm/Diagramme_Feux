@@ -209,20 +209,43 @@ const MenuBar = ({
                     title: layoutOptions.isExampleProject ? 'Projet exemple : non enregistrable' : (!hasActiveProject ? 'Aucun projet ouvert' : '')
                 }]),
                 { type: 'separator' },
-                { label: 'Interopérabilité...', disabled: true, title: 'Fonctionnalité envisageable : interopérabilité avec d\'autres systèmes (propriétaires ou ouverts) pour l\'échange de programmation de contrôleurs de carrefour. Évolutivité prévue — non opérationnelle dans cette version.' },
-                ...(recentImportDirs.length > 0 ? [{
-                    label: 'Importer Excel...',
+                {
+                    label: 'Importer',
                     type: 'submenu',
-                    submenuId: 'importRecent',
-                    submenu: recentImportDirsSubmenu,
-                    disabled: !hasPermission('canImportExcel') || !excelImportEnabled,
-                    title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : 'Importation sur mesure pour une collectivité.'
-                }] : [{
-                    label: 'Importer Excel...',
-                    action: 'import',
-                    disabled: !hasPermission('canImportExcel') || !excelImportEnabled,
-                    title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : 'Importation sur mesure pour une collectivité.'
-                }]),
+                    submenuId: 'importer',
+                    submenu: [
+                        {
+                            label: 'Projet sous Excel...',
+                            action: 'import',
+                            disabled: !hasPermission('canImportExcel') || !excelImportEnabled,
+                            title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : 'Importation sur mesure pour une collectivité.'
+                        },
+                        {
+                            label: 'Projet DiagFeux (.xml)...',
+                            action: 'importDiagfeux',
+                            title: 'Importer le plan de feux d\'un projet DiagFeux (CEREMA). Format XML ouvert. La géométrie n\'est pas reprise.'
+                        },
+                        {
+                            label: 'Fichier contrôleur...',
+                            disabled: true,
+                            title: 'À venir : import d\'un fichier de programmation de contrôleur de carrefour. Évolution prévue pour l\'interopérabilité — non opérationnelle dans cette version.'
+                        }
+                    ]
+                },
+                {
+                    label: 'Exporter',
+                    type: 'submenu',
+                    submenuId: 'exporter',
+                    disabled: !hasActiveProject,
+                    submenu: [
+                        {
+                            label: 'Vers DiagFeux (.xml)...',
+                            action: 'exportDiagfeux',
+                            disabled: true,
+                            title: 'À venir : export au format DiagFeux. Nécessite de reconstruire un modèle par phases (2 à 3 phases) depuis le modèle par groupes de TraCflux, plus général — chantier dédié, après validation de l\'import sur un fichier réel.'
+                        }
+                    ]
+                },
                 { label: 'Liens externes...', action: 'externalLinks', disabled: !hasActiveProject, title: !hasActiveProject ? 'Aucun projet ouvert' : '' },
                 { type: 'separator' },
                 { label: 'Imprimer le projet...', action: 'printDossier', disabled: !hasActiveProject, title: !hasActiveProject ? 'Aucun projet ouvert' : '' },
