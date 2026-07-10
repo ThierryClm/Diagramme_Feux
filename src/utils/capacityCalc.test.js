@@ -6,8 +6,21 @@ import {
     getCapacityColorClass,
     calculateOfferedCapacity,
     calculateDegreeOfSaturation,
-    calculateReserveCapacity
+    calculateReserveCapacity,
+    calculateUniformDelay,
+    calculateRandomDelay,
+    calculateAverageDelay,
+    calculateQueueLength
 } from './capacityCalc';
+
+// Reproduit la formule HISTORIQUE de la colonne « Retard » de TrafficTable,
+// pour garantir que calculateUniformDelay ne dévie pas de l'existant.
+const legacyRetard = (greenTime, trafficVol, laneCoef, cycleLength) => {
+    const ratio = trafficVol / (1800 * laneCoef);
+    if (ratio >= 1) return null;
+    const redTime = cycleLength - greenTime;
+    return (redTime * redTime) / (2 * cycleLength * (1 - ratio));
+};
 
 // Jeu de référence : coef 1 voie, vert 30 s, cycle 90 s -> capacité 600 uvp/h.
 // Trafic 300 uvp/h -> degré de saturation 0,5 ; V.Utile 15 s ; Cap.U 50 %.
@@ -77,5 +90,35 @@ describe('capacityCalc — réserve de capacité', () => {
     });
     it('null si capacité indéterminée', () => {
         expect(calculateReserveCapacity(300, 0, GREEN, CYCLE)).toBeNull();
+    });
+});
+
+describe('capacityCalc — attente (Webster) & file', () => {
+    // Réf : coef 1, vert 30, cycle 90, trafic 300 -> d1 = 24 s, d2 = 3 s.
+    it('attente uniforme d1 = terme 1 de Webster', () => {
+        expect(calculateUniformDelay(300, COEF, GREEN, CYCLE)).toBeCloseTo(24, 5);
+    });
+    it('d1 reste identique à la formule historique « Retard »', () => {
+        [[300, 1, 30], [560, 1, 41], [900, 2, 25], [120, 0.5, 12]].forEach(([q, c, g]) => {
+            expect(calculateUniformDelay(q, c, g, CYCLE)).toBeCloseTo(legacyRetard(g, q, c, CYCLE), 6);
+        });
+    });
+    it('attente aléatoire d2 = terme 2 de Webster', () => {
+        expect(calculateRandomDelay(300, COEF, GREEN, CYCLE)).toBeCloseTo(3, 5);
+    });
+    it('attente moyenne = d1 + d2', () => {
+        expect(calculateAverageDelay(300, COEF, GREEN, CYCLE)).toBeCloseTo(27, 5);
+    });
+    it('null en sur-saturation (x ≥ 1) ou λx ≥ 1', () => {
+        expect(calculateUniformDelay(1800, COEF, GREEN, CYCLE)).toBeNull(); // λx = 1
+        expect(calculateRandomDelay(600, COEF, GREEN, CYCLE)).toBeNull();   // x = 1
+        expect(calculateAverageDelay(900, COEF, GREEN, CYCLE)).toBeNull();  // x = 1.5
+    });
+    it('file d\'attente = formule historique (mètres)', () => {
+        expect(calculateQueueLength(300, COEF, GREEN, CYCLE)).toBe(36);
+    });
+    it('null si données insuffisantes', () => {
+        expect(calculateUniformDelay(0, COEF, GREEN, CYCLE)).toBeNull();
+        expect(calculateQueueLength(300, 0, GREEN, CYCLE)).toBeNull();
     });
 });

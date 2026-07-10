@@ -69,6 +69,54 @@ export const calculateCapacity = (greenTime, vUtile) => {
     return { value: result, display: result + '%' };
 };
 
+/**
+ * Attente uniforme de Webster (terme 1), en secondes :
+ *   d1 = c(1−λ)² / [2(1−λx)],  λ = vert/cycle,  λx = trafic/(1800·coef).
+ * C'est la formule historique de la colonne « Retard ». Renvoie null si le
+ * courant est saturé (λx ≥ 1) ou si les données sont insuffisantes.
+ */
+export const calculateUniformDelay = (trafficVol, laneCoef, greenTime, cycleLength) => {
+    if (!trafficVol || !laneCoef || !greenTime || !cycleLength || laneCoef === 0) return null;
+    const ratio = trafficVol / (SATURATION_FLOW * laneCoef); // = λx
+    if (ratio >= 1) return null;
+    const redTime = cycleLength - greenTime;
+    return (redTime * redTime) / (2 * cycleLength * (1 - ratio));
+};
+
+/**
+ * Attente aléatoire de Webster (terme 2), en secondes :
+ *   d2 = x² / [2q(1−x)],  q = trafic/3600 (véh/s),  x = degré de saturation.
+ * Renvoie null si x ≥ 1 (sur-saturation) ou données insuffisantes.
+ */
+export const calculateRandomDelay = (trafficVol, laneCoef, greenTime, cycleLength) => {
+    const x = calculateDegreeOfSaturation(trafficVol, laneCoef, greenTime, cycleLength);
+    if (x === null || x >= 1) return null;
+    const q = trafficVol / 3600; // véh/s
+    return (x * x) / (2 * q * (1 - x));
+};
+
+/**
+ * Temps d'attente moyen (Webster simplifié à 2 termes), en secondes : d1 + d2.
+ * Renvoie null si l'un des termes est indéterminé (sur-saturation).
+ */
+export const calculateAverageDelay = (trafficVol, laneCoef, greenTime, cycleLength) => {
+    const d1 = calculateUniformDelay(trafficVol, laneCoef, greenTime, cycleLength);
+    const d2 = calculateRandomDelay(trafficVol, laneCoef, greenTime, cycleLength);
+    if (d1 === null || d2 === null) return null;
+    return d1 + d2;
+};
+
+/**
+ * Longueur de file d'attente maximale hors saturation, en mètres :
+ *   (⌊trafic·(cycle−vert)/3600/coef⌋ + 1) × 6.
+ * Formule historique de la colonne « File d'attente ». null si insuffisant.
+ */
+export const calculateQueueLength = (trafficVol, laneCoef, greenTime, cycleLength) => {
+    if (!trafficVol || !laneCoef || !greenTime || !cycleLength || laneCoef === 0) return null;
+    const redTime = cycleLength - greenTime;
+    return (Math.floor(trafficVol * redTime / 3600 / laneCoef) + 1) * 6;
+};
+
 /** Classe CSS de couleur selon le niveau de capacité utilisée. */
 export const getCapacityColorClass = (value) => {
     if (value === null || value === undefined) return '';
