@@ -275,6 +275,25 @@ const TrafficTable = ({
         return 'capacity-black';
     };
 
+    // Synthèse « diagnostic carrefour » : courant dimensionnant (Cap.U max) et
+    // réserve globale. Basée sur le MÊME Cap.U que la colonne affichée, pour
+    // une cohérence stricte avec le tableau (aucun recalcul divergent).
+    const carrefourDiagnostic = useMemo(() => {
+        let dim = null; // { id, capU }
+        let saturatedCount = 0;
+        vlGroups.forEach(g => {
+            const totalGreen = getTotalGreenTime(g.id, g.durations?.green);
+            const numericVol = parseTrafficVol(getTrafficData(g.id).trafficVol);
+            const vUtile = calculateVUtile(numericVol, g.laneCoef);
+            const capU = calculateCapacity(totalGreen, vUtile).value;
+            if (capU === null) return;
+            if (capU > 100) saturatedCount++;
+            if (!dim || capU > dim.capU) dim = { id: g.id, capU };
+        });
+        return dim ? { dim, saturatedCount } : null;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [vlGroups, getTrafficData, cycleLength, actionData, activeTrafficDataset]);
+
     return (
         <div className="traffic-table-container">
             <div className="traffic-header">
@@ -530,6 +549,25 @@ const TrafficTable = ({
                 </tbody>
             </table>
             </div>
+            {carrefourDiagnostic && (() => {
+                const capU = carrefourDiagnostic.dim.capU;
+                const reserve = 100 - capU;
+                const sat = carrefourDiagnostic.saturatedCount;
+                return (
+                    <div className="traffic-diagnostic-summary">
+                        <span className="tds-label">Diagnostic carrefour :</span>{' '}
+                        courant dimensionnant <strong>GF{carrefourDiagnostic.dim.id}</strong> —{' '}
+                        capacité utilisée{' '}
+                        <strong className={getCapacityColorClass(capU)}>{capU}%</strong>{' '}
+                        {reserve >= 0
+                            ? <>(réserve <strong>{reserve}%</strong>)</>
+                            : <>(<strong className="capacity-black">dépassement {-reserve}%</strong>)</>}
+                        {sat > 0 && (
+                            <span className="tds-saturated"> · {sat} courant{sat > 1 ? 's' : ''} saturé{sat > 1 ? 's' : ''}</span>
+                        )}
+                    </div>
+                );
+            })()}
         </div>
     );
 };
