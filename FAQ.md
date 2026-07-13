@@ -6,6 +6,16 @@ Cette FAQ répond aux questions courantes sur **TraCflux**. Si la réponse à vo
 
 ## À propos du projet
 
+### Pourquoi une application web plutôt qu'un logiciel à installer ?
+
+Pour trois raisons, dans cet ordre.
+
+**La pérennité.** Un outil qui s'exécute dans le navigateur ne dépend ni d'une version de système d'exploitation, ni d'une bibliothèque système, ni d'un composant tiers sous licence. Il fonctionne sur Windows, macOS et Linux, et continuera de le faire. C'est une garantie que l'on doit à ses données autant qu'à soi-même : **un plan de feux doit pouvoir survivre à l'outil qui l'a créé** — c'est aussi ce qui motive l'import des formats existants.
+
+**Le déploiement.** Rien à installer, donc rien à faire valider par une direction informatique : on ouvre une page. Dans une collectivité ou un bureau d'études, ce seul point fait souvent la différence entre un outil qu'on essaie et un outil qu'on renonce à essayer. L'application est par ailleurs **installable (PWA)** et fonctionne **hors ligne**.
+
+**La confidentialité.** Tout s'exécute **en local**, sans serveur ni télémétrie : les données ne quittent jamais votre poste — voir [Mes données sont-elles envoyées sur internet ?](#mes-données-sont-elles-envoyées-sur-internet-).
+
 ### Je voudrais améliorer le fonctionnement des carrefours à feu sur mon territoire, mais le sujet m'est totalement étranger. Cette application va-t-elle m'aider à traiter mon problème ?
 
 Cette application est un **facilitateur de conception**, pas une boîte à outils clé en main. Elle rend visibles les interactions entre les contraintes de sécurité, la réglementation et le phasage d'un carrefour à feux, mais elle suppose une lecture initiée du sujet (cycles, temps interverts, types d'usagers, conflits).

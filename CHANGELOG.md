@@ -66,5 +66,5 @@ courant par courant.
 
 ---
 
-*L'historique détaillé antérieur à la première publication (plus de 500 commits
-depuis décembre 2025) reste consultable dans l'historique git.*
+*L'historique détaillé antérieur à la première publication reste consultable
+dans l'historique git.*

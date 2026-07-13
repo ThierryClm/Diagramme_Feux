@@ -23,6 +23,19 @@ Conçue pour être utilisée **localement**, sans serveur ni télémétrie : tou
 
 ## Pourquoi TraCflux
 
+### Un outil pérenne, sans installation
+
+TraCflux s'exécute **dans le navigateur**. Ce choix engage directement sa **longévité** : aucune dépendance à une version de système d'exploitation, aucune bibliothèque système à maintenir, aucun composant propriétaire. Il fonctionne sur n'importe quel poste et n'importe quel système — Windows, macOS, Linux — et continuera de le faire.
+
+Deux verrous en découlent, levés d'un coup :
+
+- **Déploiement** — rien à installer, donc rien à faire valider par une DSI : on ouvre une page. L'application est par ailleurs **installable (PWA)** et fonctionne **hors ligne**.
+- **Confidentialité** — tout s'exécute **en local, sans serveur ni télémétrie** : les données ne quittent jamais le poste.
+
+L'**import des formats existants** procède du même principe : un plan de feux doit pouvoir **survivre à l'outil qui l'a créé**.
+
+### Un modèle qui combine phases et groupes de feux
+
 Les outils historiques de conception de plans de feux reposent sur un modèle **strictement par phases** : les feux d'une même phase s'ouvrent et se ferment ensemble. C'est simple et lisible pour l'usager, mais cela oblige le projeteur à plier la réalité du carrefour dans des phases.
 
 TraCflux repose sur un **modèle qui combine gestion par phases et gestion par groupes de feux**. Le phasage reste disponible — pour raisonner comme pour agir (escamotage de phase, phasage bulle) — mais **chaque groupe de feux demeure indépendant** : il n'est pas verrouillé dans une phase, et garde sa propre fenêtre de vert.
