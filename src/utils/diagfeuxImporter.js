@@ -93,15 +93,24 @@ export const parseDiagfeux = (xmlText) => {
     /** Jaune d'une ligne : 3 s agglo / 5 s hors agglo ; 0 pour les feux piétons. */
     const jauneFor = (id) => isPieton(id) ? 0 : (enAgglo ? 3 : 5);
 
+    // Mapping vers le schéma RÉEL de projectProperties (cf. DEFAULT_PROJECT_PROPERTIES
+    // dans useTrafficLight.js) : toute autre clé serait silencieusement ignorée.
+    const controleur = [txt(props, 'Fabricant'), txt(props, 'TypeControleur')]
+        .filter(Boolean).join(' ').trim();
     const projectProperties = props ? {
         commune: txt(props, 'Commune'),
-        controleurType: txt(props, 'TypeControleur'),
-        controleurFabricant: txt(props, 'Fabricant'),
-        zoneRegulation: txt(props, 'ZoneRégulation'),
-        numero: txt(props, 'Numéro'),
+        idCarrefour: txt(props, 'Numéro'),
+        controleur,
+        horsAgglomeration: !enAgglo,          // DiagFeux : EnAgglo (booléen inverse)
+        auteur: txt(props, 'RéalisateurEtude'),
+        dateCreation: txt(props, 'DateEtude'),
         dateModification: txt(props, 'DateModification'),
         commentaires: txt(props, 'Commentaires')
     } : {};
+    const zoneRegulation = txt(props, 'ZoneRégulation');
+    if (zoneRegulation) {
+        warnings.push(`Zone de régulation « ${zoneRegulation} » : aucun champ équivalent dans TraCflux, non reprise.`);
+    }
 
     // --- LigneDeFeux ---
     const lignes = kids(variante, 'LigneDeFeux');

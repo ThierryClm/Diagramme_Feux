@@ -60,7 +60,31 @@ describe('diagfeuxImporter — import valide', () => {
     it('récupère le nom et les propriétés', () => {
         expect(state.projectName).toBe('Place du Test');
         expect(state.projectProperties.commune).toBe('Testville');
-        expect(state.projectProperties.controleurType).toBe('ControleurX');
+    });
+
+    // Garde-fou : les clés DOIVENT correspondre au schéma réel de TraCflux
+    // (DEFAULT_PROJECT_PROPERTIES). Toute autre clé serait perdue en silence.
+    it('mappe les propriétés sur les VRAIES clés de TraCflux', () => {
+        const p = state.projectProperties;
+        const schema = [
+            'commune', 'idCommune', 'idCarrefour', 'controleur', 'programme',
+            'horsAgglomeration', 'moa', 'moe', 'bureauEtudes', 'auteur',
+            'logoMoa', 'logoMoe', 'dateCreation', 'dateModification',
+            'numeroDossier', 'phaseEtude', 'commentaires'
+        ];
+        Object.keys(p).forEach(k => expect(schema).toContain(k));
+        // Fabricant + TypeControleur -> champ « controleur » unique
+        expect(p.controleur).toBe('FabricantY ControleurX');
+        // EnAgglo=true -> horsAgglomeration=false (booléen inverse)
+        expect(p.horsAgglomeration).toBe(false);
+    });
+
+    it('hors agglomération : jaune de 5 s et horsAgglomeration=true', () => {
+        const xml = SAMPLE.replace('<EnAgglo>true</EnAgglo>', '<EnAgglo>false</EnAgglo>');
+        const { state: s } = parseDiagfeux(xml);
+        expect(s.projectProperties.horsAgglomeration).toBe(true);
+        expect(s.groups[0].durations.orange).toBe(5);
+        expect(s.conflictMatrix[0][1]).toBe(10); // 5 (rouge) + 5 (jaune hors agglo)
     });
 
     it('crée un groupe par ligne de feux (nom = ID DiagFeux)', () => {
