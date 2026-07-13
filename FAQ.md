@@ -29,7 +29,9 @@ L'application étant gratuite et libre, son adoption par vos partenaires n'a auc
 
 ### J'utilise déjà un autre outil qui ne me satisfait pas pleinement, mais je ne souhaite pas ressaisir l'intégralité de mes plans de feux. Comment migrer mes données existantes ?
 
-L'import natif est aujourd'hui limité (Excel partiel, HTM, JSON pour le format propre à l'application). L'**interopérabilité** avec d'autres systèmes de programmation de contrôleurs de carrefour — propriétaires ou ouverts — est identifiée comme un axe d'évolution majeur de l'outil, mais n'est pas encore opérationnelle — voir [Quelles fonctionnalités sont envisageables à terme ?](#quelles-fonctionnalités-sont-envisageables-à-terme-).
+**Si votre outil est DiagFeux, c'est déjà réglé :** TraCflux importe nativement les projets **`.dfe`** — voir [Puis-je récupérer mes anciennes études DiagFeux ?](#puis-je-récupérer-mes-anciennes-études-diagfeux-).
+
+Pour les autres outils, l'import natif reste aujourd'hui limité (Excel partiel, HTM, JSON pour le format propre à l'application). L'**interopérabilité** avec d'autres systèmes de programmation de contrôleurs de carrefour — propriétaires ou ouverts — est un axe d'évolution majeur de l'outil.
 
 L'application étant **libre et open source**, l'ajout d'un parseur pour un format donné reste tout à fait envisageable :
 
@@ -37,6 +39,38 @@ L'application étant **libre et open source**, l'ajout d'un parseur pour un form
 - **Contribuez ou faites contribuer :** un développeur tiers peut proposer un parseur via une *pull request*. Le format `.json` natif sert de structure cible.
 
 **En pratique, en attendant qu'un parseur existe :** l'approche pragmatique consiste à démarrer par **un ou deux carrefours pilotes** que vous ressaisissez intégralement. Cela vous permet de valider concrètement l'apport de l'outil sur votre activité avant d'engager une migration plus large. Une fois la valeur ajoutée confirmée, vous pouvez soit demander le développement d'un parseur (issue GitHub avec un échantillon de votre format), soit organiser la ressaisie progressive du parc.
+
+### Puis-je récupérer mes anciennes études DiagFeux ?
+
+**Oui** — via **Fichier → Importer → Projet DiagFeux (.dfe)**.
+
+> ⚠️ **Fonctionnalité en cours de finalisation.** L'importateur a été construit à partir du schéma XML officiel du format et de la documentation de DiagFeux, mais sa **validation sur des fichiers `.dfe` réels est encore en cours**. Considérez le résultat comme une **base de reprise à vérifier**, pas comme une conversion garantie au dixième de seconde près.
+>
+> Si vous disposez d'un projet DiagFeux (même anonymisé) que vous pouvez partager, [ouvrez une issue](https://github.com/ThierryClm/Diagramme_Feux/issues) : cela accélérera directement la mise au point de l'import.
+
+**Ce qui est repris :**
+
+- les **groupes de feux** (lignes de feux), avec la distinction véhicules / piétons ;
+- leurs **décalages** et **durées de vert**, déduits de la séquence de phases (et des décalages d'ouverture / fermeture) ;
+- la **matrice des temps d'intervert** — reconstituée selon la règle de DiagFeux : *rouge de dégagement + temps de jaune* ;
+- le **cycle** ;
+- les **propriétés** du carrefour : commune, identifiant, contrôleur (fabricant et type), situation en ou hors agglomération, auteur de l'étude, dates et commentaires.
+
+Le **phasage** de DiagFeux est converti vers le modèle de TraCflux, où **chaque groupe reste indépendant** — une conversion toujours possible, le second modèle étant un surensemble du premier. Le plan importé **respecte par construction tous les interverts** : il arrive donc sans conflit.
+
+**Ce qui n'est pas repris :** la **géométrie** (branches, voies, îlots, passages piétons, fond de plan DXF). TraCflux n'utilise pas de modèle géométrique : il s'appuie sur une **image de fond** (photo aérienne, plan CAO ou schéma) sur laquelle vous positionnez les flèches des groupes. Les **matrices de trafic** origine-destination ne sont pas encore agrégées automatiquement.
+
+À l'import, TraCflux affiche la liste de ce qui a été converti ou approximé.
+
+### Qu'est-ce que DiagFeux, et pourquoi TraCflux l'importe-t-il ?
+
+**DiagFeux** est le logiciel de conception du diagramme des feux d'un carrefour développé par le **CERTU** (Centre d'études sur les réseaux, les transports et l'urbanisme), aujourd'hui intégré au **Cerema**. Actif dans les années 2000, il s'appuyait sur la méthode du *Guide des carrefours à feux* du CERTU — la référence méthodologique française.
+
+Il **n'est plus maintenu**. Initialement commercial, son code a été publié sous licence **GPL** sur [GitHub](https://github.com/CEREMA/territoires-ville.DiagFeux) en 2019, à titre d'archivage. Le Cerema ne distribue plus les programmes d'installation.
+
+Or de nombreux bureaux d'études et collectivités **possèdent encore des études réalisées avec DiagFeux**. L'objectif de l'import est simple : **prolonger l'utilité de ce patrimoine** plutôt que de le condamner à la ressaisie. En ce sens, TraCflux se veut une **suite logique de DiagFeux** — même méthode de calcul (débit de saturation de 1800 uvp/h par voie, méthode de Webster), mais un modèle par groupes plus fin, et des capacités nouvelles (micro-régulation, onde verte, diagnostic de capacité, présentation multi-écrans).
+
+L'importateur a été écrit **à partir du format public** (schéma XML du dépôt libre) et de la documentation du logiciel — aucun code de DiagFeux n'a été repris.
 
 ### Puis-je importer mes carrefours depuis un fichier Excel ?
 
@@ -207,11 +241,14 @@ Le détail de chaque option est documenté dans l'aide en ligne (menu **Aide**, 
 | Format | Import | Export |
 |---|---|---|
 | JSON (format natif) | ✓ | ✓ |
+| **DiagFeux `.dfe`** (CERTU/Cerema) | ✓ | (envisagé) |
 | Excel `.xlsx` | (envisageable selon modèle) | ✓ |
 | CSV | ✓ | — |
 | HTM | ✓ | — |
 | PDF (impression dossier) | — | ✓ |
 | PNG (capture diagramme) | — | ✓ |
+
+L'import DiagFeux reprend le plan de feux logique, pas la géométrie — voir [Puis-je récupérer mes anciennes études DiagFeux ?](#puis-je-récupérer-mes-anciennes-études-diagfeux-).
 
 ### Quels formats d'image puis-je utiliser comme fond de plan ?
 

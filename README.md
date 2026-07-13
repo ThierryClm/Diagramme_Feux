@@ -21,6 +21,24 @@ TraCflux s'organise en **deux modules complémentaires** :
 
 Conçue pour être utilisée **localement**, sans serveur ni télémétrie : toutes les données restent dans le navigateur (localStorage) et sur votre poste.
 
+## Pourquoi TraCflux
+
+Les outils historiques de conception de plans de feux reposent sur un modèle **strictement par phases** : les feux d'une même phase s'ouvrent et se ferment ensemble. C'est simple et lisible pour l'usager, mais cela oblige le projeteur à plier la réalité du carrefour dans des phases.
+
+TraCflux repose sur un **modèle qui combine gestion par phases et gestion par groupes de feux**. Le phasage reste disponible — pour raisonner comme pour agir (escamotage de phase, phasage bulle) — mais **chaque groupe de feux demeure indépendant** : il n'est pas verrouillé dans une phase, et garde sa propre fenêtre de vert.
+
+C'est cette combinaison qui permet d'exprimer directement les **chevauchements partiels**, la **micro-régulation fine** (escamotage, seconde lucarne, fermeture anticipée…), la **coordination sur un axe** et le **diagnostic de capacité courant par courant** — là où un modèle strictement par phases les rend malaisés, voire impossibles à décrire.
+
+### Reprendre les études DiagFeux
+
+> ⚠️ **Fonctionnalité en cours de finalisation.** L'importateur est construit à partir du schéma XML officiel et de la documentation de DiagFeux ; sa **validation sur des fichiers `.dfe` réels est en cours**. Si vous disposez d'un projet DiagFeux (même anonymisé) que vous pouvez partager, [ouvrez une issue](https://github.com/ThierryClm/Diagramme_Feux/issues) — cela accélérera directement la mise au point.
+
+**DiagFeux**, le logiciel de conception de diagrammes de feux du CERTU (aujourd'hui Cerema), **n'est plus maintenu**. TraCflux **importe ses projets (`.dfe`)** — groupes, décalages, verts, matrice d'interverts, propriétés — en convertissant le phasage vers le modèle à groupes indépendants.
+
+Les bureaux d'études et collectivités disposant d'anciennes études DiagFeux peuvent ainsi **les reprendre plutôt que de les ressaisir** : **Fichier → Importer → Projet DiagFeux (.dfe)**.
+
+La méthode de calcul reste celle du *Guide des carrefours à feux* du CERTU (débit de saturation 1800 uvp/h par voie, méthode de Webster), commune aux deux outils.
+
 ## Mode présentation
 
 L'application est conçue pour s'adapter aux contextes de **présentation devant un auditoire** — comités techniques, formations internes, validations devant un client ou échanges pédagogiques avec des élus.
@@ -39,8 +57,19 @@ L'auditoire ne voit que l'essentiel — le carrefour qui « vit » au rythme du 
 - **Multiprogrammation** — plans de feux multiples (PF) gérés par onglets : un même carrefour décliné en plusieurs programmes (pointe du matin, pointe du soir, heure creuse, nuit, événementiel…), chacun avec son cycle, ses durées de vert, ses offsets, sa matrice intervert et sa micro-régulation propres
 - Table d'actions de micro-régulation par plan (escamotage, ouverture/fermeture anticipée, etc.)
 - Fond de plan personnalisable (photo aérienne, plan CAO, schéma au trait) avec flèches d'animation des groupes — optimisé automatiquement à l'import (redimensionnement + WebP) pour alléger le projet
-- Import/export (JSON, CSV, Excel)
-- Export PDF et PNG du diagramme
+
+### Capacité et diagnostic
+
+- **Réserve de capacité** — panneau détachable : capacité offerte (uvp/h), degré de saturation, réserve, **temps d'attente moyen (Webster)** et file d'attente, courant par courant
+- Synthèse « diagnostic carrefour » : courant dimensionnant et réserve globale
+- **Comparateur de capacité** entre plans de feux
+- Méthode conforme au *Guide des carrefours à feux* (débit de saturation 1800 uvp/h par voie)
+
+### Interopérabilité
+
+- **Import de projets DiagFeux (`.dfe`)** — reprise des études réalisées avec le logiciel du CERTU/Cerema (voir [Reprendre les études DiagFeux](#reprendre-les-études-diagfeux))
+- Import Excel / CSV, export JSON
+- Export PDF et PNG du diagramme, dossier d'impression complet
 
 ### Module Onde verte
 
@@ -52,7 +81,8 @@ L'auditoire ne voit que l'essentiel — le carrefour qui « vit » au rythme du 
 ### Transverse
 
 - Thèmes (sombre, clair, haut contraste, ambre, daltonien, sépia, bleu nuit)
-- Détachement de fenêtres (matrice, formulaire, données trafic, etc.) sur un second écran
+- **Détachement de fenêtres** sur un second écran ou un vidéoprojecteur : matrice, formulaire, propriétés, données trafic, conflits, réserve de capacité, conditions et variables de micro-régulation, remarques, image du carrefour, et **miroir du diagramme en lecture seule**
+- Application installable (PWA), fonctionne hors ligne, avec bandeau « nouvelle version disponible »
 - Rapport de diagnostic pour signalement de bug (local, sans envoi réseau)
 
 ## Installation
@@ -152,6 +182,10 @@ Un service d'accompagnement à la conception de diagrammes de feux est **envisag
 Deux modes de prestation sont pressentis — **assistance technique à la carte** ou **prise en charge complète du projet** à partir des données fournies par l'utilisateur — mais **cette offre n'est pas encore opérationnelle**.
 
 *(Les modalités et coordonnées de contact seront précisées lorsque le service sera disponible.)*
+
+## Journal des versions
+
+Les évolutions notables sont consignées dans le [CHANGELOG](CHANGELOG.md). Le projet suit le [versionnage sémantique](VERSIONING.md).
 
 ## Contribuer
 

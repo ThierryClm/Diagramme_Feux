@@ -4674,7 +4674,7 @@
     }
   ],
   "trafficDatasets": {
-    "PF_Prio2017": {
+    "Priorité bus": {
       "1": {
         "trafficVol": 386
       },
@@ -4691,7 +4691,7 @@
         "trafficVol": 208
       }
     },
-    "MIX_07_01": {
+    "Variante 5": {
       "1": {
         "trafficVol": 386
       },
@@ -4975,7 +4975,7 @@
         "trafficVol": 208
       }
     },
-    "MIX_VRA_VRM": {
+    "Variante 1": {
       "1": {
         "trafficVol": 386
       },
@@ -4992,7 +4992,7 @@
         "trafficVol": 208
       }
     },
-    "MIX_26_11": {
+    "Variante 2": {
       "1": {
         "trafficVol": 386
       },
@@ -5026,7 +5026,7 @@
         "trafficVol": 208
       }
     },
-    "PF_070126": {
+    "Variante 6": {
       "1": {
         "trafficVol": 386
       },
@@ -5048,15 +5048,15 @@
   "customTrafficDatasetNames": [],
   "pfTrafficDatasetMap": {
     "1": "PF1",
-    "2": "PF_Prio2017",
-    "3": "PF3_VRA",
-    "4": "PF3_HPS_VRA",
-    "5": "MIX_VRA_VRM",
-    "6": "MIX_26_11",
-    "7": "MIX_07_01",
+    "2": "Priorité bus",
+    "3": "Variante 3",
+    "4": "Variante 4",
+    "5": "Variante 1",
+    "6": "Variante 2",
+    "7": "Variante 5",
     "8": "PF_Prio",
     "9": "PF_Samedi",
-    "10": "PF_070126"
+    "10": "Variante 6"
   },
   "dependencyGap": 20,
   "biCarrefourSeparator": 7,
