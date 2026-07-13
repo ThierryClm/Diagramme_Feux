@@ -4777,11 +4777,13 @@ function App() {
                     </div>
                 </div>
             )}
-            {/* Import DiagFeux : input caché déclenché par le menu Interopérabilité */}
+            {/* Import DiagFeux : input caché déclenché par le menu Importer.
+                Les projets DiagFeux portent l'extension .dfe (contenu XML) ;
+                on accepte aussi .xml pour les fichiers déjà renommés/exportés. */}
             <input
                 ref={diagfeuxInputRef}
                 type="file"
-                accept=".xml"
+                accept=".dfe,.xml"
                 onChange={handleDiagfeuxFileSelect}
                 style={{ display: 'none' }}
             />

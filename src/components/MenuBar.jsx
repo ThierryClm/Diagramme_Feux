@@ -221,9 +221,9 @@ const MenuBar = ({
                             title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : 'Importation sur mesure pour une collectivité.'
                         },
                         {
-                            label: 'Projet DiagFeux (.xml)...',
+                            label: 'Projet DiagFeux (.dfe)...',
                             action: 'importDiagfeux',
-                            title: 'Importer le plan de feux d\'un projet DiagFeux (CEREMA). Format XML ouvert. La géométrie n\'est pas reprise.'
+                            title: 'Importer le plan de feux d\'un projet DiagFeux (CEREMA). Fichier .dfe (contenu XML ouvert). La géométrie n\'est pas reprise.'
                         },
                         {
                             label: 'Fichier contrôleur...',
@@ -239,7 +239,7 @@ const MenuBar = ({
                     disabled: !hasActiveProject,
                     submenu: [
                         {
-                            label: 'Vers DiagFeux (.xml)...',
+                            label: 'Vers DiagFeux (.dfe)...',
                             action: 'exportDiagfeux',
                             disabled: true,
                             title: 'À venir : export au format DiagFeux. Nécessite de reconstruire un modèle par phases (2 à 3 phases) depuis le modèle par groupes de TraCflux, plus général — chantier dédié, après validation de l\'import sur un fichier réel.'
