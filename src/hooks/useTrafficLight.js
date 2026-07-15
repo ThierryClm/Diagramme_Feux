@@ -2648,6 +2648,21 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         });
     }, [saveToHistory, groups]);
 
+    // Copie la matrice d'interverts d'un AUTRE plan de feux dans le PF actif.
+    // Bloquée en lecture seule ; ne copie que si la matrice source a la même
+    // taille que les groupes courants (mêmes groupes -> copie sûre). Le sync
+    // matrice propage ensuite la valeur au PF actif. Renvoie true si copiée.
+    const copyMatrixFromPF = useCallback((sourcePFId) => {
+        if (isEditLocked()) return false;
+        const src = pfTabs.find(p => p.id === sourcePFId);
+        if (!src || !Array.isArray(src.conflictMatrix) || src.conflictMatrix.length === 0) return false;
+        if (src.conflictMatrix.length !== groups.length) return false;
+        saveToHistory();
+        setConflictMatrix(src.conflictMatrix.map(row => [...row]));
+        return true;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pfTabs, groups, saveToHistory]);
+
     // Slide all groups by a given offset
     const slideAllGroups = useCallback((delta, fromGroupId = null, toGroupId = null) => {
         saveToHistory();
@@ -2799,6 +2814,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         setDossierReadOnly,
         activePfReadOnly,
         applyMergedPf,
+        copyMatrixFromPF,
         actionColWidths,
         setActionColWidths,
         externalLinks,

@@ -8,7 +8,8 @@ import {
     createEmptyPF,
     ensurePFIntegrity,
     selectPfSubset,
-    mergePfFromProject
+    mergePfFromProject,
+    deepCopyMatrix
 } from './pfHelpers';
 
 describe('createEmptyActionRow', () => {
@@ -439,5 +440,21 @@ describe('mergePfFromProject', () => {
     it('erreur si le fichier importé n\'a aucun PF', () => {
         expect(mergePfFromProject(current(), { pfTabs: [] }).error).toBeTruthy();
         expect(mergePfFromProject(current(), null).error).toBeTruthy();
+    });
+});
+
+describe('deepCopyMatrix', () => {
+    it('copie en profondeur (aucune référence partagée)', () => {
+        const src = [[1, 2], [3, 4]];
+        const copy = deepCopyMatrix(src);
+        expect(copy).toEqual(src);
+        expect(copy).not.toBe(src);
+        expect(copy[0]).not.toBe(src[0]);
+        copy[0][0] = 99;
+        expect(src[0][0]).toBe(1); // source intacte
+    });
+    it('renvoie l\'entrée telle quelle si ce n\'est pas une matrice', () => {
+        expect(deepCopyMatrix(null)).toBeNull();
+        expect(deepCopyMatrix(undefined)).toBeUndefined();
     });
 });

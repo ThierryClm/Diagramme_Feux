@@ -297,3 +297,10 @@ export const mergePfFromProject = (current, imported, opts = {}) => {
     };
     return { state, warnings, addedCount: newPfs.length };
 };
+
+/**
+ * Copie profonde d'une matrice (tableau de tableaux). Utilisée pour copier la
+ * matrice d'interverts d'un plan de feux à un autre sans partage de référence.
+ */
+export const deepCopyMatrix = (m) =>
+    Array.isArray(m) ? m.map(row => (Array.isArray(row) ? [...row] : row)) : m;

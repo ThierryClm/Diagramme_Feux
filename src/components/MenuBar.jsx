@@ -417,7 +417,20 @@ const MenuBar = ({
                 biCarrefourSeparator
                     ? { label: 'Rétablir en uni-carrefour', action: 'uniCarrefour', disabled: !hasPermission('canModifyDiagram') }
                     : { label: 'Intégrer un bi-Carrefour...', action: 'biCarrefour', disabled: !hasPermission('canModifyDiagram') },
-                { label: 'Verrouiller les matrices', action: 'lockMatrices', toggle: true, checked: layoutOptions.matricesLocked },
+                {
+                    label: 'Matrice',
+                    type: 'submenu',
+                    submenuId: 'matrice',
+                    submenu: [
+                        { label: 'Verrouiller les matrices', action: 'lockMatrices', toggle: true, checked: layoutOptions.matricesLocked, keepSubmenuOpen: true },
+                        {
+                            label: 'Copier la matrice depuis...',
+                            action: 'copyMatrixFromPf',
+                            disabled: !layoutOptions.hasMultiplePf || !hasPermission('canModifyDiagram'),
+                            title: !layoutOptions.hasMultiplePf ? 'Nécessite au moins deux plans de feux (une source à copier)' : 'Copier la matrice d\'interverts d\'un autre plan de feux dans le plan actif.'
+                        }
+                    ]
+                },
                 { type: 'separator' },
                 { label: 'Glisser...', action: 'slide', disabled: !hasPermission('canModifyDiagram') },
                 { label: 'Inserer...', action: 'insert', disabled: !hasPermission('canModifyDiagram') },

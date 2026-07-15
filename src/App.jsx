@@ -14,6 +14,7 @@ import ConflictList from './components/ConflictList';
 import DiagnosticPanel from './components/DiagnosticPanel';
 import ExportPfModal from './components/ExportPfModal';
 import ImportPfModal from './components/ImportPfModal';
+import CopyMatrixModal from './components/CopyMatrixModal';
 import { parseDiagfeux } from './utils/diagfeuxImporter';
 import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
@@ -159,6 +160,7 @@ function App() {
         dossierReadOnly,
         activePfReadOnly,
         applyMergedPf,
+        copyMatrixFromPF,
         actionColWidths,
         setActionColWidths,
         externalLinks,
@@ -637,6 +639,7 @@ function App() {
     const [importError, setImportError] = useState('');
     const [importHintDir, setImportHintDir] = useState('');
     const [showExportPfModal, setShowExportPfModal] = useState(false);
+    const [showCopyMatrixModal, setShowCopyMatrixModal] = useState(false);
     const [importPfData, setImportPfData] = useState(null); // { name, state } du projet à fusionner
     const diagfeuxInputRef = useRef(null);
     const projectPfInputRef = useRef(null);
@@ -1373,6 +1376,9 @@ function App() {
             case 'exportPfSubset':
                 setShowExportPfModal(true);
                 break;
+            case 'copyMatrixFromPf':
+                setShowCopyMatrixModal(true);
+                break;
             case 'browseImport':
                 setImportFile(null);
                 setImportError('');
@@ -2085,7 +2091,7 @@ function App() {
                     hasActiveProject={hasActiveProject}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingProperties, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, showFloatingDiagnostic, showCapacityReserve, matricesLocked, dossierReadOnly, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingProperties, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, showFloatingDiagnostic, showCapacityReserve, matricesLocked, dossierReadOnly, hasMultiplePf: pfTabs.length > 1, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -4857,6 +4863,22 @@ function App() {
                     pfTabs={importPfData.state.pfTabs}
                     onImport={handleImportProjectPf}
                     onClose={() => setImportPfData(null)}
+                />
+            )}
+            {showCopyMatrixModal && (
+                <CopyMatrixModal
+                    pfTabs={pfTabs}
+                    activePFId={activePFId}
+                    onCopy={(sourceId) => {
+                        setShowCopyMatrixModal(false);
+                        const srcName = pfTabs.find(p => p.id === sourceId)?.name || '';
+                        if (copyMatrixFromPF(sourceId)) {
+                            toast.success(`Matrice copiée depuis « ${srcName} »`);
+                        } else {
+                            showAlert({ title: 'Copie impossible', message: 'La matrice n\'a pas pu être copiée (tailles différentes ou plan en lecture seule).' });
+                        }
+                    }}
+                    onClose={() => setShowCopyMatrixModal(false)}
                 />
             )}
             <input
