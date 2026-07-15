@@ -2,6 +2,8 @@ import { useCallback } from 'react';
 import { safeShowOpenFilePicker, safeShowSaveFilePicker } from '../utils/filePicker';
 import { toast } from '../utils/toast';
 import { validateProject } from '../utils/projectValidator';
+import { selectPfSubset } from '../utils/pfHelpers';
+import { stampReadOnly } from '../utils/dossierLock';
 import { bringAllPopupsToFront } from './usePopupWindow';
 
 /**
@@ -628,11 +630,73 @@ const useFileOperations = ({
         showFloatingForm, showFloatingMatrix, showFloatingTraffic, showFloatingImage,
         showFloatingConditions, showFloatingVariables, showFloatingRemarks]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Export SÉLECTIF d'un sous-ensemble de plans de feux, dans un fichier à part.
+    // Contrairement à « Enregistrer », c'est une copie SORTANTE : on ne touche
+    // NI au cache localStorage, NI au nom/chemin du projet courant.
+    const handleExportPfSubset = useCallback(async (selectedIds, readOnly = false) => {
+        const subset = selectPfSubset(getFullState(), selectedIds);
+        if (!subset) {
+            alertFn({ title: 'Export impossible', message: 'Sélectionnez au moins un plan de feux à exporter.' });
+            return;
+        }
+        let projectData = {
+            ...subset,
+            diagramHeight,
+            floatingCrop,
+            floatingZoom,
+            dossierSections,
+            layoutOptions: {
+                showParameters: sidebarVisible,
+                showComments, showRemarks, showActionDescription,
+                showFloatingForm, showFloatingMatrix, showFloatingTraffic, showFloatingImage,
+                showFloatingConditions, showFloatingVariables, showFloatingRemarks
+            }
+        };
+        if (readOnly) projectData = stampReadOnly(projectData);
+        const jsonContent = JSON.stringify(projectData, null, 2);
+        const nb = subset.pfTabs.length;
+        const roSuffix = readOnly ? ' — lecture seule' : '';
+        const suggestedName = `${projectName || 'projet'} (extrait ${nb} PF${readOnly ? ' LS' : ''}).json`;
+
+        // Fallback sans File System Access API : téléchargement direct.
+        if (!window.showSaveFilePicker) {
+            const blob = new Blob([jsonContent], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = suggestedName; a.click();
+            URL.revokeObjectURL(url);
+            toast.success(`Extrait exporté (${nb} plan${nb > 1 ? 's' : ''} de feux)${roSuffix}`);
+            return;
+        }
+
+        try {
+            const options = {
+                suggestedName,
+                types: [{ description: 'Fichier Projet JSON', accept: { 'application/json': ['.json'] } }]
+            };
+            if (lastSaveDirectoryRef.current) options.startIn = lastSaveDirectoryRef.current;
+            const fileHandle = await safeShowSaveFilePicker(options);
+            const writable = await fileHandle.createWritable();
+            await writable.write(jsonContent);
+            await writable.close();
+            toast.success(`Extrait exporté : ${nb} plan${nb > 1 ? 's' : ''} de feux${roSuffix}`);
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                toast.error('Échec de l\'export : ' + e.message);
+            }
+        }
+    }, [getFullState, projectName, diagramHeight, floatingCrop, floatingZoom, dossierSections,
+        sidebarVisible, showComments, showRemarks, showActionDescription,
+        showFloatingForm, showFloatingMatrix, showFloatingTraffic, showFloatingImage,
+        showFloatingConditions, showFloatingVariables, showFloatingRemarks,
+        lastSaveDirectoryRef, alertFn]);
+
     return {
         handleOpenFileWithPicker,
         handleOpenFileFromRecentDir,
         handleSaveFileWithPicker,
-        handleSaveFileToRecentDir
+        handleSaveFileToRecentDir,
+        handleExportPfSubset
     };
 };
 

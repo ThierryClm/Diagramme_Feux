@@ -11,6 +11,7 @@ import {
     ensurePFIntegrity
 } from '../utils/pfHelpers';
 import { isExampleSession } from '../utils/exampleMode';
+import { isReadOnlyStamped } from '../utils/dossierLock';
 const MAX_HISTORY_SIZE = 50;
 
 // Safe localStorage helper to prevent QuotaExceededError crashes
@@ -165,6 +166,18 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     const [dependencyGap, setDependencyGap] = useState(20);
     const [biCarrefourSeparator, setBiCarrefourSeparator] = useState(null);
     const [matricesLocked, setMatricesLocked] = useState(false);
+    // Dossier en lecture seule (ouvert depuis un export « lecture seule »).
+    // Verrou de CONVENTION : bloque la persistance (sauvegarde + autosave) et,
+    // via l'UI, les saisies d'entrée. Non inviolable (cf. utils/dossierLock).
+    const [dossierReadOnly, setDossierReadOnly] = useState(false);
+    const dossierReadOnlyRef = useRef(false);
+    dossierReadOnlyRef.current = dossierReadOnly;
+    // Lecture seule PAR PF : vrai quand le PF actif porte readOnly (PF importés
+    // « _ext » verrouillés). Le .current est mis à jour après la déclaration de
+    // pfTabs/activePFId ; la réf existe ici pour être capturée par les mutateurs.
+    const activePfReadOnlyRef = useRef(false);
+    // Garde d'édition combiné : dossier entier OU PF actif verrouillé.
+    const isEditLocked = () => dossierReadOnlyRef.current || activePfReadOnlyRef.current;
     // Largeurs (px) ajustables des colonnes Description et Action_Micro du
     // tableau de micro-régulation. Reglage unique par projet, sauvegarde.
     // Bornes a la restauration : Desc 100-350, Micro 300-700, Abrv 38-75.
@@ -189,6 +202,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         } catch { return { ...DEFAULT_PROJECT_PROPERTIES }; }
     });
     const updateProjectProperty = useCallback((field, value) => {
+        if (isEditLocked()) return;
         setProjectProperties(prev => ({ ...prev, [field]: value }));
     }, []);
     // Registres globaux de l'application (partagés entre projets)
@@ -658,6 +672,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     };
 
     const updateGroupParams = (id, params) => {
+        if (isEditLocked()) return;
         setGroups(prev => prev.map(g => {
             if (g.id !== id) return g;
 
@@ -687,6 +702,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     };
 
     const setMatrixValue = (fromId, toId, value) => {
+        if (isEditLocked()) return;
         setConflictMatrix(prev => {
             const next = prev.map(row => [...row]);
             // Guard against out of bounds if resizing happened async
@@ -744,6 +760,8 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     const loadProject = (name) => {
         // Set flag to prevent auto-save during loading
         isLoadingProjectRef.current = true;
+        // Chargement depuis le cache = copie de travail de l'utilisateur : éditable.
+        setDossierReadOnly(false);
 
         try {
             const raw = localStorage.getItem(`traffic_project_${name}`);
@@ -1092,6 +1110,8 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     // Load full state (for duplication)
     const loadFullState = (state) => {
         try {
+            // Dossier « lecture seule » : détecté depuis le marqueur du fichier.
+            setDossierReadOnly(isReadOnlyStamped(state));
             // Mettre à jour le nom du projet (clé de sauvegarde / nom du fichier)
             // Utiliser state.projectName si fourni, sinon null
             const loadedProjectName = state.projectName || null;
@@ -1246,6 +1266,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
     // Reset to a new empty project (8 groups, 75s cycle)
     const resetToNewProject = () => {
+        setDossierReadOnly(false);
         // Reset project name and intersection name
         currentProjectNameRef.current = null;
         setProjectName(null);
@@ -1349,6 +1370,11 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
     const [activePFId, setActivePFIdRaw] = useState(1);
 
+    // Lecture seule du PF actif (PF importé « _ext » verrouillé). Met à jour la
+    // réf capturée par les mutateurs + expose la valeur à l'UI (cadenas, bandeau).
+    const activePfReadOnly = pfTabs.find(p => p.id === activePFId)?.readOnly === true;
+    activePfReadOnlyRef.current = activePfReadOnly;
+
     // Simulation mode state (not persisted - resets on page load)
     const [simulationEnabled, setSimulationEnabled] = useState(false);
     const [simulationSelectedActions, setSimulationSelectedActions] = useState([]);
@@ -1404,6 +1430,16 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     };
 
     const [trafficDatasets, setTrafficDatasets] = useState(() => createInitialTrafficDatasets(5));
+
+    // Applique le résultat de mergePfFromProject : ajoute les PF importés + les
+    // jeux de trafic rapatriés, SANS toucher aux groupes ni au PF actif courant.
+    const applyMergedPf = useCallback((mergedState) => {
+        if (!mergedState || !Array.isArray(mergedState.pfTabs)) return;
+        setPfTabs(mergedState.pfTabs);
+        if (mergedState.trafficDatasets) setTrafficDatasets(mergedState.trafficDatasets);
+        if (Array.isArray(mergedState.customTrafficDatasetNames)) setCustomTrafficDatasetNames(mergedState.customTrafficDatasetNames);
+        if (mergedState.pfTrafficDatasetMap) setPfTrafficDatasetMap(mergedState.pfTrafficDatasetMap);
+    }, []);
 
     // Get current actionData based on active PF
     const actionData = useMemo(() => {
@@ -1711,6 +1747,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
     // Duplicate current PF. Renvoie null si la limite MAX_PF est atteinte
     // (l'appelant affiche le message d'erreur).
     const duplicatePF = useCallback(() => {
+        if (dossierReadOnlyRef.current) return;
         if (pfTabs.length >= MAX_PF) return null;
         const nextId = Math.max(...pfTabs.map(pf => pf.id)) + 1;
         const newName = `PF${nextId}`;
@@ -1736,6 +1773,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
     // Delete a PF (cannot delete if only one remains)
     const deletePF = useCallback((pfId) => {
+        if (dossierReadOnlyRef.current) return;
         if (pfTabs.length <= 1) return false;
         setPfTabs(prev => prev.filter(pf => pf.id !== pfId));
         if (activePFId === pfId) {
@@ -1747,6 +1785,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
     // Rename a PF
     const renamePF = useCallback((pfId, newName) => {
+        if (dossierReadOnlyRef.current) return;
         setPfTabs(prev => prev.map(pf =>
             pf.id === pfId ? { ...pf, name: newName } : pf
         ));
@@ -1819,6 +1858,8 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         // Projet exemple : non persistable (filet de sécurité — l'entrée
         // de menu Sauvegarder est déjà grisée).
         if (isExampleSession()) return false;
+        // Dossier en lecture seule : non persistable (intégrité du dossier transmis).
+        if (dossierReadOnlyRef.current) return false;
 
         // Validate data before saving to prevent empty saves
         if (!groups || groups.length === 0) {
@@ -2230,6 +2271,10 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         // Skip if no project name
         if (!currentProjectNameRef.current) return;
 
+        // Dossier en lecture seule : ne jamais mettre en cache (le dossier
+        // transmis ne doit pas devenir une copie de travail éditable).
+        if (dossierReadOnlyRef.current) return;
+
         // Debounce: save after 2 seconds of inactivity
         if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current);
@@ -2265,6 +2310,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
     // Update traffic data for a specific group in the active dataset
     const updateTrafficData = useCallback((groupId, field, value) => {
+        if (isEditLocked()) return;
         setTrafficDatasets(prev => {
             const newDatasets = { ...prev };
             if (!newDatasets[activeTrafficDataset]) {
@@ -2470,6 +2516,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
     // Wrapped update functions that save to history (skip if dragging)
     const updateActionRowWithHistory = useCallback((rowId, field, value) => {
+        if (isEditLocked()) return;
         if (!isDragging.current) {
             saveToHistory();
         }
@@ -2480,6 +2527,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
     // Wrapped setCycleLength that saves to history
     const setCycleLengthWithHistory = useCallback((newCycle) => {
+        if (isEditLocked()) return;
         if (newCycle === cycleLength) return; // No change
         saveToHistory();
         setCycleLength(newCycle);
@@ -2487,6 +2535,7 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
 
     // Wrapped setGroupCount that saves to history
     const setGroupCountWithHistory = useCallback((count) => {
+        if (isEditLocked()) return;
         const newCount = Math.max(1, parseInt(count) || 1);
         if (newCount === groups.length) return; // No change
         saveToHistory();
@@ -2746,6 +2795,10 @@ export const useTrafficLight = ({ askConfirm, showAlert } = {}) => {
         setBiCarrefourSeparator,
         matricesLocked,
         setMatricesLocked,
+        dossierReadOnly,
+        setDossierReadOnly,
+        activePfReadOnly,
+        applyMergedPf,
         actionColWidths,
         setActionColWidths,
         externalLinks,

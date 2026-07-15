@@ -200,13 +200,13 @@ const MenuBar = ({
                     type: 'submenu',
                     submenuId: 'saveRecent',
                     submenu: recentSaveDirsSubmenu,
-                    disabled: !hasPermission('canSave') || !hasActiveProject || layoutOptions.isExampleProject,
-                    title: layoutOptions.isExampleProject ? 'Projet exemple : non enregistrable' : (!hasActiveProject ? 'Aucun projet ouvert' : '')
+                    disabled: !hasPermission('canSave') || !hasActiveProject || layoutOptions.isExampleProject || layoutOptions.dossierReadOnly,
+                    title: layoutOptions.dossierReadOnly ? 'Dossier en lecture seule : non enregistrable' : (layoutOptions.isExampleProject ? 'Projet exemple : non enregistrable' : (!hasActiveProject ? 'Aucun projet ouvert' : ''))
                 }] : [{
                     label: 'Sauvegarder',
                     action: 'save',
-                    disabled: !hasPermission('canSave') || !hasActiveProject || layoutOptions.isExampleProject,
-                    title: layoutOptions.isExampleProject ? 'Projet exemple : non enregistrable' : (!hasActiveProject ? 'Aucun projet ouvert' : '')
+                    disabled: !hasPermission('canSave') || !hasActiveProject || layoutOptions.isExampleProject || layoutOptions.dossierReadOnly,
+                    title: layoutOptions.dossierReadOnly ? 'Dossier en lecture seule : non enregistrable' : (layoutOptions.isExampleProject ? 'Projet exemple : non enregistrable' : (!hasActiveProject ? 'Aucun projet ouvert' : ''))
                 }]),
                 { type: 'separator' },
                 {
@@ -215,15 +215,21 @@ const MenuBar = ({
                     submenuId: 'importer',
                     submenu: [
                         {
-                            label: 'Projet sous Excel...',
-                            action: 'import',
-                            disabled: !hasPermission('canImportExcel') || !excelImportEnabled,
-                            title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : 'Importation sur mesure pour une collectivité.'
+                            label: 'Projet TraCflux externe...',
+                            action: 'importProjectPf',
+                            disabled: !hasActiveProject,
+                            title: !hasActiveProject ? 'Aucun projet ouvert' : 'Ajouter les plans de feux d\'un autre projet TraCflux (même carrefour) pour comparer. Ils sont renommés « _ext ».'
                         },
                         {
                             label: 'Projet DiagFeux (.dfe)...',
                             action: 'importDiagfeux',
                             title: 'Importer le plan de feux d\'un projet DiagFeux (CEREMA). Fichier .dfe (contenu XML ouvert). La géométrie n\'est pas reprise.'
+                        },
+                        {
+                            label: 'Projet Excel...',
+                            action: 'import',
+                            disabled: !hasPermission('canImportExcel') || !excelImportEnabled,
+                            title: !excelImportEnabled ? 'Fonctionnalité envisageable selon modèle — non opérationnelle dans cette version' : 'Importation sur mesure pour une collectivité.'
                         },
                         {
                             label: 'Fichier contrôleur...',
@@ -239,7 +245,12 @@ const MenuBar = ({
                     disabled: !hasActiveProject,
                     submenu: [
                         {
-                            label: 'Vers DiagFeux (.dfe)...',
+                            label: 'Projet TraCflux...',
+                            action: 'exportPfSubset',
+                            title: 'Exporter une copie du projet ne contenant que les plans de feux sélectionnés. Le projet courant n\'est pas modifié.'
+                        },
+                        {
+                            label: 'Projet DiagFeux (.dfe)...',
                             action: 'exportDiagfeux',
                             disabled: true,
                             title: 'À venir : export au format DiagFeux. Nécessite de reconstruire un modèle par phases (2 à 3 phases) depuis le modèle par groupes de TraCflux, plus général — chantier dédié, après validation de l\'import sur un fichier réel.'

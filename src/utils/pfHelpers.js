@@ -118,3 +118,182 @@ export const ensurePFIntegrity = (pfTabsArr, fallbackGroups, fallbackMatrix) => 
         };
     }).filter(Boolean);
 };
+
+/**
+ * Restreint un état de projet complet (issu de getFullState) à un sous-ensemble
+ * de plans de feux, pour l'export sélectif. Fonction PURE : ne modifie pas
+ * l'entrée, ne touche à rien d'autre (pas de cache, pas de projet courant).
+ *
+ * - pfTabs filtré aux ids sélectionnés ;
+ * - activePFId recalé sur le 1er PF conservé si l'actif n'est pas retenu, avec
+ *   le miroir top-level (cycleLength, conflictMatrix) réaligné sur ce PF ;
+ * - pfTrafficDatasetMap réduit aux PF conservés (nettoie au passage les clés
+ *   orphelines) ;
+ * - capacityCompareSelection filtré aux PF conservés (null s'il ne reste rien).
+ *
+ * Les données partagées (groups, trafficDatasets, propriétés, image…) sont
+ * conservées telles quelles. Renvoie null si la sélection est vide.
+ *
+ * @param {object} fullState état complet (getFullState)
+ * @param {Array<number>} selectedIds ids de PF à conserver
+ * @returns {object|null}
+ */
+export const selectPfSubset = (fullState, selectedIds) => {
+    if (!fullState || !Array.isArray(fullState.pfTabs)) return null;
+    const ids = new Set((selectedIds || []).map(Number));
+    const pfTabs = fullState.pfTabs.filter(p => ids.has(Number(p.id)));
+    if (pfTabs.length === 0) return null;
+
+    const activePFId = ids.has(Number(fullState.activePFId))
+        ? fullState.activePFId
+        : pfTabs[0].id;
+    const active = pfTabs.find(p => Number(p.id) === Number(activePFId));
+
+    const pfTrafficDatasetMap = {};
+    Object.entries(fullState.pfTrafficDatasetMap || {}).forEach(([k, v]) => {
+        if (ids.has(Number(k))) pfTrafficDatasetMap[k] = v;
+    });
+
+    let capacityCompareSelection = fullState.capacityCompareSelection;
+    if (Array.isArray(capacityCompareSelection)) {
+        capacityCompareSelection = capacityCompareSelection.filter(id => ids.has(Number(id)));
+        if (capacityCompareSelection.length === 0) capacityCompareSelection = null;
+    }
+
+    // Réaligner les groupes (offset, vert, DA…) sur le diagramme du PF actif
+    // retenu. INDISPENSABLE quand le PF actif d'origine est exclu : sinon les
+    // groupes top-level gardent la géométrie de l'ancien PF actif, l'état
+    // exporté est incohérent, et au rechargement la synchro écrase le diagramme
+    // du nouveau PF actif (verts faussés, « fermeture anticipée » décalée).
+    // Reproduit exactement la reconstitution du reverse-sync (useTrafficLight).
+    let groups = fullState.groups;
+    if (active && Array.isArray(active.diagram) && Array.isArray(groups)) {
+        const byId = new Map(active.diagram.map(d => [d.groupId, d]));
+        groups = groups.map(g => {
+            const d = byId.get(g.id);
+            if (!d) return g;
+            return {
+                ...g,
+                offset: (d.offset !== undefined && !isNaN(d.offset)) ? d.offset : g.offset,
+                da: d.da !== undefined ? d.da : g.da,
+                comment: d.comment !== undefined ? d.comment : g.comment,
+                commentColor: d.commentColor !== undefined ? d.commentColor : g.commentColor,
+                phaseFlag: d.phaseFlag !== undefined ? d.phaseFlag : g.phaseFlag,
+                durations: {
+                    ...g.durations,
+                    green: (d.greenDuration !== undefined && !isNaN(d.greenDuration)) ? d.greenDuration : g.durations?.green
+                }
+            };
+        });
+    }
+
+    return {
+        ...fullState,
+        groups,
+        pfTabs,
+        activePFId,
+        cycleLength: active?.cycleLength ?? fullState.cycleLength,
+        conflictMatrix: active?.conflictMatrix ?? fullState.conflictMatrix,
+        pfTrafficDatasetMap,
+        capacityCompareSelection
+    };
+};
+
+/** Jeux de données trafic standard (toujours présents, non « personnalisés »). */
+const STANDARD_TRAFFIC_DATASETS = ['HPM', 'HPS', 'HC', 'Estimation', 'Projection'];
+
+/**
+ * Fusionne les plans de feux d'un projet importé DANS le projet courant, pour
+ * comparaison. Fonction PURE (ne modifie pas les entrées).
+ *
+ * - Bloque si les GROUPES diffèrent (nombre ou numérotation) : un PF référence
+ *   les groupes du projet, la comparaison n'a de sens qu'entre deux versions
+ *   d'un même carrefour. -> renvoie { error }.
+ * - PF importés renommés « <nom>_ext » (collisions : _ext, _ext2…), avec de
+ *   nouveaux ids, ajoutés à la suite. Chacun garde sa matrice et son cycle.
+ * - Jeux de données trafic référencés : rapatriés s'ils manquent.
+ * - Respecte la limite MAX_PF (avertissement + troncature si dépassement).
+ * - opts.readOnly : marque les PF importés en lecture seule (par PF).
+ *
+ * @returns {{ state?: object, warnings?: string[], addedCount?: number, error?: string }}
+ */
+export const mergePfFromProject = (current, imported, opts = {}) => {
+    const warnings = [];
+    if (!current || !Array.isArray(current.pfTabs)) {
+        return { error: 'Projet courant invalide.' };
+    }
+    if (!imported || !Array.isArray(imported.pfTabs) || imported.pfTabs.length === 0) {
+        return { error: 'Le fichier importé ne contient aucun plan de feux.' };
+    }
+
+    // Compatibilité des groupes : mêmes ids (nombre + numérotation).
+    const curIds = (current.groups || []).map(g => g.id).slice().sort((a, b) => a - b);
+    const impIds = (imported.groups || []).map(g => g.id).slice().sort((a, b) => a - b);
+    const sameGroups = curIds.length === impIds.length && curIds.every((id, i) => id === impIds[i]);
+    if (!sameGroups) {
+        return {
+            error: `Groupes de feux incompatibles : ${curIds.length} dans le projet courant, ${impIds.length} dans le fichier importé. `
+                + 'L\'import de plans de feux n\'est possible qu\'entre deux versions d\'un même carrefour (mêmes groupes).'
+        };
+    }
+
+    // Limite MAX_PF.
+    const existing = current.pfTabs;
+    const room = MAX_PF - existing.length;
+    if (room <= 0) {
+        return { error: `Limite de ${MAX_PF} plans de feux déjà atteinte : supprimez-en avant d'importer.` };
+    }
+    let toImport = imported.pfTabs;
+    if (toImport.length > room) {
+        warnings.push(`${toImport.length} plans de feux dans le fichier, mais seuls ${room} peuvent être ajoutés (limite ${MAX_PF}) : les ${toImport.length - room} derniers sont ignorés.`);
+        toImport = toImport.slice(0, room);
+    }
+
+    // Nouveaux ids + noms « _ext » (gestion des collisions).
+    let nextId = existing.reduce((m, p) => Math.max(m, p.id), 0) + 1;
+    const usedNames = new Set(existing.map(p => p.name));
+    const readOnly = !!opts.readOnly;
+
+    const newPfs = toImport.map(pf => {
+        const base = `${pf.name || 'PF'}_ext`;
+        let name = base;
+        let n = 2;
+        while (usedNames.has(name)) { name = `${base}${n++}`; }
+        usedNames.add(name);
+        const newId = nextId++;
+        const clone = { ...pf, id: newId, name };
+        if (readOnly) clone.readOnly = true; else delete clone.readOnly;
+        return { source: pf, clone };
+    });
+
+    // Rapatriement des jeux de données trafic référencés par les PF importés.
+    const trafficDatasets = { ...(current.trafficDatasets || {}) };
+    const customNames = new Set(current.customTrafficDatasetNames || []);
+    const pfTrafficDatasetMap = { ...(current.pfTrafficDatasetMap || {}) };
+    newPfs.forEach(({ source, clone }) => {
+        const dsName = imported.pfTrafficDatasetMap && imported.pfTrafficDatasetMap[source.id];
+        if (!dsName) return;
+        if (!(dsName in trafficDatasets)) {
+            if (imported.trafficDatasets && dsName in imported.trafficDatasets) {
+                trafficDatasets[dsName] = imported.trafficDatasets[dsName];
+                if (!STANDARD_TRAFFIC_DATASETS.includes(dsName)) customNames.add(dsName);
+            } else {
+                return; // pas de données pour ce jeu : on n'associe rien
+            }
+        }
+        pfTrafficDatasetMap[clone.id] = dsName;
+    });
+
+    const pfTabs = [...existing, ...newPfs.map(x => x.clone)];
+
+    const state = {
+        ...current,
+        pfTabs,
+        trafficDatasets,
+        customTrafficDatasetNames: Array.from(customNames),
+        pfTrafficDatasetMap
+        // activePFId, groups, cycleLength, conflictMatrix : inchangés (on reste
+        // sur le projet courant ; l'utilisateur navigue vers les PF _ext).
+    };
+    return { state, warnings, addedCount: newPfs.length };
+};

@@ -1,0 +1,99 @@
+/* Modales Export / Import de plans de feux.
+   Couleurs AGNOSTIQUES au thème : on hérite de la couleur de texte de la modale
+   (theme-aware via Modal.css) et on module par l'opacité ; fonds neutres en gris
+   translucide qui fonctionnent sur clair comme sur sombre. Aucun code couleur
+   en dur -> rendu correct dans les 7 thèmes. */
+
+.export-pf-modal {
+    min-width: 340px;
+    max-width: 440px;
+}
+
+.export-pf-hint {
+    margin: 0 0 14px 0;
+    font-size: 0.85em;
+    opacity: 0.8;
+    line-height: 1.5;
+}
+
+.export-pf-hint code,
+.export-pf-modal code {
+    background: rgba(128, 128, 128, 0.18);
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: 0.92em;
+}
+
+.export-pf-all {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    font-size: 0.9em;
+    padding: 6px 4px;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.35);
+    cursor: pointer;
+}
+
+.export-pf-list {
+    list-style: none;
+    margin: 8px 0 16px 0;
+    padding: 0;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.export-pf-list li label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 4px;
+    cursor: pointer;
+    font-size: 0.92em;
+}
+
+.export-pf-list li label:hover {
+    background: rgba(128, 128, 128, 0.14);
+    border-radius: 4px;
+}
+
+.export-pf-active {
+    margin-left: 6px;
+    font-size: 0.72em;
+    font-weight: bold;
+    color: #14302e;
+    background: #4ecdc4;
+    padding: 1px 6px;
+    border-radius: 8px;
+}
+
+/* Encart lecture seule : fond ambré discret, texte hérité (lisible partout) */
+.export-pf-readonly {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px;
+    margin-top: 4px;
+    background: rgba(200, 150, 0, 0.12);
+    border: 1px solid rgba(200, 150, 0, 0.45);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.export-pf-readonly input {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.export-pf-readonly span {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 0.9em;
+}
+
+.export-pf-readonly small {
+    opacity: 0.75;
+    font-size: 0.82em;
+    line-height: 1.4;
+}

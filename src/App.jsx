@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react';
 import { useTrafficLight } from './hooks/useTrafficLight';
-import { MAX_PF, MAX_GROUPS } from './utils/pfHelpers';
+import { MAX_PF, MAX_GROUPS, mergePfFromProject } from './utils/pfHelpers';
 import { useAuth, PERMISSIONS } from './hooks/useAuth';
 import TimelineDiagram from './components/TimelineDiagram';
 import ToastContainer from './components/ToastContainer';
@@ -12,6 +12,8 @@ import ActionTable from './components/ActionTable';
 import CapacityComparison from './components/CapacityComparison';
 import ConflictList from './components/ConflictList';
 import DiagnosticPanel from './components/DiagnosticPanel';
+import ExportPfModal from './components/ExportPfModal';
+import ImportPfModal from './components/ImportPfModal';
 import { parseDiagfeux } from './utils/diagfeuxImporter';
 import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
@@ -154,6 +156,9 @@ function App() {
         setBiCarrefourSeparator,
         matricesLocked,
         setMatricesLocked,
+        dossierReadOnly,
+        activePfReadOnly,
+        applyMergedPf,
         actionColWidths,
         setActionColWidths,
         externalLinks,
@@ -631,7 +636,50 @@ function App() {
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
     const [importHintDir, setImportHintDir] = useState('');
+    const [showExportPfModal, setShowExportPfModal] = useState(false);
+    const [importPfData, setImportPfData] = useState(null); // { name, state } du projet à fusionner
     const diagfeuxInputRef = useRef(null);
+    const projectPfInputRef = useRef(null);
+
+    // Import des plans de feux d'un autre projet : lecture + validation, puis
+    // ouverture de la modale d'options (lecture seule).
+    const handleProjectPfFileSelect = async (e) => {
+        const file = e.target.files?.[0];
+        if (e.target) e.target.value = '';
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            if (!parsed || !Array.isArray(parsed.pfTabs) || parsed.pfTabs.length === 0) {
+                showAlert({ title: 'Import impossible', message: 'Ce fichier ne contient pas de plans de feux exploitables.' });
+                return;
+            }
+            setImportPfData({ name: file.name.replace(/\.json$/i, ''), state: parsed });
+        } catch (err) {
+            showAlert({ title: 'Import impossible', message: 'Fichier illisible : ' + (err?.message || err) });
+        }
+    };
+
+    // Applique la fusion une fois les options confirmées dans la modale.
+    const handleImportProjectPf = (selectedIds, readOnly) => {
+        if (!importPfData) return;
+        const ids = new Set(selectedIds);
+        const filteredImported = {
+            ...importPfData.state,
+            pfTabs: importPfData.state.pfTabs.filter(p => ids.has(p.id))
+        };
+        const { state, warnings, error, addedCount } = mergePfFromProject(getFullState(), filteredImported, { readOnly });
+        setImportPfData(null);
+        if (error) {
+            showAlert({ title: 'Import des plans de feux impossible', message: error });
+            return;
+        }
+        applyMergedPf(state);
+        toast.success(`${addedCount} plan${addedCount > 1 ? 's' : ''} de feux importé${addedCount > 1 ? 's' : ''}${readOnly ? ' (lecture seule)' : ''}`);
+        if (warnings && warnings.length) {
+            showAlert({ title: 'Import — points à vérifier', message: warnings.map(w => '• ' + w).join('\n') });
+        }
+    };
 
     // Import d'un projet DiagFeux (.xml) : parse -> loadFullState + avertissements.
     const handleDiagfeuxFileSelect = async (e) => {
@@ -747,7 +795,8 @@ function App() {
         handleOpenFileWithPicker,
         handleOpenFileFromRecentDir,
         handleSaveFileWithPicker,
-        handleSaveFileToRecentDir
+        handleSaveFileToRecentDir,
+        handleExportPfSubset
     } = useFileOperations({
         projectName, diagramHeight, floatingCrop, floatingZoom,
         setSelectedProject, setOpenModal, setCurrentProjectPath, setProjectModified,
@@ -1317,6 +1366,12 @@ function App() {
                 break;
             case 'importDiagfeux':
                 diagfeuxInputRef.current?.click();
+                break;
+            case 'importProjectPf':
+                projectPfInputRef.current?.click();
+                break;
+            case 'exportPfSubset':
+                setShowExportPfModal(true);
                 break;
             case 'browseImport':
                 setImportFile(null);
@@ -2015,7 +2070,7 @@ function App() {
     }
 
     return (
-        <div className="app-container">
+        <div className={`app-container${(dossierReadOnly || activePfReadOnly) ? ' dossier-readonly' : ''}`}>
             <MenuBar
                     onAction={handleMenuAction}
                     arrowStyle={diagramArrowStyle}
@@ -2030,7 +2085,7 @@ function App() {
                     hasActiveProject={hasActiveProject}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingProperties, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, showFloatingDiagnostic, showCapacityReserve, matricesLocked, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingProperties, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, showFloatingDiagnostic, showCapacityReserve, matricesLocked, dossierReadOnly, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -2061,6 +2116,11 @@ function App() {
             {isExample && (
                 <div className="example-banner" role="status">
                     🧪 Projet exemple — librement modifiable, mais <strong>non enregistrable</strong> (sauvegarde et stockage désactivés). Faites <strong>Fichier → Nouveau projet</strong> pour démarrer le vôtre.
+                </div>
+            )}
+            {dossierReadOnly && (
+                <div className="readonly-banner" role="status">
+                    🔒 Dossier en <strong>lecture seule</strong> — les données d'entrée sont verrouillées et la sauvegarde est désactivée, pour préserver l'intégrité du dossier transmis. Consultation, simulation et fenêtres détachées restent disponibles.
                 </div>
             )}
             <header className="app-header" onMouseEnter={() => { helpZoneRef.current = 'interface'; }}>
@@ -2525,9 +2585,14 @@ function App() {
                                         renamePF(pf.id, newName.trim());
                                     }
                                 }}
-                                data-pf-tooltip="Glissez pour réordonner, double-cliquez pour renommer"
+                                data-pf-tooltip={pf.readOnly
+                                    ? '🔒 Importé — lecture seule (référence de comparaison)'
+                                    : 'Glissez pour réordonner, double-cliquez pour renommer'}
                             >
-                                <span className="pf-tab-name">{pf.name}</span>
+                                <span className="pf-tab-name">
+                                    {pf.readOnly && <span className="pf-tab-lock">🔒</span>}
+                                    {pf.name}
+                                </span>
                             </div>
                         ))}
                         <div
@@ -2578,6 +2643,7 @@ function App() {
                             }}
                         >
                             <TimelineDiagram
+                                readOnly={dossierReadOnly || activePfReadOnly}
                                 groups={groups}
                                 globalTime={globalTime}
                                 getGroupState={getGroupState}
@@ -4777,6 +4843,30 @@ function App() {
                     </div>
                 </div>
             )}
+            {showExportPfModal && (
+                <ExportPfModal
+                    pfTabs={pfTabs}
+                    activePFId={activePFId}
+                    onExport={(ids, readOnly) => { setShowExportPfModal(false); handleExportPfSubset(ids, readOnly); }}
+                    onClose={() => setShowExportPfModal(false)}
+                />
+            )}
+            {importPfData && (
+                <ImportPfModal
+                    name={importPfData.name}
+                    pfTabs={importPfData.state.pfTabs}
+                    onImport={handleImportProjectPf}
+                    onClose={() => setImportPfData(null)}
+                />
+            )}
+            <input
+                ref={projectPfInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleProjectPfFileSelect}
+                style={{ display: 'none' }}
+            />
+
             {/* Import DiagFeux : input caché déclenché par le menu Importer.
                 Les projets DiagFeux portent l'extension .dfe (contenu XML) ;
                 on accepte aussi .xml pour les fichiers déjà renommés/exportés. */}

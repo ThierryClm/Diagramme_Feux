@@ -1053,6 +1053,12 @@ body.amber-mode .help-back-to-top {
     white-space: nowrap;
 }
 
+.pf-tab-lock {
+    font-size: 0.85em;
+    margin-right: 3px;
+    vertical-align: baseline;
+}
+
 /* Spacer to push cycle input to the right */
 .pf-tabs-spacer {
     flex-grow: 1;

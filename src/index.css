@@ -3091,6 +3091,39 @@ body.blue-night-mode .validate-btn.invalidated {
     text-align: center;
 }
 .example-banner strong { color: #f0e3a8; }
+
+.readonly-banner {
+    background: #1e2a2d;
+    border-bottom: 1px solid #2f5d6b;
+    color: #8ac9d8;
+    font-size: 0.85em;
+    line-height: 1.4;
+    padding: 7px 16px;
+    text-align: center;
+}
+.readonly-banner strong { color: #a8e6f0; }
+
+/* Dossier en lecture seule : verrouillage visuel des saisies d'entrée.
+   Les mutations sont déjà bloquées à la source (useTrafficLight) ; ce CSS
+   donne le retour visuel « verrouillé » et bloque l'interaction souris.
+   On préserve les curseurs de zoom (input[type=range]) — la consultation
+   et la simulation restent permises. */
+.dossier-readonly .group-table-container input,
+.dossier-readonly .group-table-container select,
+.dossier-readonly .traffic-table-container input,
+.dossier-readonly .traffic-table-container select,
+.dossier-readonly .properties-panel input,
+.dossier-readonly .properties-panel select,
+.dossier-readonly .properties-panel textarea,
+.dossier-readonly .matrix-container-inline input,
+.dossier-readonly .action-table-container input,
+.dossier-readonly .action-table-container select,
+.dossier-readonly .action-table-container textarea,
+.dossier-readonly .app-header input:not([type=range]) {
+    pointer-events: none;
+    opacity: 0.55;
+    cursor: not-allowed;
+}
 body.high-contrast-mode .example-banner,
 body.amber-mode .example-banner {
     background: #1a1f3a;
