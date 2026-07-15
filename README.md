@@ -36,7 +36,7 @@ L'**import des formats existants** procède du même principe : un plan de feux 
 
 ### Un modèle qui combine phases et groupes de feux
 
-Les outils historiques de conception de plans de feux reposent sur un modèle **strictement par phases** : les feux d'une même phase s'ouvrent et se ferment ensemble. C'est simple et lisible pour l'usager, mais cela oblige le projeteur à plier la réalité du carrefour dans des phases.
+Les outils historiques de conception de plans de feux reposent généralement sur une **organisation par phases** : les feux d'une même phase s'ouvrent et se ferment ensemble. C'est simple et lisible pour l'usager, mais cela contraint le concepteur sur l'enchainement des groupes de feux.
 
 TraCflux repose sur un **modèle qui combine gestion par phases et gestion par groupes de feux**. Le phasage reste disponible — pour raisonner comme pour agir (escamotage de phase, phasage bulle) — mais **chaque groupe de feux demeure indépendant** : il n'est pas verrouillé dans une phase, et garde sa propre fenêtre de vert.
 
@@ -46,7 +46,7 @@ C'est cette combinaison qui permet d'exprimer directement les **chevauchements p
 
 > ⚠️ **Fonctionnalité en cours de finalisation.** L'importateur est construit à partir du schéma XML officiel et de la documentation de DiagFeux ; sa **validation sur des fichiers `.dfe` réels est en cours**. Si vous disposez d'un projet DiagFeux (même anonymisé) que vous pouvez partager, [ouvrez une issue](https://github.com/ThierryClm/Diagramme_Feux/issues) — cela accélérera directement la mise au point.
 
-**DiagFeux**, le logiciel de conception de diagrammes de feux du CERTU (aujourd'hui Cerema), **n'est plus maintenu**. TraCflux **importe ses projets (`.dfe`)** — groupes, décalages, verts, matrice d'interverts, propriétés — en convertissant le phasage vers le modèle à groupes indépendants.
+**DiagFeux**, le logiciel de conception de diagrammes de feux du CERTU (aujourd'hui Cerema), **n'est plus maintenu**. TraCflux permet d'importer ses projets (`.dfe`) — groupes, décalages, verts, matrice d'interverts, propriétés.
 
 Les bureaux d'études et collectivités disposant d'anciennes études DiagFeux peuvent ainsi **les reprendre plutôt que de les ressaisir** : **Fichier → Importer → Projet DiagFeux (.dfe)**.
 
@@ -136,7 +136,10 @@ Ces lanceurs sont spécifiques à Windows. Sur macOS et Linux, utiliser directem
 
 ### Dépannage
 
-Après plusieurs `npm run preview` consécutifs dans une même session de développement, des processus `node.exe` peuvent s'accumuler en arrière-plan, et les fenêtres détachées peuvent perdre leur thème (cache navigateur désynchronisé avec le service worker du build le plus récent).
+Après plusieurs `npm run preview` consécutifs dans une même session de développement, deux désagréments peuvent apparaître :
+
+- des processus `node.exe` s'accumulent en arrière-plan ;
+- le service worker sert encore un build précédent : le bandeau **« Nouvelle version disponible »** s'affiche à chaque rebuild, ou les fenêtres détachées gardent l'ancien cache (thème ou contenu figé).
 
 **Solution** :
 1. `npm run clean` (supprime `dist/` et arrête tous les `node.exe`)
@@ -144,7 +147,7 @@ Après plusieurs `npm run preview` consécutifs dans une même session de dével
 3. Optionnel : `edge://settings/cookies/detail?site=localhost%3A4173` → **Supprimer** (vide le service worker et le cache pour ce site uniquement)
 4. Relancer normalement (`npm run preview` ou via le lanceur VBS)
 
-Ce symptôme ne concerne **que le workflow développeur**. Les utilisateurs finaux (PWA hébergée ou installation depuis une release) ne sont pas concernés.
+Ces symptômes ne concernent **que le workflow développeur** (rebuilds successifs). Les utilisateurs finaux (PWA hébergée ou installation depuis une release) ne sont pas concernés : pour eux, le bandeau « Nouvelle version disponible » est le comportement **normal** de mise à jour (il n'apparaît qu'après un vrai déploiement).
 
 ## Exemple
 
