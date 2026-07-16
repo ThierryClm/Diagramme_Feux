@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { setSwUpdatePending, setSwRegisteredUrl } from '../utils/swStatus';
 import './ReloadPrompt.css';
 
 /**
@@ -19,6 +20,7 @@ const ReloadPrompt = () => {
         updateServiceWorker
     } = useRegisterSW({
         onRegisteredSW(swUrl, registration) {
+            setSwRegisteredUrl(swUrl);
             // Vérifie périodiquement l'existence d'une nouvelle version
             // (toutes les heures) sans dépendre d'un rechargement manuel.
             if (registration) {
@@ -26,6 +28,10 @@ const ReloadPrompt = () => {
             }
         }
     });
+
+    // Publie l'état pour le rapport de diagnostic (cf. swStatus.js) : le hook
+    // vit ici, mais le rapport doit savoir qu'une version attend d'être appliquée.
+    useEffect(() => { setSwUpdatePending(needRefresh); }, [needRefresh]);
 
     if (!needRefresh) return null;
 

@@ -6,6 +6,31 @@
 import { APP_VERSION, APP_NAME } from '../version';
 import { getInterceptedEntries } from './errorInterceptor';
 import { dataUrlBytes } from './imageCompressor';
+import { getSwStatus } from './swStatus';
+
+/**
+ * Horodatage du build courant, injecté par vite.config.js. Absent en test et
+ * dans tout contexte non bundlé — d'où le garde typeof.
+ */
+const buildDate = () => {
+    try {
+        if (typeof __BUILD_DATE__ === 'undefined') return null;
+        return new Date(__BUILD_DATE__).toLocaleString('fr-FR');
+    } catch {
+        return null;
+    }
+};
+
+/** Origine courante — le stockage local y est cloisonné (cf. section Stockage). */
+const currentOrigin = () => {
+    try {
+        return window.location.origin || null;
+    } catch {
+        return null;
+    }
+};
+
+const yesNo = (v) => (v ? 'oui' : 'non');
 
 // Petits formatages locaux au rapport — gardés ici pour rester lisibles dans
 // le texte plain (pas de "1,2 Mo" mais des Ko entiers, cohérent avec la ligne
@@ -121,6 +146,9 @@ export const buildDiagnosticReport = (ctx) => {
         conflictMatrix,
         intersectionImage,
         imageNaturalDims,
+        dossierReadOnly = false,
+        activePfReadOnly = false,
+        matricesLocked = false,
         includeProject = false
     } = ctx;
 
@@ -154,7 +182,27 @@ export const buildDiagnosticReport = (ctx) => {
     lines.push('');
     lines.push('## Application');
     lines.push(`  Version          : ${APP_VERSION}`);
+    lines.push(`  Build            : ${buildDate() || 'indisponible (mode développement)'}`);
     lines.push(`  Thème actif      : ${detectTheme()}`);
+    lines.push('');
+    const sw = getSwStatus();
+    lines.push('## Service worker (PWA)');
+    lines.push(`  Support navigateur     : ${yesNo(sw.supported)}`);
+    lines.push(`  Page contrôlée par SW  : ${sw.controlled ? `oui (${sw.state || 'état inconnu'})` : 'non (Ctrl+Shift+R, dev, premier chargement, ou SW désactivé)'}`);
+    lines.push(`  Mise à jour en attente : ${yesNo(sw.updatePending)}`);
+    if (sw.scriptUrl) lines.push(`  Script                 : ${sw.scriptUrl}`);
+    // Les deux drapeaux se lisent ensemble : « mise à jour en attente » ne
+    // signifie « code périmé » QUE si la page est contrôlée. Un rechargement
+    // forcé contourne le SW (controller = null) : le code affiché vient alors
+    // du réseau, et l'avertissement inverse serait un contresens.
+    if (sw.updatePending && sw.controlled) {
+        lines.push('  ⚠ Le code qui tourne peut être périmé : une nouvelle version est en');
+        lines.push('    cache mais pas encore appliquée (bouton « Recharger »).');
+    } else if (sw.updatePending && !sw.controlled) {
+        lines.push('  → Page chargée depuis le réseau, SW contourné : le code affiché est à');
+        lines.push('    jour. Une nouvelle version attend de prendre la main — une fenêtre');
+        lines.push('    détachée restée ouverte peut retenir l\'ancienne.');
+    }
     lines.push('');
     lines.push('## Environnement');
     lines.push(`  Navigateur       : ${navigator.userAgent}`);
@@ -196,15 +244,31 @@ export const buildDiagnosticReport = (ctx) => {
     const projectKb = formatKb(projectBytes);
     lines.push(`  Taille JSON      : ${projectKb || 'indisponible'} (projet sérialisé, image comprise)`);
     lines.push('');
+    const readOnlyPfCount = (pfTabs || []).filter(pf => pf.readOnly).length;
+    lines.push('## Verrous');
+    lines.push(`  Dossier en lecture seule  : ${yesNo(dossierReadOnly)}`);
+    lines.push(`  PF actif en lecture seule : ${yesNo(activePfReadOnly)}`);
+    lines.push(`  Matrices verrouillées     : ${yesNo(matricesLocked)}`);
+    lines.push(`  PF verrouillés            : ${readOnlyPfCount} / ${(pfTabs || []).length}`);
+    if (dossierReadOnly || activePfReadOnly) {
+        lines.push('  ⚠ Édition bloquée par un verrou — une modification refusée est');
+        lines.push('    ici un fonctionnement attendu, pas un bug.');
+    }
+    lines.push('');
     lines.push('## Détail des plans de feux');
     (pfTabs || []).forEach(pf => {
         const nbGreens = Array.isArray(pf.diagram) ? pf.diagram.filter(d => d.greenDuration > 0).length : 0;
         const nbActions = Array.isArray(pf.data) ? pf.data.filter(a => a && a.action && a.action.trim() !== '').length : 0;
-        lines.push(`  • ${pf.name} (id=${pf.id}) — verts configurés: ${nbGreens}, actions: ${nbActions}${pf.color ? `, validé (${pf.color})` : ''}`);
+        const flags = [];
+        if (pf.readOnly) flags.push('lecture seule');
+        if (pf.color) flags.push(`validé (${pf.color})`);
+        lines.push(`  • ${pf.name} (id=${pf.id}) — verts configurés: ${nbGreens}, actions: ${nbActions}${flags.length ? `, ${flags.join(', ')}` : ''}`);
     });
     lines.push('');
     lines.push('## Stockage local');
     const lsKb = estimateLocalStorageUsage();
+    lines.push(`  Origine          : ${currentOrigin() || 'indisponible'}`);
+    lines.push(`  (le stockage est cloisonné par origine : un autre port = un autre cache)`);
     lines.push(`  Taille utilisée  : ${lsKb !== null ? `${lsKb} Ko` : 'indisponible'}`);
     lines.push(`  Quota estimé     : ~5 120 Ko (5 Mo typique)`);
     if (lsKb !== null && lsKb > 4000) {
@@ -268,6 +332,9 @@ export const buildDiagnosticJSON = (ctx) => {
         conflictMatrix,
         intersectionImage,
         imageNaturalDims,
+        dossierReadOnly = false,
+        activePfReadOnly = false,
+        matricesLocked = false,
         includeProject = false
     } = ctx;
 
@@ -298,8 +365,10 @@ export const buildDiagnosticJSON = (ctx) => {
         app: {
             name: APP_NAME,
             version: APP_VERSION,
+            buildDate: (typeof __BUILD_DATE__ === 'undefined') ? null : __BUILD_DATE__,
             theme: detectTheme()
         },
+        serviceWorker: getSwStatus(),
         environment: {
             userAgent: navigator.userAgent,
             platform: navigator.platform || null,
@@ -334,14 +403,22 @@ export const buildDiagnosticJSON = (ctx) => {
             imageHeight: (imageNaturalDims && imageNaturalDims.height > 1) ? imageNaturalDims.height : null,
             projectBytes: estimateProjectBytes(ctx)
         },
+        locks: {
+            dossierReadOnly: !!dossierReadOnly,
+            activePfReadOnly: !!activePfReadOnly,
+            matricesLocked: !!matricesLocked,
+            readOnlyPfCount: (pfTabs || []).filter(pf => pf.readOnly).length
+        },
         pfDetails: (pfTabs || []).map(pf => ({
             id: pf.id,
             name: pf.name,
             greensConfigured: Array.isArray(pf.diagram) ? pf.diagram.filter(d => d.greenDuration > 0).length : 0,
             actionsFilled: Array.isArray(pf.data) ? pf.data.filter(a => a && a.action && a.action.trim() !== '').length : 0,
+            readOnly: !!pf.readOnly,
             validated: pf.color || null
         })),
         storage: {
+            origin: currentOrigin(),
             usageKb: lsKb,
             quotaKbEstimate: 5120,
             quotaWarning: lsKb !== null && lsKb > 4000

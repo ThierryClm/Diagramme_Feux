@@ -3196,6 +3196,9 @@ function App() {
                         conflictMatrix,
                         intersectionImage,
                         imageNaturalDims,
+                        dossierReadOnly,
+                        activePfReadOnly,
+                        matricesLocked,
                         includeProject: diagnosticIncludeProject
                     });
                     const journalEntries = getInterceptedEntries();
@@ -3315,6 +3318,9 @@ function App() {
                                             conflictMatrix,
                                             intersectionImage,
                                             imageNaturalDims,
+                                            dossierReadOnly,
+                                            activePfReadOnly,
+                                            matricesLocked,
                                             includeProject: diagnosticIncludeProject
                                         });
                                         downloadDiagnosticJSON(obj, 'diagnostic');

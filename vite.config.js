@@ -46,6 +46,12 @@ export default defineConfig({
     })
   ],
   base: './',
+  define: {
+    // Horodatage du build, affiché par le rapport de diagnostic : c'est le seul
+    // moyen fiable de repérer un bundle périmé servi par le service worker.
+    // APP_VERSION ne bouge qu'aux releases et ne discrimine donc pas.
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString())
+  },
   server: {
     port: 3000
   },

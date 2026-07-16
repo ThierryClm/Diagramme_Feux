@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
     buildErrorJournal,
     buildDiagnosticReport,
     buildDiagnosticJSON
 } from './diagnostics';
 import { clearInterceptedEntries, installErrorInterceptor } from './errorInterceptor';
+import { setSwUpdatePending, setSwRegisteredUrl, resetSwStatus } from './swStatus';
 import { APP_NAME, APP_VERSION } from '../version';
 
 // Ensure a deterministic starting point for each test: no intercepted entries,
@@ -15,6 +16,9 @@ beforeEach(() => {
     clearInterceptedEntries();
     localStorage.clear();
     document.body.className = '';
+    // Le registre SW est un module singleton : sans reset, un test qui pose une
+    // mise à jour en attente contaminerait les suivants.
+    resetSwStatus();
 });
 
 // ---------------- buildErrorJournal ----------------
@@ -79,9 +83,11 @@ describe('buildDiagnosticReport — structure', () => {
     it('inclut toutes les sections attendues', () => {
         const out = buildDiagnosticReport(baseCtx());
         expect(out).toContain('## Application');
+        expect(out).toContain('## Service worker (PWA)');
         expect(out).toContain('## Environnement');
         expect(out).toContain('## Préférences');
         expect(out).toContain('## Projet en cours');
+        expect(out).toContain('## Verrous');
         expect(out).toContain('## Détail des plans de feux');
         expect(out).toContain('## Stockage local');
         expect(out).toContain('## Journal d\'erreurs récent');
@@ -327,5 +333,134 @@ describe('buildDiagnosticJSON — préférences', () => {
         // toastSuccess default = true
         expect(j.preferences.toastSuccess).toBe(true);
         expect(j.preferences.toastError).toBe(true);
+    });
+});
+
+// ---------------- Verrous ----------------
+// Chaque cas ci-dessous correspond à un incident vécu : un rapport muet sur les
+// verrous laissait croire à un bug alors que l'édition était simplement bloquée.
+
+describe('rapport — verrous', () => {
+    it('signale un dossier en lecture seule, texte et JSON', () => {
+        const ctx = { ...baseCtx(), dossierReadOnly: true };
+        const out = buildDiagnosticReport(ctx);
+        expect(out).toMatch(/Dossier en lecture seule\s+:\s+oui/);
+        expect(out).toMatch(/Édition bloquée par un verrou/);
+        expect(buildDiagnosticJSON(ctx).locks.dossierReadOnly).toBe(true);
+    });
+
+    it('verrous à « non » par défaut, sans avertissement', () => {
+        const out = buildDiagnosticReport(baseCtx());
+        expect(out).toMatch(/Dossier en lecture seule\s+:\s+non/);
+        expect(out).toMatch(/Matrices verrouillées\s+:\s+non/);
+        expect(out).not.toMatch(/Édition bloquée par un verrou/);
+    });
+
+    it('compte les PF verrouillés et les marque dans le détail', () => {
+        const ctx = baseCtx();
+        ctx.pfTabs = [
+            { id: 1, name: 'PF Jour' },
+            { id: 2, name: 'Ref_ext', readOnly: true }
+        ];
+        const out = buildDiagnosticReport(ctx);
+        expect(out).toMatch(/PF verrouillés\s+:\s+1 \/ 2/);
+        expect(out).toMatch(/Ref_ext.*lecture seule/);
+        expect(out).not.toMatch(/PF Jour.*lecture seule/);
+        const j = buildDiagnosticJSON(ctx);
+        expect(j.locks.readOnlyPfCount).toBe(1);
+        expect(j.pfDetails[0].readOnly).toBe(false);
+        expect(j.pfDetails[1].readOnly).toBe(true);
+    });
+
+    it('remonte le verrou des matrices et celui du PF actif', () => {
+        const ctx = { ...baseCtx(), matricesLocked: true, activePfReadOnly: true };
+        const out = buildDiagnosticReport(ctx);
+        expect(out).toMatch(/Matrices verrouillées\s+:\s+oui/);
+        expect(out).toMatch(/PF actif en lecture seule\s+:\s+oui/);
+        const j = buildDiagnosticJSON(ctx);
+        expect(j.locks.matricesLocked).toBe(true);
+        expect(j.locks.activePfReadOnly).toBe(true);
+    });
+
+    it('conserve la mention « validé » à côté du verrou', () => {
+        const ctx = baseCtx();
+        ctx.pfTabs = [{ id: 1, name: 'Ref_ext', readOnly: true, color: 'green' }];
+        const out = buildDiagnosticReport(ctx);
+        expect(out).toMatch(/Ref_ext.*lecture seule, validé \(green\)/);
+    });
+});
+
+// ---------------- Origine du stockage ----------------
+// L'affaire des « 6 projets au lieu de 15 » : le localStorage est cloisonné par
+// origine (:3000 ≠ :4173) et le rapport ne disait pas laquelle il décrivait.
+
+describe('rapport — origine du stockage', () => {
+    it('indique l\'origine et rappelle le cloisonnement', () => {
+        const out = buildDiagnosticReport(baseCtx());
+        expect(out).toContain(window.location.origin);
+        expect(out).toMatch(/cloisonné par origine/);
+    });
+
+    it('expose l\'origine en JSON', () => {
+        expect(buildDiagnosticJSON(baseCtx()).storage.origin).toBe(window.location.origin);
+    });
+});
+
+// ---------------- Service worker ----------------
+// Deux fois, un bundle périmé a été pris pour un bug de rendu.
+
+describe('rapport — service worker', () => {
+    // jsdom n'implémente pas serviceWorker : on le simule pour couvrir les deux
+    // lectures croisées. Sans contrôleur simulé, on est dans l'état « page non
+    // contrôlée », qui est justement celui d'après Ctrl+Shift+R.
+    const mockController = (controller) => {
+        Object.defineProperty(navigator, 'serviceWorker', {
+            configurable: true,
+            value: { controller }
+        });
+    };
+    afterEach(() => { delete navigator.serviceWorker; });
+
+    it('page contrôlée + mise à jour en attente → avertit d\'un code périmé', () => {
+        mockController({ state: 'activated', scriptURL: 'http://localhost:4173/sw.js' });
+        setSwUpdatePending(true);
+        const out = buildDiagnosticReport(baseCtx());
+        expect(out).toMatch(/Page contrôlée par SW\s+:\s+oui \(activated\)/);
+        expect(out).toMatch(/Le code qui tourne peut être périmé/);
+        expect(out).not.toMatch(/SW contourné/);
+    });
+
+    it('page NON contrôlée + mise à jour en attente → aucun soupçon de code périmé', () => {
+        // L'état d'après Ctrl+Shift+R : le SW est contourné, le code affiché vient
+        // du réseau. Avertir d'un bundle périmé ici serait le contresens exact.
+        setSwUpdatePending(true);
+        const out = buildDiagnosticReport(baseCtx());
+        expect(out).toMatch(/Page contrôlée par SW\s+:\s+non \(Ctrl\+Shift\+R/);
+        expect(out).toMatch(/le code affiché est à\s*\n?\s*jour/);
+        expect(out).not.toMatch(/peut être périmé/);
+    });
+
+    it('aucune mise à jour en attente → aucun des deux messages', () => {
+        const out = buildDiagnosticReport(baseCtx());
+        expect(out).toMatch(/Mise à jour en attente\s+:\s+non/);
+        expect(out).not.toMatch(/peut être périmé/);
+        expect(out).not.toMatch(/SW contourné/);
+        expect(buildDiagnosticJSON(baseCtx()).serviceWorker.updatePending).toBe(false);
+    });
+
+    it('mentionne le rechargement forcé parmi les causes de « non contrôlée »', () => {
+        // Le message d'origine listait « dev, premier chargement, SW désactivé »
+        // en oubliant Ctrl+Shift+R — la cause la plus fréquente à l'usage.
+        expect(buildDiagnosticReport(baseCtx())).toMatch(/Ctrl\+Shift\+R/);
+    });
+
+    it('absolutise l\'URL du script enregistré (elle révèle le port)', () => {
+        setSwRegisteredUrl('./sw.js');
+        const out = buildDiagnosticReport(baseCtx());
+        expect(out).toContain(`Script                 : ${window.location.origin}/sw.js`);
+    });
+
+    it('expose une ligne Build dans la section Application', () => {
+        expect(buildDiagnosticReport(baseCtx())).toMatch(/Build\s+:/);
     });
 });
