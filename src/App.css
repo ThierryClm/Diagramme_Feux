@@ -1993,6 +1993,27 @@ body.amber-mode .help-back-to-top {
     padding: 0 2px;
 }
 
+/* Légende imprimée : 3 colonnes compactes, texte lisible sur fond blanc */
+.print-dossier-legend .legend-section {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px 24px;
+}
+.print-dossier-legend .legend-section-title {
+    grid-column: 1 / -1;
+    color: #333;
+}
+.print-dossier-legend .legend-item {
+    break-inside: avoid;
+    color: #000;
+}
+/* Texte des items en gras et noir à l'impression (le gris clair de la fenêtre
+   flottante était invisible sur fond blanc). */
+.print-dossier-legend .legend-item span {
+    color: #000;
+    font-weight: bold;
+}
+
 .print-dossier-section h3 {
     position: relative;
     font-size: 14px;
