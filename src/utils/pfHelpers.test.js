@@ -200,6 +200,16 @@ describe('ensurePFIntegrity', () => {
         expect(result[0].remarques).toBe('hello');
     });
 
+    it('préserve le verrou lecture seule (readOnly) des PF importés', () => {
+        const pfs = [
+            { id: 1, name: 'Mien' },
+            { id: 2, name: 'Ref_ext', readOnly: true }
+        ];
+        const result = ensurePFIntegrity(pfs, [], []);
+        expect(result[0].readOnly).toBeUndefined(); // PF normal : pas de flag
+        expect(result[1].readOnly).toBe(true);      // PF importé : verrou conservé
+    });
+
     it('uses fallbackGroups to build diagram when missing', () => {
         const groups = [{ id: 1, offset: 0, durations: { green: 10 } }];
         const pfs = [{ id: 1 }];

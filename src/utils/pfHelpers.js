@@ -114,7 +114,10 @@ export const ensurePFIntegrity = (pfTabsArr, fallbackGroups, fallbackMatrix) => 
                     ? fallbackMatrix.map(row => [...row])
                     : buildEmptyMatrix(groupCount)),
             remarques: pf.remarques ?? '',
-            ...(pf.color !== undefined ? { color: pf.color } : {})
+            ...(pf.color !== undefined ? { color: pf.color } : {}),
+            // Préserver le verrou lecture seule des PF importés (« _ext ») :
+            // sans ça il était perdu au rechargement du projet.
+            ...(pf.readOnly ? { readOnly: true } : {})
         };
     }).filter(Boolean);
 };
