@@ -24,6 +24,9 @@ const MenuBar = ({
 }) => {
     const [openMenu, setOpenMenu] = useState(initialOpenMenu);
     const [openSubmenu, setOpenSubmenu] = useState(null);
+    // Troisième niveau : un sous-menu ouvert à l'intérieur d'un sous-menu
+    // (ex. Diagramme ▸ Options ▸ Style de flèche).
+    const [openNestedSubmenu, setOpenNestedSubmenu] = useState(null);
     const menuRef = useRef(null);
     // Timer pour l'ouverture différée au survol (filtre les passages rapides)
     const hoverTimerRef = useRef(null);
@@ -67,6 +70,7 @@ const MenuBar = ({
             if (menuRef.current && !menuRef.current.contains(e.target)) {
                 setOpenMenu(null);
                 setOpenSubmenu(null);
+                setOpenNestedSubmenu(null);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -83,12 +87,14 @@ const MenuBar = ({
     const handleMenuClick = (menuName) => {
         setOpenMenu(openMenu === menuName ? null : menuName);
         setOpenSubmenu(null);
+        setOpenNestedSubmenu(null);
     };
 
     const handleItemClick = (action, keepSubmenuOpen = false) => {
         if (!keepSubmenuOpen) {
             setOpenMenu(null);
             setOpenSubmenu(null);
+            setOpenNestedSubmenu(null);
         }
 
         // Handle special actions
@@ -112,6 +118,7 @@ const MenuBar = ({
         }
         setOpenMenu(null);
         setOpenSubmenu(null);
+        setOpenNestedSubmenu(null);
     };
 
     // Build imported files submenu dynamically
@@ -352,6 +359,7 @@ const MenuBar = ({
                         { label: 'Diagramme (miroir lecture seule)', action: 'toggleFloatingDiagram', checked: layoutOptions.showFloatingDiagram, keepSubmenuOpen: true },
                         { label: 'Conditions de micro-régulation', action: 'toggleFloatingConditions', checked: layoutOptions.showFloatingConditions, keepSubmenuOpen: true },
                         { label: 'Variables micro', action: 'toggleFloatingVariables', checked: layoutOptions.showFloatingVariables, keepSubmenuOpen: true },
+                        { label: 'Légende', action: 'toggleLegend', checked: layoutOptions.showFloatingLegend, keepSubmenuOpen: true },
                         { label: 'Remarques du diagramme', action: 'toggleFloatingRemarks', checked: layoutOptions.showFloatingRemarks, disabled: !layoutOptions.showRemarks, keepSubmenuOpen: true },
                         { label: 'Image du carrefour', action: 'toggleFloatingImage', checked: layoutOptions.showFloatingImage, disabled: !layoutOptions.hasIntersectionImage, keepSubmenuOpen: true }
                     ]
@@ -448,15 +456,20 @@ const MenuBar = ({
                     type: 'submenu',
                     submenuId: 'options',
                     submenu: [
-                        { label: 'Style de flèche', type: 'header' },
-                        { label: 'Trait plein', action: 'arrowStyle:solid', styleId: 'solid' },
-                        { label: 'Trait pointillé', action: 'arrowStyle:dashed', styleId: 'dashed' },
-                        { label: 'Points', action: 'arrowStyle:dotted', styleId: 'dotted' },
-                        { label: 'Double trait', action: 'arrowStyle:double', styleId: 'double' },
+                        { label: 'Condition micro au survol', action: 'toggleMicroOnHover', checked: showMicroOnHover },
+                        { label: 'Variables Priorité Bus...', action: 'microVariables' },
                         { type: 'separator' },
-                        { label: 'Légende', action: 'legend' },
-                        { type: 'separator' },
-                        { label: 'Condition micro au survol', action: 'toggleMicroOnHover', checked: showMicroOnHover }
+                        {
+                            label: 'Style de flèche',
+                            type: 'submenu',
+                            submenuId: 'arrowStyle',
+                            submenu: [
+                                { label: 'Trait plein', action: 'arrowStyle:solid', styleId: 'solid' },
+                                { label: 'Trait pointillé', action: 'arrowStyle:dashed', styleId: 'dashed' },
+                                { label: 'Points', action: 'arrowStyle:dotted', styleId: 'dotted' },
+                                { label: 'Double trait', action: 'arrowStyle:double', styleId: 'double' }
+                            ]
+                        }
                     ]
                 }
             ]
@@ -494,6 +507,34 @@ const MenuBar = ({
             return (
                 <div key={subIdx} className="menu-header">
                     {subItem.label}
+                </div>
+            );
+        }
+
+        // Sous-menu imbriqué (3e niveau) : ex. Options ▸ Style de flèche.
+        if (subItem.type === 'submenu') {
+            return (
+                <div
+                    key={subIdx}
+                    className="menu-item-with-submenu nested-submenu"
+                    onMouseEnter={() => setOpenNestedSubmenu(subItem.submenuId)}
+                    onMouseLeave={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget)) {
+                            setOpenNestedSubmenu(null);
+                        }
+                    }}
+                >
+                    <button className="menu-item has-submenu">
+                        {subItem.label}
+                        <span className="submenu-arrow">▶</span>
+                    </button>
+                    {openNestedSubmenu === subItem.submenuId && (
+                        <div className="submenu-dropdown nested">
+                            {subItem.submenu.map((child, childIdx) =>
+                                renderSubmenuItem(child, childIdx, subItem.submenuId)
+                            )}
+                        </div>
+                    )}
                 </div>
             );
         }

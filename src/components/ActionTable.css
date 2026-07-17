@@ -64,6 +64,22 @@
     cursor: default;
 }
 
+/* « + Ajouter une condition » partage l'apparence de .detach-btn (donc les
+   déclinaisons de thème et le survol) ; on ne surcharge que le placement :
+   rejeté tout à droite, Détacher restant collé au titre. */
+.add-condition-btn {
+    white-space: nowrap;
+}
+.action-table-title-row .add-condition-btn {
+    margin-left: auto;
+}
+/* Bandeau du bouton dans la fenêtre détachée (pas de barre de titre là-bas). */
+.popup-add-condition-row {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px 2px 6px;
+}
+
 .action-table-container .action-table-scroll {
     grid-column: 1;
     grid-row: 2;

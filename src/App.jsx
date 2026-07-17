@@ -20,6 +20,7 @@ import { parseDiagfeux } from './utils/diagfeuxImporter';
 import IntersectionImage from './components/IntersectionImage';
 import MenuBar from './components/MenuBar';
 import Modal from './components/Modal';
+import MicroVariablesDialog from './components/MicroVariablesDialog';
 import { useConfirm, useAlert } from './components/ConfirmProvider';
 import { APP_VERSION, APP_NAME, APP_DESCRIPTION } from './version';
 import { buildExportFilename } from './utils/exportFilename';
@@ -479,13 +480,12 @@ function App() {
         remarquesPopup
     } = useFloatingRemarks(activePFName);
 
-    // Floating legend state
+    // Légende : état d'affichage. Le drag interne n'est plus nécessaire depuis
+    // qu'elle est une vraie fenêtre détachée (usePopupWindow, déplaçable sur un
+    // autre écran) — cf. legendPopup ci-dessous.
     const {
         showFloatingLegend,
-        setShowFloatingLegend,
-        floatingLegendPosition,
-        isLegendDragging,
-        handleLegendMouseDown
+        setShowFloatingLegend
     } = useFloatingLegend();
 
     // Floating conditions & variables states (lifted from ActionTable for menu control)
@@ -577,6 +577,15 @@ function App() {
         title: `Conflits${activePFName ? ` — ${activePFName}` : ''}`,
         width: 460,
         height: 420
+    });
+
+    // Légende du diagramme en fenêtre détachée (déplaçable sur un autre écran).
+    const legendPopup = usePopupWindow({
+        isOpen: showFloatingLegend,
+        onClose: () => setShowFloatingLegend(false),
+        title: 'Légende du diagramme',
+        width: 380,
+        height: 580
     });
 
     // Diagram arrow style
@@ -739,6 +748,7 @@ function App() {
         insertModal, setInsertModal,
         reduceModal, setReduceModal,
         optionsModal, setOptionsModal,
+        microVariablesModal, setMicroVariablesModal,
         helpModal, setHelpModal,
         helpZoneRef,
         importModal, setImportModal,
@@ -1320,8 +1330,11 @@ function App() {
             case 'options':
                 setOptionsModal(true);
                 break;
-            case 'legend':
-                setShowFloatingLegend(true);
+            case 'microVariables':
+                setMicroVariablesModal(true);
+                break;
+            case 'toggleLegend':
+                setShowFloatingLegend(v => !v);
                 break;
             case 'toggleMicroOnHover':
                 setShowMicroOnHover(v => !v);
@@ -1944,6 +1957,31 @@ function App() {
         );
     }, [showFloatingRemarks, currentRemarques, updatePFRemarques, groups.length, remarquesPopup.renderToPopup]);
 
+    useEffect(() => {
+        if (!showFloatingLegend) return;
+        legendPopup.renderToPopup(
+            <div className="floating-legend-content">
+                <DiagramLegend />
+            </div>
+        );
+        // Ajuste la fenêtre à la taille réelle de la légende (nombre de lignes),
+        // une fois le contenu mis en page — évite l'espace mort sous la dernière
+        // ligne comme le rognage quand la fenêtre est trop courte.
+        const popup = legendPopup.popupWindow.current;
+        if (!popup || popup.closed) return;
+        const raf = popup.requestAnimationFrame(() => {
+            if (popup.closed) return;
+            const el = popup.document.querySelector('.floating-legend-content');
+            if (!el) return;
+            const chromeW = popup.outerWidth - popup.innerWidth;
+            const chromeH = popup.outerHeight - popup.innerHeight;
+            const targetW = Math.min(560, Math.max(360, Math.ceil(el.scrollWidth) + 4));
+            const targetH = Math.ceil(el.scrollHeight) + 4;
+            popup.resizeTo(targetW + chromeW, targetH + chromeH);
+        });
+        return () => { if (!popup.closed) popup.cancelAnimationFrame(raf); };
+    }, [showFloatingLegend, legendPopup.renderToPopup]);
+
     // Render capacity comparison into its detached popup window
     useEffect(() => {
         if (!capacityCompareModal) return;
@@ -2092,7 +2130,7 @@ function App() {
                     hasActiveProject={hasActiveProject}
                     onManageUsers={() => setShowUserManager(true)}
                     biCarrefourSeparator={biCarrefourSeparator}
-                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingProperties, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, showFloatingDiagnostic, showCapacityReserve, matricesLocked, dossierReadOnly, hasMultiplePf: pfTabs.length > 1, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
+                    layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingProperties, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, showFloatingDiagnostic, showFloatingLegend, showCapacityReserve, matricesLocked, dossierReadOnly, hasMultiplePf: pfTabs.length > 1, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
                     pixelsPerSecond={pixelsPerSecond}
                     onPixelsPerSecondChange={setPixelsPerSecond}
                     showMicroOnHover={showMicroOnHover}
@@ -3074,6 +3112,13 @@ function App() {
                     </button>
                 </div>
             </Modal>
+
+            {/* Fenêtre « Variables Priorité Bus » (référence éditable, persistée) */}
+            <MicroVariablesDialog
+                isOpen={microVariablesModal}
+                onClose={() => setMicroVariablesModal(false)}
+                tooltipsEnabled={tooltipPrefs.main}
+            />
 
             {/* Modal Options - Légende des actions */}
             <Modal isOpen={optionsModal} onClose={() => setOptionsModal(false)} title={tip("Options - Légende des actions")}>
@@ -4729,32 +4774,8 @@ function App() {
                 onLinksChange={setExternalLinks}
             />
 
-            {/* Floating legend window (non-modal) */}
-            {showFloatingLegend && (
-                <div
-                    className="floating-legend-window"
-                    style={{
-                        left: floatingLegendPosition.x,
-                        top: floatingLegendPosition.y
-                    }}
-                >
-                    <div
-                        className="floating-legend-header"
-                        onMouseDown={handleLegendMouseDown}
-                    >
-                        <span>Légende du diagramme</span>
-                        <button
-                            className="floating-close-btn"
-                            onClick={() => setShowFloatingLegend(false)}
-                        >
-                            ✕
-                        </button>
-                    </div>
-                    <div className="floating-legend-content">
-                        <DiagramLegend />
-                    </div>
-                </div>
-            )}
+            {/* La légende est désormais rendue dans une fenêtre détachée
+                (legendPopup / usePopupWindow) — voir l'effet renderToPopup. */}
             {isSaving && (
                 <div style={{
                     position: 'fixed',

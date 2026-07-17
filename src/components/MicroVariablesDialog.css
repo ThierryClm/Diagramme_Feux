@@ -1,0 +1,113 @@
+/* Fenêtre « Variables Priorité Bus ». S'appuie sur les classes .modal-* du
+   composant Modal ; ne définit que la mise en page de la liste éditable. */
+
+/* Fenêtre large : la colonne Signification doit afficher le texte en entier. */
+.micro-variables-modal {
+    width: 720px;
+    max-width: 92vw;
+}
+
+.micro-variables-modal .micro-variables-intro {
+    margin: 0 0 12px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    opacity: 0.9;
+}
+
+/* Le violet des conditions micro, réutilisé pour les exemples de l'intro. */
+.micro-variables-modal .micro-keyword {
+    color: rgb(180, 50, 255);
+    font-weight: bold;
+}
+
+.micro-variables-table {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.micro-variables-head,
+.micro-variables-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 28px;
+    gap: 8px;
+    align-items: start;
+}
+
+.micro-variables-head {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    opacity: 0.6;
+    padding: 0 2px 2px;
+}
+
+.micro-variables-name,
+.micro-variables-desc {
+    padding: 4px 6px;
+    background: rgba(127, 127, 127, 0.12);
+    border: 1px solid rgba(127, 127, 127, 0.35);
+    border-radius: 3px;
+    color: inherit;
+    font-size: 0.85rem;
+}
+.micro-variables-name {
+    font-family: monospace;
+    color: rgb(180, 50, 255);
+    font-weight: bold;
+}
+/* Signification : multi-lignes, retour à la ligne pour lire tout le texte. */
+.micro-variables-desc {
+    resize: vertical;
+    min-height: 2.4em;
+    line-height: 1.35;
+    font-family: inherit;
+}
+.micro-variables-name:focus,
+.micro-variables-desc:focus {
+    outline: none;
+    border-color: rgba(180, 50, 255, 0.7);
+}
+
+.micro-variables-remove {
+    width: 24px;
+    height: 24px;
+    line-height: 1;
+    font-size: 1.1rem;
+    background: transparent;
+    color: inherit;
+    border: 1px solid rgba(127, 127, 127, 0.35);
+    border-radius: 3px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+.micro-variables-remove:hover {
+    opacity: 1;
+    border-color: #e06;
+    color: #e06;
+}
+
+.micro-variables-empty {
+    font-size: 0.85rem;
+    opacity: 0.6;
+    padding: 8px 2px;
+}
+
+.micro-variables-add {
+    margin: 10px 0 4px;
+    padding: 4px 12px;
+    background: transparent;
+    border: 1px dashed rgba(180, 50, 255, 0.6);
+    border-radius: 3px;
+    color: rgb(180, 50, 255);
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.micro-variables-add:hover {
+    background: rgba(180, 50, 255, 0.12);
+}
+
+/* Pousse Annuler/Enregistrer à droite, Réinitialiser restant à gauche. */
+.micro-variables-modal .micro-variables-spacer {
+    flex: 1;
+}

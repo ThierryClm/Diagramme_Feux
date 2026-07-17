@@ -4,10 +4,13 @@ import NumericInput from './NumericInput';
 import CustomTooltip from './CustomTooltip';
 import EmptyState from './EmptyState';
 import RemarquesEditor from './RemarquesEditor';
+import { useMicroVariables } from './MicroVariablesProvider';
+import { tokenizeMicroText } from '../utils/microVariables';
 import './TimelineDiagram.css';
 
 const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3, conflicts, conflictMatrix = [], updateGroupParams, cycleLength, actionData = [], updateActionRow, startDrag, endDrag, showDependencies = false, dependencyGap = 20, hoveredActionId, setHoveredActionId, simulationFilter = null, simulationResult = null, simulationCurrentTime = null, isPlayingSimulation = false, setIsPlayingSimulation, setSimulationCurrentTime, hoveredArrowGroupId = null, hoveredArrowGroupSaturated = false, hoveredConflict = null, setHoveredGroupId: setHoveredGroupIdProp = null, setHoveredDiagramTime = null, hoveredVUtile = null, planName = '', activePFName = '', remarques = '', updateRemarques = null, biCarrefourSeparator = null, showComments = true, showRemarks = true, showGroupNames = true, showMicroOnHover = true, showWrapFlash = true, cycleLengthInput, setCycleLengthInput, setCycleLength, onDragConflicts, remarquesDetached = false, tooltipsEnabled = true, readOnly = false, onDetach = null }) => {
     const tip = (text) => tooltipsEnabled ? text : undefined;
+    const { names: microVariableNames } = useMicroVariables();
     const containerRef = useRef(null);
     // Whether the mouse is currently over the diagram container (not the action table)
     // Used to suppress the action tooltip when hovering actions via the ActionTable rows
@@ -4607,12 +4610,12 @@ const TimelineDiagram = ({ groups, globalTime, onGroupClick, pixelsPerSecond = 3
                     )}
                     {hasMicro && (
                         <div className="action-hover-tooltip-micro">
-                            {(action.micro || '').split(/(\b\w*(?:DA|TPPh|AVert|TMAB)\w*\b|[{}\[\]()]|\b(?:et|ou)\b)/g).map((part, i) =>
-                                /DA|TPPh|AVert|TMAB/.test(part)
-                                    ? <span key={i} className="micro-keyword">{part}</span>
-                                    : /^[{}\[\]()]$/.test(part) || /^(et|ou)$/.test(part)
-                                        ? <span key={i} className="micro-bold">{part}</span>
-                                        : part
+                            {tokenizeMicroText(action.micro, microVariableNames).map((tok, i) =>
+                                tok.type === 'keyword'
+                                    ? <span key={i} className="micro-keyword">{tok.text}</span>
+                                    : tok.type === 'bold'
+                                        ? <span key={i} className="micro-bold">{tok.text}</span>
+                                        : tok.text
                             )}
                         </div>
                     )}

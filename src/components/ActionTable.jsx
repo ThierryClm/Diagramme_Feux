@@ -2,6 +2,8 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import usePopupWindow from '../hooks/usePopupWindow';
 import NumericInput from './NumericInput';
 import { useConfirm } from './ConfirmProvider';
+import { useMicroVariables } from './MicroVariablesProvider';
+import { tokenizeMicroText } from '../utils/microVariables';
 import './ActionTable.css';
 
 // Auto-resize textarea helper
@@ -80,6 +82,7 @@ const isRowFilled = (row) => {
 
 const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength = 100, maxGroup = 16, hoveredActionId, setHoveredActionId, microCustomFields = [], updateMicroCustomField, onResizePanel, showFloatingConditions, setShowFloatingConditions, showFloatingVariables, setShowFloatingVariables, showWrapFlash = true, showDescription = true, actionColWidths = { description: 160, micro: 420 }, setActionColWidths = () => {}, tooltipsEnabled = true }) => {
     const tip = (text) => tooltipsEnabled ? text : undefined;
+    const { names: microVariableNames } = useMicroVariables();
     const askConfirm = useConfirm();
 
     // Colonnes redimensionnables (poignee a droite de l'en-tete). Bornes :
@@ -149,6 +152,37 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
     }, [onResizeMove, onResizeEnd]);
     // Refs for textarea auto-resize
     const textareaRefs = useRef({});
+    // Premier champ de la ligne vide en fin de tableau (celle qui sert à ajouter
+    // une condition). Cible du bouton « Ajouter une condition » : la ligne peut
+    // être hors de vue quand l'ascenseur est actif, ou tout simplement difficile
+    // à atteindre selon la barre de défilement — le bouton la ramène et y met le
+    // focus de façon fiable, sans dépendre du positionnement.
+    const addRowInputRef = useRef(null);
+
+    // Reste-t-il une ligne vide où saisir ? (30 lignes max : createEmptyActionData)
+    const hasEmptyRow = useMemo(() => actionData.some(row => !isRowFilled(row)), [actionData]);
+
+    const handleAddCondition = useCallback(() => {
+        const el = addRowInputRef.current;
+        if (!el) return; // limite de 30 conditions atteinte : aucune ligne vide
+        el.scrollIntoView({ block: 'nearest' });
+        el.focus();
+    }, []);
+
+    // Bouton partagé par la vue intégrée (barre de titre) et la vue détachée
+    // (fenêtre séparée), pour un comportement identique dans les deux.
+    const addConditionButton = (
+        <button
+            className="detach-btn add-condition-btn"
+            onClick={handleAddCondition}
+            disabled={!hasEmptyRow}
+            title={tip(hasEmptyRow
+                ? 'Aller à la ligne de saisie pour ajouter une condition'
+                : 'Limite de 30 conditions atteinte')}
+        >
+            + Ajouter une condition
+        </button>
+    );
 
     // Horizontal separator position (height of variables micro section)
     const [variablesHeight, setVariablesHeight] = useState(() => {
@@ -435,13 +469,13 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
             <tbody>
                 {visibleRows.map((row) => (
                     <tr key={row.id} className={hoveredActionId === row.id ? 'row-highlighted' : ''} onMouseEnter={() => isRowFilled(row) && setHoveredActionId(row.id)} onMouseLeave={() => setHoveredActionId(null)}>
-                        <td><input type="number" min="0" max={maxGroup} className="input-gf" value={row.gf} onChange={(e) => handleGroupFieldChange(row.id, 'gf', e.target.value)} /></td>
+                        <td><input ref={isRowFilled(row) ? undefined : addRowInputRef} type="number" min="0" max={maxGroup} className="input-gf" value={row.gf} onChange={(e) => handleGroupFieldChange(row.id, 'gf', e.target.value)} /></td>
                         <td><select className="input-action" value={row.action} onChange={(e) => handleActionChange(row.id, e.target.value, row)}>{ACTION_OPTIONS.map((opt) => (<option key={opt} value={opt}>{opt || '—'}</option>))}</select></td>
                         {showDescription && <td><input type="text" maxLength="30" className="input-desc" value={row.description} onChange={(e) => updateActionRow(row.id, 'description', e.target.value)} /></td>}
                         <td><NumericInput className="input-time-xs" value={row.deb} onCommit={(val) => updateActionRow(row.id, 'deb', val)} wrapAt={cycleLength} showWrapFlash={showWrapFlash} selectOnFocus /></td>
                         <td><NumericInput className={`input-time-xs ${FIN_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.fin} onCommit={(val) => updateActionRow(row.id, 'fin', val)} disabled={FIN_DISABLED_ACTIONS.includes(row.action)} wrapAt={cycleLength} showWrapFlash={showWrapFlash} selectOnFocus /></td>
                         <td><input type="text" maxLength="10" className="input-abrv" value={row.abrv || ''} onChange={(e) => updateActionRow(row.id, 'abrv', e.target.value)} /></td>
-                        <td><div className="micro-highlight-container"><div className="micro-highlight-backdrop" aria-hidden="true">{(row.micro || '').split(/(\b\w*(?:DA|TPPh|AVert|TMAB)\w*\b|[{}\[\]()]|\b(?:et|ou)\b)/g).map((part, i) => /DA|TPPh|AVert|TMAB/.test(part) ? <span key={i} className="micro-keyword">{part}</span> : /^[{}\[\]()]$/.test(part) || /^(et|ou)$/.test(part) ? <span key={i} className="micro-bold">{part}</span> : part)}</div><textarea ref={(el) => { textareaRefs.current[row.id] = el; autoResizeTextarea(el); }} className="input-micro micro-has-backdrop" value={row.micro || ''} onChange={(e) => { updateActionRow(row.id, 'micro', e.target.value); autoResizeTextarea(e.target); }} rows={1} /></div></td>
+                        <td><div className="micro-highlight-container"><div className="micro-highlight-backdrop" aria-hidden="true">{tokenizeMicroText(row.micro, microVariableNames).map((tok, i) => tok.type === 'keyword' ? <span key={i} className="micro-keyword">{tok.text}</span> : tok.type === 'bold' ? <span key={i} className="micro-bold">{tok.text}</span> : tok.text)}</div><textarea ref={(el) => { textareaRefs.current[row.id] = el; autoResizeTextarea(el); }} className="input-micro micro-has-backdrop" value={row.micro || ''} onChange={(e) => { updateActionRow(row.id, 'micro', e.target.value); autoResizeTextarea(e.target); }} rows={1} /></div></td>
                         <td><input type="number" min="1" max={maxGroup} className={`input-small ${PLAGE_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.plage1} onChange={(e) => handleGroupFieldChange(row.id, 'plage1', e.target.value)} disabled={PLAGE_DISABLED_ACTIONS.includes(row.action)} /></td>
                         <td><input type="number" min="1" max={maxGroup} className={`input-small ${PLAGE_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.plage2} onChange={(e) => handleGroupFieldChange(row.id, 'plage2', e.target.value)} disabled={PLAGE_DISABLED_ACTIONS.includes(row.action)} /></td>
                         <td><input type="number" min="1" max={maxGroup} className={`input-small ${GF_DISABLED_ACTIONS.includes(row.action) ? 'input-disabled' : ''}`} value={row.actGf1} onChange={(e) => handleGroupFieldChange(row.id, 'actGf1', e.target.value)} disabled={GF_DISABLED_ACTIONS.includes(row.action)} title={tip(row.action === 'Fermeture anticipée' && row.actGf1 ? `Glissement sur GF ${row.actGf1}` : undefined)} /></td>
@@ -468,6 +502,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
         if (showFloatingConditions) {
             conditionsPopup.renderToPopup(
                 <div className="popup-content-wrapper">
+                    <div className="popup-add-condition-row">{addConditionButton}</div>
                     {renderTableContent()}
                 </div>
             );
@@ -491,6 +526,7 @@ const ActionTable = ({ actionData, updateActionRow, reorderActions, cycleLength 
                     <div className="action-table-title-row">
                         <h3 className="action-table-title">Conditions de micro-régulation</h3>
                         <button className="detach-btn" onClick={handleDetach} title={tip("Ouvrir dans une fenêtre séparée")}>Détacher</button>
+                        {addConditionButton}
                     </div>
                     {renderTableContent()}
                 </>

@@ -11,6 +11,7 @@ const useDialogState = () => {
     const [insertModal, setInsertModal] = useState(false);
     const [reduceModal, setReduceModal] = useState(false);
     const [optionsModal, setOptionsModal] = useState(false);
+    const [microVariablesModal, setMicroVariablesModal] = useState(false);
     const [helpModal, setHelpModal] = useState(false);
     const helpZoneRef = useRef(null);
     const [importModal, setImportModal] = useState(false);
@@ -78,6 +79,7 @@ const useDialogState = () => {
         insertModal, setInsertModal,
         reduceModal, setReduceModal,
         optionsModal, setOptionsModal,
+        microVariablesModal, setMicroVariablesModal,
         helpModal, setHelpModal,
         helpZoneRef,
         importModal, setImportModal,

@@ -812,8 +812,7 @@ body.light-mode .welcome-screen .welcome-hint strong { color: #555; }
 
 .floating-legend-content {
     padding: 12px 16px;
-    max-height: 70vh;
-    overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .legend-section {
