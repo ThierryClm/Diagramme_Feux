@@ -42,6 +42,10 @@ TraCflux repose sur un **modèle qui combine gestion par phases et gestion par g
 
 C'est cette combinaison qui permet d'exprimer directement les **chevauchements partiels**, la **micro-régulation fine** (escamotage, seconde lucarne, fermeture anticipée…), la **coordination sur un axe** et le **diagnostic de capacité courant par courant** — là où un modèle strictement par phases les rend malaisés, voire impossibles à décrire.
 
+### Priorité bus
+
+La prise en compte des transports en commun est pensée comme une **orientation de fond** de TraCflux : les variables et actions de micro-régulation propres à la priorité bus (délai d'approche, temps moyen d'attente bus, allongement de vert, escamotage de phase, point de repos…) sont intégrées au cœur de l'outil. L'objectif est de rendre une stratégie de priorité **explicite, visualisable et vérifiable** — sans boîte noire, hors ligne et interopérable — tout en laissant la décision d'ingénierie à l'utilisateur. TraCflux ne décide pas du niveau de priorité accordé : il en offre le langage et la lecture, en préservant les contraintes de sécurité et la cohérence du plan de feux.
+
 ### Reprendre les études DiagFeux
 
 > ⚠️ **Fonctionnalité en cours de finalisation.** L'importateur est construit à partir du schéma XML officiel et de la documentation de DiagFeux ; sa **validation sur des fichiers `.dfe` réels est en cours**. Si vous disposez d'un projet DiagFeux (même anonymisé) que vous pouvez partager, [ouvrez une issue](https://github.com/ThierryClm/Diagramme_Feux/issues) — cela accélérera directement la mise au point.

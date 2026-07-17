@@ -378,6 +378,23 @@ const HelpContent = ({ initialAnchor = null }) => {
             </section>
 
             <section className="help-section">
+                <h4>Orientation « priorité bus »</h4>
+                <p>
+                    TraCflux traite la priorité aux transports en commun comme une composante à
+                    part entière de la micro-régulation, et non comme un module ajouté en
+                    périphérie. L'outil met à disposition le vocabulaire de modélisation — délai
+                    d'approche (DA), temps moyen d'attente bus (TMAB), temps passé dans la phase
+                    (TPPh), avant-vert (AVer) — et les mécanismes associés — allongement et
+                    ouverture anticipée du vert, escamotage de phase, point de repos — pour
+                    accorder au bus un avantage temporel <strong>lisible</strong>. La philosophie
+                    reste inchangée : l'application représente et met en évidence la stratégie que
+                    vous concevez ; elle ne l'impose pas et ne la calcule pas à votre place. Les
+                    temps interverts et la cohérence du cycle demeurent la référence — la priorité
+                    bus s'y inscrit sans jamais les contourner.
+                </p>
+            </section>
+
+            <section className="help-section">
                 <h4>Détection des conflits</h4>
                 <p>L'application détecte automatiquement les conflits entre groupes antagonistes :</p>
                 <ul>
@@ -820,8 +837,8 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <dt><strong>Adaptatif vertical</strong></dt>
                     <dd>Action de micro-régulation qui décale verticalement l'ensemble des groupes de feux à une période donnée du cycle, pour créer une contraction ou une dilatation temporaire des phases.</dd>
 
-                    <dt><strong>A vert (AVert)</strong></dt>
-                    <dd>« Avant vert » — variable indiquant le temps résiduel avant l'apparition du vert d'un groupe. Utilisée dans les conditions de micro-régulation pour déclencher une action juste avant l'ouverture d'un feu.</dd>
+                    <dt><strong>Avant vert (AVer)</strong></dt>
+                    <dd>Variable indiquant le temps résiduel avant l'apparition du vert d'un groupe. Utilisée dans les conditions de micro-régulation pour déclencher une action juste avant l'ouverture d'un feu. Reconnue avec ou sans le T final (AVer couvre aussi l'écriture AVert).</dd>
 
                     <dt><strong>Bande passante (début / fin)</strong></dt>
                     <dd>Actions de micro-régulation qui marquent les bornes de progression d'un véhicule d'un feu à l'autre sur un axe. Représentées dans le diagramme par des flèches vertes en pointillé.</dd>
