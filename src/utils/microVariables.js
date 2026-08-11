@@ -14,6 +14,7 @@ export const DEFAULT_MICRO_VARIABLES = [
     { name: 'TPPh', description: 'Temps Passé dans la Phase — temps écoulé depuis le début de la phase en cours.' },
     { name: 'AVer', description: "Avant vert — temps résiduel avant l'apparition du vert d'un groupe. Reconnu avec ou sans le T final (AVer couvre aussi AVert)." },
     { name: 'TMAB', description: "Temps Moyen d'Attente Bus — indicateur de performance de la priorité bus." },
+    { name: 'NIVEAU_PRIORITE', description: 'Coefficient à appliquer sur les variables de priorité bus (de 0 à 3)' },
 ];
 
 const STORAGE_KEY = 'tracflux.microVariables';

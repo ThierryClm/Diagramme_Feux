@@ -26,6 +26,7 @@ const DiagnosticPanel = ({
     activeTrafficDataset,
     onDetach = null,
     detached = false,
+    hideTitle = false,
     tip = (t) => t
 }) => {
     const rows = useMemo(() => {
@@ -59,18 +60,20 @@ const DiagnosticPanel = ({
 
     return (
         <div className={`diagnostic-panel${detached ? ' diagnostic-panel-detached' : ''}`}>
-            <h3 className="diagnostic-title">
-                Réserve de capacité
-                {onDetach && !detached && (
-                    <button
-                        className="detach-btn"
-                        onClick={onDetach}
-                        title={tip("Détacher dans une fenêtre séparée (2e écran)")}
-                    >
-                        Détacher
-                    </button>
-                )}
-            </h3>
+            {!hideTitle && (
+                <h3 className="diagnostic-title">
+                    Réserve de capacité
+                    {onDetach && !detached && (
+                        <button
+                            className="detach-btn"
+                            onClick={onDetach}
+                            title={tip("Détacher dans une fenêtre séparée (2e écran)")}
+                        >
+                            Détacher
+                        </button>
+                    )}
+                </h3>
+            )}
 
             {rows.length === 0 ? (
                 <p className="diagnostic-empty">

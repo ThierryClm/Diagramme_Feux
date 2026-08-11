@@ -1,9 +1,12 @@
+/* Panneau « Réserve de capacité ». Aligné visuellement sur le tableau
+   « Données de trafic » (mêmes fonds, bordures et couleurs de thème) pour que
+   les deux panneaux voisins forment un ensemble cohérent. */
 .diagnostic-panel {
-    margin-top: 1rem;
+    margin-top: 8px;
     padding: 10px 12px;
-    background: rgba(78, 205, 196, 0.06);
-    border: 1px solid #3a5a57;
-    border-radius: 4px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
 }
 
 .diagnostic-panel-detached {
@@ -19,7 +22,7 @@
     gap: 10px;
     margin: 0 0 10px 0;
     font-size: 0.95em;
-    color: #4ecdc4;
+    color: #eee;
 }
 
 .diagnostic-empty {
@@ -43,9 +46,10 @@
 
 .diagnostic-table th {
     color: #aaa;
-    font-weight: 600;
+    font-weight: normal;
     line-height: 1.15;
     vertical-align: bottom;
+    border-bottom: 1px solid #444;
 }
 
 .diagnostic-table td.dg-id {
@@ -56,17 +60,17 @@
 .diagnostic-carrefour {
     margin-top: 10px;
     padding-top: 8px;
-    border-top: 1px solid #3a5a57;
+    border-top: 1px solid #333;
     font-size: 0.82em;
     color: #ccc;
 }
 
 .diagnostic-carrefour .dg-label {
     font-weight: bold;
-    color: #4ecdc4;
+    color: #eee;
 }
 
-/* Sémantique couleur du degré de saturation (reprise du tableau trafic) */
+/* Sémantique couleur du degré de saturation (identique au tableau trafic) */
 .diagnostic-panel .capacity-green { color: #4caf50; }
 .diagnostic-panel .capacity-orange { color: #ff9800; }
 .diagnostic-panel .capacity-red { color: #f44336; }
@@ -78,12 +82,27 @@
     border-radius: 2px;
 }
 
-/* Thème clair */
-body.light-mode .diagnostic-panel {
-    background: rgba(0, 137, 123, 0.06);
-    border-color: #bcd;
-}
+/* --- Déclinaisons de thème, calquées sur .traffic-table-container --- */
 
-body.light-mode .diagnostic-table th { color: #666; }
+/* Clair */
+body.light-mode .diagnostic-panel {
+    background: #f5f5f5;
+    border-color: #ccc;
+}
+body.light-mode .diagnostic-title { color: #222; }
+body.light-mode .diagnostic-table th { background: #e0e0e0; color: #222; }
 body.light-mode .diagnostic-table td.dg-id { color: #222; }
 body.light-mode .diagnostic-carrefour { color: #333; }
+body.light-mode .diagnostic-carrefour .dg-label { color: #222; }
+
+/* Haut contraste */
+body.high-contrast-mode .diagnostic-panel { background: #0f1440; }
+body.high-contrast-mode .diagnostic-title,
+body.high-contrast-mode .diagnostic-carrefour .dg-label { color: #ffdd00; }
+body.high-contrast-mode .diagnostic-table th { background: #1a2050; color: #ffdd00; }
+
+/* Ambre */
+body.amber-mode .diagnostic-panel { background: #222222; }
+body.amber-mode .diagnostic-title,
+body.amber-mode .diagnostic-carrefour .dg-label { color: #ffb300; }
+body.amber-mode .diagnostic-table th { background: #303030; color: #ffb300; }

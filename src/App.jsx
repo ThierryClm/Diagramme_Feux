@@ -1248,6 +1248,7 @@ function App() {
                                 [`variablesMicro_${pf.id}`, checked],
                                 [`phasageBulle_${pf.id}`, checked],
                                 [`traficCapacite_${pf.id}`, checked],
+                                [`reserveCapacite_${pf.id}`, checked],
                             ];
                         })),
                     };
@@ -3845,6 +3846,14 @@ function App() {
                                                 }); }} />
                                             Données de trafic et calcul de capacité
                                         </label>
+                                        <label>
+                                            <input type="checkbox" checked={dossierSections[`reserveCapacite_${pf.id}`] || false}
+                                                onChange={e => { const v = e.target.checked; setDossierSections(s => {
+                                                    if (v) return {...s, [`reserveCapacite_${pf.id}`]: true};
+                                                    const u = {...s}; pfTabs.forEach(p => { if (s[`diagram_${p.id}`]) u[`reserveCapacite_${p.id}`] = false; }); return u;
+                                                }); }} />
+                                            Réserve de capacité
+                                        </label>
                                     </div>
                                     )}
                                 </div>
@@ -4052,7 +4061,7 @@ function App() {
                                                                     <td>{row.deb}</td>
                                                                     <td>{row.fin}</td>
                                                                     <td>{row.abrv}</td>
-                                                                    <td>{row.micro}</td>
+                                                                    <td className="print-micro-cell">{row.micro}</td>
                                                                     <td>{row.plage1}</td>
                                                                     <td>{row.plage2}</td>
                                                                     <td>{row.actGf1}</td>
@@ -4568,7 +4577,7 @@ function App() {
                                                                     <td>{row.deb}</td>
                                                                     <td>{row.fin}</td>
                                                                     <td>{row.abrv}</td>
-                                                                    <td>{row.micro}</td>
+                                                                    <td className="print-micro-cell">{row.micro}</td>
                                                                     <td>{row.plage1}</td>
                                                                     <td>{row.plage2}</td>
                                                                     <td>{row.actGf1}</td>
@@ -4715,6 +4724,21 @@ function App() {
                                                         })}
                                                     </tbody>
                                                 </table>
+                                            </div>
+                                        )}
+
+                                        {/* Réserve de capacité (même calcul que le panneau à l'écran) */}
+                                        {dossierSections[`reserveCapacite_${pf.id}`] && (
+                                            <div className="print-dossier-section print-dossier-reserve">
+                                                <h3>Réserve de capacité - {pf.name}{dossierSmallLogos}</h3>
+                                                <DiagnosticPanel
+                                                    groups={pfGroups}
+                                                    cycleLength={pfCycleLength}
+                                                    getTrafficData={getTrafficData}
+                                                    actionData={pfActionData}
+                                                    activeTrafficDataset={pfTrafficDatasetMap[pf.id] || activeTrafficDataset}
+                                                    hideTitle={true}
+                                                />
                                             </div>
                                         )}
                                         </Fragment>

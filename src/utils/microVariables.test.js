@@ -23,6 +23,11 @@ describe('tokenizeMicroText — coloration', () => {
         expect(kw(tokenizeMicroText('si AVert1 < 5', names))).toEqual(['AVert1']);
     });
 
+    it('colore NIVEAU_PRIORITE malgré son souligné', () => {
+        const toks = tokenizeMicroText('si NIVEAU_PRIORITE > 2', names);
+        expect(kw(toks)).toEqual(['NIVEAU_PRIORITE']);
+    });
+
     it('met en gras la syntaxe {}[]() et les connecteurs et/ou', () => {
         const toks = tokenizeMicroText('( DA1 ) et TMAB1', names);
         expect(toks.filter(t => t.type === 'bold').map(t => t.text)).toEqual(['(', ')', 'et']);

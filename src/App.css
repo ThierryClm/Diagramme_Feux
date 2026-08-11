@@ -338,9 +338,14 @@ body.light-mode .welcome-screen .welcome-hint strong { color: #555; }
     border-radius: 4px;
 }
 
+/* Les h4 sont les titres de section (majeurs / potentiels) : ils portent
+   chacun leur couleur, il n'y a plus de titre global au-dessus. */
 .conflict-list h4 {
-    margin: 0 0 0.5rem 0;
-    color: #e74c3c;
+    margin: 0 0 0.35rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
 .conflict-list ul {
@@ -349,7 +354,7 @@ body.light-mode .welcome-screen .welcome-hint strong { color: #555; }
     font-size: 0.85em;
 }
 
-.conflict-list h4 {
+.conflict-empty-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -362,6 +367,58 @@ body.light-mode .welcome-screen .welcome-hint strong { color: #555; }
     color: #2ecc71;
     font-weight: bold;
 }
+
+/* --- Conflits majeurs vs potentiels --------------------------------------
+   Majeurs : rien ne les prend en charge, ils sont à traiter.
+   Potentiels : présents dans le diagramme mais traités par la micro-régulation
+   (aiguillage/escamotage). Ils sont atténués par la COULEUR et non par
+   l'opacité : à 0.4 le texte passe sous le seuil de contraste et devient
+   illisible en thème haut contraste, alors qu'il doit rester consultable. */
+
+.conflict-section + .conflict-section {
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(231, 76, 60, 0.25);
+}
+
+.conflict-section-majeurs { color: #e74c3c; }
+.conflict-section-potentiels { color: #ff9800; }
+
+.conflict-item-majeur { color: #eee; }
+.conflict-item-potentiel { color: #9aa0a6; }
+
+.conflict-item-potentiel .conflict-flag {
+    margin-left: 6px;
+    font-size: 0.85em;
+    color: #888;
+}
+
+/* Quand tout est pris en charge, le cadre rouge dirait le contraire de la
+   réalité : on passe l'ensemble en ambre. */
+.conflict-list-sans-majeur {
+    background: rgba(255, 152, 0, 0.1);
+    border-color: #ff9800;
+}
+
+.conflict-list-sans-majeur .conflict-section + .conflict-section {
+    border-top-color: rgba(255, 152, 0, 0.25);
+}
+
+/* Thème clair */
+body.light-mode .conflict-item-majeur { color: #222; }
+body.light-mode .conflict-item-potentiel { color: #6b7075; }
+body.light-mode .conflict-item-potentiel .conflict-flag { color: #777; }
+
+/* Thème haut contraste */
+body.high-contrast-mode .conflict-item-majeur { color: #fff; }
+body.high-contrast-mode .conflict-item-potentiel { color: #c8cdf5; }
+body.high-contrast-mode .conflict-item-potentiel .conflict-flag { color: #c8cdf5; }
+body.high-contrast-mode .conflict-section-potentiels { color: #ffdd00; }
+
+/* Thème ambre */
+body.amber-mode .conflict-item-majeur { color: #ffb300; }
+body.amber-mode .conflict-item-potentiel { color: #a8813c; }
+body.amber-mode .conflict-item-potentiel .conflict-flag { color: #a8813c; }
 
 /* En fenêtre détachée : on remplit la fenêtre proprement */
 .conflict-list-detached {
@@ -1860,6 +1917,48 @@ body.amber-mode .help-back-to-top {
     white-space: nowrap;
 }
 
+/* Action_Micro : préserver les sauts de ligne saisis dans la fenêtre principale
+   (annule le nowrap/ellipsis ci-dessus, qui écrasait le texte sur une ligne). */
+.print-actions-table td.print-micro-cell {
+    white-space: pre-wrap;
+    overflow: visible;
+    text-overflow: clip;
+    max-width: 220px;
+    word-break: break-word;
+}
+
+/* Réserve de capacité à l'impression : même présentation que le tableau
+   « Données de trafic » (bordures 1px, en-tête gris, texte noir sur blanc),
+   en préservant le codage couleur de saturation (vert/orange/rouge). */
+.print-dossier-reserve .diagnostic-panel {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+.print-dossier-reserve .diagnostic-table {
+    border-collapse: collapse;
+    font-size: 0.75rem;
+}
+.print-dossier-reserve .diagnostic-table th,
+.print-dossier-reserve .diagnostic-table td {
+    border: 1px solid #999;
+    padding: 2px 6px;
+    text-align: center;
+    color: #000;
+    background: #fff;
+}
+.print-dossier-reserve .diagnostic-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+.print-dossier-reserve .diagnostic-carrefour,
+.print-dossier-reserve .diagnostic-carrefour .dg-label { color: #000; }
+.print-dossier-reserve .diagnostic-table td.capacity-green { color: #4caf50; }
+.print-dossier-reserve .diagnostic-table td.capacity-orange { color: #ff9800; }
+.print-dossier-reserve .diagnostic-table td.capacity-red { color: #f44336; }
+.print-dossier-reserve .diagnostic-table td.capacity-black { color: #000; }
+
 .print-footer-path {
     text-align: left;
     max-width: 60%;
@@ -3344,9 +3443,19 @@ body.amber-mode .help-back-to-top {
     body.print-dossier .preview-matrix-table th,
     body.print-dossier .preview-matrix-table td.row-header,
     body.print-dossier .print-actions-table th,
-    body.print-dossier .dossier-traffic-table th {
+    body.print-dossier .dossier-traffic-table th,
+    body.print-dossier .print-dossier-reserve .diagnostic-table th {
         background: #f0f0f0 !important;
         background-color: #f0f0f0 !important;
+    }
+
+    /* Réserve de capacité : forcer le rendu des fonds (en-tête gris, cellule
+       de dépassement rouge) à l'impression, comme le tableau trafic. */
+    body.print-dossier .print-dossier-reserve .diagnostic-table th,
+    body.print-dossier .print-dossier-reserve .diagnostic-table td {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
     }
 
     body.print-dossier .preview-matrix-table td.diagonal {
