@@ -3806,6 +3806,7 @@ function App() {
                                                     [`variablesMicro_${pf.id}`]: checked,
                                                     [`phasageBulle_${pf.id}`]: checked,
                                                     [`traficCapacite_${pf.id}`]: checked,
+                                                    [`reserveCapacite_${pf.id}`]: checked,
                                                 }));
                                             }} />
                                         Diagramme {pf.name}
