@@ -17,6 +17,7 @@
         "clean": "rmdir /S /Q dist 2>nul & taskkill /F /IM node.exe /T 2>nul",
         "test": "vitest",
         "test:ui": "vitest --ui",
+        "check": "node scripts/check-deps.mjs",
         "release": "node scripts/release.mjs"
     },
     "dependencies": {

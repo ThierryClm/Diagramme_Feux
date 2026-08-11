@@ -9,7 +9,22 @@ npm install      # Install dependencies
 npm run dev      # Start dev server at http://localhost:3000
 npm run build    # Production build
 npm run preview  # Preview production build
+npm run check    # Dependency health report (audit + outdated, prod vs dev)
+npx vitest run   # Run the test suite once (`npm test` starts watch mode)
 ```
+
+### Dependency hygiene
+
+Run `npm run check` at the start of any session resuming work after a gap, and
+report the result before doing anything else. The project goes weeks between
+sessions and new advisories accumulate silently — six appeared in three weeks
+during the July/August 2026 break, none caused by a code change here.
+
+The report separates vulnerabilities that reach the browser from those confined
+to the build/test toolchain; only the former are urgent. `npm audit fix` plus
+`npm update` handles everything inside the existing semver ranges. `xlsx` has a
+standing high-severity advisory with no upstream fix — it is a known, tracked
+item, not a new finding.
 
 ## Architecture
 
