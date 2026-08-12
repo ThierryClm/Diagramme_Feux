@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { safeShowOpenFilePicker } from '../utils/filePicker';
 import { useConfirm, useAlert } from './ConfirmProvider';
 import { toast } from '../utils/toast';
+import Modal from './Modal';
 import './ExternalLinksModal.css';
 
 const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
@@ -137,105 +138,100 @@ const ExternalLinksModal = ({ isOpen, onClose, links = [], onLinksChange }) => {
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="external-links-overlay">
-            <div className="external-links-modal">
-                <div className="external-links-header">
-                    <h2>Liens externes</h2>
-                    <button className="close-btn" onClick={onClose}>×</button>
-                </div>
-
-                <div className="external-links-content">
-                    {/* List of existing links */}
-                    <div className="links-list">
-                        {localLinks.length === 0 ? (
-                            <p className="no-links">Aucun lien externe configuré.</p>
-                        ) : (
-                            localLinks.map(link => (
-                                <div key={link.id} className="link-item">
-                                    <div className="link-info" onDoubleClick={() => handleOpenLink(link)}>
-                                        <span className="link-name">{link.name}</span>
-                                        <span className="link-path" title={link.path}>{link.path}</span>
-                                    </div>
-                                    <div className="link-actions">
-                                        <button
-                                            className="btn-copy"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigator.clipboard.writeText(link.path);
-                                                toast.success('Chemin copié dans le presse-papiers');
-                                            }}
-                                            title="Copier le chemin"
-                                        >
-                                            📋
-                                        </button>
-                                        <button
-                                            className="btn-edit"
-                                            onClick={(e) => { e.stopPropagation(); handleEditLink(link); }}
-                                            title="Modifier"
-                                        >
-                                            ✎
-                                        </button>
-                                        <button
-                                            className="btn-delete"
-                                            onClick={(e) => { e.stopPropagation(); handleDeleteLink(link.id); }}
-                                            title="Supprimer"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-
-                    {/* Add/Edit form */}
-                    <div className="link-form">
-                        <h4>{editingId ? 'Modifier le lien' : 'Ajouter un lien'}</h4>
-                        <div className="form-row">
-                            <label>Nom :</label>
-                            <input
-                                type="text"
-                                value={newLinkName}
-                                onChange={(e) => setNewLinkName(e.target.value)}
-                                placeholder="Nom du raccourci"
-                            />
-                        </div>
-                        <div className="form-row">
-                            <label>Chemin :</label>
-                            <div className="path-input-group">
-                                <input
-                                    type="text"
-                                    value={newLinkPath}
-                                    onChange={(e) => setNewLinkPath(e.target.value)}
-                                    placeholder="Chemin du fichier ou URL"
-                                />
-                                <button className="btn-browse" onClick={handleBrowseFile} title="Parcourir...">
-                                    ...
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Liens externes"
+            className="external-links-modal"
+            overlayClassName="modal-menu-overlay"
+        >
+            {/* List of existing links */}
+            <div className="links-list">
+                {localLinks.length === 0 ? (
+                    <p className="no-links">Aucun lien externe configuré.</p>
+                ) : (
+                    localLinks.map(link => (
+                        <div key={link.id} className="link-item">
+                            <div className="link-info" onDoubleClick={() => handleOpenLink(link)}>
+                                <span className="link-name">{link.name}</span>
+                                <span className="link-path" title={link.path}>{link.path}</span>
+                            </div>
+                            <div className="link-actions">
+                                <button
+                                    className="btn-copy"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigator.clipboard.writeText(link.path);
+                                        toast.success('Chemin copié dans le presse-papiers');
+                                    }}
+                                    title="Copier le chemin"
+                                >
+                                    📋
+                                </button>
+                                <button
+                                    className="btn-edit"
+                                    onClick={(e) => { e.stopPropagation(); handleEditLink(link); }}
+                                    title="Modifier"
+                                >
+                                    ✎
+                                </button>
+                                <button
+                                    className="btn-delete"
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteLink(link.id); }}
+                                    title="Supprimer"
+                                >
+                                    ×
                                 </button>
                             </div>
                         </div>
-                        <div className="form-actions">
-                            {editingId ? (
-                                <>
-                                    <button className="btn-save" onClick={handleSaveEdit}>Enregistrer</button>
-                                    <button className="btn-cancel" onClick={handleCancelEdit}>Annuler</button>
-                                </>
-                            ) : (
-                                <button className="btn-add" onClick={handleAddLink}>Ajouter</button>
-                            )}
-                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Add/Edit form */}
+            <div className="link-form">
+                <h4>{editingId ? 'Modifier le lien' : 'Ajouter un lien'}</h4>
+                <div className="el-form-row">
+                    <label>Nom :</label>
+                    <input
+                        type="text"
+                        value={newLinkName}
+                        onChange={(e) => setNewLinkName(e.target.value)}
+                        placeholder="Nom du raccourci"
+                    />
+                </div>
+                <div className="el-form-row">
+                    <label>Chemin :</label>
+                    <div className="path-input-group">
+                        <input
+                            type="text"
+                            value={newLinkPath}
+                            onChange={(e) => setNewLinkPath(e.target.value)}
+                            placeholder="Chemin du fichier ou URL"
+                        />
+                        <button className="btn-browse" onClick={handleBrowseFile} title="Parcourir...">
+                            ...
+                        </button>
                     </div>
                 </div>
-
-                <div className="external-links-footer">
-                    <p className="hint">Double-cliquez sur un lien pour l'ouvrir dans une nouvelle fenêtre.</p>
-                    <button className="btn-close" onClick={onClose}>Fermer</button>
+                <div className="form-actions">
+                    {editingId ? (
+                        <>
+                            <button className="btn-save" onClick={handleSaveEdit}>Enregistrer</button>
+                            <button className="btn-cancel" onClick={handleCancelEdit}>Annuler</button>
+                        </>
+                    ) : (
+                        <button className="btn-add" onClick={handleAddLink}>Ajouter</button>
+                    )}
                 </div>
             </div>
-        </div>
+
+            <div className="modal-actions el-footer">
+                <p className="hint">Double-cliquez sur un lien pour l'ouvrir dans une nouvelle fenêtre.</p>
+                <button className="btn-close" onClick={onClose}>Fermer</button>
+            </div>
+        </Modal>
     );
 };
 

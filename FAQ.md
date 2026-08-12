@@ -291,6 +291,67 @@ Pas de limite stricte. L'application a été testée avec une trentaine de group
 
 ---
 
+## Accessibilité
+
+### Puis-je utiliser l'application si j'ai un handicap ?
+
+Cela dépend du besoin, et voici une réponse franche plutôt qu'une déclaration d'intention.
+
+**Ce qui fonctionne bien.** L'agrandissement de l'affichage : parce que TraCflux est une application web, le zoom du navigateur agrandit l'interface entière, textes et champs compris. La sensibilité aux couleurs et la fatigue visuelle : sept thèmes sont proposés, dont un mode daltonien, un mode haut contraste et deux palettes chaudes. La navigation au clavier est visible : l'élément actif est toujours entouré d'un contour net.
+
+**Ce qui fonctionne partiellement.** Le pilotage au clavier : les commandes principales ont des raccourcis, mais le diagramme lui-même se manipule à la souris.
+
+**Ce qui ne fonctionne pas.** Les lecteurs d'écran ne sont pas supportés, et les animations ne peuvent pas être désactivées. Les détails sont donnés plus bas.
+
+### J'ai besoin de grossir l'affichage, que puis-je faire ?
+
+Quatre leviers, du plus général au plus ciblé.
+
+- **Le zoom du navigateur** — `Ctrl + molette`, ou `Ctrl +` et `Ctrl -`. Il agrandit toute l'interface : diagramme, tableaux, formulaires, menus. C'est le levier le plus efficace, et il vient du navigateur, pas de l'application. Dans une fenêtre détachée, il s'applique indépendamment de la fenêtre principale.
+- **La dilatation du diagramme** (menu **Mise en page**) — à ne pas confondre avec le précédent : elle étire l'échelle des temps pour espacer les phases, sans changer la taille des textes.
+- **Le détachement** (menu **Mise en page → Détachements**) — envoyez la matrice, le tableau de trafic ou l'image du carrefour dans une fenêtre séparée, que vous pouvez agrandir en plein écran ou poser sur un second écran.
+- **Le masquage** — commentaires, remarques, noms de groupes, panneau de configuration et infobulles se désactivent individuellement. Moins d'éléments à l'écran, plus de place pour ce qui compte.
+
+Voir aussi *Comment adapter l'affichage à mon écran*, dans la section précédente.
+
+### Les couleurs sont difficiles à distinguer pour moi
+
+L'application propose **sept thèmes**, dans le menu **Mise en page → Options de contraste** :
+
+| Thème | Ce qu'il vise |
+|---|---|
+| **Blanc sur fond noir** (défaut) | Texte clair sur fond sombre |
+| **Noir sur fond blanc** | Texte sombre sur fond blanc |
+| **Haut contraste** | Lisibilité maximale : couleurs vives sur fond bleu profond, contours de focus jaune vif |
+| **Contraste ambre** | Ambre sur anthracite, chaleureux et reposant |
+| **Daltonien** | Palette construite sur l'axe bleu / orange, sans opposition rouge-vert |
+| **Sépia** | Tons chauds, pensé pour les longues sessions |
+| **Bleu nuit** | Palette Solarized, bleu-vert profond |
+
+Le thème est mémorisé et s'applique aussi aux fenêtres détachées.
+
+**Une limite à connaître si vous êtes daltonien.** Le thème adapte l'interface — panneaux, boutons, mise en évidence des conflits. Mais certains codes couleur relèvent du métier lui-même et restent sur l'axe rouge / vert : les états de feu du diagramme, et le degré de saturation du tableau de capacité. Pour un feu tricolore, le rouge et le vert *sont* le sujet, pas une décoration. Dans ces deux cas, l'information reste disponible autrement — en toutes lettres dans les tableaux, et par la position dans le diagramme.
+
+### Puis-je travailler au clavier ?
+
+En partie.
+
+**Ce qui marche.** L'élément actif au clavier est toujours signalé par un contour visible de 2 pixels, décliné selon le thème — turquoise en sombre, bleu en clair, jaune vif en haut contraste et en ambre. La navigation par `Tab` parcourt les champs, les boutons et les menus. Les commandes courantes ont des raccourcis : `Ctrl+Z` et `Ctrl+Y` pour annuler et rétablir, `Ctrl+N`, `Ctrl+O` et `Ctrl+S` pour les projets, `Alt+A` et `Alt+E` pour poser un aiguillage ou un escamotage sur un groupe, les flèches directionnelles pour déplacer une flèche sur l'image du carrefour.
+
+**Ce qui ne marche pas.** Le calage du diagramme — déplacer le début ou la fin d'un vert — se fait au glisser-déposer à la souris, sans équivalent clavier. Les valeurs restent modifiables au clavier dans le tableau des paramètres, ce qui permet de contourner, mais plus lentement.
+
+### L'application fonctionne-t-elle avec un lecteur d'écran ?
+
+Non, et il vaut mieux le dire clairement que de laisser espérer.
+
+L'application n'a pas été conçue ni testée pour les lecteurs d'écran, et son balisage d'accessibilité est insuffisant pour un usage réel. S'y ajoute une difficulté de fond : l'objet central de l'outil est un diagramme temporel, une information spatiale dont la restitution vocale demanderait une conception spécifique, et non un simple ajout d'étiquettes.
+
+Dans le même esprit, les animations du mode simulation ne peuvent pas être désactivées : la préférence système de réduction des animations n'est pas prise en compte.
+
+Ces deux points sont des manques identifiés, pas des choix. Si vous êtes concerné et souhaitez en discuter, les retours sont bienvenus (voir *Comment signaler un bug ou demander une fonctionnalité*).
+
+---
+
 ## Comptes et sécurité
 
 ### Faut-il créer un compte pour utiliser l'application ?

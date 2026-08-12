@@ -333,9 +333,21 @@ body.light-mode .welcome-screen .welcome-hint strong { color: #555; }
 .conflict-list {
     margin-top: 1rem;
     padding: 1rem;
-    background: rgba(231, 76, 60, 0.1);
-    border: 1px solid #e74c3c;
     border-radius: 4px;
+
+    /* Palette par défaut : thème sombre. Voir les déclinaisons plus bas. */
+    --cf-majeur: #e74c3c;
+    --cf-potentiel: #ff9800;
+    --cf-tint-majeur: rgba(231, 76, 60, 0.1);
+    --cf-tint-potentiel: rgba(255, 152, 0, 0.1);
+    --cf-rule-majeur: rgba(231, 76, 60, 0.25);
+    --cf-rule-potentiel: rgba(255, 152, 0, 0.25);
+    --cf-text: #eeeeee;
+    --cf-muted: #9aa0a6;
+    --cf-flag: #888888;
+
+    background: var(--cf-tint-majeur);
+    border: 1px solid var(--cf-majeur);
 }
 
 /* Les h4 sont les titres de section (majeurs / potentiels) : ils portent
@@ -368,6 +380,13 @@ body.light-mode .welcome-screen .welcome-hint strong { color: #555; }
     font-weight: bold;
 }
 
+/* Sur les deux thèmes à fond clair, le vert vif tombe sous le seuil de
+   contraste : on l'assombrit sans changer la sémantique. */
+body.light-mode .conflict-none,
+body.sepia-mode .conflict-none {
+    color: #1e8449;
+}
+
 /* --- Conflits majeurs vs potentiels --------------------------------------
    Majeurs : rien ne les prend en charge, ils sont à traiter.
    Potentiels : présents dans le diagramme mais traités par la micro-régulation
@@ -378,47 +397,97 @@ body.light-mode .welcome-screen .welcome-hint strong { color: #555; }
 .conflict-section + .conflict-section {
     margin-top: 0.75rem;
     padding-top: 0.6rem;
-    border-top: 1px solid rgba(231, 76, 60, 0.25);
+    border-top: 1px solid var(--cf-rule-majeur);
 }
 
-.conflict-section-majeurs { color: #e74c3c; }
-.conflict-section-potentiels { color: #ff9800; }
+.conflict-section-majeurs { color: var(--cf-majeur); }
+.conflict-section-potentiels { color: var(--cf-potentiel); }
 
-.conflict-item-majeur { color: #eee; }
-.conflict-item-potentiel { color: #9aa0a6; }
+.conflict-item-majeur { color: var(--cf-text); }
+.conflict-item-potentiel { color: var(--cf-muted); }
 
 .conflict-item-potentiel .conflict-flag {
     margin-left: 6px;
     font-size: 0.85em;
-    color: #888;
+    color: var(--cf-flag);
 }
 
 /* Quand tout est pris en charge, le cadre rouge dirait le contraire de la
-   réalité : on passe l'ensemble en ambre. */
+   réalité : on passe l'ensemble sur la teinte des potentiels. */
 .conflict-list-sans-majeur {
-    background: rgba(255, 152, 0, 0.1);
-    border-color: #ff9800;
+    background: var(--cf-tint-potentiel);
+    border-color: var(--cf-potentiel);
 }
 
 .conflict-list-sans-majeur .conflict-section + .conflict-section {
-    border-top-color: rgba(255, 152, 0, 0.25);
+    border-top-color: var(--cf-rule-potentiel);
 }
 
-/* Thème clair */
-body.light-mode .conflict-item-majeur { color: #222; }
-body.light-mode .conflict-item-potentiel { color: #6b7075; }
-body.light-mode .conflict-item-potentiel .conflict-flag { color: #777; }
+/* --- Déclinaisons de thème : seule la palette change ---------------------- */
 
-/* Thème haut contraste */
-body.high-contrast-mode .conflict-item-majeur { color: #fff; }
-body.high-contrast-mode .conflict-item-potentiel { color: #c8cdf5; }
-body.high-contrast-mode .conflict-item-potentiel .conflict-flag { color: #c8cdf5; }
-body.high-contrast-mode .conflict-section-potentiels { color: #ffdd00; }
+body.light-mode .conflict-list {
+    --cf-potentiel: #d97706;   /* l'orange vif passe mal sur fond clair */
+    --cf-text: #222222;
+    --cf-muted: #6b7075;
+    --cf-flag: #777777;
+}
 
-/* Thème ambre */
-body.amber-mode .conflict-item-majeur { color: #ffb300; }
-body.amber-mode .conflict-item-potentiel { color: #a8813c; }
-body.amber-mode .conflict-item-potentiel .conflict-flag { color: #a8813c; }
+body.high-contrast-mode .conflict-list {
+    --cf-majeur: #ff5555;
+    --cf-potentiel: #ffdd00;
+    --cf-tint-majeur: rgba(255, 85, 85, 0.22);
+    --cf-tint-potentiel: rgba(255, 221, 0, 0.18);
+    --cf-rule-majeur: rgba(255, 85, 85, 0.4);
+    --cf-rule-potentiel: rgba(255, 221, 0, 0.4);
+    --cf-text: #ffffff;
+    --cf-muted: #c8cdf5;
+    --cf-flag: #c8cdf5;
+}
+
+body.amber-mode .conflict-list {
+    --cf-text: #ffb300;
+    --cf-muted: #a8813c;
+    --cf-flag: #a8813c;
+}
+
+/* Daltonien : la distinction majeur / potentiel repose ailleurs sur un écart
+   rouge → orange, exactement l'axe que ce thème sert à éviter. On la reporte
+   sur l'axe orange / cyan, lisible sans perception du rouge-vert. */
+body.daltonian-mode .conflict-list {
+    --cf-majeur: #ff8c42;
+    --cf-potentiel: #4cc9f0;
+    --cf-tint-majeur: rgba(255, 140, 66, 0.12);
+    --cf-tint-potentiel: rgba(76, 201, 240, 0.12);
+    --cf-rule-majeur: rgba(255, 140, 66, 0.3);
+    --cf-rule-potentiel: rgba(76, 201, 240, 0.3);
+    --cf-text: #e0e1dd;
+    --cf-muted: #9aa5b1;
+    --cf-flag: #9aa5b1;
+}
+
+body.sepia-mode .conflict-list {
+    --cf-majeur: #a63d2f;
+    --cf-potentiel: #b8860b;
+    --cf-tint-majeur: rgba(166, 61, 47, 0.1);
+    --cf-tint-potentiel: rgba(184, 134, 11, 0.12);
+    --cf-rule-majeur: rgba(166, 61, 47, 0.25);
+    --cf-rule-potentiel: rgba(184, 134, 11, 0.3);
+    --cf-text: #5b4636;
+    --cf-muted: #8a7250;
+    --cf-flag: #8a7250;
+}
+
+body.blue-night-mode .conflict-list {
+    --cf-majeur: #dc322f;
+    --cf-potentiel: #b58900;
+    --cf-tint-majeur: rgba(220, 50, 47, 0.14);
+    --cf-tint-potentiel: rgba(181, 137, 0, 0.14);
+    --cf-rule-majeur: rgba(220, 50, 47, 0.3);
+    --cf-rule-potentiel: rgba(181, 137, 0, 0.3);
+    --cf-text: #eee8d5;
+    --cf-muted: #657b83;
+    --cf-flag: #657b83;
+}
 
 /* En fenêtre détachée : on remplit la fenêtre proprement */
 .conflict-list-detached {

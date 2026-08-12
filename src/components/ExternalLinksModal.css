@@ -1,71 +1,122 @@
-.external-links-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: transparent;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    z-index: 1000;
-}
+/* Fenêtre « Liens externes ».
+ *
+ * La structure (overlay transparent, ancrage sous le menu, en-tête, corps
+ * défilant) vient du composant Modal partagé via `modal-menu-overlay` : elle
+ * était auparavant réécrite ici à l'identique, ce qui excluait cette fenêtre
+ * de l'habillage des thèmes défini dans index.css.
+ *
+ * Ne restent ici que la largeur, propre à cette fenêtre, et le contenu qui lui
+ * appartient : liste des liens, formulaire, boutons. Ce contenu se décline sur
+ * les sept thèmes par variables — une palette par thème plutôt qu'une réécriture
+ * de chaque sélecteur.
+ */
 
-.external-links-modal {
-    background: #2c2c2c;
-    border-radius: 4px;
+.modal-content.external-links-modal {
     min-width: 700px;
     max-width: 900px;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     font-size: 0.85em;
-    margin-top: 28px;
-    margin-left: 160px;
+
+    /* Palette par défaut : thème sombre */
+    --el-item-bg: #3a3a3a;
+    --el-item-hover: #454545;
+    --el-text: #ffffff;
+    --el-muted: #888888;
+    --el-field-bg: #2c2c2c;
+    --el-field-border: #555555;
+    --el-btn-bg: #555555;
+    --el-btn-bg-hover: #666666;
+    --el-btn-fg: #ffffff;
+    --el-separator: #444444;
 }
 
-.external-links-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #444;
+/* --- Déclinaisons de thème : seule la palette change ---------------------- */
+
+body.light-mode .external-links-modal {
+    --el-item-bg: #e8e8e8;
+    --el-item-hover: #dcdcdc;
+    --el-text: #222222;
+    --el-muted: #666666;
+    --el-field-bg: #ffffff;
+    --el-field-border: #999999;
+    --el-btn-bg: #d0d0d0;
+    --el-btn-bg-hover: #c0c0c0;
+    --el-btn-fg: #222222;
+    --el-separator: #cccccc;
 }
 
-.external-links-header h2 {
-    margin: 0;
-    color: white;
-    font-size: 1.2rem;
+body.high-contrast-mode .external-links-modal {
+    --el-item-bg: #1a2050;
+    --el-item-hover: #253080;
+    --el-text: #ffffff;
+    --el-muted: #c8cdf5;
+    --el-field-bg: #1a2050;
+    --el-field-border: #4466bb;
+    --el-btn-bg: #1a2050;
+    --el-btn-bg-hover: #253080;
+    --el-btn-fg: #ffdd00;
+    --el-separator: #3355aa;
 }
 
-.external-links-header .close-btn {
-    background: none;
-    border: none;
-    color: #888;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
+body.amber-mode .external-links-modal {
+    --el-item-bg: #303030;
+    --el-item-hover: #3a3a3a;
+    --el-text: #f5f0e8;
+    --el-muted: #b09a72;
+    --el-field-bg: #303030;
+    --el-field-border: #666666;
+    --el-btn-bg: #404040;
+    --el-btn-bg-hover: #4a4a4a;
+    --el-btn-fg: #ffb300;
+    --el-separator: #555555;
 }
 
-.external-links-header .close-btn:hover {
-    color: white;
+body.daltonian-mode .external-links-modal {
+    --el-item-bg: #22304a;
+    --el-item-hover: #2c3e5c;
+    --el-text: #e0e1dd;
+    --el-muted: #9aa5b1;
+    --el-field-bg: #1b263b;
+    --el-field-border: #415a77;
+    --el-btn-bg: #415a77;
+    --el-btn-bg-hover: #4d6a8a;
+    --el-btn-fg: #e0e1dd;
+    --el-separator: #415a77;
 }
 
-.external-links-content {
-    padding: 1rem 1.5rem;
-    overflow-y: auto;
-    flex: 1;
+body.sepia-mode .external-links-modal {
+    --el-item-bg: #ede2c5;
+    --el-item-hover: #e3d5b0;
+    --el-text: #5b4636;
+    --el-muted: #8a7250;
+    --el-field-bg: #faf3e0;
+    --el-field-border: #c9b88e;
+    --el-btn-bg: #c9b88e;
+    --el-btn-bg-hover: #bda87a;
+    --el-btn-fg: #5b4636;
+    --el-separator: #c9b88e;
 }
 
-/* Links list */
+body.blue-night-mode .external-links-modal {
+    --el-item-bg: #0a4552;
+    --el-item-hover: #0d5263;
+    --el-text: #eee8d5;
+    --el-muted: #657b83;
+    --el-field-bg: #073642;
+    --el-field-border: #586e75;
+    --el-btn-bg: #586e75;
+    --el-btn-bg-hover: #657b83;
+    --el-btn-fg: #eee8d5;
+    --el-separator: #586e75;
+}
+
+/* --- Liste des liens ------------------------------------------------------ */
+
 .links-list {
     margin-bottom: 1.5rem;
 }
 
 .no-links {
-    color: #888;
+    color: var(--el-muted);
     font-style: italic;
     text-align: center;
     padding: 1rem;
@@ -75,7 +126,7 @@
     display: flex;
     align-items: center;
     padding: 0.75rem;
-    background: #3a3a3a;
+    background: var(--el-item-bg);
     border-radius: 4px;
     margin-bottom: 0.5rem;
     cursor: pointer;
@@ -83,7 +134,7 @@
 }
 
 .link-item:hover {
-    background: #454545;
+    background: var(--el-item-hover);
 }
 
 .link-info {
@@ -95,12 +146,12 @@
 }
 
 .link-name {
-    color: white;
+    color: var(--el-text);
     font-weight: 500;
 }
 
 .link-path {
-    color: #888;
+    color: var(--el-muted);
     font-size: 0.85em;
     white-space: nowrap;
     overflow: hidden;
@@ -122,66 +173,55 @@
     font-size: 1rem;
 }
 
-.btn-copy {
-    color: #81c784;
-}
+/* Couleurs d'action : sémantiques, identiques sur tous les thèmes. */
+.btn-copy { color: #81c784; }
+.btn-copy:hover { background: rgba(129, 199, 132, 0.2); }
 
-.btn-copy:hover {
-    background: rgba(129, 199, 132, 0.2);
-}
+.btn-edit { color: #64b5f6; }
+.btn-edit:hover { background: rgba(100, 181, 246, 0.2); }
 
-.btn-edit {
-    color: #64b5f6;
-}
+.btn-delete { color: #ef5350; }
+.btn-delete:hover { background: rgba(239, 83, 80, 0.2); }
 
-.btn-edit:hover {
-    background: rgba(100, 181, 246, 0.2);
-}
+/* --- Formulaire d'ajout / édition ----------------------------------------- */
 
-.btn-delete {
-    color: #ef5350;
-}
-
-.btn-delete:hover {
-    background: rgba(239, 83, 80, 0.2);
-}
-
-/* Add/Edit form */
 .link-form {
-    background: #353535;
+    background: var(--el-item-bg);
     padding: 1rem;
     border-radius: 4px;
 }
 
 .link-form h4 {
     margin: 0 0 1rem 0;
-    color: white;
+    color: var(--el-text);
     font-size: 0.95rem;
 }
 
-.form-row {
+/* Préfixée : `.form-row` existe déjà dans Modal.css avec une autre mise en
+   page, et les deux s'appliqueraient une fois la fenêtre dans .modal-body. */
+.el-form-row {
     display: flex;
     align-items: center;
     margin-bottom: 0.75rem;
 }
 
-.form-row label {
-    color: #aaa;
+.el-form-row label {
+    color: var(--el-muted);
     min-width: 70px;
     font-size: 0.9em;
 }
 
-.form-row input {
+.el-form-row input {
     flex: 1;
     padding: 0.4rem;
-    background: #2c2c2c;
-    border: 1px solid #555;
+    background: var(--el-field-bg);
+    border: 1px solid var(--el-field-border);
     border-radius: 4px;
-    color: white;
+    color: var(--el-text);
     font-size: 0.8em;
 }
 
-.form-row input:focus {
+.el-form-row input:focus {
     outline: none;
     border-color: #4CAF50;
 }
@@ -197,8 +237,8 @@
 }
 
 .btn-browse {
-    background: #555;
-    color: white;
+    background: var(--el-btn-bg);
+    color: var(--el-btn-fg);
     border: none;
     padding: 0.5rem 0.75rem;
     border-radius: 4px;
@@ -207,7 +247,7 @@
 }
 
 .btn-browse:hover {
-    background: #666;
+    background: var(--el-btn-bg-hover);
 }
 
 .form-actions {
@@ -216,6 +256,7 @@
     margin-top: 1rem;
 }
 
+/* Vert de validation : sémantique, conservé sur tous les thèmes. */
 .btn-add, .btn-save {
     background: #4CAF50;
     color: white;
@@ -231,8 +272,8 @@
 }
 
 .btn-cancel {
-    background: #666;
-    color: white;
+    background: var(--el-btn-bg);
+    color: var(--el-btn-fg);
     border: none;
     padding: 0.5rem 1rem;
     border-radius: 4px;
@@ -241,33 +282,34 @@
 }
 
 .btn-cancel:hover {
-    background: #777;
+    background: var(--el-btn-bg-hover);
 }
 
-/* Footer */
-.external-links-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid #444;
-    display: flex;
+/* --- Pied de fenêtre ------------------------------------------------------ */
+
+/* Compose .modal-actions (bordure et espacement de la maison) en replaçant
+   l'aide à gauche et le bouton à droite. */
+.el-footer {
     justify-content: space-between;
     align-items: center;
+    border-top-color: var(--el-separator);
 }
 
-.external-links-footer .hint {
-    color: #888;
+.el-footer .hint {
+    color: var(--el-muted);
     font-size: 0.85em;
     margin: 0;
 }
 
-.external-links-footer .btn-close {
-    background: #555;
-    color: white;
+.el-footer .btn-close {
+    background: var(--el-btn-bg);
+    color: var(--el-btn-fg);
     border: none;
     padding: 0.5rem 1.5rem;
     border-radius: 4px;
     cursor: pointer;
 }
 
-.external-links-footer .btn-close:hover {
-    background: #666;
+.el-footer .btn-close:hover {
+    background: var(--el-btn-bg-hover);
 }

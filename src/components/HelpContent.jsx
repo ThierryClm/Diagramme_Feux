@@ -461,11 +461,43 @@ const HelpContent = ({ initialAnchor = null }) => {
 
             <section className="help-section">
                 <h4>Raccourcis clavier</h4>
+
+                <p><strong>Projet</strong></p>
+                <ul>
+                    <li><strong>Ctrl+N :</strong> Nouveau projet (réinitialise l'application)</li>
+                    <li><strong>Ctrl+O :</strong> Ouvrir un projet</li>
+                    <li><strong>Ctrl+S :</strong> Enregistrer le projet</li>
+                </ul>
+
+                <p><strong>Édition</strong></p>
                 <ul>
                     <li><strong>Ctrl+Z :</strong> Annuler la dernière action</li>
-                    <li><strong>Ctrl+Y :</strong> Refaire la dernière action annulée</li>
+                    <li><strong>Ctrl+Y</strong> (ou <strong>Ctrl+Maj+Z</strong>) <strong>:</strong> Refaire la dernière action annulée</li>
+                </ul>
+
+                <p><strong>Diagramme</strong></p>
+                <ul>
+                    <li><strong>Alt+A :</strong> Pose ou retire un <em>aiguillage</em> sur un groupe. Cliquez d'abord sur l'étiquette du groupe, à gauche de sa ligne, pour lui donner le focus.</li>
+                    <li><strong>Alt+E :</strong> Pose ou retire un <em>escamotage</em>, de la même façon. Les deux raccourcis fonctionnent en bascule : un second appui retire le marqueur.</li>
+                </ul>
+
+                <p><strong>Image du carrefour</strong></p>
+                <ul>
                     <li><strong>Flèches directionnelles :</strong> Déplacent point par point la flèche sélectionnée sur l'image du carrefour (focus requis sur l'image)</li>
                 </ul>
+
+                <p><strong>Commentaires et Remarques</strong></p>
+                <ul>
+                    <li><strong>+</strong> et <strong>−</strong> : Colorent le texte sélectionné en vert ou en rouge (voir les sections Commentaires et Remarques)</li>
+                    <li><strong>▲</strong> et <strong>▼</strong> : Agrandissent ou réduisent le texte sélectionné dans les Remarques</li>
+                </ul>
+
+                <p><strong>Affichage</strong></p>
+                <ul>
+                    <li><strong>Ctrl + molette</strong> (ou <strong>Ctrl +</strong> / <strong>Ctrl −</strong>) <strong>:</strong> Zoom du navigateur — agrandit toute l'interface, textes et champs compris. S'applique indépendamment dans chaque fenêtre détachée. À ne pas confondre avec la <em>Dilatation du diagramme</em>, qui étire l'échelle des temps sans changer la taille des textes.</li>
+                </ul>
+
+                <p>L'élément actif au clavier est toujours signalé par un contour visible, dont la couleur suit le thème choisi dans <em>Mise en page → Options de contraste</em>.</p>
             </section>
 
             <section className="help-section">
