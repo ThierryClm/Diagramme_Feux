@@ -28,6 +28,12 @@ desktop.ini
 /*.bn
 /Car *.json
 /RSI_*.cmpx
+# Documents de travail déposés à la racine pour lecture (dossiers de carrefour,
+# pièces client). Non couverts avant le 2026-08-12, alors qu'un `git add -A`
+# suffisait à les envoyer dans l'historique.
+/*.pdf
+/*.docx
+/*.xlsx
 /samples/
 /bn/
 

@@ -48,10 +48,20 @@ function vulns(report) {
         .sort(bySeverity);
 }
 
+/**
+ * « Pas de correctif » au sens de npm audit signifie « rien de corrigé sur le
+ * registre npm » — ce qui ne veut pas dire qu'aucun correctif n'existe. Cette
+ * table porte les exceptions connues, pour ne pas laisser croire à une impasse
+ * là où il n'y a qu'un canal de distribution différent.
+ */
+const CORRECTIFS_HORS_NPM = {
+    xlsx: 'correctif HORS npm — tarball cdn.sheetjs.com >= 0.20.2 (voir la note projet)',
+};
+
 function ligneVuln(v) {
     const suite = v.fixable ? 'corrigeable par npm audit fix'
         : v.major ? `correctif en version majeure (${v.cible ?? '?'})`
-        : 'pas de correctif amont';
+        : CORRECTIFS_HORS_NPM[v.name] || 'pas de correctif amont';
     return `    - ${v.name} (${v.severity}) — ${suite}`;
 }
 
