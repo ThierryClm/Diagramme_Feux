@@ -38,7 +38,7 @@ L'**import des formats existants** procède du même principe : un plan de feux 
 
 Les outils historiques de conception de plans de feux reposent généralement sur une **organisation par phases** : les feux d'une même phase s'ouvrent et se ferment ensemble. C'est simple et lisible pour l'usager, mais cela contraint le concepteur sur l'enchainement des groupes de feux.
 
-TraCflux repose sur un **modèle qui combine gestion par phases et gestion par groupes de feux**. Le phasage reste disponible — pour raisonner comme pour agir (escamotage de phase, phasage bulle) — mais **chaque groupe de feux demeure indépendant** : il n'est pas verrouillé dans une phase, et garde sa propre fenêtre de vert.
+TraCflux repose sur un **modèle qui combine gestion par phases et gestion par groupes de feux**. Le phasage reste disponible — pour raisonner comme pour agir (escamotage de phase, phasage bulle) — mais **chaque groupe de feux demeure indépendant** : il n'est pas verrouillé dans une phase, et conserve ses propres instants d'ouverture et de fermeture.
 
 C'est cette combinaison qui permet d'exprimer directement les **chevauchements partiels**, la **micro-régulation fine** (escamotage, seconde lucarne, fermeture anticipée…), la **coordination sur un axe** et le **diagnostic de capacité courant par courant** — là où un modèle strictement par phases les rend malaisés, voire impossibles à décrire.
 
