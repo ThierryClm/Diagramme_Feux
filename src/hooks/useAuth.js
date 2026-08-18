@@ -1,5 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { safeShowOpenFilePicker, safeShowSaveFilePicker } from '../utils/filePicker';
+import { isExampleSession } from '../utils/exampleMode';
+
+// Visiteur d'une session « projet exemple » : découvre l'outil sans créer de
+// compte. Permissions de modification totale pour que rien ne soit grisé, mais
+// pas administrateur — la gestion des comptes du poste reste hors de portée.
+// Jamais écrit dans localStorage : la session meurt avec l'onglet.
+export const EXAMPLE_VISITOR = { username: 'Visiteur', permissions: 'total', isAdmin: false };
 
 // Niveaux de permissions
 export const PERMISSIONS = {
@@ -89,6 +96,7 @@ export const useAuth = () => {
                 }
 
                 // Vérifier s'il y a une session active
+                let sessionRetablie = false;
                 const savedSession = localStorage.getItem('auth_session');
                 if (savedSession) {
                     const session = JSON.parse(savedSession);
@@ -102,10 +110,18 @@ export const useAuth = () => {
                             isAdmin: usersData[session.username].isAdmin
                         });
                         setIsAuthenticated(true);
+                        sessionRetablie = true;
                     } else {
                         // Session invalide, la supprimer
                         localStorage.removeItem('auth_session');
                     }
+                }
+
+                // À défaut de session, un projet exemple entre sans compte :
+                // il doit s'ouvrir d'un clic, sans formulaire préalable.
+                if (!sessionRetablie && isExampleSession()) {
+                    setCurrentUser(EXAMPLE_VISITOR);
+                    setIsAuthenticated(true);
                 }
             } catch (e) {
                 console.error('Erreur chargement auth:', e);

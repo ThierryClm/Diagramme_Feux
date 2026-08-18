@@ -2300,13 +2300,18 @@ function App() {
                         {currentUser?.username}
                         {currentUser?.isAdmin && ' (Admin)'}
                     </span>
-                    <button
-                        className="logout-btn"
-                        onClick={logout}
-                        title={tip("Se déconnecter")}
-                    >
-                        Déconnexion
-                    </button>
+                    {/* Le visiteur d'un projet exemple n'a pas de compte : lui offrir
+                        « Déconnexion » le renverrait sur l'écran de création de compte,
+                        justement ce que la session exemple évite. */}
+                    {!isExample && (
+                        <button
+                            className="logout-btn"
+                            onClick={logout}
+                            title={tip("Se déconnecter")}
+                        >
+                            Déconnexion
+                        </button>
+                    )}
                 </div>
             </header>
 
