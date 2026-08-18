@@ -178,7 +178,8 @@
     height: 96px;
 }
 
-.arrow-marker .arrow-label {
+.arrow-marker .arrow-label,
+.floating-arrow-marker .arrow-label {
     font-size: 12px;
     color: #fff;
     background: rgba(0, 0, 0, 0.85);
@@ -194,7 +195,8 @@
 }
 
 /* For side labels (Piéton/Cycle) */
-.arrow-marker.side-label .arrow-label {
+.arrow-marker.side-label .arrow-label,
+.floating-arrow-marker.side-label .arrow-label {
     position: absolute;
     bottom: auto;
     left: auto;

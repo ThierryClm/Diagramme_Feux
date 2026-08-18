@@ -29,6 +29,7 @@ const useFloatingImageRenderer = ({
         if (!showFloatingImage || !intersectionImage) return;
 
         const showNums = JSON.parse(localStorage.getItem('intersection_showGroupNumbers') ?? 'true');
+        const showNames = JSON.parse(localStorage.getItem('intersection_showGroupNames') ?? 'true');
 
         // Compute group number centroids
         const groupMap = {};
@@ -187,15 +188,32 @@ const useFloatingImageRenderer = ({
                                     }
                                 }
 
+                                const isPedestrianOrCycle = courant === 'Piéton' || courant === 'Cycle';
+
                                 return (
                                     <div
                                         key={arrow.id}
-                                        className={`floating-arrow-marker ${isHovered ? 'hovered' : ''}`}
+                                        className={`floating-arrow-marker ${isHovered ? 'hovered' : ''} ${isPedestrianOrCycle ? 'side-label' : ''}`}
                                         style={{ left: `${arrow.x}%`, top: `${arrow.y}%` }}
                                     >
                                         <div className="arrow-symbol" style={{ transform: `rotate(${rotation}deg) scale(${scale})` }}>
                                             {renderFloatingArrowSVG(courant, arrowColor, arrowLength, turnLength)}
                                         </div>
+                                        {showNames && group?.name && (
+                                            // Contre-échelle : l'étiquette garde sa taille à l'écran quel que
+                                            // soit le zoom, si bien que zoomer écarte les flèches sans grossir
+                                            // le texte — c'est ce qui dénoue les chevauchements sur un plan dense.
+                                            <span
+                                                className="arrow-label"
+                                                style={{
+                                                    transform: isPedestrianOrCycle
+                                                        ? `translateY(-50%) scale(${1 / floatingZoom})`
+                                                        : `translateX(-50%) scale(${1 / floatingZoom})`
+                                                }}
+                                            >
+                                                {group.name}
+                                            </span>
+                                        )}
                                     </div>
                                 );
                             })}
