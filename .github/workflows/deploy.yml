@@ -1,0 +1,69 @@
+name: Déploiement GitHub Pages
+
+# Publie l'application sur GitHub Pages à chaque push sur master.
+#
+# La suite Vitest est rejouée ici avant le build, alors que test.yml la joue
+# déjà sur le même push : c'est volontaire. Les deux workflows sont
+# indépendants et rien n'empêcherait de publier une version dont les tests
+# échouent. Une minute de CI en double vaut mieux qu'un plan de feux faux
+# servi en ligne.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Jetons nécessaires au déploiement Pages (OIDC)
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois. Pas d'annulation en cours de route :
+# interrompre un déploiement Pages peut laisser le site dans un état partiel.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Vitest suite
+        run: npm test -- --run
+
+      - name: Production build
+        run: npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      # `base: './'` dans vite.config.js rend les chemins relatifs : le site
+      # fonctionne tel quel sous le sous-chemin /Diagramme_Feux/ de Pages.
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
