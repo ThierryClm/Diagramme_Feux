@@ -246,7 +246,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <li><strong>Déb (Début de vert) :</strong> Position de départ du vert dans le cycle (en secondes depuis le début du cycle)</li>
                     <li><strong>Fin (Fin de vert) :</strong> Position de fin du vert dans le cycle (en secondes depuis le début du cycle)</li>
                     <li><strong>Durée :</strong> Durée du feu vert, calculée automatiquement comme la différence entre Fin et Déb</li>
-                    <li><strong>Indicateur aiguillage/escamotage :</strong> Lorsqu'une action <em>Escamotage</em> est définie dans les conditions de micro-régulation, un petit "e" s'affiche automatiquement en haut à droite du nom des groupes concernés (GF source et Action GF cibles). Les conflits où ce groupe est en première position (GFx dans "GFx ↔ GFy") sont alors grisés et non comptabilisés, ce qui peut permettre de valider le plan de feux. Il est également possible de poser manuellement cet indicateur : cliquez sur un nom de groupe puis utilisez <em>Alt+A</em> (aiguillage) ou <em>Alt+E</em> (escamotage) pour marquer le groupe. Un indicateur posé manuellement n'est pas écrasé par l'automatisme.</li>
+                    <li><strong>Indicateur aiguillage/escamotage :</strong> L'<em>aiguillage de phase</em> choisit dynamiquement la phase suivante parmi plusieurs possibles, selon l'arrivée réelle des usagers ; l'<em>escamotage</em> supprime une tranche du cycle. Lorsqu'une action <em>Escamotage</em> est définie dans les conditions de micro-régulation, un petit "e" s'affiche automatiquement en haut à droite du nom des groupes concernés (GF source et Action GF cibles). Les conflits où ce groupe est en première position (GFx dans "GFx ↔ GFy") sont alors grisés et non comptabilisés, ce qui peut permettre de valider le plan de feux. Il est également possible de poser manuellement cet indicateur : cliquez sur un nom de groupe puis utilisez <em>Alt+A</em> (aiguillage) ou <em>Alt+E</em> (escamotage) pour marquer le groupe. Un indicateur posé manuellement n'est pas écrasé par l'automatisme.</li>
                     <li><strong>Mode simulation :</strong> Lorsque l'onglet Simulation est actif, le diagramme passe en mode lecture seule : les valeurs DA, Déb, Fin et la durée du cycle ne sont plus modifiables. Le diagramme affiche en temps réel l'effet des actions de micro-régulation cochées dans le panneau de simulation. Les zones contractées (Adaptatif vertical, Escamotage de phase) réduisent visuellement le cycle, les fermetures anticipées ajustent les fins de vert, et les actions de micro-régulation (Priorité piétons, Signal aide conduite, Flèche d'anticipation) suivent les décalages. Ce mode permet de vérifier le comportement du carrefour sous différentes combinaisons d'actions avant la mise en service.</li>
                 </ul>
             </section>
@@ -867,13 +867,16 @@ const HelpContent = ({ initialAnchor = null }) => {
                 <h4>Glossaire</h4>
                 <dl style={{ margin: 0 }}>
                     <dt><strong>Adaptatif vertical</strong></dt>
-                    <dd>Action de micro-régulation qui décale verticalement l'ensemble des groupes de feux à une période donnée du cycle, pour créer une contraction ou une dilatation temporaire des phases.</dd>
+                    <dd>Neutralisation d'une plage du cycle afin de le raccourcir. Matérialisée dans le diagramme par un rectangle bleu.</dd>
+
+                    <dt><strong>Aiguillage de phase</strong></dt>
+                    <dd>Fonction de régulation qui choisit dynamiquement la phase suivante parmi plusieurs options possibles, selon l'arrivée réelle des usagers ou la configuration du trafic. Relève de la gestion par groupes de feux — à la différence de l'<em>escamotage de phase</em>, qui procède d'un fonctionnement par phases. Se pose ou se retire manuellement sur un groupe par <em>Alt+A</em>.</dd>
 
                     <dt><strong>Avant vert (AVer)</strong></dt>
                     <dd>Variable indiquant le temps résiduel avant l'apparition du vert d'un groupe. Utilisée dans les conditions de micro-régulation pour déclencher une action juste avant l'ouverture d'un feu. Reconnue avec ou sans le T final (AVer couvre aussi l'écriture AVert).</dd>
 
                     <dt><strong>Bande passante (début / fin)</strong></dt>
-                    <dd>Actions de micro-régulation qui marquent les bornes de progression d'un véhicule d'un feu à l'autre sur un axe. Représentées dans le diagramme par des flèches vertes en pointillé.</dd>
+                    <dd>Repères qui marquent les bornes de progression d'un véhicule d'un feu à l'autre sur un axe. Ils se saisissent dans la table des conditions, mais relèvent de la représentation : ce sont des raccourcis de tracé, non des actions agissant sur le plan de feux. Représentés dans le diagramme par des flèches vertes en pointillé.</dd>
 
                     <dt><strong>Coefficient de voie</strong></dt>
                     <dd>Pondération appliquée au débit de saturation théorique d'une voie pour refléter les particularités locales (pente, tourne-à-gauche, largeur, etc.). Utilisé dans les calculs de capacité et de taux d'occupation.</dd>
@@ -891,7 +894,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <dd>Représentation temporelle d'un cycle de feux, où chaque groupe dispose d'une ligne et chaque phase (vert, orange, rouge) est visualisée par une barre colorée.</dd>
 
                     <dt><strong>Escamotage de phase</strong></dt>
-                    <dd>Action de micro-régulation qui supprime (contracte) une tranche temporelle du cycle sur tous les groupes, raccourcissant temporairement le cycle global.</dd>
+                    <dd>Suppression d'une phase du cycle lorsqu'elle n'est pas demandée.</dd>
 
                     <dt><strong>Fermeture anticipée</strong></dt>
                     <dd>Action qui raccourcit la durée de vert d'un groupe de feux en anticipant sa fin. Représentée par une accolade sur la fin du vert. Lorsqu'elle est associée à une action sur un autre groupe de feu (champ <em>Action GF</em>), on parle également de <em>glissement</em>.</dd>
@@ -922,7 +925,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     </dd>
 
                     <dt><strong>Instant CO</strong></dt>
-                    <dd>Action de micro-régulation qui repère un instant précis du cycle (« Cycle Outil » / moment de coordination). Matérialisé dans le diagramme par des flèches verticales orange.</dd>
+                    <dd>Position fixe du cycle où le contrôleur se met en attente de coordination. Matérialisé dans le diagramme par des flèches verticales orange.</dd>
 
                     <dt><strong>Intervert (temps d')</strong></dt>
                     <dd>Temps de dégagement minimal (en secondes) à respecter entre la fin du vert d'un groupe et le début du vert d'un groupe antagoniste. Stocké dans la matrice des interverts.</dd>
@@ -949,13 +952,13 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <dd>Configuration temporelle complète d'un cycle de feux (durées, offsets, actions). Une application peut contenir plusieurs plans de feux (PF1, PF2, ...) permettant de comparer des scénarios ou de gérer différentes périodes horaires.</dd>
 
                     <dt><strong>Point de repos</strong></dt>
-                    <dd>Action de micro-régulation qui définit un point du cycle où le contrôleur « attend » (feu maintenu dans un état) jusqu'à ce qu'une condition de micro-régulation déclenche la suite. Représenté dans le diagramme par des flèches verticales rouges.</dd>
+                    <dd>Position fixe du cycle où le contrôleur se met en attente d'un événement. Représenté dans le diagramme par des flèches verticales rouges.</dd>
 
                     <dt><strong>Priorité bus</strong></dt>
                     <dd>Ensemble de mécanismes (allongement de vert, escamotage de phase, point de repos, etc.) permettant d'accorder un avantage temporel aux transports en commun détectés à l'approche du carrefour.</dd>
 
                     <dt><strong>Priorité piétons</strong></dt>
-                    <dd>Action de micro-régulation qui réduit le temps d'attente d'un piéton en avançant le vert piéton dès qu'une détection piétonne le justifie.</dd>
+                    <dd>Signal de type A13b signalant un conflit entre un temps piéton rendu prioritaire et un mouvement tournant.</dd>
 
                     <dt><strong>Seconde lucarne</strong></dt>
                     <dd>Second feu complémentaire pour un groupe, permettant un second vert dans le cycle — utilisé pour certains mouvements nécessitant deux créneaux (piéton bidirectionnel, par exemple).</dd>
