@@ -383,7 +383,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     TraCflux traite la priorité aux transports en commun comme une composante à
                     part entière de la micro-régulation, et non comme un module ajouté en
                     périphérie. L'outil met à disposition le vocabulaire de modélisation — délai
-                    d'approche (DA), temps moyen d'attente bus (TMAB), temps passé dans la phase
+                    d'approche (DA), temps maxi d'attente bus (TMAB), temps passé dans la phase
                     (TPPh), avant-vert (AVer) — et les mécanismes associés — allongement et
                     ouverture anticipée du vert, escamotage de phase, point de repos — pour
                     accorder au bus un avantage temporel <strong>lisible</strong>. La philosophie
@@ -963,8 +963,8 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <dt><strong>Synchro BTS</strong></dt>
                     <dd>Action de synchronisation de type « Base de Temps Système » — permet d'aligner le cycle local sur un signal de synchronisation externe (ex : coordination de carrefours en cascade). Représentée dans le diagramme par des flèches verticales bleues.</dd>
 
-                    <dt><strong>TMAB (Temps Moyen d'Attente Bus)</strong></dt>
-                    <dd>Indicateur de performance mesurant le temps moyen d'attente des bus à un carrefour. Utilisé pour évaluer l'efficacité de la priorité bus.</dd>
+                    <dt><strong>TMAB (Temps Maxi d'Attente Bus)</strong></dt>
+                    <dd>Durée d'attente maximale retenue pour un bus au carrefour. Sert de seuil dans les conditions de micro-régulation de la priorité bus.</dd>
 
                     <dt><strong>TPPh (Temps Passé dans la Phase)</strong></dt>
                     <dd>Variable de micro-régulation indiquant le temps écoulé depuis le début de la phase en cours. Utilisée dans les conditions conditionnelles (ex : allonger le vert tant que TPPh {'<'} X).</dd>

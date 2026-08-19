@@ -50,7 +50,7 @@ C'est cette combinaison qui permet d'exprimer directement les **chevauchements p
 
 ### Priorité bus
 
-La prise en compte des transports en commun est pensée comme une **orientation de fond** de TraCflux : les variables et actions de micro-régulation propres à la priorité bus (délai d'approche, temps moyen d'attente bus, allongement de vert, escamotage de phase, point de repos…) sont intégrées au cœur de l'outil. L'objectif est de rendre une stratégie de priorité **explicite, visualisable et vérifiable** — sans boîte noire, hors ligne et interopérable — tout en laissant la décision d'ingénierie à l'utilisateur. TraCflux ne décide pas du niveau de priorité accordé : il en offre le langage et la lecture, en préservant les contraintes de sécurité et la cohérence du plan de feux.
+La prise en compte des transports en commun est pensée comme une **orientation de fond** de TraCflux : les variables et actions de micro-régulation propres à la priorité bus (délai d'approche, temps maxi d'attente bus, allongement de vert, escamotage de phase, point de repos…) sont intégrées au cœur de l'outil. L'objectif est de rendre une stratégie de priorité **explicite, visualisable et vérifiable** — sans boîte noire, hors ligne et interopérable — tout en laissant la décision d'ingénierie à l'utilisateur. TraCflux ne décide pas du niveau de priorité accordé : il en offre le langage et la lecture, en préservant les contraintes de sécurité et la cohérence du plan de feux.
 
 ### Reprendre les études DiagFeux
 

@@ -13,7 +13,7 @@ export const DEFAULT_MICRO_VARIABLES = [
     { name: 'DA', description: "Délai d'Approche — temps de parcours entre le point d'appel et la ligne d'effet." },
     { name: 'TPPh', description: 'Temps Passé dans la Phase — temps écoulé depuis le début de la phase en cours.' },
     { name: 'AVer', description: "Avant vert — temps résiduel avant l'apparition du vert d'un groupe. Reconnu avec ou sans le T final (AVer couvre aussi AVert)." },
-    { name: 'TMAB', description: "Temps Moyen d'Attente Bus — indicateur de performance de la priorité bus." },
+    { name: 'TMAB', description: "Temps Maxi d'Attente Bus — durée d'attente maximale retenue pour un bus, utilisée comme seuil dans les conditions de priorité." },
     { name: 'NIVEAU_PRIORITE', description: 'Coefficient à appliquer sur les variables de priorité bus (de 0 à 3)' },
 ];
 
