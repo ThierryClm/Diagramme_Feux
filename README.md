@@ -21,6 +21,12 @@ TraCflux s'organise en **deux modules complémentaires** :
 
 Conçue pour être utilisée **localement**, sans serveur ni télémétrie : toutes les données restent dans le navigateur (localStorage) et sur votre poste.
 
+## Essayer TraCflux
+
+**[Ouvrir l'application](https://thierryclm.github.io/Diagramme_Feux/?example=carrefour)** — un carrefour d'exemple s'ouvre directement, sans compte à créer et sans rien installer.
+
+Pour l'avoir sous la main : le bouton **« Installer cette app »** de la barre d'adresse (Chrome ou Edge) en fait un raccourci sur le bureau, et l'application fonctionne ensuite hors connexion.
+
 ## Pourquoi TraCflux
 
 ### Un outil pérenne, sans installation
@@ -102,7 +108,9 @@ L'auditoire ne voit que l'essentiel — le carrefour qui « vit » au rythme du 
 - Application installable (PWA), fonctionne hors ligne, avec bandeau « nouvelle version disponible »
 - Rapport de diagnostic pour signalement de bug (local, sans envoi réseau)
 
-## Installation
+## Développement
+
+Pour travailler sur le code. L'usage courant ne demande rien de tout cela — voir [Essayer TraCflux](#essayer-tracflux).
 
 Prérequis : [Node.js](https://nodejs.org/) 18 ou plus.
 
@@ -163,7 +171,9 @@ Application React + Vite, état centralisé dans [`src/hooks/useTrafficLight.js`
 
 ## Comptes utilisateurs
 
-L'application embarque un système de comptes optionnel à 3 niveaux de permissions (lecture seule, modification partielle, modification totale) avec mots de passe hachés en SHA-256.
+L'application embarque un système de comptes à 3 niveaux de permissions (lecture seule, modification partielle, modification totale), avec mots de passe hachés en SHA-256.
+
+**Il est désactivé par défaut** : à l'ouverture, on entre directement dans l'application, sans écran de connexion. Il s'adresse aux postes partagés et s'active depuis **À propos → Utilisateurs → Activer les comptes**. Une fois activé, l'application demande une connexion à chaque ouverture ; on peut le désactiver au même endroit, les comptes créés étant conservés.
 
 **Important — ce que ce système est, et n'est pas :**
 
