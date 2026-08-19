@@ -30,7 +30,6 @@ const MenuBar = ({
     const [openNestedSubmenu, setOpenNestedSubmenu] = useState(null);
     const menuRef = useRef(null);
     // Timer pour l'ouverture différée au survol (filtre les passages rapides)
-    const hoverTimerRef = useRef(null);
 
     // Drapeau « import Excel » : la fonctionnalité dépend du modèle de
     // fichier Excel (mises en page variables d'un éditeur à l'autre) et n'est
@@ -65,6 +64,17 @@ const MenuBar = ({
         { id: 'double', label: 'Double trait' }
     ];
 
+    // Le menu d'accueil (Fichier, ouvert d'office tant qu'aucun projet n'est
+    // chargé) doit se refermer dès qu'un projet arrive. Sans cela il restait
+    // ouvert indéfiniment : la barre demeurait en mode « bascule au survol »,
+    // et le premier clic de l'utilisateur refermait le menu au lieu de
+    // l'ouvrir — d'où l'impression qu'il s'ouvre et se referme aussitôt.
+    useEffect(() => {
+        setOpenMenu(initialOpenMenu);
+        setOpenSubmenu(null);
+        setOpenNestedSubmenu(null);
+    }, [initialOpenMenu]);
+
     // Close menu when clicking outside
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -76,13 +86,6 @@ const MenuBar = ({
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    // Nettoyage du timer de survol au démontage
-    useEffect(() => {
-        return () => {
-            if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-        };
     }, []);
 
     const handleMenuClick = (menuName) => {
@@ -711,22 +714,12 @@ const MenuBar = ({
                                 }
                                 return;
                             }
-                            // Aucun menu ouvert : ouverture différée (150 ms) sur les menus
-                            // avec dropdown disponible, pour filtrer les survols accidentels.
-                            if (menu.items && !menu.disabled) {
-                                if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-                                hoverTimerRef.current = setTimeout(() => {
-                                    setOpenMenu(key);
-                                    hoverTimerRef.current = null;
-                                }, 150);
-                            }
-                        }}
-                        onMouseLeave={() => {
-                            // Annule l'ouverture différée si on quitte avant la fin du délai.
-                            if (hoverTimerRef.current) {
-                                clearTimeout(hoverTimerRef.current);
-                                hoverTimerRef.current = null;
-                            }
+                            // Aucun menu ouvert : on n'ouvre PAS au survol. Le
+                            // survol et le clic se disputaient sinon le même
+                            // geste — le survol ouvrait le menu, puis le clic le
+                            // refermait en le trouvant déjà ouvert, d'où un
+                            // clignotement. C'est le clic qui ouvre, comme dans
+                            // toute barre de menus.
                         }}
                         disabled={menu.disabled}
                         title={menu.disabled && !hasActiveProject ? 'Aucun projet ouvert' : ''}
