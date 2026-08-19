@@ -870,7 +870,7 @@ const HelpContent = ({ initialAnchor = null }) => {
                     <dd>Neutralisation d'une plage du cycle afin de le raccourcir. Matérialisée dans le diagramme par un rectangle bleu.</dd>
 
                     <dt><strong>Aiguillage de phase</strong></dt>
-                    <dd>Fonction de régulation qui choisit dynamiquement la phase suivante parmi plusieurs options possibles, selon l'arrivée réelle des usagers ou la configuration du trafic. Relève de la gestion par groupes de feux — à la différence de l'<em>escamotage de phase</em>, qui procède d'un fonctionnement par phases. Se pose ou se retire manuellement sur un groupe par <em>Alt+A</em>.</dd>
+                    <dd>Fonction de régulation qui choisit dynamiquement la phase suivante parmi plusieurs options possibles, selon l'arrivée réelle des usagers ou la configuration du trafic. Se pose ou se retire manuellement sur un groupe par <em>Alt+A</em>.</dd>
 
                     <dt><strong>Avant vert (AVer)</strong></dt>
                     <dd>Variable indiquant le temps résiduel avant l'apparition du vert d'un groupe. Utilisée dans les conditions de micro-régulation pour déclencher une action juste avant l'ouverture d'un feu. Reconnue avec ou sans le T final (AVer couvre aussi l'écriture AVert).</dd>
