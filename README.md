@@ -66,7 +66,7 @@ La méthode de calcul reste celle du *Guide des carrefours à feux* du CERTU (d�
 
 L'application est conçue pour s'adapter aux contextes de **présentation devant un auditoire** — comités techniques, formations internes, validations devant un client ou échanges pédagogiques avec des élus.
 
-Détachez la fenêtre **Image du carrefour** sur un vidéoprojecteur ou un second écran pour montrer en grand l'animation du carrefour pendant la simulation : les flèches changent de couleur (vert / orange / rouge) seconde par seconde, en suivant le cycle et l'effet des actions de micro-régulation activées.
+En réunion comme en visio, détachez la fenêtre **Image du carrefour** : c'est elle seule que vous partagez ou posez sur un second écran. Pendant la simulation : les flèches changent de couleur (vert / orange / rouge) seconde par seconde, en suivant le cycle et l'effet des actions de micro-régulation activées.
 
 L'auditoire ne voit que l'essentiel — le carrefour qui « vit » au rythme du cycle — pendant que vous gardez le contrôle complet sur votre écran de travail (diagramme, matrice, panneau de simulation, micro-régulation) et commentez en direct les actions que vous activez et leur effet sur la dynamique du carrefour.
 
@@ -104,7 +104,7 @@ L'auditoire ne voit que l'essentiel — le carrefour qui « vit » au rythme du 
 ### Transverse
 
 - Thèmes (sombre, clair, haut contraste, ambre, daltonien, sépia, bleu nuit)
-- **Détachement de fenêtres** sur un second écran ou un vidéoprojecteur : matrice, formulaire, propriétés, données trafic, conflits, réserve de capacité, conditions et variables de micro-régulation, remarques, image du carrefour, et **miroir du diagramme en lecture seule**
+- **Détachement de fenêtres** — à partager en visio ou à poser sur un second écran : matrice, formulaire, propriétés, données trafic, conflits, réserve de capacité, conditions et variables de micro-régulation, remarques, image du carrefour, et **miroir du diagramme en lecture seule**
 - Application installable (PWA), fonctionne hors ligne, avec bandeau « nouvelle version disponible »
 - Rapport de diagnostic pour signalement de bug (local, sans envoi réseau)
 
