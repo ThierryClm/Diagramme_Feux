@@ -8,6 +8,23 @@ import { isExampleSession } from '../utils/exampleMode';
 // Jamais écrit dans localStorage : la session meurt avec l'onglet.
 export const EXAMPLE_VISITOR = { username: 'Visiteur', permissions: 'total', isAdmin: false };
 
+// Utilisateur implicite quand les comptes sont désactivés — le cas courant.
+// Administrateur, sans quoi l'entrée « Utilisateurs » du menu serait grisée et
+// l'on ne pourrait plus activer les comptes.
+export const LOCAL_USER = { username: 'Local', permissions: 'total', isAdmin: true };
+
+// Les comptes sont un dispositif pour poste partagé, pas une inscription :
+// désactivés par défaut. Un poste qui en a déjà créé les conserve — on ne
+// retire pas silencieusement une protection que quelqu'un a mise en place.
+export const comptesActives = () => {
+    try {
+        const explicite = localStorage.getItem('auth_enabled');
+        if (explicite !== null) return JSON.parse(explicite);
+        const anciens = localStorage.getItem('auth_users');
+        return !!anciens && Object.keys(JSON.parse(anciens)).length > 0;
+    } catch { return false; }
+};
+
 // Niveaux de permissions
 export const PERMISSIONS = {
     'lecture': {
@@ -83,6 +100,7 @@ export const useAuth = () => {
     const [currentUser, setCurrentUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [users, setUsers] = useState({});
+    const [accountsEnabled, setAccountsEnabled] = useState(comptesActives);
     const [isLoading, setIsLoading] = useState(true);
 
     // Charger les utilisateurs et la session au démarrage
@@ -93,6 +111,15 @@ export const useAuth = () => {
                 const savedUsers = localStorage.getItem('auth_users');
                 if (savedUsers) {
                     setUsers(JSON.parse(savedUsers));
+                }
+
+                // Comptes désactivés : on entre directement, sans écran de
+                // connexion. Rien n'est écrit, l'utilisateur local est implicite.
+                if (!comptesActives()) {
+                    setCurrentUser(LOCAL_USER);
+                    setIsAuthenticated(true);
+                    setIsLoading(false);
+                    return;
                 }
 
                 // Vérifier s'il y a une session active
@@ -426,10 +453,31 @@ export const useAuth = () => {
         }));
     }, [users]);
 
+    // Activer les comptes sur ce poste : on repasse par l'écran de connexion,
+    // qui proposera la création du premier compte administrateur.
+    const activerComptes = useCallback(() => {
+        localStorage.setItem('auth_enabled', 'true');
+        localStorage.removeItem('auth_session');
+        setAccountsEnabled(true);
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+    }, []);
+
+    // Désactiver : on rend la main à l'utilisateur local. Les comptes existants
+    // sont conservés dans localStorage, une réactivation les retrouve.
+    const desactiverComptes = useCallback(() => {
+        localStorage.setItem('auth_enabled', 'false');
+        localStorage.removeItem('auth_session');
+        setAccountsEnabled(false);
+        setCurrentUser(LOCAL_USER);
+        setIsAuthenticated(true);
+    }, []);
+
     return {
         // État
         currentUser,
         isAuthenticated,
+        accountsEnabled,
         isLoading,
         users,
 
@@ -443,6 +491,8 @@ export const useAuth = () => {
         changePassword,
         resetPassword,
         hasPermission,
+        activerComptes,
+        desactiverComptes,
         getUsersList,
         exportUsersToFile,
         importUsersFromFile,

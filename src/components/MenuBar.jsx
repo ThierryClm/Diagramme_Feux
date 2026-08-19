@@ -20,6 +20,7 @@ const MenuBar = ({
     onPixelsPerSecondChange,
     showMicroOnHover = true,
     initialOpenMenu = null,
+    accountsEnabled = false,
     pfCount = 0
 }) => {
     const [openMenu, setOpenMenu] = useState(initialOpenMenu);
@@ -487,11 +488,21 @@ const MenuBar = ({
                 { label: 'Aide', action: 'help' },
                 { label: 'Rapport de diagnostic...', action: 'diagnosticReport' },
                 { label: 'À propos', action: 'credit' },
+                // Les comptes sont un dispositif pour poste partagé, éteint par
+                // défaut : on propose de l'activer plutôt que de le subir.
                 ...(currentUser?.isAdmin ? [
                     { type: 'separator' },
-                    { label: 'Utilisateurs', type: 'submenu', submenuId: 'utilisateurs', submenu: [
-                        { label: 'Gérer les utilisateurs...', action: 'manageUsers' }
-                    ]}
+                    { label: 'Utilisateurs', type: 'submenu', submenuId: 'utilisateurs', submenu: (
+                        accountsEnabled
+                            ? [
+                                { label: 'Gérer les utilisateurs...', action: 'manageUsers' },
+                                { type: 'separator' },
+                                { label: 'Désactiver les comptes...', action: 'disableAccounts' }
+                              ]
+                            : [
+                                { label: 'Activer les comptes...', action: 'enableAccounts' }
+                              ]
+                    )}
                 ] : [])
             ]
         }

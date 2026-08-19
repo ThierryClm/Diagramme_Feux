@@ -254,6 +254,9 @@ function App() {
         deleteUser,
         resetPassword,
         hasPermission,
+        accountsEnabled,
+        activerComptes,
+        desactiverComptes,
         getUsersList,
         exportUsersToFile,
         importUsersFromFile
@@ -1456,6 +1459,27 @@ function App() {
             case 'toggleActionDescription':
                 setShowActionDescription(v => !v);
                 break;
+            case 'enableAccounts':
+                (async () => {
+                    const ok = await askConfirm({
+                        title: 'Activer les comptes utilisateurs',
+                        message: "Destiné aux postes partagés : chacun ouvrira une session avec ses droits. Vous allez créer le compte administrateur. Les comptes restent locaux à cet ordinateur, rien n'est envoyé sur un réseau.",
+                        confirmLabel: 'Activer'
+                    });
+                    if (ok) activerComptes();
+                })();
+                break;
+            case 'disableAccounts':
+                (async () => {
+                    const ok = await askConfirm({
+                        title: 'Désactiver les comptes utilisateurs',
+                        message: "L'application s'ouvrira sans demander de connexion. Les comptes déjà créés sont conservés et seront retrouvés si vous les réactivez.",
+                        confirmLabel: 'Désactiver',
+                        danger: true
+                    });
+                    if (ok) desactiverComptes();
+                })();
+                break;
             case 'toggleFloatingImage':
                 setShowFloatingImage(v => !v);
                 break;
@@ -2104,7 +2128,9 @@ function App() {
         getTrafficData, updateGroupParams, trafficDatasetNames, copyTrafficDataset, addCustomTrafficDataset]);
 
     // Afficher l'écran de connexion si non authentifié
-    if (!isAuthenticated) {
+    // Écran de connexion seulement si les comptes sont activés sur ce poste.
+    // Par défaut ils ne le sont pas : on entre directement dans l'application.
+    if (accountsEnabled && !isAuthenticated) {
         return (
             <LoginModal
                 onLogin={login}
@@ -2130,6 +2156,7 @@ function App() {
                     hasPermission={hasPermission}
                     hasActiveProject={hasActiveProject}
                     onManageUsers={() => setShowUserManager(true)}
+                    accountsEnabled={accountsEnabled}
                     biCarrefourSeparator={biCarrefourSeparator}
                     layoutOptions={{ showParameters: sidebarVisible, showComments, showRemarks, darkMode, colorTheme, showGroupNamesForm, showGroupNamesMatrix, showGroupNamesDiagram, showActionDescription, projectModified, showFloatingImage, hasIntersectionImage: !!intersectionImage, showFloatingMatrix, showFloatingForm, showFloatingProperties, showFloatingTraffic, showFloatingConditions, showFloatingVariables, showFloatingRemarks, showFloatingDiagram, showFloatingConflicts, showFloatingDiagnostic, showFloatingLegend, showCapacityReserve, matricesLocked, dossierReadOnly, hasMultiplePf: pfTabs.length > 1, toastPrefs, openPropertiesOnNewProject, showWrapFlash, showSaveReminder, phasageBulleEnabled, simulationEnabled, activeTab, isExampleProject: isExample, tooltipPrefs }}
                     pixelsPerSecond={pixelsPerSecond}
@@ -2295,7 +2322,7 @@ function App() {
                     )}
                 </div>
 
-                <div className="user-info">
+                {accountsEnabled && (<div className="user-info">
                     <span className="user-name" title={tip(`Permissions: ${PERMISSIONS[currentUser?.permissions]?.label || 'Inconnues'}`)}>
                         {currentUser?.username}
                         {currentUser?.isAdmin && ' (Admin)'}
@@ -2312,7 +2339,7 @@ function App() {
                             Déconnexion
                         </button>
                     )}
-                </div>
+                </div>)}
             </header>
 
             <main className="split-view" ref={splitViewRef}>
