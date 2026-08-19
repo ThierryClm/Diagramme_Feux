@@ -132,6 +132,11 @@ L'application s'ouvre à `http://localhost:3000`.
 | `npm run preview` | Aperçu local du build de production |
 | `npm run clean` | Nettoyage local : supprime `dist/` et arrête les processus `node.exe` (Windows — voir [Dépannage](#dépannage)) |
 | `npm test` | Lancer les tests (Vitest) |
+| `npm run test:ui` | Les mêmes tests dans l'interface graphique de Vitest |
+| `npm run check` | Rapport de santé des dépendances : vulnérabilités et versions obsolètes, celles qui atteignent le navigateur étant séparées de celles confinées à la chaîne de compilation |
+| `npm run release` | Incrémente la version, met à jour `src/version.js` et `package.json`, crée le commit et le tag (voir [VERSIONING.md](VERSIONING.md)) |
+
+Le projet passant parfois plusieurs semaines sans modification, `npm run check` est la commande à lancer en reprenant : de nouvelles alertes de sécurité peuvent être apparues sans qu'une seule ligne de code ait bougé.
 
 ### Lanceurs preview Windows (optionnel)
 
