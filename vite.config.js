@@ -55,6 +55,20 @@ export default defineConfig({
   server: {
     port: 3000
   },
+  // Port de l'aperçu figé explicitement. C'est la valeur par défaut de
+  // Vite, mais elle est codée en dur dans les lanceurs VBS et dans
+  // loading-preview.html : si Vite la changeait un jour, comme il l'a fait
+  // pour le serveur de développement en passant à la version 3, ces pages
+  // pointeraient dans le vide sans rien signaler.
+  preview: {
+    port: 4173,
+    // strictPort : sans lui, Vite bascule silencieusement sur 4174 quand 4173
+    // est occupé — cas courant ici, les processus node.exe s'accumulant après
+    // plusieurs aperçus (voir la section Dépannage du README). La page d'attente
+    // des lanceurs sonderait alors le 4173 et se connecterait au serveur
+    // périmé. Mieux vaut un échec franc qu'un aperçu qui montre l'ancien build.
+    strictPort: true
+  },
   test: {
     environment: 'jsdom',
     globals: true,
