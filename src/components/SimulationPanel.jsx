@@ -367,7 +367,7 @@ const SimulationPanel = ({
                                         <td className="col-start">{greenStart}''</td>
                                         <td className="col-end">{greenEnd}''</td>
                                         <td className="col-green">{greenDuration ? `${greenDuration}''` : '-'}</td>
-                                        <td className="col-vutile">{vUtile ? `${vUtile}''` : '-'}</td>
+                                        <td className="col-vutile">{vUtile ? `${Math.round(vUtile)}''` : '-'}</td>
                                         <td className={`col-capacity ${getCapacityColorClass(capacity.value)}`}>
                                             {capacity.display || '-'}
                                         </td>

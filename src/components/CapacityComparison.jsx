@@ -254,7 +254,7 @@ const CapacityComparison = ({
                                                     </td>
                                                 )}
                                                 <td className="cc-vutile">
-                                                    {cell?.vUtile ? `${cell.vUtile}''` : '-'}
+                                                    {cell?.vUtile ? `${Math.round(cell.vUtile)}''` : '-'}
                                                 </td>
                                                 <td className={`cc-capacity ${getCapacityColorClass(cap?.value)}`}>
                                                     {cap?.display || '-'}

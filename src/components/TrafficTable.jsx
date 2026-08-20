@@ -159,8 +159,8 @@ const TrafficTable = ({
     // Calculate V.Utile = trafic / (1800 * coef / cycle)
     const calculateVUtile = (trafficVol, laneCoef) => {
         if (!trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
-        const result = trafficVol / (1800 * laneCoef / cycleLength);
-        return Math.round(result); // Round to integer
+        // Valeur exacte : l'arrondi se fait à l'affichage (cf. capacityCalc).
+        return trafficVol / (1800 * laneCoef / cycleLength);
     };
 
     // Calculate Cap.U = (V.Utile / green time) * 100 (percentage)
@@ -339,13 +339,13 @@ const TrafficTable = ({
                                     )}
                                 </div>
                             ) : (
-                                'Trafic'
+                                <>Trafic<br/>UVP</>
                             )}
                         </th>
                         <th title={tip("Durée de vert nécessaire pour passer le trafic")}>V.<br/>Utile</th>
                         <th title={tip("Capacité utilisée pour passer le trafic affecté au groupe de feu")}>Cap.<br/>U</th>
-                        <th title={tip("Retard moyen par véhicule, hors saturation (Webster, retard uniforme).")}>Retard</th>
-                        <th title={tip("File d'attente théorique maximale hors saturation")}>File<br/>d'attente</th>
+                        <th title={tip("Retard uniforme par véhicule, hors saturation : terme 1 de Webster seul. Le panneau Capacité affiche l'attente moyenne, qui ajoute le terme aléatoire et donne donc une valeur plus élevée.")}>Retard<br/>unif.</th>
+                        <th title={tip("File d'attente théorique MAXIMALE hors saturation. Le panneau Capacité affiche la file moyenne, plus faible.")}>File<br/>max</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -447,7 +447,7 @@ const TrafficTable = ({
                                             onMouseEnter={() => setHoveredVUtile && vUtile && setHoveredVUtile({ groupId: g.id, vUtile, capacityValue: capacity.value })}
                                             onMouseLeave={() => setHoveredVUtile && setHoveredVUtile(null)}
                                         >
-                                            {vUtile ? `${vUtile}''` : ''}
+                                            {vUtile ? `${Math.round(vUtile)}''` : ''}
                                         </td>
                                     );
                                 })()}

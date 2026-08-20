@@ -23,7 +23,12 @@ export const SATURATION_FLOW = 1800;
 /** Vert utile (secondes) ou null si données insuffisantes. */
 export const calculateVUtile = (trafficVol, laneCoef, cycleLength) => {
     if (!trafficVol || !laneCoef || !cycleLength || laneCoef === 0) return null;
-    return Math.round(trafficVol / (SATURATION_FLOW * laneCoef / cycleLength));
+    // Valeur EXACTE, volontairement non arrondie : l'arrondi à la seconde
+    // entière relève de l'affichage. L'appliquer ici le propagerait dans
+    // Cap.U, qui divergerait alors du degré de saturation calculé par
+    // l'autre chaîne — les deux panneaux annonçaient des réserves
+    // différentes pour le même courant.
+    return trafficVol / (SATURATION_FLOW * laneCoef / cycleLength);
 };
 
 /**

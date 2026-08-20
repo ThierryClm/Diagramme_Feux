@@ -72,6 +72,17 @@ describe('capacityCalc — degré de saturation', () => {
         const capU = calculateCapacity(GREEN, calculateVUtile(300, COEF, CYCLE)).value;
         expect(Math.round(x * 100)).toBe(capU);
     });
+    // Le cas ci-dessus tombe sur un V.Utile entier (15 s) et ne révélait donc
+    // rien. Ici V.Utile vaut 9,11 s : arrondir avant de calculer le pourcentage
+    // faisait dire 82 % au tableau Trafic et 0,83 au panneau Capacité, soit un
+    // point d'écart sur la réserve annoncée pour le même courant.
+    it("reste cohérent quand V.Utile n'est pas entier", () => {
+        const [vol, coef, vert, cycle] = [303, 0.85, 11, 46];
+        const x = calculateDegreeOfSaturation(vol, coef, vert, cycle);
+        const capU = calculateCapacity(vert, calculateVUtile(vol, coef, cycle)).value;
+        expect(calculateVUtile(vol, coef, cycle)).toBeCloseTo(9.11, 2);
+        expect(Math.round(x * 100)).toBe(capU);
+    });
     it('null si données insuffisantes', () => {
         expect(calculateDegreeOfSaturation(0, COEF, GREEN, CYCLE)).toBeNull();
         expect(calculateDegreeOfSaturation(300, 0, GREEN, CYCLE)).toBeNull();
