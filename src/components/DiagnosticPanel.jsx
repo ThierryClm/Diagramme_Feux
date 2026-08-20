@@ -88,8 +88,8 @@ const DiagnosticPanel = ({
                                 <th title={tip("Capacité offerte : 1800 × coef × vert/cycle")}>Cap.<br/>uvp/h</th>
                                 <th title={tip("Degré de saturation = trafic / capacité offerte")}>Degré<br/>sat.</th>
                                 <th title={tip("Réserve de capacité = capacité − trafic")}>Réserve<br/>uvp/h</th>
-                                <th title={tip("Attente moyenne par véhicule, surcharge aléatoire comprise (Webster, 2 termes).")}>Attente</th>
-                                <th title={tip("File d'attente moyenne, déduite de l'attente (loi de Little).")}>File</th>
+                                <th title={tip("Attente MOYENNE par véhicule, surcharge aléatoire comprise (Webster, 2 termes). Le tableau Trafic affiche le retard uniforme seul, plus faible.")}>Attente<br/>moy.</th>
+                                <th title={tip("File d'attente MOYENNE, déduite de l'attente (loi de Little). Le tableau Trafic affiche la file maximale, plus élevée.")}>File<br/>moy.</th>
                             </tr>
                         </thead>
                         <tbody>
