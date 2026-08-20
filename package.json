@@ -1,7 +1,7 @@
 {
     "name": "tracflux",
     "private": true,
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Outil de conception et d'optimisation de diagrammes de feux tricolores",
     "license": "AGPL-3.0-or-later",
     "author": "Thierry Colmon",
