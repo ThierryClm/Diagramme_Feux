@@ -31,16 +31,28 @@ jobs:
         id: tag
         run: echo "name=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
+      # On lit le CHANGELOG et le script depuis la branche par défaut, jamais
+      # depuis le tag : une version taguée avant la mise en place de ce
+      # workflow ne contient ni l'un ni l'autre, et les notes d'une version
+      # peuvent être rédigées après coup. Le tag ne sert qu'à nommer la release
+      # et à l'y rattacher.
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ steps.tag.outputs.name }}
           fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: '22'
+
+      - name: Vérifier que le tag existe
+        run: |
+          TAG="${{ steps.tag.outputs.name }}"
+          if ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG introuvable sur le dépôt."
+            exit 1
+          fi
 
       - name: Extraire les notes du CHANGELOG
         run: node scripts/changelog-section.mjs "${{ steps.tag.outputs.name }}" > notes.md
