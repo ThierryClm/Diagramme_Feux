@@ -7,7 +7,7 @@ et le projet suit le [versionnage sémantique](VERSIONING.md).
 
 ---
 
-## [1.2.0] — à paraître
+## [1.2.0] — 2026-08-20
 
 ### Ajouté
 
