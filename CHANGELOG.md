@@ -7,9 +7,82 @@ et le projet suit le [versionnage sémantique](VERSIONING.md).
 
 ---
 
-## [1.0.0] — à paraître
+## [1.2.0] — à paraître
 
-**Première version publique.** Date fixée lors du `npm run release` de publication.
+### Ajouté
+
+- **Masquage des noms dans le rapport de diagnostic**, actif par défaut. Un rapport est
+  destiné à être joint à une issue publique ; les noms de projet, de carrefour et de plan
+  de feux désignent une commune et des rues réelles, et n'ont aucune valeur de débogage.
+  Une case permet de les rétablir pour un échange privé.
+- **Réserve affichée avant tout import DiagFeux**, y compris sur une application vide —
+  la confirmation n'apparaissait jusqu'ici que si un projet était déjà ouvert, c'est-à-dire
+  jamais dans le cas où l'on vient précisément essayer un fichier `.dfe`.
+
+### Corrigé
+
+- **La capacité utilisée divergeait du degré de saturation** : le V.Utile était arrondi à
+  la seconde entière avant de servir au calcul du pourcentage, si bien que le tableau
+  Trafic et le panneau Réserve de capacité annonçaient des réserves différentes pour le
+  même courant — 18 % contre 17 % sur le projet exemple. L'arrondi ne concerne plus que
+  l'affichage.
+- **Port de l'aperçu figé** (`strictPort`) : Vite basculait silencieusement sur un autre
+  port quand 4173 était occupé, et la page d'attente des lanceurs se connectait alors au
+  build précédent.
+
+### Modifié
+
+- **En-têtes des tableaux de capacité** : *Retard unif.* et *File max* côté Trafic,
+  *Attente moy.* et *File moy.* côté Réserve de capacité. Les deux panneaux calculent des
+  grandeurs différentes — terme uniforme de Webster contre attente moyenne, file maximale
+  contre file moyenne — ce que les anciens intitulés ne disaient pas.
+- La ligne de synthèse du tableau Trafic devient **« Synthèse trafic »**, et la colonne
+  du trafic **« Trafic UVP »**.
+- **Glossaire de l'aide** revu : entrée *Aiguillage de phase* ajoutée, définitions de
+  l'adaptatif vertical, de l'escamotage de phase, de l'instant CO, du point de repos et de
+  la priorité piétons reprises ; les bandes passantes ne sont plus présentées comme des
+  actions de micro-régulation mais comme des repères de tracé.
+- **Importateur DiagFeux** annoncé pour ce qu'il est : en cours de développement, jamais
+  confronté à un fichier réel.
+
+---
+
+## [1.1.0] — 2026-08-19
+
+Première série publique, centrée sur l'accès à l'outil.
+
+### Ajouté
+
+- **Déploiement continu sur GitHub Pages** : l'application est en ligne et se met à jour à
+  chaque publication.
+- **Balises de partage** sur la page de l'application : un lien relayé dans une messagerie
+  ou un fil de discussion s'affiche désormais avec titre, description et visuel.
+
+### Modifié
+
+- **Les comptes utilisateurs deviennent facultatifs**, désactivés par défaut. On entre
+  directement dans l'application ; le dispositif s'active depuis *À propos → Utilisateurs*
+  pour les postes partagés. Un poste ayant déjà créé des comptes les conserve.
+- **Un projet exemple s'ouvre sans créer de compte** — le lien de découverte mène
+  directement au carrefour.
+- README réorganisé autour de l'usage : section *Essayer TraCflux* en tête, chapitre
+  *Développement* pour le montage d'un poste.
+
+### Corrigé
+
+- **Le menu s'ouvrait et se refermait au premier clic** : le survol et le clic se
+  disputaient le même geste, et le menu Fichier restait ouvert indéfiniment après le
+  chargement d'un projet.
+- **Les noms des groupes n'apparaissaient pas** dans la fenêtre carrefour détachée.
+- **Fond de plan du projet exemple** remplacé par le tracé au trait, plus lisible en
+  présentation.
+
+---
+
+## [1.0.0] — 2026-08-18
+
+**Première version publique.** Passage du dépôt en public et première mise en ligne de
+l'application sur GitHub Pages.
 
 TraCflux est né fin 2025 d'un besoin de terrain : concevoir des plans de feux
 sans être enfermé dans le modèle **strictement par phases** des outils existants.
