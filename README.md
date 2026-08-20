@@ -66,7 +66,7 @@ La méthode de calcul reste celle du *Guide des carrefours à feux* du CERTU (d�
 
 L'application est conçue pour s'adapter aux contextes de **présentation devant un auditoire** — comités techniques, formations internes, validations devant un client ou échanges pédagogiques avec des élus.
 
-En réunion comme en visio, détachez la fenêtre **Image du carrefour** : c'est elle seule que vous partagez ou posez sur un second écran. Pendant la simulation : les flèches changent de couleur (vert / orange / rouge) seconde par seconde, en suivant le cycle et l'effet des actions de micro-régulation activées.
+En réunion comme en visio, détachez la fenêtre **Image du carrefour** : c'est elle seule que vous partagez ou posez sur un second écran. Pendant la simulation, les flèches changent de couleur (vert / orange / rouge) seconde par seconde, en suivant le cycle et l'effet des actions de micro-régulation activées.
 
 L'auditoire ne voit que l'essentiel — le carrefour qui « vit » au rythme du cycle — pendant que vous gardez le contrôle complet sur votre écran de travail (diagramme, matrice, panneau de simulation, micro-régulation) et commentez en direct les actions que vous activez et leur effet sur la dynamique du carrefour.
 
@@ -138,18 +138,7 @@ L'application s'ouvre à `http://localhost:3000`.
 
 Le projet passant parfois plusieurs semaines sans modification, `npm run check` est la commande à lancer en reprenant : de nouvelles alertes de sécurité peuvent être apparues sans qu'une seule ligne de code ait bougé.
 
-### Lanceurs preview Windows (optionnel)
-
-Deux scripts VBScript sont fournis pour ouvrir l'aperçu d'un double-clic :
-
-- [`Lancer-preview.vbs`](Lancer-preview.vbs) — Microsoft Edge
-- [`Lancer-preview-chrome.vbs`](Lancer-preview-chrome.vbs) — Google Chrome
-
-Pour créer un raccourci sur le bureau : clic droit sur le fichier `.vbs` → **Envoyer vers** → **Bureau (créer un raccourci)**. Le double-clic affiche une page d'attente pendant le build, puis bascule automatiquement sur l'application dès que le serveur est prêt. Si le serveur est déjà en ligne, une nouvelle fenêtre s'ouvre directement dessus.
-
-Pour une expérience « application native » sans onglets ni barre d'adresse, utiliser le bouton **« Installer cette app »** de la barre d'adresse Chrome/Edge une fois l'app ouverte (voir l'aide en ligne, section Mise en page).
-
-Ces lanceurs sont spécifiques à Windows. Sur macOS et Linux, utiliser directement `npm run preview` en ligne de commande.
+Les quelques fichiers `.vbs` à la racine sont des lanceurs Windows personnels — un double-clic enchaîne `npm run build` puis `npm run preview`. Ils ne sont nécessaires ni à l'usage de l'application, ni pour développer.
 
 ### Dépannage
 
