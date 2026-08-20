@@ -118,8 +118,17 @@ describe('buildDiagnosticReport — données projet', () => {
     });
 
     it('indique le PF actif par nom et id', () => {
-        const out = buildDiagnosticReport(baseCtx());
+        const out = buildDiagnosticReport({ ...baseCtx(), maskNames: false });
         expect(out).toMatch(/PF actif\s+:\s+PF Jour \(id=1\)/);
+    });
+
+    // Masquage par défaut : un rapport est destiné à une issue publique, et
+    // ces noms désignent une commune et des rues réelles.
+    it('masque les noms par défaut', () => {
+        const out = buildDiagnosticReport(baseCtx());
+        expect(out).toMatch(/Nom du projet\s+:\s+\(masqué\)/);
+        expect(out).toMatch(/Nom du carrefour\s+:\s+\(masqué\)/);
+        expect(out).not.toContain('PF Jour');
     });
 
     it('indique "(aucun)" si pas de PF actif', () => {
@@ -140,7 +149,7 @@ describe('buildDiagnosticReport — données projet', () => {
     });
 
     it('détaille chaque PF avec le nombre de verts et d\'actions', () => {
-        const out = buildDiagnosticReport(baseCtx());
+        const out = buildDiagnosticReport({ ...baseCtx(), maskNames: false });
         expect(out).toMatch(/PF Jour.*verts configurés: 1, actions: 1/);
         expect(out).toMatch(/PF Nuit.*validé \(green\)/);
     });
@@ -148,7 +157,7 @@ describe('buildDiagnosticReport — données projet', () => {
 
 describe('buildDiagnosticReport — thème', () => {
     it('thème par défaut "Sombre"', () => {
-        const out = buildDiagnosticReport(baseCtx());
+        const out = buildDiagnosticReport({ ...baseCtx(), maskNames: false });
         expect(out).toMatch(/Thème actif\s+:\s+Sombre/);
     });
 
@@ -214,7 +223,8 @@ describe('buildDiagnosticReport — robustesse', () => {
             cycleLength: 60,
             actionData: [],
             conflictMatrix: [],
-            intersectionImage: null
+            intersectionImage: null,
+            maskNames: false
         });
         expect(out).toMatch(/Groupes de feux\s+:\s+0/);
         expect(out).toMatch(/Nom du projet\s+:\s+\(aucun\)/);
@@ -264,9 +274,16 @@ describe('buildDiagnosticJSON — données projet', () => {
     });
 
     it('résout le nom du PF actif', () => {
-        const j = buildDiagnosticJSON(baseCtx());
+        const j = buildDiagnosticJSON({ ...baseCtx(), maskNames: false });
         expect(j.project.activePFId).toBe(1);
         expect(j.project.activePFName).toBe('PF Jour');
+    });
+
+    it('masque les noms par défaut', () => {
+        const j = buildDiagnosticJSON(baseCtx());
+        expect(j.project.name).toBeNull();
+        expect(j.project.intersectionName).toBeNull();
+        expect(j.project.activePFName).toBeNull();
     });
 
     it('met hasImage à false quand intersectionImage est null', () => {
@@ -275,7 +292,7 @@ describe('buildDiagnosticJSON — données projet', () => {
     });
 
     it('détaille chaque PF', () => {
-        const j = buildDiagnosticJSON(baseCtx());
+        const j = buildDiagnosticJSON({ ...baseCtx(), maskNames: false });
         expect(j.pfDetails).toHaveLength(2);
         expect(j.pfDetails[0]).toMatchObject({
             id: 1,
@@ -362,7 +379,7 @@ describe('rapport — verrous', () => {
             { id: 1, name: 'PF Jour' },
             { id: 2, name: 'Ref_ext', readOnly: true }
         ];
-        const out = buildDiagnosticReport(ctx);
+        const out = buildDiagnosticReport({ ...ctx, maskNames: false });
         expect(out).toMatch(/PF verrouillés\s+:\s+1 \/ 2/);
         expect(out).toMatch(/Ref_ext.*lecture seule/);
         expect(out).not.toMatch(/PF Jour.*lecture seule/);
@@ -385,7 +402,7 @@ describe('rapport — verrous', () => {
     it('conserve la mention « validé » à côté du verrou', () => {
         const ctx = baseCtx();
         ctx.pfTabs = [{ id: 1, name: 'Ref_ext', readOnly: true, color: 'green' }];
-        const out = buildDiagnosticReport(ctx);
+        const out = buildDiagnosticReport({ ...ctx, maskNames: false });
         expect(out).toMatch(/Ref_ext.*lecture seule, validé \(green\)/);
     });
 });

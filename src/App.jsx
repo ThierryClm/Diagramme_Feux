@@ -380,6 +380,9 @@ function App() {
     const [diagnosticModal, setDiagnosticModal] = useState(false);
     const [capacityCompareModal, setCapacityCompareModal] = useState(false);
     const [diagnosticIncludeProject, setDiagnosticIncludeProject] = useState(false);
+    // Noms masqués par défaut : un rapport est destiné à une issue publique,
+    // et ces noms désignent une commune et des rues réelles.
+    const [diagnosticMaskNames, setDiagnosticMaskNames] = useState(true);
     const [diagnosticRefresh, setDiagnosticRefresh] = useState(0);
     const printPreviewPageRef = useRef(null);
 
@@ -3280,7 +3283,8 @@ function App() {
                         dossierReadOnly,
                         activePfReadOnly,
                         matricesLocked,
-                        includeProject: diagnosticIncludeProject
+                        includeProject: diagnosticIncludeProject,
+                        maskNames: diagnosticMaskNames
                     });
                     const journalEntries = getInterceptedEntries();
                     const journalCount = journalEntries.length;
@@ -3291,6 +3295,9 @@ function App() {
                                 Ce rapport contient des informations techniques utiles pour signaler un bug.
                                 Aucune donnée n'est envoyée — le contenu reste sur votre poste. Vous pouvez le
                                 copier dans le presse-papiers ou le télécharger comme fichier texte.
+                                {' '}<strong>Une issue GitHub est publique</strong> : les noms de projet
+                                et de carrefour sont masqués par défaut, car ils désignent une commune
+                                et des rues réelles.
                             </div>
                             <div style={{
                                 fontSize: '0.85em',
@@ -3310,6 +3317,14 @@ function App() {
                                     onChange={(e) => setDiagnosticIncludeProject(e.target.checked)}
                                 />
                                 Inclure le projet en cours (données détaillées — ne pas partager si sensibles)
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={diagnosticMaskNames}
+                                    onChange={(e) => setDiagnosticMaskNames(e.target.checked)}
+                                />
+                                Masquer les noms de projet et de carrefour (recommandé pour une issue publique)
                             </label>
                             <textarea
                                 readOnly
@@ -3402,7 +3417,8 @@ function App() {
                                             dossierReadOnly,
                                             activePfReadOnly,
                                             matricesLocked,
-                                            includeProject: diagnosticIncludeProject
+                                            includeProject: diagnosticIncludeProject,
+                                            maskNames: diagnosticMaskNames
                                         });
                                         downloadDiagnosticJSON(obj, 'diagnostic');
                                         toast.success('Rapport téléchargé (.json)');

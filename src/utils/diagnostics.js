@@ -149,7 +149,12 @@ export const buildDiagnosticReport = (ctx) => {
         dossierReadOnly = false,
         activePfReadOnly = false,
         matricesLocked = false,
-        includeProject = false
+        includeProject = false,
+        // Masque les noms de projet, de carrefour et de plan de feux. Actif par
+        // défaut : un rapport est destiné à être collé dans une issue publique,
+        // et ces noms désignent une commune et des rues réelles. Ils n'ont
+        // aucune valeur de débogage.
+        maskNames = true
     } = ctx;
 
     const now = new Date();
@@ -221,11 +226,11 @@ export const buildDiagnosticReport = (ctx) => {
     lines.push(`  Rappel de sauvegarde             : ${lsBool('showSaveReminder') ? 'actif' : 'inactif'}`);
     lines.push('');
     lines.push('## Projet en cours');
-    lines.push(`  Nom du projet    : ${projectName || '(aucun)'}`);
-    lines.push(`  Nom du carrefour : ${intersectionName || '(aucun)'}`);
+    lines.push(`  Nom du projet    : ${maskNames ? '(masqué)' : (projectName || '(aucun)')}`);
+    lines.push(`  Nom du carrefour : ${maskNames ? '(masqué)' : (intersectionName || '(aucun)')}`);
     lines.push(`  Groupes de feux  : ${(groups || []).length}`);
     lines.push(`  Plans de feux    : ${(pfTabs || []).length}`);
-    lines.push(`  PF actif         : ${activePF ? `${activePF.name} (id=${activePF.id})` : '(aucun)'}`);
+    lines.push(`  PF actif         : ${activePF ? (maskNames ? `(masqué) (id=${activePF.id})` : `${activePF.name} (id=${activePF.id})`) : '(aucun)'}`);
     lines.push(`  Durée du cycle   : ${cycleLength}s`);
     lines.push(`  Actions remplies : ${filledActions} / ${(actionData || []).length}`);
     lines.push(`  Matrice (taille) : ${matrixSize}×${matrixSize}`);
@@ -262,7 +267,7 @@ export const buildDiagnosticReport = (ctx) => {
         const flags = [];
         if (pf.readOnly) flags.push('lecture seule');
         if (pf.color) flags.push(`validé (${pf.color})`);
-        lines.push(`  • ${pf.name} (id=${pf.id}) — verts configurés: ${nbGreens}, actions: ${nbActions}${flags.length ? `, ${flags.join(', ')}` : ''}`);
+        lines.push(`  • ${maskNames ? '(masqué)' : pf.name} (id=${pf.id}) — verts configurés: ${nbGreens}, actions: ${nbActions}${flags.length ? `, ${flags.join(', ')}` : ''}`);
     });
     lines.push('');
     lines.push('## Stockage local');
@@ -335,7 +340,12 @@ export const buildDiagnosticJSON = (ctx) => {
         dossierReadOnly = false,
         activePfReadOnly = false,
         matricesLocked = false,
-        includeProject = false
+        includeProject = false,
+        // Masque les noms de projet, de carrefour et de plan de feux. Actif par
+        // défaut : un rapport est destiné à être collé dans une issue publique,
+        // et ces noms désignent une commune et des rues réelles. Ils n'ont
+        // aucune valeur de débogage.
+        maskNames = true
     } = ctx;
 
     const filledActions = (actionData || []).filter(a => a && a.action && a.action.trim() !== '').length;
@@ -386,13 +396,13 @@ export const buildDiagnosticJSON = (ctx) => {
             showSaveReminder: lsBool('showSaveReminder')
         },
         project: {
-            name: projectName || null,
-            intersectionName: intersectionName || null,
+            name: maskNames ? null : (projectName || null),
+            intersectionName: maskNames ? null : (intersectionName || null),
             cycleLength,
             groupCount: (groups || []).length,
             pfCount: (pfTabs || []).length,
             activePFId: activePFId || null,
-            activePFName: activePF ? activePF.name : null,
+            activePFName: activePF ? (maskNames ? null : activePF.name) : null,
             filledActions,
             totalActions: (actionData || []).length,
             matrixSize,
@@ -411,7 +421,7 @@ export const buildDiagnosticJSON = (ctx) => {
         },
         pfDetails: (pfTabs || []).map(pf => ({
             id: pf.id,
-            name: pf.name,
+            name: maskNames ? null : pf.name,
             greensConfigured: Array.isArray(pf.diagram) ? pf.diagram.filter(d => d.greenDuration > 0).length : 0,
             actionsFilled: Array.isArray(pf.data) ? pf.data.filter(a => a && a.action && a.action.trim() !== '').length : 0,
             readOnly: !!pf.readOnly,
