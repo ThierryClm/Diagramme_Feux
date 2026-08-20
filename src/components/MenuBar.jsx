@@ -232,9 +232,9 @@ const MenuBar = ({
                             title: !hasActiveProject ? 'Aucun projet ouvert' : 'Ajouter les plans de feux d\'un autre projet TraCflux (même carrefour) pour comparer. Ils sont renommés « _ext ».'
                         },
                         {
-                            label: 'Projet DiagFeux (.dfe)...',
+                            label: 'Projet DiagFeux (.dfe)... (ébauche)',
                             action: 'importDiagfeux',
-                            title: 'Importer le plan de feux d\'un projet DiagFeux (CEREMA). Fichier .dfe (contenu XML ouvert). La géométrie n\'est pas reprise.'
+                            title: 'Importer le plan de feux d\'un projet DiagFeux (CEREMA). Fichier .dfe (contenu XML ouvert). La géométrie n\'est pas reprise. Fonction en cours de développement : jamais confrontée à un fichier réel, le résultat demande vérification.'
                         },
                         {
                             label: 'Projet Excel...',

@@ -702,12 +702,15 @@ function App() {
         const file = e.target.files?.[0];
         if (e.target) e.target.value = '';
         if (!file) return;
-        if (hasActiveProject) {
+        {
+            const reserve = "L'importateur DiagFeux est en cours de développement : il n'a pas encore été confronté à un fichier .dfe réel, et le résultat demande vérification.";
             const ok = await askConfirm({
                 title: 'Importer un projet DiagFeux',
-                message: 'Le projet courant sera remplacé par le projet DiagFeux importé. Continuer ?',
+                message: hasActiveProject
+                    ? 'Le projet courant sera remplacé par le projet DiagFeux importé.\n\n' + reserve
+                    : reserve,
                 confirmLabel: 'Importer',
-                danger: true
+                danger: hasActiveProject
             });
             if (!ok) return;
         }
