@@ -519,7 +519,7 @@ const TrafficTable = ({
                 const sat = carrefourDiagnostic.saturatedCount;
                 return (
                     <div className="traffic-diagnostic-summary">
-                        <span className="tds-label">Diagnostic carrefour :</span>{' '}
+                        <span className="tds-label">Synthèse trafic :</span>{' '}
                         courant dimensionnant <strong>GF{carrefourDiagnostic.dim.id}</strong> —{' '}
                         capacité utilisée{' '}
                         <strong className={getCapacityColorClass(capU)}>{capU}%</strong>{' '}

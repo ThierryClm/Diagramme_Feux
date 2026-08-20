@@ -38,7 +38,7 @@ Deux verrous en découlent, levés d'un coup :
 - **Déploiement** — rien à installer, donc rien à faire valider par une DSI : on ouvre une page. L'application est par ailleurs **installable (PWA)** et fonctionne **hors ligne**.
 - **Confidentialité** — tout s'exécute **en local, sans serveur ni télémétrie** : les données ne quittent jamais le poste.
 
-L'**import des formats existants** procède du même principe : un plan de feux doit pouvoir **survivre à l'outil qui l'a créé**.
+L'**import des formats existants** procède du même principe : un projet doit pouvoir **survivre à l'outil qui l'a créé**.
 
 ### Un modèle qui combine phases et groupes de feux
 
